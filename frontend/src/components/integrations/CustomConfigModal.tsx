@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { XMarkIcon, Cog6ToothIcon, CodeBracketIcon } from '@heroicons/react/24/outline';
+import { Cog6ToothIcon, CodeBracketIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { integrationsApi } from '../../lib/api';
+import { Button, Dialog } from '@/components/ui';
 import VisualConfigBuilder from './VisualConfigBuilder';
 import CodeEditor from './CodeEditor';
-
-import { Button } from '@/components/ui/Button';
-import { Dialog } from '@/components/ui/Dialog';
 
 interface Props {
   integrationId: string;
@@ -17,19 +15,19 @@ interface Props {
   onClose: () => void;
 }
 
-type ConfigMode = 'visual' | 'code' | 'raw';
+type ConfigMode = 'visual' | 'code';
 
 interface CustomConfig {
   mode: ConfigMode;
   baseUrl: string;
   endpoints: any[];
-  authType: 'none' | 'api_key' | 'oauth2' | 'basic' | null;
+  authType: 'api_key' | 'oauth2' | null;
   authConfig: any;
   responseMapping: any;
   customCode: string;
   lastTestAt?: string;
-  lastTestStatus?: 'success' | 'error' | string | null;
-  lastTestError?: string | null;
+  lastTestStatus?: string;
+  lastTestError?: string;
 }
 
 const DEFAULT_CODE = `/**
@@ -143,38 +141,12 @@ export default function CustomConfigModal({
       if (result.success) {
         toast.success(result.message);
       } else {
-        // Check for SSRF-specific error messages
-        const errorMsg = result.error || result.message || '';
-        if (
-          errorMsg.includes('SSRF') ||
-          errorMsg.includes('private') ||
-          errorMsg.includes('blocked') ||
-          errorMsg.includes('internal')
-        ) {
-          toast.error('Cannot connect to internal/private addresses. Use a public URL.');
-        } else {
-          toast.error(result.message);
-        }
+        toast.error(result.message);
       }
     },
     onError: (error: any) => {
-      const msg = error.response?.data?.message || error.message || 'Test failed';
-      // Check for SSRF-specific error messages
-      if (
-        msg.includes('SSRF') ||
-        msg.includes('private') ||
-        msg.includes('blocked') ||
-        msg.includes('internal')
-      ) {
-        setTestResult({
-          success: false,
-          message: 'Cannot connect to internal/private addresses. Use a public URL.',
-        });
-        toast.error('Cannot connect to internal/private addresses. Use a public URL.');
-      } else {
-        setTestResult({ success: false, message: msg });
-        toast.error(msg);
-      }
+      setTestResult({ success: false, message: error.response?.data?.message || 'Test failed' });
+      toast.error('Test failed');
     },
   });
 
@@ -274,124 +246,118 @@ export default function CustomConfigModal({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <Dialog open onClose={onClose}>
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-surface-200">
-        <div>
-          <h2 className="text-lg font-semibold text-surface-900">Configure Custom Integration</h2>
-          <p className="text-sm text-surface-600">{integrationName}</p>
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      size="xl"
+      className="max-w-5xl"
+      title="Configure Custom Integration"
+      description={integrationName}
+      footer={
+        <div className="flex w-full items-center justify-between">
+          <div className="flex items-center gap-2">
+            {hasChanges && <span className="text-xs text-yellow-700">• Unsaved changes</span>}
+            {config.lastTestAt && (
+              <div className="text-xs text-surface-500">
+                Last test: {new Date(config.lastTestAt).toLocaleString()}
+                <span
+                  className={clsx(
+                    'ml-2 px-1.5 py-0.5 rounded',
+                    config.lastTestStatus === 'success'
+                      ? 'bg-green-500/20 text-emerald-700'
+                      : 'bg-red-500/20 text-red-600'
+                  )}
+                >
+                  {config.lastTestStatus}
+                </span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={handleSave}
+              disabled={saveMutation.isPending || !hasChanges}
+            >
+              {saveMutation.isPending ? 'Saving...' : 'Save'}
+            </Button>
+            <Button onClick={handleSync} disabled={syncMutation.isPending}>
+              {syncMutation.isPending ? 'Syncing...' : 'Save & Sync'}
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          {config.lastTestAt && (
-            <div className="text-xs text-surface-500">
-              Last test: {new Date(config.lastTestAt).toLocaleString()}
-              <span
-                className={clsx(
-                  'ml-2 px-1.5 py-0.5 rounded',
-                  config.lastTestStatus === 'success'
-                    ? 'bg-green-500/20 text-green-600'
-                    : 'bg-red-500/20 text-red-600'
-                )}
-              >
-                {config.lastTestStatus}
-              </span>
-            </div>
-          )}
-          <button onClick={onClose} className="p-2 text-surface-600 hover:text-surface-800">
-            <XMarkIcon className="w-5 h-5" />
+      }
+    >
+      <div className="-mx-5 -my-4 flex h-[75vh] flex-col">
+        {/* Tabs */}
+        <div className="flex border-b border-surface-300">
+          <button
+            onClick={() => handleTabChange('visual')}
+            className={clsx(
+              'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
+              activeTab === 'visual'
+                ? 'border-brand-500 text-brand-700'
+                : 'border-transparent text-surface-600 hover:text-surface-800'
+            )}
+          >
+            <Cog6ToothIcon className="w-4 h-4" />
+            Visual Builder
+          </button>
+          <button
+            onClick={() => handleTabChange('code')}
+            className={clsx(
+              'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
+              activeTab === 'code'
+                ? 'border-brand-500 text-brand-700'
+                : 'border-transparent text-surface-600 hover:text-surface-800'
+            )}
+          >
+            <CodeBracketIcon className="w-4 h-4" />
+            Code Editor
           </button>
         </div>
-      </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-surface-200">
-        <button
-          onClick={() => handleTabChange('visual')}
-          className={clsx(
-            'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
-            activeTab === 'visual'
-              ? 'border-brand-500 text-brand-400'
-              : 'border-transparent text-surface-600 hover:text-surface-800'
-          )}
-        >
-          <Cog6ToothIcon className="w-4 h-4" />
-          Visual Builder
-        </button>
-        <button
-          onClick={() => handleTabChange('code')}
-          className={clsx(
-            'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
-            activeTab === 'code'
-              ? 'border-brand-500 text-brand-400'
-              : 'border-transparent text-surface-600 hover:text-surface-800'
-          )}
-        >
-          <CodeBracketIcon className="w-4 h-4" />
-          Code Editor
-        </button>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-full text-surface-500">
-            Loading configuration...
-          </div>
-        ) : activeTab === 'visual' ? (
-          <div className="h-full overflow-auto p-6">
-            <VisualConfigBuilder
-              config={{
-                baseUrl: config.baseUrl,
-                endpoints: config.endpoints,
-                authType: config.authType,
-                authConfig: config.authConfig,
-              }}
-              onChange={(visualConfig) =>
-                handleConfigChange({
-                  baseUrl: visualConfig.baseUrl,
-                  endpoints: visualConfig.endpoints,
-                  authType: visualConfig.authType,
-                  authConfig: visualConfig.authConfig,
-                })
-              }
-              onTest={handleTest}
+        {/* Content */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full text-surface-500">
+              Loading configuration...
+            </div>
+          ) : activeTab === 'visual' ? (
+            <div className="h-full overflow-auto p-6">
+              <VisualConfigBuilder
+                config={{
+                  baseUrl: config.baseUrl,
+                  endpoints: config.endpoints,
+                  authType: config.authType,
+                  authConfig: config.authConfig,
+                }}
+                onChange={(visualConfig) =>
+                  handleConfigChange({
+                    baseUrl: visualConfig.baseUrl,
+                    endpoints: visualConfig.endpoints,
+                    authType: visualConfig.authType,
+                    authConfig: visualConfig.authConfig,
+                  })
+                }
+                onTest={handleTest}
+                isTestLoading={testMutation.isPending}
+              />
+            </div>
+          ) : (
+            <CodeEditor
+              code={config.customCode}
+              onChange={(customCode) => handleConfigChange({ customCode })}
+              onValidate={handleValidateCode}
+              onTest={() => handleTest()}
               isTestLoading={testMutation.isPending}
+              testResult={testResult || undefined}
             />
-          </div>
-        ) : (
-          <CodeEditor
-            code={config.customCode}
-            onChange={(customCode) => handleConfigChange({ customCode })}
-            onValidate={handleValidateCode}
-            onTest={() => handleTest()}
-            isTestLoading={testMutation.isPending}
-            testResult={testResult || undefined}
-          />
-        )}
-      </div>
-
-      {/* Footer */}
-      <div className="flex items-center justify-between px-6 py-4 border-t border-surface-200 bg-white/50">
-        <div className="flex items-center gap-2">
-          {hasChanges && <span className="text-xs text-yellow-600">• Unsaved changes</span>}
-        </div>
-        <div className="flex items-center gap-3">
-          <Button onClick={onClose} variant="secondary">
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={saveMutation.isPending || !hasChanges}
-            variant="secondary"
-          >
-            {saveMutation.isPending ? 'Saving...' : 'Save'}
-          </Button>
-          <Button onClick={handleSync} disabled={syncMutation.isPending} variant="primary">
-            {syncMutation.isPending ? 'Syncing...' : 'Save & Sync'}
-          </Button>
+          )}
         </div>
       </div>
     </Dialog>

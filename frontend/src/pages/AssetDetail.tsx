@@ -1,739 +1,536 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { assetsApi } from '../lib/api';
-import { Asset } from '../lib/apiTypes';
-import { Button } from '@/components/ui/Button';
-import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
-import toast from 'react-hot-toast';
+import { Link, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import {
-  ArrowLeft,
-  Edit2,
-  Trash2,
-  Server,
   AlertTriangle,
-  X,
-  Monitor,
-  Smartphone,
-  HardDrive,
-  Cloud,
-  Database,
-  Network,
-  Clock,
-  ShieldAlert,
+  ArrowLeft,
+  Calendar,
+  Cpu,
+  Globe,
+  MapPin,
+  Pencil,
+  Shield,
+  User as UserIcon,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import api from '@/lib/api';
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  DataTable,
+  EmptyState,
+  PageHeader,
+  Skeleton,
+  Tabs,
+  type BadgeVariant,
+  type DataTableColumn,
+} from '@/components/ui';
 
-import { Textarea } from '@/components/ui/Textarea';
+interface AssetRisk {
+  id: string;
+  riskId: string;
+  title: string;
+  severity: string;
+  status: string;
+}
 
-import { Input } from '@/components/ui/Input';
+interface AssetControl {
+  id: string;
+  controlId: string;
+  title: string;
+  status: string;
+}
 
-import { SelectNative } from '@/components/ui/SelectNative';
-import { Dialog } from '@/components/ui/Dialog';
+interface AssetFinding {
+  id: string;
+  findingNumber?: string;
+  title: string;
+  severity: string;
+  status: string;
+  reportedAt?: string;
+}
 
-const ASSET_TYPES = [
-  { value: 'server', label: 'Server', icon: HardDrive },
-  { value: 'workstation', label: 'Workstation', icon: Monitor },
-  { value: 'mobile', label: 'Mobile', icon: Smartphone },
-  { value: 'network', label: 'Network', icon: Network },
-  { value: 'application', label: 'Application', icon: Database },
-  { value: 'data', label: 'Data', icon: Database },
-  { value: 'cloud', label: 'Cloud', icon: Cloud },
-];
+interface Asset {
+  id: string;
+  name: string;
+  type: string;
+  category?: string;
+  criticality: string;
+  status?: string;
+  owner?: string;
+  ownerName?: string;
+  location?: string;
+  environment?: string;
+  os?: string;
+  osVersion?: string;
+  department?: string;
+  lastSeenAt?: string;
+  acquiredAt?: string;
+  retiresAt?: string;
+  decommissionedAt?: string;
+  description?: string;
+  source?: string;
+  risks?: AssetRisk[];
+  controls?: AssetControl[];
+  findings?: AssetFinding[];
+}
 
-const CRITICALITY_LEVELS = [
-  { value: 'low', label: 'Low', color: 'bg-surface-500' },
-  { value: 'medium', label: 'Medium', color: 'bg-amber-500' },
-  { value: 'high', label: 'High', color: 'bg-orange-500' },
-  { value: 'critical', label: 'Critical', color: 'bg-red-500' },
-];
+const CRITICALITY_VARIANT: Record<string, BadgeVariant> = {
+  low: 'neutral',
+  medium: 'info',
+  high: 'warning',
+  critical: 'danger',
+};
 
-const STATUSES = [
-  { value: 'active', label: 'Active' },
-  { value: 'inactive', label: 'Inactive' },
-  { value: 'decommissioned', label: 'Decommissioned' },
-];
+const SEVERITY_VARIANT: Record<string, BadgeVariant> = {
+  low: 'neutral',
+  medium: 'info',
+  high: 'warning',
+  critical: 'danger',
+  very_high: 'danger',
+  very_low: 'neutral',
+};
+
+const CONTROL_STATUS_VARIANT: Record<string, BadgeVariant> = {
+  not_started: 'neutral',
+  in_progress: 'info',
+  implemented: 'success',
+  not_applicable: 'neutral',
+};
+
+const FINDING_STATUS_VARIANT: Record<string, BadgeVariant> = {
+  open: 'warning',
+  in_review: 'info',
+  remediated: 'success',
+  closed: 'neutral',
+  accepted: 'neutral',
+};
+
+function formatDate(value?: string) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+function MetaCell({
+  label,
+  icon,
+  children,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div className="flex items-center gap-1.5 text-xs text-surface-500 uppercase tracking-wider font-medium">
+        {icon}
+        <span>{label}</span>
+      </div>
+      <div className="mt-1 text-body text-surface-900">{children}</div>
+    </div>
+  );
+}
 
 export default function AssetDetail() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
 
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [editForm, setEditForm] = useState({
-    name: '',
-    type: 'workstation',
-    category: '',
-    status: 'active',
-    criticality: 'medium',
-    owner: '',
-    location: '',
-    department: '',
-    description: '',
-    // BC/DR fields
-    rtoHours: undefined as number | undefined,
-    rpoHours: undefined as number | undefined,
-    bcdrCriticality: '' as string,
-    recoveryNotes: '' as string,
-  });
-
-  // Fetch asset details
-  const { data: asset, isLoading } = useQuery<Asset>({
-    queryKey: ['asset', id],
+  const {
+    data: asset,
+    isLoading,
+    error,
+  } = useQuery<Asset>({
+    queryKey: ['assets', id],
     queryFn: async () => {
-      const response = await assetsApi.get(id!);
-      return response.data;
+      const res = await api.get(`/api/assets/${id}`);
+      return res.data;
     },
     enabled: !!id,
   });
 
-  // Initialize edit form when asset loads
-  useEffect(() => {
-    if (asset) {
-      setEditForm({
-        name: asset.name || '',
-        type: asset.type || 'workstation',
-        category: asset.category || '',
-        status: asset.status || 'active',
-        criticality: asset.criticality || 'medium',
-        owner: asset.owner || '',
-        location: asset.location || '',
-        department: asset.department || '',
-        description: asset.description || '',
-        // BC/DR fields
-        rtoHours: (asset as any).rtoHours || undefined,
-        rpoHours: (asset as any).rpoHours || undefined,
-        bcdrCriticality: (asset as any).bcdrCriticality || '',
-        recoveryNotes: (asset as any).recoveryNotes || '',
-      });
-    }
-  }, [asset]);
-
-  // Update mutation
-  const updateMutation = useMutation({
-    mutationFn: async (data: typeof editForm) => {
-      const response = await assetsApi.update(id!, data);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['asset', id] });
-      queryClient.invalidateQueries({ queryKey: ['assets'] });
-      setShowEditModal(false);
-      toast.success('Asset updated successfully');
-    },
-    onError: () => toast.error('Failed to update asset'),
-  });
-
-  // Delete mutation
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      await assetsApi.delete(id!);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assets'] });
-      toast.success('Asset deleted successfully');
-      navigate('/assets');
-    },
-    onError: () => toast.error('Failed to delete asset'),
-  });
-
-  const getCriticalityColor = (criticality: string) => {
-    const level = CRITICALITY_LEVELS.find((l) => l.value === criticality);
-    return level?.color || 'bg-surface-500';
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-emerald-500/20 text-emerald-600';
-      case 'inactive':
-        return 'bg-surface-500/20 text-surface-600';
-      case 'decommissioned':
-        return 'bg-red-500/20 text-red-600';
-      default:
-        return 'bg-surface-500/20 text-surface-600';
-    }
-  };
-
-  const getTypeIcon = (type: string) => {
-    const t = ASSET_TYPES.find((at) => at.value === type);
-    const Icon = t?.icon || Server;
-    return <Icon className="w-8 h-8 text-surface-600" />;
-  };
-
-  const getRiskLevelColor = (level: string) => {
-    switch (level) {
-      case 'critical':
-        return 'bg-red-500';
-      case 'high':
-        return 'bg-orange-500';
-      case 'medium':
-        return 'bg-amber-500';
-      case 'low':
-        return 'bg-emerald-500';
-      default:
-        return 'bg-surface-500';
-    }
-  };
-
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <SkeletonDetailHeader />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <SkeletonDetailSection />
-          </div>
-          <div>
-            <SkeletonDetailSection />
-          </div>
-        </div>
+      <div className="space-y-5 animate-fade-in">
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-10 w-1/2" />
+        <Skeleton className="h-32" />
+        <Skeleton className="h-64" />
       </div>
     );
   }
 
-  if (!asset) {
+  if (error || !asset) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-surface-600">Asset not found</div>
+      <div className="space-y-5 animate-fade-in">
+        <Link
+          to="/assets"
+          className="inline-flex items-center gap-1.5 text-small text-surface-600 hover:text-surface-900"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Assets
+        </Link>
+        <Card>
+          <CardBody density="comfy">
+            <EmptyState
+              icon={<AlertTriangle className="h-8 w-8" />}
+              title="Asset not found"
+              description="The asset you're looking for doesn't exist or has been deleted."
+            />
+          </CardBody>
+        </Card>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/assets')}
-            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="flex items-center gap-4">
-            {getTypeIcon(asset.type)}
-            <div>
-              <h1 className="text-2xl font-semibold text-white">{asset.name}</h1>
-              <div className="flex items-center gap-3 mt-1">
-                <span
-                  className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(asset.status || '')}`}
-                >
-                  {asset.status}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`w-2 h-2 rounded-full ${getCriticalityColor(asset.criticality || '')}`}
-                  />
-                  <span className="text-surface-600 capitalize text-sm">
-                    {asset.criticality} criticality
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="secondary"
-            onClick={() => setShowEditModal(true)}
-            leftIcon={<Edit2 className="w-4 h-4" />}
-          >
-            Edit
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => setShowDeleteConfirm(true)}
-            leftIcon={<Trash2 className="w-4 h-4" />}
-          >
-            Delete
-          </Button>
-        </div>
-      </div>
-      {/* Asset Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Info */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-surface-200 p-6 space-y-6">
-          {asset.description && (
-            <div>
-              <h3 className="text-sm font-medium text-surface-600 mb-2">Description</h3>
-              <p className="text-surface-800">{asset.description}</p>
-            </div>
-          )}
+  const risks = asset.risks ?? [];
+  const controls = asset.controls ?? [];
+  const findings = asset.findings ?? [];
 
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-sm font-medium text-surface-600 mb-2">Type</h3>
-              <p className="text-white capitalize">{asset.type}</p>
-            </div>
-            {asset.category && (
-              <div>
-                <h3 className="text-sm font-medium text-surface-600 mb-2">Category</h3>
-                <p className="text-white">{asset.category}</p>
-              </div>
-            )}
-            <div>
-              <h3 className="text-sm font-medium text-surface-600 mb-2">Source</h3>
-              <p className="text-white capitalize">{asset.source}</p>
-            </div>
-            {asset.externalId && (
-              <div>
-                <h3 className="text-sm font-medium text-surface-600 mb-2">External ID</h3>
-                <p className="text-white font-mono text-sm">{asset.externalId}</p>
-              </div>
-            )}
-            {asset.owner && (
-              <div>
-                <h3 className="text-sm font-medium text-surface-600 mb-2">Owner</h3>
-                <p className="text-white">{asset.owner}</p>
-              </div>
-            )}
-            {asset.department && (
-              <div>
-                <h3 className="text-sm font-medium text-surface-600 mb-2">Department</h3>
-                <p className="text-white">{asset.department}</p>
-              </div>
-            )}
-            {asset.location && (
-              <div>
-                <h3 className="text-sm font-medium text-surface-600 mb-2">Location</h3>
-                <p className="text-white">{asset.location}</p>
-              </div>
-            )}
-            {asset.lastSyncAt && (
-              <div>
-                <h3 className="text-sm font-medium text-surface-600 mb-2">Last Synced</h3>
-                <p className="text-white">{new Date(asset.lastSyncAt).toLocaleString()}</p>
-              </div>
-            )}
-          </div>
+  const riskColumns: DataTableColumn<AssetRisk>[] = [
+    {
+      id: 'riskId',
+      accessorKey: 'riskId',
+      header: 'ID',
+      mobileLabel: 'ID',
+      cell: ({ row }) => (
+        <Link
+          to={`/risks/${row.original.id}`}
+          className="font-mono text-small text-brand-700 hover:text-brand-800"
+        >
+          {row.original.riskId}
+        </Link>
+      ),
+    },
+    {
+      id: 'title',
+      accessorKey: 'title',
+      header: 'Title',
+      mobileLabel: 'Title',
+      cell: ({ row }) => <span className="text-surface-900">{row.original.title}</span>,
+    },
+    {
+      id: 'severity',
+      accessorKey: 'severity',
+      header: 'Severity',
+      mobileLabel: 'Severity',
+      cell: ({ row }) => (
+        <Badge variant={SEVERITY_VARIANT[row.original.severity] ?? 'neutral'} size="sm">
+          {(row.original.severity || '').replace(/_/g, ' ')}
+        </Badge>
+      ),
+    },
+    {
+      id: 'status',
+      accessorKey: 'status',
+      header: 'Status',
+      mobileLabel: 'Status',
+      cell: ({ row }) => (
+        <Badge variant="neutral" size="sm">
+          {(row.original.status || '').replace(/_/g, ' ')}
+        </Badge>
+      ),
+    },
+  ];
 
-          {/* Metadata */}
-          {asset.metadata && Object.keys(asset.metadata).length > 0 && (
-            <div className="border-t border-surface-200 pt-6">
-              <h3 className="text-sm font-medium text-surface-600 mb-3">Additional Metadata</h3>
-              <div className="bg-surface-200/50 rounded-lg p-4">
-                <pre className="text-sm text-surface-700 overflow-x-auto">
-                  {JSON.stringify(asset.metadata, null, 2)}
-                </pre>
-              </div>
-            </div>
-          )}
-        </div>
+  const controlColumns: DataTableColumn<AssetControl>[] = [
+    {
+      id: 'controlId',
+      accessorKey: 'controlId',
+      header: 'ID',
+      mobileLabel: 'ID',
+      cell: ({ row }) => (
+        <Link
+          to={`/controls/${row.original.id}`}
+          className="font-mono text-small text-brand-700 hover:text-brand-800"
+        >
+          {row.original.controlId}
+        </Link>
+      ),
+    },
+    {
+      id: 'title',
+      accessorKey: 'title',
+      header: 'Title',
+      mobileLabel: 'Title',
+      cell: ({ row }) => <span className="text-surface-900">{row.original.title}</span>,
+    },
+    {
+      id: 'status',
+      accessorKey: 'status',
+      header: 'Status',
+      mobileLabel: 'Status',
+      cell: ({ row }) => (
+        <Badge variant={CONTROL_STATUS_VARIANT[row.original.status] ?? 'neutral'} size="sm">
+          {(row.original.status || '').replace(/_/g, ' ')}
+        </Badge>
+      ),
+    },
+  ];
 
-        {/* Sidebar */}
-        <div className="space-y-4">
-          {/* Quick Stats */}
-          <div className="bg-white rounded-xl border border-surface-200 p-6">
-            <h3 className="text-lg font-medium text-white mb-4">Risk Summary</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-surface-600 flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4" />
-                  Associated Risks
-                </span>
-                <span
-                  className={`px-2 py-1 rounded text-sm ${
-                    (asset.riskCount ?? 0) > 0 ? 'bg-red-500/20 text-red-600' : 'text-white'
-                  }`}
-                >
-                  {asset.riskCount ?? 0}
-                </span>
-              </div>
-            </div>
-          </div>
+  const findingColumns: DataTableColumn<AssetFinding>[] = [
+    {
+      id: 'findingNumber',
+      accessorKey: 'findingNumber',
+      header: 'ID',
+      mobileLabel: 'ID',
+      cell: ({ row }) => (
+        <span className="font-mono text-small text-brand-700">
+          {row.original.findingNumber ?? row.original.id.slice(0, 8)}
+        </span>
+      ),
+    },
+    {
+      id: 'title',
+      accessorKey: 'title',
+      header: 'Title',
+      mobileLabel: 'Title',
+      cell: ({ row }) => <span className="text-surface-900">{row.original.title}</span>,
+    },
+    {
+      id: 'severity',
+      accessorKey: 'severity',
+      header: 'Severity',
+      mobileLabel: 'Severity',
+      cell: ({ row }) => (
+        <Badge variant={SEVERITY_VARIANT[row.original.severity] ?? 'neutral'} size="sm">
+          {(row.original.severity || '').replace(/_/g, ' ')}
+        </Badge>
+      ),
+    },
+    {
+      id: 'status',
+      accessorKey: 'status',
+      header: 'Status',
+      mobileLabel: 'Status',
+      cell: ({ row }) => (
+        <Badge variant={FINDING_STATUS_VARIANT[row.original.status] ?? 'neutral'} size="sm">
+          {(row.original.status || '').replace(/_/g, ' ')}
+        </Badge>
+      ),
+    },
+    {
+      id: 'reportedAt',
+      accessorKey: 'reportedAt',
+      header: 'Reported',
+      mobileLabel: 'Reported',
+      cell: ({ row }) => (
+        <span className="text-small text-surface-700 tabular-nums">
+          {formatDate(row.original.reportedAt)}
+        </span>
+      ),
+    },
+  ];
 
-          {/* Timestamps */}
-          <div className="bg-white rounded-xl border border-surface-200 p-6">
-            <h3 className="text-lg font-medium text-white mb-4">Timeline</h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-surface-600">Created</span>
-                <span className="text-surface-800">
-                  {new Date(asset.createdAt).toLocaleDateString()}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-surface-600">Updated</span>
-                <span className="text-surface-800">
-                  {new Date(asset.updatedAt).toLocaleDateString()}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* Associated Risks */}
-      {asset.risks && asset.risks.length > 0 && (
-        <div className="bg-white rounded-xl border border-surface-200 p-6">
-          <h3 className="text-lg font-medium text-white mb-4">Associated Risks</h3>
-          <div className="space-y-2">
-            {asset.risks.map((risk) => (
-              <div
-                key={risk.id}
-                onClick={() => navigate(`/risks/${risk.id}`)}
-                className="flex items-center justify-between p-4 bg-surface-200 rounded-lg cursor-pointer hover:bg-surface-600 transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <span className="text-brand-400 font-mono text-sm">{risk.riskId}</span>
-                  <span className="text-white">{risk.title}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`w-2 h-2 rounded-full ${getRiskLevelColor(risk.inherentRisk)}`}
-                    />
-                    <span className="text-surface-600 capitalize text-sm">{risk.inherentRisk}</span>
-                  </div>
-                  <span
-                    className={`px-2 py-1 rounded text-xs ${
-                      risk.status === 'mitigated'
-                        ? 'bg-emerald-500/20 text-emerald-600'
-                        : risk.status === 'in_treatment'
-                          ? 'bg-amber-500/20 text-amber-600'
-                          : 'bg-red-500/20 text-red-600'
-                    }`}
-                  >
-                    {risk.status.replace('_', ' ')}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      {/* BC/DR Information */}
-      <div className="bg-white rounded-xl border border-surface-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium text-white flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-brand-400" />
-            Business Continuity / Disaster Recovery
-          </h3>
-          <Link to="/bcdr" className="text-brand-400 text-sm hover:text-brand-300">
-            View BC/DR Dashboard →
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+  const overviewTab = (
+    <Card>
+      <CardBody density="comfy" className="space-y-5">
+        {asset.description && (
           <div>
-            <h4 className="text-sm font-medium text-surface-600 mb-2 flex items-center gap-1">
-              <Clock className="w-4 h-4" />
-              RTO (Recovery Time)
+            <h4 className="text-xs text-surface-500 uppercase tracking-wider font-medium mb-1.5">
+              Description
             </h4>
-            <p className="text-white text-lg font-semibold">
-              {(asset as any).rtoHours ? `${(asset as any).rtoHours} hours` : 'Not set'}
-            </p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-surface-600 mb-2 flex items-center gap-1">
-              <Clock className="w-4 h-4" />
-              RPO (Recovery Point)
-            </h4>
-            <p className="text-white text-lg font-semibold">
-              {(asset as any).rpoHours ? `${(asset as any).rpoHours} hours` : 'Not set'}
-            </p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-surface-600 mb-2">BC/DR Criticality</h4>
-            <p className="text-white">
-              {(asset as any).bcdrCriticality ? (
-                <span
-                  className={`px-2 py-1 rounded text-xs font-medium ${
-                    (asset as any).bcdrCriticality === 'tier_1_critical'
-                      ? 'bg-red-500/20 text-red-600'
-                      : (asset as any).bcdrCriticality === 'tier_2_essential'
-                        ? 'bg-orange-500/20 text-orange-600'
-                        : (asset as any).bcdrCriticality === 'tier_3_important'
-                          ? 'bg-yellow-500/20 text-yellow-600'
-                          : 'bg-blue-500/20 text-blue-600'
-                  }`}
-                >
-                  {(asset as any).bcdrCriticality.replace(/_/g, ' ')}
-                </span>
-              ) : (
-                'Not set'
-              )}
-            </p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-surface-600 mb-2">Recovery Strategy</h4>
-            <p className="text-white">
-              {(asset as any).recoveryStrategyId ? (
-                <Link
-                  to={`/bcdr/strategies/${(asset as any).recoveryStrategyId}`}
-                  className="text-brand-400 hover:text-brand-300"
-                >
-                  View Strategy →
-                </Link>
-              ) : (
-                <span className="text-surface-500">Not assigned</span>
-              )}
-            </p>
-          </div>
-        </div>
-        {(asset as any).recoveryNotes && (
-          <div className="mt-4 pt-4 border-t border-surface-200">
-            <h4 className="text-sm font-medium text-surface-600 mb-2">Recovery Notes</h4>
-            <p className="text-surface-800 text-sm">{(asset as any).recoveryNotes}</p>
+            <p className="text-body text-surface-800 whitespace-pre-wrap">{asset.description}</p>
           </div>
         )}
-      </div>
-      {/* Edit Modal */}
-      <Dialog open={showEditModal} onClose={() => setShowEditModal(false)}>
-        <div className="p-6 border-b border-surface-200 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-white">Edit Asset</h2>
-          <button
-            onClick={() => setShowEditModal(false)}
-            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600"
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-surface-200">
+          <div>
+            <p className="text-xs text-surface-500 uppercase tracking-wider font-medium">
+              Category
+            </p>
+            <p className="mt-1 text-body text-surface-900 capitalize">{asset.category ?? '—'}</p>
+          </div>
+          <div>
+            <p className="text-xs text-surface-500 uppercase tracking-wider font-medium">Source</p>
+            <p className="mt-1 text-body text-surface-900">{asset.source ?? '—'}</p>
+          </div>
+          <div>
+            <p className="text-xs text-surface-500 uppercase tracking-wider font-medium">
+              Department
+            </p>
+            <p className="mt-1 text-body text-surface-900">{asset.department ?? '—'}</p>
+          </div>
+          <div>
+            <p className="text-xs text-surface-500 uppercase tracking-wider font-medium">Status</p>
+            <p className="mt-1 text-body text-surface-900 capitalize">{asset.status ?? '—'}</p>
+          </div>
         </div>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            updateMutation.mutate(editForm);
-          }}
-          className="p-6 space-y-4"
-        >
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3 border-t border-surface-200">
           <div>
-            <label className="block text-sm font-medium text-surface-700 mb-2">Name *</label>
-            <Input
-              type="text"
-              value={editForm.name}
-              onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
-              required
-              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-            />
+            <p className="text-xs text-surface-500 uppercase tracking-wider font-medium">
+              Acquired
+            </p>
+            <p className="mt-1 text-body text-surface-900 tabular-nums">
+              {formatDate(asset.acquiredAt)}
+            </p>
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">Type *</label>
-              <SelectNative
-                value={editForm.type}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, type: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-              >
-                {ASSET_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </SelectNative>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">Status</label>
-              <SelectNative
-                value={editForm.status}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-              >
-                {STATUSES.map((status) => (
-                  <option key={status.value} value={status.value}>
-                    {status.label}
-                  </option>
-                ))}
-              </SelectNative>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">Criticality</label>
-              <SelectNative
-                value={editForm.criticality}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, criticality: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-              >
-                {CRITICALITY_LEVELS.map((level) => (
-                  <option key={level.value} value={level.value}>
-                    {level.label}
-                  </option>
-                ))}
-              </SelectNative>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">Category</label>
-              <Input
-                type="text"
-                value={editForm.category}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, category: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-                placeholder="e.g., Web Server"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">Owner</label>
-              <Input
-                type="text"
-                value={editForm.owner}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, owner: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">Department</label>
-              <Input
-                type="text"
-                value={editForm.department}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, department: e.target.value }))}
-                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-              />
-            </div>
-          </div>
-
           <div>
-            <label className="block text-sm font-medium text-surface-700 mb-2">Location</label>
-            <Input
-              type="text"
-              value={editForm.location}
-              onChange={(e) => setEditForm((prev) => ({ ...prev, location: e.target.value }))}
-              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-              placeholder="e.g., AWS us-east-1, Office HQ"
-            />
+            <p className="text-xs text-surface-500 uppercase tracking-wider font-medium">Retires</p>
+            <p className="mt-1 text-body text-surface-900 tabular-nums">
+              {formatDate(asset.retiresAt)}
+            </p>
           </div>
-
           <div>
-            <label className="block text-sm font-medium text-surface-700 mb-2">Description</label>
-            <Textarea
-              value={editForm.description}
-              onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
-              rows={3}
-              className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-              placeholder="Describe this asset..."
-            />
+            <p className="text-xs text-surface-500 uppercase tracking-wider font-medium">
+              Decommissioned
+            </p>
+            <p className="mt-1 text-body text-surface-900 tabular-nums">
+              {formatDate(asset.decommissionedAt)}
+            </p>
           </div>
-
-          {/* BC/DR Fields */}
-          <div className="border-t border-surface-200 pt-4 mt-4">
-            <h4 className="text-sm font-medium text-surface-800 mb-4 flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-brand-400" />
-              Business Continuity / Disaster Recovery
-            </h4>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">
-                  RTO (Hours)
-                </label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={editForm.rtoHours ?? ''}
-                  onChange={(e) =>
-                    setEditForm((prev) => ({
-                      ...prev,
-                      rtoHours: e.target.value ? parseInt(e.target.value) : undefined,
-                    }))
-                  }
-                  className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-                  placeholder="e.g., 4"
-                />
-                <p className="text-xs text-surface-500 mt-1">Recovery Time Objective</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">
-                  RPO (Hours)
-                </label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={editForm.rpoHours ?? ''}
-                  onChange={(e) =>
-                    setEditForm((prev) => ({
-                      ...prev,
-                      rpoHours: e.target.value ? parseInt(e.target.value) : undefined,
-                    }))
-                  }
-                  className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-                  placeholder="e.g., 1"
-                />
-                <p className="text-xs text-surface-500 mt-1">Recovery Point Objective</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              <div>
-                <label className="block text-sm font-medium text-surface-700 mb-2">
-                  BC/DR Criticality
-                </label>
-                <SelectNative
-                  value={editForm.bcdrCriticality}
-                  onChange={(e) =>
-                    setEditForm((prev) => ({ ...prev, bcdrCriticality: e.target.value }))
-                  }
-                  className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-                >
-                  <option value="">Not set</option>
-                  <option value="tier_1_critical">Tier 1 - Critical</option>
-                  <option value="tier_2_essential">Tier 2 - Essential</option>
-                  <option value="tier_3_important">Tier 3 - Important</option>
-                  <option value="tier_4_standard">Tier 4 - Standard</option>
-                </SelectNative>
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-surface-700 mb-2">
-                Recovery Notes
-              </label>
-              <Textarea
-                value={editForm.recoveryNotes}
-                onChange={(e) =>
-                  setEditForm((prev) => ({ ...prev, recoveryNotes: e.target.value }))
-                }
-                rows={2}
-                className="w-full px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-                placeholder="Notes about recovery procedures for this asset..."
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4 border-t border-surface-200">
-            <button
-              type="button"
-              onClick={() => setShowEditModal(false)}
-              className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg hover:bg-surface-600"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={updateMutation.isPending}
-              className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50"
-            >
-              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
-        </form>
-      </Dialog>
-      {/* Delete Confirmation */}
-      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
-        <h3 className="text-lg font-semibold text-white mb-2">Delete Asset</h3>
-        <p className="text-surface-600 mb-6">
-          Are you sure you want to delete "{asset.name}"? This action cannot be undone.
-        </p>
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={() => setShowDeleteConfirm(false)}
-            className="px-4 py-2 bg-surface-200 text-surface-700 rounded-lg hover:bg-surface-600"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => deleteMutation.mutate()}
-            disabled={deleteMutation.isPending}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-          >
-            {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-          </button>
         </div>
-      </Dialog>
+      </CardBody>
+    </Card>
+  );
+
+  const risksTab = (
+    <Card>
+      <CardHeader>
+        <CardTitle>Risks</CardTitle>
+        <Badge variant="neutral" size="sm" capitalize={false}>
+          {risks.length}
+        </Badge>
+      </CardHeader>
+      <CardBody density="cozy">
+        {risks.length === 0 ? (
+          <EmptyState
+            icon={<AlertTriangle className="h-6 w-6" />}
+            title="No risks linked"
+            description="Risks tied to this asset will appear here."
+            size="sm"
+          />
+        ) : (
+          <DataTable data={risks} columns={riskColumns} density="cozy" getRowId={(row) => row.id} />
+        )}
+      </CardBody>
+    </Card>
+  );
+
+  const controlsTab = (
+    <Card>
+      <CardHeader>
+        <CardTitle>Controls</CardTitle>
+        <Badge variant="neutral" size="sm" capitalize={false}>
+          {controls.length}
+        </Badge>
+      </CardHeader>
+      <CardBody density="cozy">
+        {controls.length === 0 ? (
+          <EmptyState
+            icon={<Shield className="h-6 w-6" />}
+            title="No controls covering this asset"
+            description="Controls scoped to this asset will appear here."
+            size="sm"
+          />
+        ) : (
+          <DataTable
+            data={controls}
+            columns={controlColumns}
+            density="cozy"
+            getRowId={(row) => row.id}
+          />
+        )}
+      </CardBody>
+    </Card>
+  );
+
+  const findingsTab = (
+    <Card>
+      <CardHeader>
+        <CardTitle>Findings</CardTitle>
+        <Badge variant="neutral" size="sm" capitalize={false}>
+          {findings.length}
+        </Badge>
+      </CardHeader>
+      <CardBody density="cozy">
+        {findings.length === 0 ? (
+          <EmptyState
+            icon={<AlertTriangle className="h-6 w-6" />}
+            title="No findings"
+            description="Recent findings against this asset will appear here."
+            size="sm"
+          />
+        ) : (
+          <DataTable
+            data={findings}
+            columns={findingColumns}
+            density="cozy"
+            getRowId={(row) => row.id}
+          />
+        )}
+      </CardBody>
+    </Card>
+  );
+
+  const osLabel = asset.os ? (asset.osVersion ? `${asset.os} ${asset.osVersion}` : asset.os) : '—';
+
+  return (
+    <div className="space-y-5 animate-fade-in">
+      <Link
+        to="/assets"
+        className="inline-flex items-center gap-1.5 text-small text-surface-600 hover:text-surface-900"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Assets
+      </Link>
+
+      <PageHeader
+        title={asset.name}
+        meta={
+          <>
+            <Badge variant="neutral" capitalize>
+              {(asset.type || '').replace(/_/g, ' ')}
+            </Badge>
+            <Badge variant={CRITICALITY_VARIANT[asset.criticality] ?? 'neutral'} dot capitalize>
+              {(asset.criticality || '').replace(/_/g, ' ')}
+            </Badge>
+          </>
+        }
+        actions={
+          <Button variant="outline" size="sm" leftIcon={<Pencil className="h-4 w-4" />}>
+            Edit
+          </Button>
+        }
+      />
+
+      <Card>
+        <CardBody density="comfy">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
+            <MetaCell label="Owner" icon={<UserIcon className="h-3.5 w-3.5" />}>
+              {asset.ownerName ?? asset.owner ?? '—'}
+            </MetaCell>
+            <MetaCell label="Location" icon={<MapPin className="h-3.5 w-3.5" />}>
+              {asset.location ?? '—'}
+            </MetaCell>
+            <MetaCell label="Environment" icon={<Globe className="h-3.5 w-3.5" />}>
+              <span className="capitalize">{asset.environment ?? '—'}</span>
+            </MetaCell>
+            <MetaCell label="OS" icon={<Cpu className="h-3.5 w-3.5" />}>
+              {osLabel}
+            </MetaCell>
+            <MetaCell label="Last seen" icon={<Calendar className="h-3.5 w-3.5" />}>
+              <span className="tabular-nums">{formatDate(asset.lastSeenAt)}</span>
+            </MetaCell>
+          </div>
+        </CardBody>
+      </Card>
+
+      <Tabs
+        tabs={[
+          { label: 'Overview', content: overviewTab },
+          { label: `Risks (${risks.length})`, content: risksTab },
+          { label: `Controls (${controls.length})`, content: controlsTab },
+          { label: `Findings (${findings.length})`, content: findingsTab },
+        ]}
+      />
     </div>
   );
 }

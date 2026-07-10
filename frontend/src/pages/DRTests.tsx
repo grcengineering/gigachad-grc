@@ -1,59 +1,74 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
-import {
-  PlusIcon,
-  MagnifyingGlassIcon,
-  BeakerIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ExclamationTriangleIcon,
-  ExclamationCircleIcon,
-  ArrowPathIcon,
-} from '@heroicons/react/24/outline';
+import { useNavigate } from 'react-router-dom';
+import { Beaker, CheckCircle2, AlertTriangle, ListChecks, Search, Plus } from 'lucide-react';
 import api from '@/lib/api';
-import { useDebounce } from '@/hooks/useDebounce';
-import clsx from 'clsx';
+import {
+  Badge,
+  Button,
+  DataTable,
+  EmptyState,
+  FilterBar,
+  Input,
+  PageHeader,
+  Select,
+  StatCard,
+  type ActiveFilter,
+  type BadgeVariant,
+  type DataTableColumn,
+} from '@/components/ui';
 
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-
-import { Button } from '@/components/ui/Button';
+// Inline debounce hook (avoids creating files outside the 6 pages while still
+// debouncing the search input as called for in the spec).
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState<T>(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
 
 interface DRTest {
   id: string;
   test_id: string;
   name: string;
-  description: string;
+  description?: string;
   test_type: string;
   status: string;
   result: string | null;
   scheduled_date: string;
-  actual_end_at: string;
-  coordinator_name: string;
-  plan_title: string;
-  finding_count: number;
-  actual_recovery_time_minutes: number;
+  actual_end_at?: string | null;
+  coordinator_name?: string;
+  plan_title?: string;
+  finding_count?: number;
 }
 
-const statusColors: Record<string, string> = {
-  planned: 'bg-surface-600 text-surface-700',
-  scheduled: 'bg-blue-500/20 text-blue-600',
-  in_progress: 'bg-yellow-500/20 text-yellow-600',
-  completed: 'bg-green-500/20 text-green-600',
-  cancelled: 'bg-red-500/20 text-red-600',
-  postponed: 'bg-orange-500/20 text-orange-600',
+interface DRTestStats {
+  total?: number;
+  completed_count?: number;
+  passed_count?: number;
+  openFindingsCount?: number;
+  avg_recovery_time?: number | string;
+}
+
+const STATUS_VARIANT: Record<string, BadgeVariant> = {
+  planned: 'neutral',
+  scheduled: 'info',
+  in_progress: 'warning',
+  completed: 'success',
+  cancelled: 'danger',
+  postponed: 'warning',
 };
 
-const resultColors: Record<string, { bg: string; icon: React.ElementType }> = {
-  passed: { bg: 'text-green-600', icon: CheckCircleIcon },
-  passed_with_issues: { bg: 'text-yellow-600', icon: ExclamationTriangleIcon },
-  failed: { bg: 'text-red-600', icon: XCircleIcon },
-  incomplete: { bg: 'text-surface-600', icon: ExclamationTriangleIcon },
+const RESULT_VARIANT: Record<string, BadgeVariant> = {
+  passed: 'success',
+  passed_with_issues: 'warning',
+  failed: 'danger',
+  incomplete: 'neutral',
 };
 
-const testTypeLabels: Record<string, string> = {
+const TEST_TYPE_LABELS: Record<string, string> = {
   tabletop: 'Tabletop Exercise',
   walkthrough: 'Walkthrough',
   simulation: 'Simulation',
@@ -61,298 +76,318 @@ const testTypeLabels: Record<string, string> = {
   full_interruption: 'Full Interruption',
 };
 
+const TEST_TYPE_OPTIONS = Object.entries(TEST_TYPE_LABELS).map(([value, label]) => ({
+  value,
+  label,
+}));
+
+const STATUS_OPTIONS = [
+  { value: 'planned', label: 'Planned' },
+  { value: 'scheduled', label: 'Scheduled' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'postponed', label: 'Postponed' },
+];
+
+const PAGE_SIZE = 25;
+
+function humanize(s: string | null | undefined): string {
+  if (!s) return '';
+  return s.replace(/_/g, ' ');
+}
+
 export default function DRTests() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(search, 300);
 
-  // Reset page when filters change
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch, typeFilter, statusFilter]);
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['dr-tests', debouncedSearch, typeFilter, statusFilter, page],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (debouncedSearch) params.append('search', debouncedSearch);
-      if (typeFilter) params.append('testType', typeFilter);
-      if (statusFilter) params.append('status', statusFilter);
-      params.append('page', page.toString());
-      params.append('limit', '25');
-
-      const res = await api.get(`/api/bcdr/tests?${params}`);
+      const params: Record<string, string | number> = { page, limit: PAGE_SIZE };
+      if (debouncedSearch) params.search = debouncedSearch;
+      if (typeFilter) params.testType = typeFilter;
+      if (statusFilter) params.status = statusFilter;
+      const res = await api.get('/api/bcdr/tests', { params });
       return res.data;
     },
-    retry: 1,
   });
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ['dr-tests-stats'],
+  const { data: stats } = useQuery<DRTestStats>({
+    queryKey: ['dr-tests', 'stats'],
     queryFn: async () => {
       const res = await api.get('/api/bcdr/tests/stats');
       return res.data;
     },
-    staleTime: 30000, // Cache stats for 30 seconds
+    staleTime: 30_000,
   });
 
-  const tests = data?.data || [];
-  const totalPages = data?.totalPages || 1;
+  const tests: DRTest[] = data?.data ?? [];
+  const total: number = data?.total ?? tests.length;
+  const totalPages: number = data?.totalPages ?? Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  // Calculate pass rate with proper type safety
   const completedCount = Number(stats?.completed_count) || 0;
   const passedCount = Number(stats?.passed_count) || 0;
-  const passRate = completedCount > 0 ? Math.round((passedCount / completedCount) * 100) : 0;
+  const openFindings = Number(stats?.openFindingsCount) || 0;
+  const totalCount = Number(stats?.total) || 0;
 
-  // Error state
-  if (error) {
-    return (
-      <div className="p-6">
-        <div className="card p-8 text-center">
-          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
-          <h2 className="text-lg font-semibold text-surface-900 mb-2">Failed to load DR Tests</h2>
-          <p className="text-surface-600 mb-4">
-            {(error as Error).message || 'An unexpected error occurred'}
-          </p>
-          <Button onClick={() => refetch()} variant="primary">
-            Try Again
-          </Button>
-        </div>
-      </div>
-    );
+  const updateStatusFilter = (value: string) =>
+    setStatusFilter(value === statusFilter ? '' : value);
+
+  const clearAll = () => {
+    setSearch('');
+    setTypeFilter('');
+    setStatusFilter('');
+  };
+
+  const activeFilters: ActiveFilter[] = [];
+  if (debouncedSearch)
+    activeFilters.push({
+      key: 'search',
+      label: `Search: ${debouncedSearch}`,
+      onClear: () => setSearch(''),
+    });
+  if (typeFilter) {
+    const l = TEST_TYPE_OPTIONS.find((o) => o.value === typeFilter)?.label ?? typeFilter;
+    activeFilters.push({ key: 'type', label: `Type: ${l}`, onClear: () => setTypeFilter('') });
+  }
+  if (statusFilter) {
+    const l = STATUS_OPTIONS.find((o) => o.value === statusFilter)?.label ?? statusFilter;
+    activeFilters.push({
+      key: 'status',
+      label: `Status: ${l}`,
+      onClear: () => setStatusFilter(''),
+    });
   }
 
-  return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+  const columns: DataTableColumn<DRTest>[] = [
+    {
+      id: 'test_id',
+      accessorKey: 'test_id',
+      header: 'Test ID',
+      mobileLabel: 'ID',
+      cell: ({ row }) => (
+        <span className="font-mono text-small text-brand-700">{row.original.test_id}</span>
+      ),
+    },
+    {
+      id: 'name',
+      accessorKey: 'name',
+      header: 'Name',
+      mobileLabel: 'Name',
+      cell: ({ row }) => (
         <div>
-          <h1 className="text-2xl font-bold text-surface-900">DR Tests</h1>
-          <p className="text-surface-600 mt-1">Schedule and track disaster recovery tests</p>
-        </div>
-        <Link to="/bcdr/tests/new" className="">
-          <PlusIcon className="w-5 h-5 mr-2" />
-          Schedule Test
-        </Link>
-      </div>
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card p-4">
-          <p className="text-surface-600 text-sm">Total Tests</p>
-          {statsLoading ? (
-            <div className="h-8 w-16 bg-surface-200 rounded animate-pulse mt-1"></div>
-          ) : (
-            <p className="text-2xl font-bold text-surface-900">{stats?.total || 0}</p>
-          )}
-        </div>
-        <div className="card p-4">
-          <p className="text-surface-600 text-sm">Pass Rate</p>
-          {statsLoading ? (
-            <div className="h-8 w-16 bg-surface-200 rounded animate-pulse mt-1"></div>
-          ) : (
-            <p className="text-2xl font-bold text-green-600">{passRate}%</p>
-          )}
-        </div>
-        <div className="card p-4">
-          <p className="text-surface-600 text-sm">Open Findings</p>
-          {statsLoading ? (
-            <div className="h-8 w-16 bg-surface-200 rounded animate-pulse mt-1"></div>
-          ) : (
-            <p className="text-2xl font-bold text-yellow-600">{stats?.openFindingsCount || 0}</p>
-          )}
-        </div>
-        <div className="card p-4">
-          <p className="text-surface-600 text-sm">Avg Recovery Time</p>
-          {statsLoading ? (
-            <div className="h-8 w-16 bg-surface-200 rounded animate-pulse mt-1"></div>
-          ) : (
-            <p className="text-2xl font-bold text-surface-900">
-              {stats?.avg_recovery_time ? `${Math.round(Number(stats.avg_recovery_time))}m` : 'N/A'}
+          <p className="text-surface-900">{row.original.name}</p>
+          {row.original.plan_title && (
+            <p className="text-xs text-surface-500 truncate max-w-sm">
+              Plan: {row.original.plan_title}
             </p>
           )}
         </div>
-      </div>
-      {/* Filters */}
-      <div className="card p-4">
-        <div className="flex flex-wrap gap-4">
-          <div className="flex-1 min-w-64">
-            <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-600" />
-              <Input
-                type="text"
-                placeholder="Search tests..."
-                className="form-input pl-10 w-full"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="w-40">
-            <SelectNative
-              className="form-select w-full"
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <option value="">All Types</option>
-              {Object.entries(testTypeLabels).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </SelectNative>
-          </div>
-          <div className="w-36">
-            <SelectNative
-              className="form-select w-full"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="">All Status</option>
-              <option value="planned">Planned</option>
-              <option value="scheduled">Scheduled</option>
-              <option value="in_progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </SelectNative>
-          </div>
-          <Button onClick={() => refetch()} variant="secondary">
-            <ArrowPathIcon className="w-5 h-5" />
+      ),
+    },
+    {
+      id: 'test_type',
+      accessorKey: 'test_type',
+      header: 'Type',
+      mobileLabel: 'Type',
+      cell: ({ row }) => (
+        <span className="text-surface-700">
+          {TEST_TYPE_LABELS[row.original.test_type] ?? humanize(row.original.test_type)}
+        </span>
+      ),
+    },
+    {
+      id: 'scheduled_date',
+      accessorKey: 'scheduled_date',
+      header: 'Scheduled',
+      mobileLabel: 'Scheduled',
+      cell: ({ row }) => {
+        const d = row.original.scheduled_date;
+        if (!d) return <span className="text-surface-500">—</span>;
+        return <span className="text-surface-700">{new Date(d).toLocaleDateString()}</span>;
+      },
+    },
+    {
+      id: 'status',
+      accessorKey: 'status',
+      header: 'Status',
+      mobileLabel: 'Status',
+      cell: ({ row }) => {
+        const status = row.original.status;
+        if (!status) return <span className="text-surface-500">—</span>;
+        const variant = STATUS_VARIANT[status] ?? 'neutral';
+        return (
+          <Badge variant={variant} dot>
+            {humanize(status)}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: 'result',
+      accessorKey: 'result',
+      header: 'Result',
+      mobileLabel: 'Result',
+      cell: ({ row }) => {
+        const result = row.original.result;
+        if (!result) return <span className="text-surface-500">—</span>;
+        const variant = RESULT_VARIANT[result] ?? 'neutral';
+        return <Badge variant={variant}>{humanize(result)}</Badge>;
+      },
+    },
+  ];
+
+  return (
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="DR Tests"
+        description="Schedule and track disaster recovery test exercises."
+        actions={
+          <Button
+            size="sm"
+            leftIcon={<Plus className="h-4 w-4" />}
+            onClick={() => navigate('/bcdr/tests/new')}
+          >
+            Schedule Test
           </Button>
-        </div>
+        }
+      />
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard
+          label="Total Tests"
+          value={totalCount}
+          icon={<Beaker className="h-5 w-5" />}
+          tone="brand"
+        />
+        <StatCard
+          label="Completed"
+          value={completedCount}
+          icon={<ListChecks className="h-5 w-5" />}
+          tone="blue"
+          onClick={() => updateStatusFilter('completed')}
+        />
+        <StatCard
+          label="Passed"
+          value={passedCount}
+          icon={<CheckCircle2 className="h-5 w-5" />}
+          tone="emerald"
+          caption={
+            completedCount > 0
+              ? `${Math.round((passedCount / completedCount) * 100)}% pass rate`
+              : undefined
+          }
+        />
+        <StatCard
+          label="Open Findings"
+          value={openFindings}
+          icon={<AlertTriangle className="h-5 w-5" />}
+          tone="amber"
+        />
       </div>
-      {/* Table */}
-      <div className="card overflow-hidden">
-        {isLoading ? (
-          <div className="p-8 text-center text-surface-600">Loading...</div>
-        ) : tests.length === 0 ? (
-          <div className="p-8 text-center text-surface-600">
-            <BeakerIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>No DR tests found</p>
-            <Link
-              to="/bcdr/tests/new"
-              className="text-brand-400 hover:text-brand-300 mt-2 inline-block"
-            >
-              Schedule your first test →
-            </Link>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-white/50">
-                <tr>
-                  <th className="text-left p-4 text-surface-700 font-medium">Test</th>
-                  <th className="text-left p-4 text-surface-700 font-medium">Type</th>
-                  <th className="text-left p-4 text-surface-700 font-medium">Status</th>
-                  <th className="text-left p-4 text-surface-700 font-medium">Result</th>
-                  <th className="text-left p-4 text-surface-700 font-medium">Date</th>
-                  <th className="text-left p-4 text-surface-700 font-medium">Findings</th>
-                  <th className="text-left p-4 text-surface-700 font-medium">Coordinator</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-surface-200">
-                {tests.map((test: DRTest) => {
-                  const ResultIcon = test.result ? resultColors[test.result]?.icon : null;
 
-                  return (
-                    <tr key={test.id} className="hover:bg-white/30 transition-colors">
-                      <td className="p-4">
-                        <Link
-                          to={`/bcdr/tests/${test.id}`}
-                          className="text-surface-900 font-medium hover:text-brand-400 transition-colors"
-                        >
-                          {test.name}
-                        </Link>
-                        <div className="text-surface-600 text-sm">{test.test_id}</div>
-                        {test.plan_title && (
-                          <div className="text-surface-500 text-xs mt-1">
-                            Plan: {test.plan_title}
-                          </div>
-                        )}
-                      </td>
-                      <td className="p-4 text-surface-700 text-sm">
-                        {testTypeLabels[test.test_type] || test.test_type}
-                      </td>
-                      <td className="p-4">
-                        <span
-                          className={clsx(
-                            'px-2 py-1 rounded-full text-xs font-medium',
-                            statusColors[test.status]
-                          )}
-                        >
-                          {test.status.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        {test.result ? (
-                          <div
-                            className={clsx(
-                              'flex items-center gap-1',
-                              resultColors[test.result]?.bg
-                            )}
-                          >
-                            {ResultIcon && <ResultIcon className="w-4 h-4" />}
-                            <span className="text-sm capitalize">
-                              {test.result.replace('_', ' ')}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-surface-500 text-sm">-</span>
-                        )}
-                      </td>
-                      <td className="p-4 text-surface-700 text-sm">
-                        {test.actual_end_at
-                          ? new Date(test.actual_end_at).toLocaleDateString()
-                          : test.scheduled_date
-                            ? new Date(test.scheduled_date).toLocaleDateString()
-                            : '-'}
-                      </td>
-                      <td className="p-4">
-                        {test.finding_count > 0 ? (
-                          <span className="px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-600 text-xs font-medium">
-                            {test.finding_count} findings
-                          </span>
-                        ) : (
-                          <span className="text-surface-500 text-sm">-</span>
-                        )}
-                      </td>
-                      <td className="p-4 text-surface-700 text-sm">
-                        {test.coordinator_name || '-'}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+      <FilterBar active={activeFilters} onClearAll={activeFilters.length ? clearAll : undefined}>
+        <Input
+          inputSize="sm"
+          className="w-64"
+          placeholder="Search tests…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          leftIcon={<Search className="h-4 w-4" />}
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-48"
+          placeholder="All Types"
+          value={typeFilter}
+          onChange={(v) => setTypeFilter(v)}
+          options={TEST_TYPE_OPTIONS}
+          clearable
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-44"
+          placeholder="All Statuses"
+          value={statusFilter}
+          onChange={(v) => setStatusFilter(v)}
+          options={STATUS_OPTIONS}
+          clearable
+        />
+      </FilterBar>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between p-4 border-t border-surface-200">
+      <DataTable
+        data={tests}
+        columns={columns}
+        loading={isLoading}
+        getRowId={(t) => t.id}
+        onRowClick={(t) => navigate(`/bcdr/tests/${t.id}`)}
+        emptyState={
+          <EmptyState
+            icon={<Beaker className="h-8 w-8" />}
+            title="No DR tests found"
+            description={
+              activeFilters.length
+                ? 'Try clearing your filters to see all tests.'
+                : 'Schedule your first DR test to start tracking recovery readiness.'
+            }
+            action={
+              activeFilters.length ? (
+                <Button variant="outline" size="sm" onClick={clearAll}>
+                  Clear filters
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  leftIcon={<Plus className="h-4 w-4" />}
+                  onClick={() => navigate('/bcdr/tests/new')}
+                >
+                  Schedule Test
+                </Button>
+              )
+            }
+          />
+        }
+      />
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between text-xs text-surface-500">
+          <span>
+            Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} of {total}
+          </span>
+          <div className="flex items-center gap-2">
             <Button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              variant="outline"
+              size="sm"
               disabled={page === 1}
-              className=""
-              variant="secondary"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
             >
               Previous
             </Button>
-            <span className="text-surface-600 text-sm">
+            <span className="text-surface-500">
               Page {page} of {totalPages}
             </span>
             <Button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className=""
-              variant="secondary"
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
             >
               Next
             </Button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

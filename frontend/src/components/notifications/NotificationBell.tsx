@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { BellIcon, CheckIcon, TrashIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 import { BellAlertIcon } from '@heroicons/react/24/solid';
 import { notificationsApi } from '../../lib/api';
-import { formatDistanceToNow } from 'date-fns';
+import { formatRelativeTimeFromNow } from '../../lib/date';
 import { Link } from 'react-router-dom';
 
 interface Notification {
@@ -31,7 +31,7 @@ const severityIcons = {
 const getEntityLink = (
   entityType?: string,
   entityId?: string,
-  _metadata?: Record<string, unknown>
+  _metadata?: Record<string, any>
 ): string | null => {
   if (!entityType || !entityId) return null;
 
@@ -123,11 +123,11 @@ export default function NotificationBell() {
       {/* Bell Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-lg text-surface-600 hover:text-surface-900 hover:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors"
+        className="relative p-2 rounded-lg text-surface-600 hover:text-surface-900 hover:bg-surface-100 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors"
         aria-label="Notifications"
       >
         {unreadCount > 0 ? (
-          <BellAlertIcon className="h-5 w-5 text-brand-400" />
+          <BellAlertIcon className="h-5 w-5 text-brand-700" />
         ) : (
           <BellIcon className="h-5 w-5" />
         )}
@@ -142,15 +142,15 @@ export default function NotificationBell() {
 
       {/* Dropdown Panel */}
       {isOpen && (
-        <div className="absolute left-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-surface-200 z-[100] overflow-hidden">
+        <div className="absolute left-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-surface-300 z-[100] overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-surface-200">
+          <div className="flex items-center justify-between px-4 py-3 bg-surface-100 border-b border-surface-300">
             <h3 className="text-sm font-semibold text-surface-900">Notifications</h3>
             <div className="flex items-center space-x-2">
               {unreadCount > 0 && (
                 <button
                   onClick={() => markReadMutation.mutate({ markAll: true })}
-                  className="text-xs text-brand-400 hover:text-brand-300 flex items-center space-x-1"
+                  className="text-xs text-brand-700 hover:text-brand-800 flex items-center space-x-1"
                   title="Mark all as read"
                 >
                   <CheckIcon className="h-3 w-3" />
@@ -181,7 +181,7 @@ export default function NotificationBell() {
                 <p className="text-sm">No notifications yet</p>
               </div>
             ) : (
-              <ul className="divide-y divide-surface-200">
+              <ul className="divide-y divide-surface-300">
                 {notifications.map((notification) => {
                   const link = getEntityLink(
                     notification.entityType,
@@ -191,7 +191,7 @@ export default function NotificationBell() {
 
                   const NotificationContent = (
                     <div
-                      className={`p-3 hover:bg-white transition-colors cursor-pointer ${!notification.isRead ? 'bg-white/50' : ''}`}
+                      className={`p-3 hover:bg-surface-100 transition-colors cursor-pointer ${!notification.isRead ? 'bg-surface-100/50' : ''}`}
                     >
                       <div className="flex items-start space-x-2">
                         {/* Severity Icon */}
@@ -219,9 +219,7 @@ export default function NotificationBell() {
 
                           {/* Timestamp */}
                           <span className="text-[10px] text-surface-500 mt-1 block">
-                            {formatDistanceToNow(new Date(notification.createdAt), {
-                              addSuffix: true,
-                            })}
+                            {formatRelativeTimeFromNow(notification.createdAt)}
                           </span>
                         </div>
 
@@ -234,7 +232,7 @@ export default function NotificationBell() {
                                 e.stopPropagation();
                                 markReadMutation.mutate({ id: notification.id });
                               }}
-                              className="p-1 text-surface-500 hover:text-green-600 rounded"
+                              className="p-1 text-surface-500 hover:text-emerald-700 rounded"
                               title="Mark as read"
                             >
                               <CheckIcon className="h-3 w-3" />
@@ -276,11 +274,11 @@ export default function NotificationBell() {
 
           {/* Footer */}
           {notifications.length > 0 && (
-            <div className="px-3 py-2 bg-white border-t border-surface-200 text-center">
+            <div className="px-3 py-2 bg-surface-100 border-t border-surface-300 text-center">
               <Link
                 to="/settings/notifications"
                 onClick={() => setIsOpen(false)}
-                className="text-xs text-brand-400 hover:text-brand-300"
+                className="text-xs text-brand-700 hover:text-brand-800"
               >
                 View all & settings →
               </Link>

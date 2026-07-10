@@ -1,35 +1,36 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Zap, Plus, Search, Tag, AlertTriangle } from 'lucide-react';
 import {
-  BoltIcon,
-  PlusIcon,
-  MagnifyingGlassIcon,
-  TagIcon,
-  ExclamationTriangleIcon,
-  DocumentDuplicateIcon,
-  PlayCircleIcon,
-  TrashIcon,
-  PencilIcon,
-  ChartBarIcon,
-} from '@heroicons/react/24/outline';
-import { riskScenariosApi, RiskScenario } from '@/lib/api';
-import { Button } from '@/components/ui/Button';
-import { Modal } from '@/components/Modal';
-import { SkeletonTable } from '@/components/Skeleton';
-import { EmptyState } from '@/components/EmptyState';
-import { useToast } from '@/hooks/useToast';
+  Button,
+  Badge,
+  Card,
+  CardBody,
+  Input,
+  Textarea,
+  Label,
+  Select,
+  PageHeader,
+  FilterBar,
+  EmptyState,
+  Dialog,
+  type BadgeVariant,
+  type ActiveFilter,
+} from '@/components/ui';
 
-import { Textarea } from '@/components/ui/Textarea';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-
-interface SimulationResult {
-  inherentRisk: { score: number; level: string };
-  residualRisk: { score: number; level: string };
-  riskReduction: number;
-  recommendations: string[];
+interface Scenario {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  threatActor: string;
+  attackVector: string;
+  targetAssets: string[];
+  likelihood: string;
+  impact: string;
+  tags: string[];
+  isTemplate: boolean;
+  usageCount: number;
+  createdAt: string;
 }
 
 const THREAT_ACTORS = [
@@ -65,13 +66,11 @@ const CATEGORIES = [
   'Reputation Damage',
   'Physical Security',
   'Third Party Risk',
-  'Cloud Security',
-  'AI/ML Risk',
-  'Remote Work',
-  'IoT/OT Security',
 ];
 
-const LIKELIHOOD_OPTIONS = [
+const CATEGORY_OPTS = CATEGORIES.map((c) => ({ value: c, label: c }));
+
+const LIKELIHOOD_OPTS = [
   { value: 'rare', label: 'Rare' },
   { value: 'unlikely', label: 'Unlikely' },
   { value: 'possible', label: 'Possible' },
@@ -79,7 +78,7 @@ const LIKELIHOOD_OPTIONS = [
   { value: 'almost_certain', label: 'Almost Certain' },
 ];
 
-const IMPACT_OPTIONS = [
+const IMPACT_OPTS = [
   { value: 'negligible', label: 'Negligible' },
   { value: 'minor', label: 'Minor' },
   { value: 'moderate', label: 'Moderate' },
@@ -87,789 +86,473 @@ const IMPACT_OPTIONS = [
   { value: 'severe', label: 'Severe' },
 ];
 
-const getRiskColor = (level: string) => {
-  switch (level) {
-    case 'critical':
-      return 'text-red-500 bg-red-500/20';
-    case 'high':
-      return 'text-orange-500 bg-orange-500/20';
-    case 'medium':
-      return 'text-yellow-500 bg-yellow-500/20';
-    case 'low':
-      return 'text-green-500 bg-green-500/20';
-    default:
-      return 'text-surface-600 bg-surface-500/20';
-  }
+const LIKELIHOOD_VARIANT: Record<string, BadgeVariant> = {
+  almost_certain: 'danger',
+  likely: 'danger',
+  possible: 'warning',
+  unlikely: 'info',
+  rare: 'neutral',
 };
 
+const IMPACT_VARIANT: Record<string, BadgeVariant> = {
+  severe: 'danger',
+  major: 'danger',
+  moderate: 'warning',
+  minor: 'info',
+  negligible: 'neutral',
+};
+
+const mockScenarios: Scenario[] = [
+  {
+    id: '1',
+    title: 'Phishing Attack on Employees',
+    description:
+      'Targeted phishing campaign to obtain employee credentials and access corporate systems',
+    category: 'Data Breach',
+    threatActor: 'external_attacker',
+    attackVector: 'phishing',
+    targetAssets: ['Email System', 'Corporate Network', 'User Credentials'],
+    likelihood: 'likely',
+    impact: 'major',
+    tags: ['email', 'credentials', 'social-engineering'],
+    isTemplate: true,
+    usageCount: 15,
+    createdAt: '2024-01-15',
+  },
+  {
+    id: '2',
+    title: 'Ransomware Infection',
+    description: 'Ransomware attack encrypting critical business data and demanding payment',
+    category: 'System Compromise',
+    threatActor: 'organized_crime',
+    attackVector: 'malware',
+    targetAssets: ['File Servers', 'Databases', 'Backup Systems'],
+    likelihood: 'possible',
+    impact: 'severe',
+    tags: ['ransomware', 'encryption', 'extortion'],
+    isTemplate: true,
+    usageCount: 12,
+    createdAt: '2024-01-20',
+  },
+  {
+    id: '3',
+    title: 'Insider Data Theft',
+    description:
+      'Employee with access to sensitive data exfiltrates information before leaving company',
+    category: 'Data Breach',
+    threatActor: 'insider_malicious',
+    attackVector: 'insider_access',
+    targetAssets: ['Customer Database', 'Financial Records', 'IP/Trade Secrets'],
+    likelihood: 'possible',
+    impact: 'major',
+    tags: ['insider', 'data-theft', 'exfiltration'],
+    isTemplate: true,
+    usageCount: 8,
+    createdAt: '2024-02-01',
+  },
+  {
+    id: '4',
+    title: 'DDoS Attack on Public Services',
+    description: 'Distributed denial of service attack targeting public-facing web applications',
+    category: 'Service Disruption',
+    threatActor: 'hacktivist',
+    attackVector: 'network',
+    targetAssets: ['Web Servers', 'Load Balancers', 'CDN'],
+    likelihood: 'likely',
+    impact: 'moderate',
+    tags: ['ddos', 'availability', 'web'],
+    isTemplate: true,
+    usageCount: 6,
+    createdAt: '2024-02-10',
+  },
+  {
+    id: '5',
+    title: 'Supply Chain Compromise',
+    description: 'Third-party vendor compromise leading to access to internal systems',
+    category: 'Third Party Risk',
+    threatActor: 'nation_state',
+    attackVector: 'supply_chain',
+    targetAssets: ['Vendor Integrations', 'API Connections', 'Shared Systems'],
+    likelihood: 'unlikely',
+    impact: 'severe',
+    tags: ['supply-chain', 'vendor', 'solarwinds-style'],
+    isTemplate: true,
+    usageCount: 4,
+    createdAt: '2024-02-15',
+  },
+];
+
 export default function RiskScenarios() {
-  const queryClient = useQueryClient();
-  const toast = useToast();
+  const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [threatActorFilter, setThreatActorFilter] = useState('');
-  const [showTemplatesOnly, setShowTemplatesOnly] = useState(false);
-
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [editingScenario, setEditingScenario] = useState<RiskScenario | null>(null);
-  const [simulatingScenario, setSimulatingScenario] = useState<RiskScenario | null>(null);
-  const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
-  const [simulationParams, setSimulationParams] = useState({
-    controlEffectiveness: 50,
-    mitigations: [] as string[],
+  const scenarios = mockScenarios;
+  const filteredScenarios = scenarios.filter((s) => {
+    const matchesSearch =
+      s.title.toLowerCase().includes(search.toLowerCase()) ||
+      s.description.toLowerCase().includes(search.toLowerCase()) ||
+      s.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()));
+    const matchesCategory = !selectedCategory || s.category === selectedCategory;
+    return matchesSearch && matchesCategory;
   });
 
-  // Fetch scenarios
-  const { data: scenariosData, isLoading } = useQuery({
-    queryKey: ['risk-scenarios', searchTerm, categoryFilter, threatActorFilter, showTemplatesOnly],
-    queryFn: async () => {
-      const response = await riskScenariosApi.list({
-        search: searchTerm || undefined,
-        category: categoryFilter || undefined,
-        threatActor: threatActorFilter || undefined,
-        isTemplate: showTemplatesOnly || undefined,
-      });
-      return response.data;
-    },
-  });
-
-  // Fetch library templates (global templates available to all orgs)
-  const { data: libraryData } = useQuery({
-    queryKey: ['risk-scenario-library'],
-    queryFn: async () => {
-      const response = await riskScenariosApi.getLibraryByCategory();
-      return response.data;
-    },
-  });
-
-  // Fetch statistics
-  const { data: statsData } = useQuery({
-    queryKey: ['risk-scenario-stats'],
-    queryFn: async () => {
-      const response = await riskScenariosApi.getStatistics();
-      return response.data;
-    },
-  });
-
-  // Create mutation
-  const createMutation = useMutation({
-    mutationFn: (data: Parameters<typeof riskScenariosApi.create>[0]) =>
-      riskScenariosApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['risk-scenarios'] });
-      queryClient.invalidateQueries({ queryKey: ['risk-scenario-stats'] });
-      setIsCreateModalOpen(false);
-      toast.success('Scenario created successfully');
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to create scenario');
-    },
-  });
-
-  // Update mutation
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => riskScenariosApi.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['risk-scenarios'] });
-      setEditingScenario(null);
-      toast.success('Scenario updated successfully');
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update scenario');
-    },
-  });
-
-  // Delete mutation
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => riskScenariosApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['risk-scenarios'] });
-      queryClient.invalidateQueries({ queryKey: ['risk-scenario-stats'] });
-      toast.success('Scenario deleted successfully');
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete scenario');
-    },
-  });
-
-  // Clone mutation
-  const cloneMutation = useMutation({
-    mutationFn: ({ id, newTitle }: { id: string; newTitle?: string }) =>
-      riskScenariosApi.clone(id, newTitle),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['risk-scenarios'] });
-      toast.success('Scenario cloned successfully');
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to clone scenario');
-    },
-  });
-
-  // Simulate mutation
-  const simulateMutation = useMutation({
-    mutationFn: ({ id, params }: { id: string; params: typeof simulationParams }) =>
-      riskScenariosApi.simulate(id, params),
-    onSuccess: (response) => {
-      setSimulationResult(response.data);
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to run simulation');
-    },
-  });
-
-  const scenarios = (scenariosData as any)?.data || [];
-  const libraryCategories = libraryData || [];
-  const stats = statsData || {
-    total: 0,
-    templates: 0,
-    byCategory: [],
-    byThreatActor: [],
-    byRiskLevel: [],
+  const activeFilters: ActiveFilter[] = [];
+  if (search)
+    activeFilters.push({ key: 'search', label: `Search: ${search}`, onClear: () => setSearch('') });
+  if (selectedCategory)
+    activeFilters.push({
+      key: 'category',
+      label: `Category: ${selectedCategory}`,
+      onClear: () => setSelectedCategory(''),
+    });
+  const clearAll = () => {
+    setSearch('');
+    setSelectedCategory('');
   };
-
-  const handleRunSimulation = () => {
-    if (simulatingScenario) {
-      simulateMutation.mutate({ id: simulatingScenario.id, params: simulationParams });
-    }
-  };
-
-  const getThreatActorLabel = (value: string) =>
-    THREAT_ACTORS.find((t) => t.value === value)?.label || value;
-
-  const getAttackVectorLabel = (value: string) =>
-    ATTACK_VECTORS.find((v) => v.value === value)?.label || value;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <BoltIcon className="h-7 w-7 text-brand-400" />
-            Risk Scenarios
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Manage risk scenarios and run simulations to analyze potential threats
-          </p>
-        </div>
-        <Button
-          onClick={() => setIsCreateModalOpen(true)}
-          leftIcon={<PlusIcon className="h-5 w-5" />}
-        >
-          New Scenario
-        </Button>
-      </div>
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card p-4">
-          <p className="text-sm text-muted-foreground">Total Scenarios</p>
-          <p className="text-2xl font-bold text-foreground">{stats.total}</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-sm text-muted-foreground">Templates</p>
-          <p className="text-2xl font-bold text-brand-400">{stats.templates}</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-sm text-muted-foreground">High/Critical Risk</p>
-          <p className="text-2xl font-bold text-red-600">
-            {stats.byRiskLevel
-              ?.filter((r: any) => ['high', 'critical'].includes(r.level))
-              .reduce((sum: number, r: any) => sum + r.count, 0) || 0}
-          </p>
-        </div>
-        <div className="card p-4">
-          <p className="text-sm text-muted-foreground">Categories</p>
-          <p className="text-2xl font-bold text-foreground">{stats.byCategory?.length || 0}</p>
-        </div>
-      </div>
-      {/* Filters */}
-      <div className="card p-4">
-        <div className="flex flex-wrap gap-4">
-          <div className="flex-1 min-w-[200px]">
-            <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search scenarios..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
-              />
-            </div>
-          </div>
-          <SelectNative
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Risk Scenarios"
+        description="Threat scenario library for risk assessments."
+        actions={
+          <Button
+            size="sm"
+            leftIcon={<Plus className="h-4 w-4" />}
+            onClick={() => setShowCreateModal(true)}
           >
-            <option value="">All Categories</option>
-            {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </SelectNative>
-          <SelectNative
-            value={threatActorFilter}
-            onChange={(e) => setThreatActorFilter(e.target.value)}
-            className="px-4 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
-          >
-            <option value="">All Threat Actors</option>
-            {THREAT_ACTORS.map((actor) => (
-              <option key={actor.value} value={actor.value}>
-                {actor.label}
-              </option>
-            ))}
-          </SelectNative>
-          <label className="flex items-center gap-2 text-foreground">
-            <input
-              type="checkbox"
-              checked={showTemplatesOnly}
-              onChange={(e) => setShowTemplatesOnly(e.target.checked)}
-              className="rounded border-surface-300"
-            />
-            Templates Only
-          </label>
-        </div>
-      </div>
-      {/* Scenarios List */}
-      {isLoading ? (
-        <SkeletonTable rows={8} columns={6} />
-      ) : scenarios.length === 0 ? (
-        <EmptyState
-          variant="chart"
-          title="No scenarios found"
-          description="Create your first risk scenario or import from the template library."
-          action={{
-            label: 'Create Scenario',
-            onClick: () => setIsCreateModalOpen(true),
-          }}
+            Create Scenario
+          </Button>
+        }
+      />
+
+      <FilterBar active={activeFilters} onClearAll={activeFilters.length ? clearAll : undefined}>
+        <Input
+          inputSize="sm"
+          className="w-72"
+          placeholder="Search scenarios…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          leftIcon={<Search className="h-4 w-4" />}
         />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-56"
+          placeholder="All Categories"
+          value={selectedCategory}
+          onChange={setSelectedCategory}
+          options={CATEGORY_OPTS}
+          clearable
+        />
+      </FilterBar>
+
+      {filteredScenarios.length === 0 ? (
+        <Card>
+          <EmptyState
+            icon={<Zap className="h-8 w-8" />}
+            title="No scenarios found"
+            description="Try adjusting your search or filters."
+          />
+        </Card>
       ) : (
-        <div className="grid gap-4">
-          {scenarios.map((scenario: RiskScenario) => (
-            <div
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredScenarios.map((scenario) => (
+            <Card
               key={scenario.id}
-              className="card p-4 hover:border-brand-500/50 transition-colors cursor-pointer"
-              onClick={() => setEditingScenario(scenario)}
+              interactive
+              onClick={() => setSelectedScenario(scenario)}
+              className="hover:border-surface-400"
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <h3 className="font-semibold text-foreground">{scenario.title}</h3>
-                    {scenario.isTemplate && (
-                      <span className="px-2 py-0.5 text-xs bg-brand-500/20 text-brand-400 rounded-full">
-                        Template
-                      </span>
-                    )}
-                    {scenario.riskLevel && (
-                      <span
-                        className={`px-2 py-0.5 text-xs rounded-full ${getRiskColor(scenario.riskLevel)}`}
-                      >
-                        {scenario.riskLevel.toUpperCase()}
-                      </span>
-                    )}
+              <CardBody density="comfy">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="p-2 rounded-md bg-brand-500/10">
+                    <Zap className="h-5 w-5 text-brand-700" />
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                    {scenario.description}
-                  </p>
-                  <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <ExclamationTriangleIcon className="h-4 w-4" />
-                      {getThreatActorLabel(scenario.threatActor)}
-                    </span>
-                    <span>{getAttackVectorLabel(scenario.attackVector)}</span>
-                    <span className="bg-surface-200 px-2 py-0.5 rounded">{scenario.category}</span>
-                    {scenario.tags?.slice(0, 3).map((tag: string) => (
-                      <span key={tag} className="flex items-center gap-1">
-                        <TagIcon className="h-3 w-3" />
-                        {tag}
-                      </span>
-                    ))}
-                    {(scenario.usageCount ?? 0) > 0 && <span>Used {scenario.usageCount}x</span>}
-                  </div>
+                  {scenario.isTemplate && (
+                    <Badge variant="success" size="sm">
+                      Template
+                    </Badge>
+                  )}
                 </div>
-                <div className="flex items-center gap-2 ml-4" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    onClick={() => {
-                      setSimulatingScenario(scenario);
-                      setSimulationResult(null);
-                      setSimulationParams({ controlEffectiveness: 50, mitigations: [] });
-                    }}
-                    className="p-2 text-surface-600 hover:text-brand-400 hover:bg-surface-200 rounded-lg transition-colors"
-                    title="Run Simulation"
+                <h3 className="text-h3 text-surface-900 mb-1.5">{scenario.title}</h3>
+                <p className="text-small text-surface-600 line-clamp-2 mb-3">
+                  {scenario.description}
+                </p>
+                <div className="flex items-center gap-2 mb-3">
+                  <Badge
+                    variant={LIKELIHOOD_VARIANT[scenario.likelihood] ?? 'neutral'}
+                    className="capitalize"
                   >
-                    <PlayCircleIcon className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => cloneMutation.mutate({ id: scenario.id })}
-                    className="p-2 text-surface-600 hover:text-brand-400 hover:bg-surface-200 rounded-lg transition-colors"
-                    title="Clone"
+                    {scenario.likelihood.replace(/_/g, ' ')}
+                  </Badge>
+                  <Badge
+                    variant={IMPACT_VARIANT[scenario.impact] ?? 'neutral'}
+                    className="capitalize"
                   >
-                    <DocumentDuplicateIcon className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => setEditingScenario(scenario)}
-                    className="p-2 text-surface-600 hover:text-brand-400 hover:bg-surface-200 rounded-lg transition-colors"
-                    title="Edit"
-                  >
-                    <PencilIcon className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (confirm('Are you sure you want to delete this scenario?')) {
-                        deleteMutation.mutate(scenario.id);
-                      }
-                    }}
-                    className="p-2 text-surface-600 hover:text-red-600 hover:bg-surface-200 rounded-lg transition-colors"
-                    title="Delete"
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
+                    {scenario.impact}
+                  </Badge>
                 </div>
-              </div>
-            </div>
+                <div className="flex flex-wrap gap-1">
+                  {scenario.tags.slice(0, 3).map((tag) => (
+                    <Badge key={tag} variant="neutral" size="sm">
+                      {tag}
+                    </Badge>
+                  ))}
+                  {scenario.tags.length > 3 && (
+                    <Badge variant="neutral" size="sm">
+                      +{scenario.tags.length - 3}
+                    </Badge>
+                  )}
+                </div>
+                <div className="mt-3 pt-3 border-t border-surface-200 flex items-center justify-between text-xs text-surface-500">
+                  <span>{scenario.category}</span>
+                  <span>Used {scenario.usageCount} times</span>
+                </div>
+              </CardBody>
+            </Card>
           ))}
         </div>
       )}
-      {/* Scenario Library Section */}
-      {libraryCategories.length > 0 && !showTemplatesOnly && (
-        <div className="card p-6">
-          <div className="flex items-center justify-between mb-4">
+
+      {/* Scenario Detail */}
+      <Dialog
+        open={!!selectedScenario}
+        onClose={() => setSelectedScenario(null)}
+        title={selectedScenario?.title ?? ''}
+        description={selectedScenario?.category}
+        size="lg"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setSelectedScenario(null)}>
+              Close
+            </Button>
+            <Button leftIcon={<AlertTriangle className="h-4 w-4" />}>Use for New Risk</Button>
+          </>
+        }
+      >
+        {selectedScenario && (
+          <div className="space-y-5">
             <div>
-              <h3 className="text-lg font-semibold text-foreground">Scenario Library</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Browse pre-built risk scenarios organized by category. Clone any scenario to
-                customize it for your organization.
-              </p>
-            </div>
-            <span className="text-xs bg-brand-500/20 text-brand-400 px-2 py-1 rounded-full">
-              {libraryCategories.reduce((sum, cat) => sum + cat.templates.length, 0)} scenarios
-            </span>
-          </div>
-
-          <div className="space-y-6">
-            {libraryCategories.map((categoryGroup) => (
-              <div key={categoryGroup.category}>
-                <h4 className="text-sm font-medium text-surface-700 mb-3 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-brand-500 rounded-full"></span>
-                  {categoryGroup.category}
-                  <span className="text-xs text-surface-500">
-                    ({categoryGroup.templates.length})
-                  </span>
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {categoryGroup.templates.map((template: RiskScenario) => (
-                    <div
-                      key={template.id}
-                      className="bg-surface-200/50 hover:bg-surface-200 rounded-lg p-4 transition-colors group"
-                    >
-                      <h5 className="font-medium text-foreground text-sm line-clamp-1">
-                        {template.title}
-                      </h5>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                        {template.description}
-                      </p>
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {template.tags?.slice(0, 3).map((tag: string) => (
-                          <span
-                            key={tag}
-                            className="text-xs bg-surface-600 text-surface-700 px-1.5 py-0.5 rounded"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                      <div className="flex items-center justify-between mt-3 pt-2 border-t border-surface-300">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>{getThreatActorLabel(template.threatActor)}</span>
-                          {(template.usageCount ?? 0) > 0 && (
-                            <span>• Used {template.usageCount}x</span>
-                          )}
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => cloneMutation.mutate({ id: template.id })}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          Use
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      {/* Create/Edit Modal */}
-      <Modal
-        isOpen={isCreateModalOpen || !!editingScenario}
-        onClose={() => {
-          setIsCreateModalOpen(false);
-          setEditingScenario(null);
-        }}
-        title={editingScenario ? 'Edit Scenario' : 'Create Scenario'}
-        size="lg"
-      >
-        <ScenarioForm
-          scenario={editingScenario}
-          onSubmit={(data) => {
-            if (editingScenario) {
-              updateMutation.mutate({ id: editingScenario.id, data });
-            } else {
-              createMutation.mutate(data as Parameters<typeof riskScenariosApi.create>[0]);
-            }
-          }}
-          isLoading={createMutation.isPending || updateMutation.isPending}
-        />
-      </Modal>
-      {/* Simulation Modal */}
-      <Modal
-        isOpen={!!simulatingScenario}
-        onClose={() => {
-          setSimulatingScenario(null);
-          setSimulationResult(null);
-        }}
-        title="Risk Simulation"
-        size="lg"
-      >
-        {simulatingScenario && (
-          <div className="space-y-6">
-            <div className="bg-surface-200/50 rounded-lg p-4">
-              <h4 className="font-medium text-foreground">{simulatingScenario.title}</h4>
-              <p className="text-sm text-muted-foreground mt-1">{simulatingScenario.description}</p>
-              <div className="flex items-center gap-4 mt-3 text-sm">
-                <span className="text-muted-foreground">
-                  Threat:{' '}
-                  <span className="text-foreground">
-                    {getThreatActorLabel(simulatingScenario.threatActor)}
-                  </span>
-                </span>
-                <span className="text-muted-foreground">
-                  Vector:{' '}
-                  <span className="text-foreground">
-                    {getAttackVectorLabel(simulatingScenario.attackVector)}
-                  </span>
-                </span>
-              </div>
+              <h3 className="text-xs font-medium text-surface-500 uppercase tracking-wider mb-1.5">
+                Description
+              </h3>
+              <p className="text-body text-surface-800">{selectedScenario.description}</p>
             </div>
 
-            <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Control Effectiveness: {simulationParams.controlEffectiveness}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={simulationParams.controlEffectiveness}
-                  onChange={(e) =>
-                    setSimulationParams({
-                      ...simulationParams,
-                      controlEffectiveness: parseInt(e.target.value),
-                    })
-                  }
-                  className="w-full"
-                />
+                <h3 className="text-xs font-medium text-surface-500 uppercase tracking-wider mb-1.5">
+                  Threat Actor
+                </h3>
+                <p className="text-body text-surface-900">
+                  {THREAT_ACTORS.find((t) => t.value === selectedScenario.threatActor)?.label ??
+                    selectedScenario.threatActor}
+                </p>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Mitigations (comma-separated)
-                </label>
-                <Input
-                  type="text"
-                  placeholder="e.g., MFA, Employee Training, Network Segmentation"
-                  value={simulationParams.mitigations.join(', ')}
-                  onChange={(e) =>
-                    setSimulationParams({
-                      ...simulationParams,
-                      mitigations: e.target.value
-                        .split(',')
-                        .map((s) => s.trim())
-                        .filter(Boolean),
-                    })
-                  }
-                  className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
-                />
+                <h3 className="text-xs font-medium text-surface-500 uppercase tracking-wider mb-1.5">
+                  Attack Vector
+                </h3>
+                <p className="text-body text-surface-900">
+                  {ATTACK_VECTORS.find((v) => v.value === selectedScenario.attackVector)?.label ??
+                    selectedScenario.attackVector}
+                </p>
               </div>
-
-              <Button onClick={handleRunSimulation} isLoading={simulateMutation.isPending}>
-                <ChartBarIcon className="h-5 w-5 mr-2" />
-                Run Simulation
-              </Button>
             </div>
 
-            {simulationResult && (
-              <div className="bg-white rounded-lg p-6 border border-surface-200">
-                <h4 className="font-semibold text-foreground mb-4">Simulation Results</h4>
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Inherent Risk</p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-foreground">
-                        {simulationResult.inherentRisk.score}
-                      </span>
-                      <span
-                        className={`px-2 py-1 text-xs rounded ${getRiskColor(simulationResult.inherentRisk.level)}`}
-                      >
-                        {simulationResult.inherentRisk.level.toUpperCase()}
-                      </span>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Residual Risk</p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-foreground">
-                        {simulationResult.residualRisk.score}
-                      </span>
-                      <span
-                        className={`px-2 py-1 text-xs rounded ${getRiskColor(simulationResult.residualRisk.level)}`}
-                      >
-                        {simulationResult.residualRisk.level.toUpperCase()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <p className="text-sm text-muted-foreground">Risk Reduction</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="flex-1 h-2 bg-surface-200 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-green-500 rounded-full transition-all"
-                        style={{ width: `${simulationResult.riskReduction}%` }}
-                      />
-                    </div>
-                    <span className="text-green-600 font-semibold">
-                      {simulationResult.riskReduction}%
-                    </span>
-                  </div>
-                </div>
-                {simulationResult.recommendations.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-sm font-medium text-foreground mb-2">Recommendations</p>
-                    <ul className="space-y-1">
-                      {simulationResult.recommendations.map((rec, i) => (
-                        <li
-                          key={i}
-                          className="text-sm text-muted-foreground flex items-start gap-2"
-                        >
-                          <span className="text-brand-400">•</span>
-                          {rec}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+            <div>
+              <h3 className="text-xs font-medium text-surface-500 uppercase tracking-wider mb-1.5">
+                Target Assets
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {selectedScenario.targetAssets.map((asset) => (
+                  <Badge key={asset} variant="neutral">
+                    {asset}
+                  </Badge>
+                ))}
               </div>
-            )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h3 className="text-xs font-medium text-surface-500 uppercase tracking-wider mb-1.5">
+                  Likelihood
+                </h3>
+                <Badge
+                  variant={LIKELIHOOD_VARIANT[selectedScenario.likelihood] ?? 'neutral'}
+                  className="capitalize"
+                >
+                  {selectedScenario.likelihood.replace(/_/g, ' ')}
+                </Badge>
+              </div>
+              <div>
+                <h3 className="text-xs font-medium text-surface-500 uppercase tracking-wider mb-1.5">
+                  Impact
+                </h3>
+                <Badge
+                  variant={IMPACT_VARIANT[selectedScenario.impact] ?? 'neutral'}
+                  className="capitalize"
+                >
+                  {selectedScenario.impact}
+                </Badge>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-xs font-medium text-surface-500 uppercase tracking-wider mb-1.5">
+                Tags
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {selectedScenario.tags.map((tag) => (
+                  <Badge key={tag} variant="brand" className="inline-flex items-center gap-1">
+                    <Tag className="h-3 w-3" />
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
           </div>
         )}
-      </Modal>
+      </Dialog>
+
+      {showCreateModal && <CreateScenarioModal onClose={() => setShowCreateModal(false)} />}
     </div>
   );
 }
 
-interface ScenarioFormProps {
-  scenario?: RiskScenario | null;
-  onSubmit: (data: any) => void;
-  isLoading: boolean;
-}
-
-function ScenarioForm({ scenario, onSubmit, isLoading }: ScenarioFormProps) {
+function CreateScenarioModal({ onClose }: { onClose: () => void }) {
   const [formData, setFormData] = useState({
-    title: scenario?.title || '',
-    description: scenario?.description || '',
-    category: scenario?.category || CATEGORIES[0],
-    threatActor: scenario?.threatActor || 'external_attacker',
-    attackVector: scenario?.attackVector || 'phishing',
-    targetAssets: scenario?.targetAssets?.join(', ') || '',
-    likelihood: scenario?.likelihood || 'possible',
-    impact: scenario?.impact || 'moderate',
-    tags: scenario?.tags?.join(', ') || '',
-    isTemplate: scenario?.isTemplate || false,
-    mitigationStrategy: scenario?.mitigationStrategy || '',
-    businessContext: scenario?.businessContext || '',
-    complianceImpact: scenario?.complianceImpact || '',
+    title: '',
+    description: '',
+    category: '',
+    threatActor: '',
+    attackVector: '',
+    targetAssets: '',
+    likelihood: 'possible',
+    impact: 'moderate',
+    tags: '',
+    isTemplate: true,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit({
-      ...formData,
-      targetAssets: formData.targetAssets
-        .split(',')
-        .map((s: string) => s.trim())
-        .filter(Boolean),
-      tags: formData.tags
-        .split(',')
-        .map((s: string) => s.trim())
-        .filter(Boolean),
-    });
-  };
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-1">Title *</label>
-        <Input
-          type="text"
-          required
-          value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
-          placeholder="e.g., Phishing Attack on Employees"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-1">Description *</label>
-        <Textarea
-          required
-          rows={3}
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
-          placeholder="Describe the risk scenario in detail..."
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
+    <Dialog
+      open
+      onClose={onClose}
+      title="Create Scenario"
+      size="lg"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button>Create Scenario</Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1">Category *</label>
-          <SelectNative
-            required
-            value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
-          >
-            {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </SelectNative>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1">Threat Actor *</label>
-          <SelectNative
-            required
-            value={formData.threatActor}
-            onChange={(e) => setFormData({ ...formData, threatActor: e.target.value })}
-            className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
-          >
-            {THREAT_ACTORS.map((actor) => (
-              <option key={actor.value} value={actor.value}>
-                {actor.label}
-              </option>
-            ))}
-          </SelectNative>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1">Attack Vector *</label>
-          <SelectNative
-            required
-            value={formData.attackVector}
-            onChange={(e) => setFormData({ ...formData, attackVector: e.target.value })}
-            className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
-          >
-            {ATTACK_VECTORS.map((vector) => (
-              <option key={vector.value} value={vector.value}>
-                {vector.label}
-              </option>
-            ))}
-          </SelectNative>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1">Target Assets</label>
+          <Label htmlFor="sc-title" required>
+            Title
+          </Label>
           <Input
-            type="text"
-            value={formData.targetAssets}
-            onChange={(e) => setFormData({ ...formData, targetAssets: e.target.value })}
-            className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
-            placeholder="e.g., Email System, Database (comma-separated)"
+            id="sc-title"
+            value={formData.title}
+            onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+            placeholder="e.g., Phishing Attack on Employees"
           />
         </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1">Likelihood *</label>
-          <SelectNative
-            required
-            value={formData.likelihood}
-            onChange={(e) => setFormData({ ...formData, likelihood: e.target.value })}
-            className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
-          >
-            {LIKELIHOOD_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </SelectNative>
+          <Label htmlFor="sc-desc" required>
+            Description
+          </Label>
+          <Textarea
+            id="sc-desc"
+            value={formData.description}
+            onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+            rows={3}
+            placeholder="Describe the threat scenario…"
+          />
         </div>
-
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label>Category</Label>
+            <Select
+              value={formData.category}
+              onChange={(v) => setFormData((p) => ({ ...p, category: v }))}
+              options={CATEGORY_OPTS}
+              placeholder="Select…"
+            />
+          </div>
+          <div>
+            <Label>Threat Actor</Label>
+            <Select
+              value={formData.threatActor}
+              onChange={(v) => setFormData((p) => ({ ...p, threatActor: v }))}
+              options={THREAT_ACTORS}
+              placeholder="Select…"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label>Attack Vector</Label>
+            <Select
+              value={formData.attackVector}
+              onChange={(v) => setFormData((p) => ({ ...p, attackVector: v }))}
+              options={ATTACK_VECTORS}
+              placeholder="Select…"
+            />
+          </div>
+          <div>
+            <Label htmlFor="sc-targets">Target Assets</Label>
+            <Input
+              id="sc-targets"
+              value={formData.targetAssets}
+              onChange={(e) => setFormData((p) => ({ ...p, targetAssets: e.target.value }))}
+              placeholder="Comma separated"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label>Likelihood</Label>
+            <Select
+              value={formData.likelihood}
+              onChange={(v) => setFormData((p) => ({ ...p, likelihood: v }))}
+              options={LIKELIHOOD_OPTS}
+            />
+          </div>
+          <div>
+            <Label>Impact</Label>
+            <Select
+              value={formData.impact}
+              onChange={(v) => setFormData((p) => ({ ...p, impact: v }))}
+              options={IMPACT_OPTS}
+            />
+          </div>
+        </div>
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1">Impact *</label>
-          <SelectNative
-            required
-            value={formData.impact}
-            onChange={(e) => setFormData({ ...formData, impact: e.target.value })}
-            className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
-          >
-            {IMPACT_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </SelectNative>
+          <Label htmlFor="sc-tags">Tags</Label>
+          <Input
+            id="sc-tags"
+            value={formData.tags}
+            onChange={(e) => setFormData((p) => ({ ...p, tags: e.target.value }))}
+            placeholder="Comma separated tags"
+          />
         </div>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-1">Tags</label>
-        <Input
-          type="text"
-          value={formData.tags}
-          onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-          className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
-          placeholder="e.g., critical, compliance, data (comma-separated)"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-1">
-          Mitigation Strategy
-        </label>
-        <Textarea
-          rows={2}
-          value={formData.mitigationStrategy}
-          onChange={(e) => setFormData({ ...formData, mitigationStrategy: e.target.value })}
-          className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground"
-          placeholder="Describe how this risk can be mitigated..."
-        />
-      </div>
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          id="isTemplate"
-          checked={formData.isTemplate}
-          onChange={(e) => setFormData({ ...formData, isTemplate: e.target.checked })}
-          className="rounded border-surface-300"
-        />
-        <label htmlFor="isTemplate" className="text-sm text-foreground">
-          Save as template (available for reuse)
+        <label className="flex items-center gap-2 text-small text-surface-700 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={formData.isTemplate}
+            onChange={(e) => setFormData((p) => ({ ...p, isTemplate: e.target.checked }))}
+            className="rounded border-surface-400 bg-surface-100 text-brand-500 focus:ring-brand-500 focus:ring-offset-white"
+          />
+          Save as reusable template
         </label>
       </div>
-      <div className="flex justify-end gap-3 pt-4 border-t border-surface-200">
-        <Button type="submit" isLoading={isLoading}>
-          {scenario ? 'Update Scenario' : 'Create Scenario'}
-        </Button>
-      </div>
-    </form>
+    </Dialog>
   );
 }

@@ -1,608 +1,274 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
-import { risksApi, customDashboardsApi } from '../lib/api';
+import { useQuery } from '@tanstack/react-query';
+import { Link, useNavigate } from 'react-router-dom';
+import { risksApi } from '../lib/api';
 import {
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
-  ChartBarIcon,
-  ArrowPathIcon,
-  Cog6ToothIcon,
-} from '@heroicons/react/24/outline';
-import toast from 'react-hot-toast';
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  TrendingUp,
+  TrendingDown,
+  BarChart,
+} from 'lucide-react';
+import { cn } from '@/lib/cn';
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  PageHeader,
+  Skeleton,
+  EmptyState,
+} from '@/components/ui';
+import { riskStatusVariant } from '@/lib/riskStatus';
 
-// Edit mode toggle for dashboard customization
-function DashboardEditToggle({
-  isEditing,
-  onToggle,
-  onSave,
-  onReset,
-  isSaving,
-}: {
-  isEditing: boolean;
-  onToggle: () => void;
-  onSave: () => void;
-  onReset: () => void;
-  isSaving: boolean;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      {isEditing ? (
-        <>
-          <button
-            onClick={onReset}
-            className="px-3 py-1.5 text-sm text-gray-600 dark:text-surface-600 hover:text-gray-800 dark:hover:text-surface-800 flex items-center gap-1"
-          >
-            <ArrowPathIcon className="w-4 h-4" />
-            Reset
-          </button>
-          <button
-            onClick={onSave}
-            disabled={isSaving}
-            className="px-3 py-1.5 text-sm bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50 flex items-center gap-1"
-          >
-            {isSaving ? 'Saving...' : 'Save Layout'}
-          </button>
-          <button
-            onClick={onToggle}
-            className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-surface-200 text-gray-700 dark:text-surface-700 rounded-lg hover:bg-gray-300 dark:hover:bg-surface-600"
-          >
-            Done
-          </button>
-        </>
-      ) : (
-        <button
-          onClick={onToggle}
-          className="px-3 py-1.5 text-sm text-gray-600 dark:text-surface-600 hover:text-gray-800 dark:hover:text-surface-800 flex items-center gap-1"
-          title="Customize dashboard layout"
-        >
-          <Cog6ToothIcon className="w-4 h-4" />
-          Customize
-        </button>
-      )}
-    </div>
-  );
-}
-
-// Widget visibility configuration
-interface WidgetConfig {
-  totalRisks: boolean;
-  openRisks: boolean;
-  inTreatment: boolean;
-  mitigatedThisMonth: boolean;
-  riskLevelDistribution: boolean;
-  risksByCategory: boolean;
-  recentRisks: boolean;
-  quickActions: boolean;
-  riskAppetite: boolean;
-}
-
-const DEFAULT_WIDGET_CONFIG: WidgetConfig = {
-  totalRisks: true,
-  openRisks: true,
-  inTreatment: true,
-  mitigatedThisMonth: true,
-  riskLevelDistribution: true,
-  risksByCategory: true,
-  recentRisks: true,
-  quickActions: true,
-  riskAppetite: true,
+const LEVEL_BG: Record<string, string> = {
+  critical: 'bg-red-500',
+  high: 'bg-orange-500',
+  medium: 'bg-amber-500',
+  low: 'bg-emerald-500',
 };
 
-const STORAGE_KEY = 'risk-dashboard-config';
-const DASHBOARD_NAME = 'Risk Dashboard';
-
-// Convert WidgetConfig to backend format
-function widgetConfigToBackendFormat(config: WidgetConfig) {
-  return Object.entries(config).map(([key, enabled]) => ({
-    widgetType: key,
-    title: key.replace(/([A-Z])/g, ' $1').trim(),
-    config: { enabled },
-    position: { x: 0, y: 0, w: 4, h: 2 },
-  }));
-}
-
-// Convert backend format to WidgetConfig
-function backendToWidgetConfig(widgets: any[]): WidgetConfig {
-  const config = { ...DEFAULT_WIDGET_CONFIG };
-  if (widgets && Array.isArray(widgets)) {
-    widgets.forEach((widget: any) => {
-      const key = widget.widgetType as keyof WidgetConfig;
-      if (key in config && widget.config?.enabled !== undefined) {
-        config[key] = widget.config.enabled;
-      }
-    });
-  }
-  return config;
-}
-
 export default function RiskDashboard() {
-  const queryClient = useQueryClient();
-  const [isEditing, setIsEditing] = useState(false);
-  const [dashboardId, setDashboardId] = useState<string | null>(null);
-  const [widgetConfig, setWidgetConfig] = useState<WidgetConfig>(DEFAULT_WIDGET_CONFIG);
-  const [tempConfig, setTempConfig] = useState<WidgetConfig>(widgetConfig);
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  // Fetch user's dashboards to find Risk Dashboard
-  const { data: dashboardsData } = useQuery({
-    queryKey: ['user-dashboards'],
-    queryFn: async () => {
-      try {
-        const response = await customDashboardsApi.list();
-        return response.data;
-      } catch {
-        return { data: [] };
-      }
-    },
-    staleTime: 30000,
-  });
-
-  // Initialize dashboard config from backend or localStorage
-  useEffect(() => {
-    if (isInitialized) return;
-
-    const dashboards = dashboardsData?.data || [];
-    const riskDashboard = dashboards.find((d: any) => d.name === DASHBOARD_NAME);
-
-    if (riskDashboard) {
-      // Found existing backend dashboard
-      setDashboardId(riskDashboard.id);
-      const config = backendToWidgetConfig(riskDashboard.widgets || []);
-      setWidgetConfig(config);
-      setTempConfig(config);
-      setIsInitialized(true);
-    } else if (dashboardsData !== undefined) {
-      // No backend dashboard, try localStorage
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        const config = saved
-          ? { ...DEFAULT_WIDGET_CONFIG, ...JSON.parse(saved) }
-          : DEFAULT_WIDGET_CONFIG;
-        setWidgetConfig(config);
-        setTempConfig(config);
-      } catch {
-        // Use default
-      }
-      setIsInitialized(true);
-    }
-  }, [dashboardsData, isInitialized]);
-
-  // Mutation to save dashboard
-  const saveMutation = useMutation({
-    mutationFn: async (config: WidgetConfig) => {
-      const widgets = widgetConfigToBackendFormat(config);
-
-      if (dashboardId) {
-        // Update existing
-        return customDashboardsApi.update(dashboardId, { widgets });
-      } else {
-        // Create new
-        return customDashboardsApi.create({
-          name: DASHBOARD_NAME,
-          description: 'Risk management dashboard widget configuration',
-          widgets,
-        });
-      }
-    },
-    onSuccess: (response: any) => {
-      if (!dashboardId && response.data?.data?.id) {
-        setDashboardId(response.data.data.id);
-      }
-      queryClient.invalidateQueries({ queryKey: ['user-dashboards'] });
-    },
-    onError: () => {
-      // Fallback to localStorage on error
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tempConfig));
-    },
-  });
-
-  const handleToggleEdit = useCallback(() => {
-    if (isEditing) {
-      // Cancel editing - restore original config
-      setTempConfig(widgetConfig);
-    } else {
-      // Start editing
-      setTempConfig(widgetConfig);
-    }
-    setIsEditing(!isEditing);
-  }, [isEditing, widgetConfig]);
-
-  const handleSaveLayout = useCallback(async () => {
-    setWidgetConfig(tempConfig);
-    // Also save to localStorage as backup
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tempConfig));
-    // Save to backend
-    saveMutation.mutate(tempConfig);
-    setIsEditing(false);
-    toast.success('Dashboard layout saved');
-  }, [tempConfig, saveMutation]);
-
-  const handleResetLayout = useCallback(() => {
-    setTempConfig(DEFAULT_WIDGET_CONFIG);
-  }, []);
-
-  const toggleWidget = useCallback((key: keyof WidgetConfig) => {
-    setTempConfig((prev) => ({ ...prev, [key]: !prev[key] }));
-  }, []);
-
-  const activeConfig = isEditing ? tempConfig : widgetConfig;
-  // Fetch dashboard stats
+  const navigate = useNavigate();
   const { data: dashboard, isLoading } = useQuery({
     queryKey: ['risk-dashboard'],
-    queryFn: async () => {
-      const response = await risksApi.getDashboard();
-      return response.data;
-    },
+    queryFn: () => risksApi.getDashboard().then((r) => r.data),
   });
 
-  // Fetch recent risks
   const { data: recentRisks } = useQuery({
     queryKey: ['risks', 'recent'],
-    queryFn: async () => {
-      const response = await risksApi.list({ limit: 5 });
-      return response.data;
-    },
+    queryFn: () => risksApi.list({ limit: 5 }).then((r) => r.data),
   });
-
-  // Fetch trend data
-  const { data: _trendData } = useQuery({
-    queryKey: ['risk-trend'],
-    queryFn: async () => {
-      const response = await risksApi.getTrend(30);
-      return response.data;
-    },
-  });
-  void _trendData; // Available for trend chart
-
-  const getRiskLevelColor = (level: string) => {
-    switch (level) {
-      case 'critical':
-        return 'bg-red-500';
-      case 'high':
-        return 'bg-orange-500';
-      case 'medium':
-        return 'bg-amber-500';
-      case 'low':
-        return 'bg-emerald-500';
-      default:
-        return 'bg-surface-500';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    if (
-      status.includes('complete') ||
-      status.includes('mitigat') ||
-      status.includes('accept') ||
-      status.includes('avoid') ||
-      status.includes('transfer')
-    ) {
-      return 'text-emerald-600 bg-emerald-500/20';
-    }
-    if (status.includes('progress') || status.includes('review') || status.includes('approval')) {
-      return 'text-amber-600 bg-amber-500/20';
-    }
-    return 'text-blue-600 bg-blue-500/20';
-  };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500 dark:text-surface-600">Loading risk dashboard...</div>
+      <div className="space-y-5 animate-fade-in">
+        <PageHeader title="Risk Dashboard" description="Executive overview of your risk posture." />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Risk Dashboard</h1>
-          <p className="text-gray-500 dark:text-surface-600 mt-1">
-            Executive overview of your risk posture
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <DashboardEditToggle
-            isEditing={isEditing}
-            onToggle={handleToggleEdit}
-            onSave={handleSaveLayout}
-            onReset={handleResetLayout}
-            isSaving={saveMutation.isPending}
-          />
-          <Link
-            to="/risks"
-            className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 flex items-center gap-2"
-          >
-            <ExclamationTriangleIcon className="w-5 h-5" />
-            View All Risks
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Risk Dashboard"
+        description="Executive overview of your risk posture."
+        actions={
+          <Link to="/risks">
+            <Button size="sm" leftIcon={<AlertTriangle className="h-4 w-4" />}>
+              View All Risks
+            </Button>
           </Link>
-        </div>
+        }
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard
+          title="Total Risks"
+          value={dashboard?.totalRisks || 0}
+          icon={<AlertTriangle className="h-5 w-5" />}
+          tone="blue"
+          onClick={() => navigate('/risks')}
+        />
+        <MetricCard
+          title="Open Risks"
+          value={dashboard?.openRisks || 0}
+          icon={<Clock className="h-5 w-5" />}
+          tone="amber"
+          trend={dashboard?.openRisksTrend}
+          onClick={() => navigate('/risks?status=open')}
+        />
+        <MetricCard
+          title="In Treatment"
+          value={dashboard?.inTreatment || 0}
+          icon={<TrendingUp className="h-5 w-5" />}
+          tone="cyan"
+          onClick={() => navigate('/risks?status=in_treatment')}
+        />
+        <MetricCard
+          title="Mitigated This Month"
+          value={dashboard?.mitigatedThisMonth || 0}
+          icon={<CheckCircle2 className="h-5 w-5" />}
+          tone="emerald"
+          onClick={() => navigate('/risks?status=mitigated')}
+        />
       </div>
 
-      {/* Edit Mode: Widget Visibility Controls */}
-      {isEditing && (
-        <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl p-4">
-          <h3 className="text-amber-800 dark:text-amber-600 font-medium mb-3">
-            Customize Dashboard
-          </h3>
-          <p className="text-amber-700 dark:text-amber-700 text-sm mb-4">
-            Toggle widgets on/off to customize your dashboard view.
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            {(Object.entries(tempConfig) as [keyof WidgetConfig, boolean][]).map(
-              ([key, enabled]) => (
-                <label key={key} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={enabled}
-                    onChange={() => toggleWidget(key)}
-                    className="rounded border-amber-300 text-brand-500 focus:ring-brand-500"
-                  />
-                  <span className="text-sm text-amber-800 dark:text-amber-700 capitalize">
-                    {key.replace(/([A-Z])/g, ' $1').trim()}
-                  </span>
-                </label>
-              )
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Key Metrics */}
-      {(activeConfig.totalRisks ||
-        activeConfig.openRisks ||
-        activeConfig.inTreatment ||
-        activeConfig.mitigatedThisMonth) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {activeConfig.totalRisks && (
-            <MetricCard
-              title="Total Risks"
-              value={dashboard?.totalRisks || 0}
-              icon={ExclamationTriangleIcon}
-              color="text-blue-600"
-              bgColor="bg-blue-500/20"
-            />
-          )}
-          {activeConfig.openRisks && (
-            <MetricCard
-              title="Open Risks"
-              value={dashboard?.openRisks || 0}
-              icon={ClockIcon}
-              color="text-amber-600"
-              bgColor="bg-amber-500/20"
-              trend={dashboard?.openRisksTrend}
-            />
-          )}
-          {activeConfig.inTreatment && (
-            <MetricCard
-              title="In Treatment"
-              value={dashboard?.inTreatment || 0}
-              icon={ArrowTrendingUpIcon}
-              color="text-cyan-600"
-              bgColor="bg-cyan-500/20"
-            />
-          )}
-          {activeConfig.mitigatedThisMonth && (
-            <MetricCard
-              title="Mitigated This Month"
-              value={dashboard?.mitigatedThisMonth || 0}
-              icon={CheckCircleIcon}
-              color="text-emerald-600"
-              bgColor="bg-emerald-500/20"
-            />
-          )}
-        </div>
-      )}
-
-      {/* Risk Level Distribution & Risk by Category */}
-      {(activeConfig.riskLevelDistribution || activeConfig.risksByCategory) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Risk Level Distribution */}
-          {activeConfig.riskLevelDistribution && (
-            <div className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-6">
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                Risk Level Distribution
-              </h2>
-              <div className="space-y-4">
-                {[
-                  { key: 'very_high', label: 'Critical' },
-                  { key: 'high', label: 'High' },
-                  { key: 'medium', label: 'Medium' },
-                  { key: 'low', label: 'Low' },
-                ].map(({ key, label }) => {
-                  const count =
-                    dashboard?.byRiskLevel?.find(
-                      (r: any) =>
-                        r.level === key ||
-                        r.inherent_risk === key ||
-                        (key === 'very_high' &&
-                          (r.level === 'critical' || r.inherent_risk === 'critical'))
-                    )?.count ||
-                    (dashboard?.byRiskLevel?.[key] as number) ||
-                    0;
-                  const total = dashboard?.totalRisks || 1;
-                  const percentage = Math.round((count / total) * 100);
-
-                  return (
-                    <div key={key} className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600 dark:text-surface-700">{label}</span>
-                        <span className="text-gray-900 dark:text-white font-medium">{count}</span>
-                      </div>
-                      <div className="h-2 bg-gray-200 dark:bg-surface-200 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full ${getRiskLevelColor(key === 'very_high' ? 'critical' : key)} transition-all duration-500`}
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Card>
+          <CardHeader>
+            <CardTitle>Risk Level Distribution</CardTitle>
+          </CardHeader>
+          <CardBody density="comfy">
+            <div className="space-y-3">
+              {(['critical', 'high', 'medium', 'low'] as const).map((level) => {
+                const count =
+                  dashboard?.byRiskLevel?.find(
+                    (r: { level: string; count: number }) => r.level === level
+                  )?.count || 0;
+                const total = dashboard?.totalRisks || 1;
+                const percentage = Math.round((count / total) * 100);
+                return (
+                  <div key={level} className="space-y-1">
+                    <div className="flex items-center justify-between text-small">
+                      <span className="text-surface-700 capitalize">{level}</span>
+                      <span className="text-surface-900 font-medium tabular-nums">{count}</span>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Risk by Category */}
-          {activeConfig.risksByCategory && (
-            <div className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-6">
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                Risks by Category
-              </h2>
-              <div className="space-y-3">
-                {(dashboard?.byCategory || []).slice(0, 6).map((cat: any) => (
-                  <div key={cat.category} className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-surface-700 capitalize">
-                      {cat.category?.replace('_', ' ') || 'Uncategorized'}
-                    </span>
-                    <span className="px-2 py-1 bg-gray-100 dark:bg-surface-200 rounded text-gray-900 dark:text-white text-sm font-medium">
-                      {cat.count}
-                    </span>
+                    <div className="h-1.5 bg-surface-100 rounded-full overflow-hidden">
+                      <div
+                        className={cn('h-full transition-all duration-500', LEVEL_BG[level])}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
                   </div>
-                ))}
-                {(!dashboard?.byCategory || dashboard.byCategory.length === 0) && (
-                  <p className="text-gray-500 dark:text-surface-500 text-center py-4">
-                    No risks categorized yet
-                  </p>
-                )}
-              </div>
+                );
+              })}
             </div>
-          )}
-        </div>
-      )}
+          </CardBody>
+        </Card>
 
-      {/* Recent Risks & Quick Actions */}
-      {(activeConfig.recentRisks || activeConfig.quickActions) && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent Risks */}
-          {activeConfig.recentRisks && (
-            <div className="lg:col-span-2 bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-medium text-gray-900 dark:text-white">Recent Risks</h2>
-                <Link
-                  to="/risks"
-                  className="text-brand-500 dark:text-brand-400 text-sm hover:text-brand-600 dark:hover:text-brand-300"
-                >
-                  View all →
-                </Link>
-              </div>
-              <div className="space-y-3">
-                {(recentRisks?.risks || []).map((risk: any) => (
-                  <Link
-                    key={risk.id}
-                    to={`/risks/${risk.id}`}
-                    className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-surface-200/50 rounded-lg hover:bg-gray-100 dark:hover:bg-surface-200 transition-colors"
-                  >
-                    <div
-                      className={`w-2 h-2 rounded-full ${getRiskLevelColor(risk.inherentRisk)}`}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-gray-900 dark:text-white font-medium truncate">
-                        {risk.title}
-                      </p>
-                      <p className="text-gray-500 dark:text-surface-600 text-sm truncate">
-                        {risk.riskId}
-                      </p>
-                    </div>
-                    <span
-                      className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(risk.status)}`}
+        <Card>
+          <CardHeader>
+            <CardTitle>Risks by Category</CardTitle>
+          </CardHeader>
+          <CardBody density="comfy">
+            {dashboard?.byCategory && dashboard.byCategory.length > 0 ? (
+              <div className="space-y-2">
+                {dashboard.byCategory
+                  .slice(0, 6)
+                  .map((cat: { category: string; count: number }) => (
+                    <button
+                      key={cat.category}
+                      type="button"
+                      onClick={() =>
+                        navigate(`/risks?category=${encodeURIComponent(cat.category || '')}`)
+                      }
+                      className="w-full flex items-center justify-between px-2.5 py-1.5 bg-surface-50 hover:bg-surface-100 border border-surface-200 rounded transition-colors text-left"
                     >
-                      {risk.status?.replace(/_/g, ' ') || 'Unknown'}
-                    </span>
-                  </Link>
-                ))}
-                {(!recentRisks?.risks || recentRisks.risks.length === 0) && (
-                  <p className="text-gray-500 dark:text-surface-500 text-center py-8">
-                    No risks recorded yet
-                  </p>
+                      <span className="text-small text-surface-700 capitalize">
+                        {cat.category?.replace(/_/g, ' ') || 'Uncategorized'}
+                      </span>
+                      <span className="text-small text-surface-900 font-medium tabular-nums">
+                        {cat.count}
+                      </span>
+                    </button>
+                  ))}
+              </div>
+            ) : (
+              <EmptyState title="No risks categorized yet" size="sm" />
+            )}
+          </CardBody>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Recent Risks</CardTitle>
+            <Link to="/risks" className="text-small text-brand-700 hover:text-brand-800">
+              View all →
+            </Link>
+          </CardHeader>
+          <CardBody density="comfy">
+            {recentRisks?.risks && recentRisks.risks.length > 0 ? (
+              <div className="space-y-2">
+                {recentRisks.risks.map(
+                  (risk: {
+                    id: string;
+                    riskId: string;
+                    title: string;
+                    status: string;
+                    inherentRisk: string;
+                  }) => (
+                    <Link
+                      key={risk.id}
+                      to={`/risks/${risk.id}`}
+                      className="flex items-center gap-3 p-2.5 bg-surface-100/60 rounded-md hover:bg-surface-100 transition-colors"
+                    >
+                      <span
+                        className={cn(
+                          'h-2 w-2 rounded-full shrink-0',
+                          LEVEL_BG[risk.inherentRisk] || 'bg-surface-500'
+                        )}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-surface-900 font-medium truncate">{risk.title}</p>
+                        <p className="text-xs text-surface-500 font-mono">{risk.riskId}</p>
+                      </div>
+                      <Badge variant={riskStatusVariant(risk.status)} size="sm">
+                        {(risk.status || '').replace(/_/g, ' ')}
+                      </Badge>
+                    </Link>
+                  )
                 )}
               </div>
-            </div>
-          )}
+            ) : (
+              <EmptyState title="No risks recorded yet" size="sm" />
+            )}
+          </CardBody>
+        </Card>
 
-          {/* Quick Actions */}
-          {activeConfig.quickActions && (
-            <div className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-6">
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                Quick Actions
-              </h2>
-              <div className="space-y-3">
-                <Link
-                  to="/risks?create=true"
-                  className="flex items-center gap-3 p-3 bg-brand-500/20 text-brand-600 dark:text-brand-400 rounded-lg hover:bg-brand-500/30 transition-colors"
-                >
-                  <ExclamationTriangleIcon className="w-5 h-5" />
-                  <span>Report New Risk</span>
-                </Link>
-                <Link
-                  to="/risk-queue"
-                  className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-surface-200 text-gray-700 dark:text-surface-700 rounded-lg hover:bg-gray-200 dark:hover:bg-surface-600 transition-colors"
-                >
-                  <ClockIcon className="w-5 h-5" />
-                  <span>View My Queue</span>
-                </Link>
-                <Link
-                  to="/risk-heatmap"
-                  className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-surface-200 text-gray-700 dark:text-surface-700 rounded-lg hover:bg-gray-200 dark:hover:bg-surface-600 transition-colors"
-                >
-                  <ChartBarIcon className="w-5 h-5" />
-                  <span>View Heatmap</span>
-                </Link>
-                <Link
-                  to="/risk-reports"
-                  className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-surface-200 text-gray-700 dark:text-surface-700 rounded-lg hover:bg-gray-200 dark:hover:bg-surface-600 transition-colors"
-                >
-                  <ArrowTrendingUpIcon className="w-5 h-5" />
-                  <span>Generate Report</span>
-                </Link>
-              </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardBody density="comfy">
+            <div className="space-y-2">
+              <QuickAction
+                to="/risks?create=true"
+                icon={<AlertTriangle className="h-4 w-4" />}
+                tone="brand"
+              >
+                Report New Risk
+              </QuickAction>
+              <QuickAction to="/risk-queue" icon={<Clock className="h-4 w-4" />}>
+                View My Queue
+              </QuickAction>
+              <QuickAction to="/risk-heatmap" icon={<BarChart className="h-4 w-4" />}>
+                View Heatmap
+              </QuickAction>
+              <QuickAction to="/risk-reports" icon={<TrendingUp className="h-4 w-4" />}>
+                Generate Report
+              </QuickAction>
             </div>
-          )}
-        </div>
-      )}
+          </CardBody>
+        </Card>
+      </div>
 
-      {/* Risk Appetite Indicator */}
-      {activeConfig.riskAppetite && (
-        <div className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-            Risk Appetite Status
-          </h2>
+      <Card>
+        <CardHeader>
+          <CardTitle>Risk Appetite Status</CardTitle>
+        </CardHeader>
+        <CardBody density="comfy">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/20 mb-3">
-                <CheckCircleIcon className="w-8 h-8 text-emerald-600" />
-              </div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {dashboard?.withinAppetite || 0}
-              </p>
-              <p className="text-gray-500 dark:text-surface-600 text-sm">Within Appetite</p>
-            </div>
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-500/20 mb-3">
-                <ExclamationTriangleIcon className="w-8 h-8 text-amber-600" />
-              </div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {dashboard?.nearingThreshold || 0}
-              </p>
-              <p className="text-gray-500 dark:text-surface-600 text-sm">Nearing Threshold</p>
-            </div>
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/20 mb-3">
-                <ArrowTrendingDownIcon className="w-8 h-8 text-red-600" />
-              </div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {dashboard?.exceedsAppetite || 0}
-              </p>
-              <p className="text-gray-500 dark:text-surface-600 text-sm">Exceeds Appetite</p>
-            </div>
+            <AppetiteTile
+              icon={<CheckCircle2 className="h-7 w-7" />}
+              tone="emerald"
+              label="Within Appetite"
+              value={dashboard?.withinAppetite || 0}
+            />
+            <AppetiteTile
+              icon={<AlertTriangle className="h-7 w-7" />}
+              tone="amber"
+              label="Nearing Threshold"
+              value={dashboard?.nearingThreshold || 0}
+            />
+            <AppetiteTile
+              icon={<TrendingDown className="h-7 w-7" />}
+              tone="red"
+              label="Exceeds Appetite"
+              value={dashboard?.exceedsAppetite || 0}
+            />
           </div>
-        </div>
-      )}
+        </CardBody>
+      </Card>
     </div>
   );
 }
@@ -610,37 +276,100 @@ export default function RiskDashboard() {
 function MetricCard({
   title,
   value,
-  icon: Icon,
-  color,
-  bgColor,
+  icon,
+  tone,
   trend,
+  onClick,
 }: {
   title: string;
   value: number;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-  bgColor: string;
+  icon: React.ReactNode;
+  tone: 'blue' | 'amber' | 'cyan' | 'emerald';
   trend?: number;
+  onClick?: () => void;
 }) {
+  const tones = {
+    blue: 'bg-blue-500/10 text-blue-600',
+    amber: 'bg-amber-500/10 text-amber-700',
+    cyan: 'bg-cyan-500/10 text-cyan-600',
+    emerald: 'bg-emerald-500/10 text-emerald-600',
+  };
   return (
-    <div className="bg-white dark:bg-white rounded-xl border border-gray-200 dark:border-surface-200 p-6">
-      <div className="flex items-center gap-4">
-        <div className={`p-3 rounded-lg ${bgColor}`}>
-          <Icon className={`w-6 h-6 ${color}`} />
-        </div>
+    <Card interactive={!!onClick} onClick={onClick}>
+      <CardBody density="comfy" className="flex items-center gap-3">
+        <div className={cn('p-2.5 rounded-md', tones[tone])}>{icon}</div>
         <div>
-          <p className="text-gray-500 dark:text-surface-600 text-sm">{title}</p>
-          <div className="flex items-center gap-2">
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+          <p className="text-xs text-surface-500 uppercase tracking-wider">{title}</p>
+          <div className="flex items-baseline gap-2">
+            <p className="text-h1 text-surface-900">{value}</p>
             {trend !== undefined && (
-              <span className={`text-sm ${trend >= 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+              <span className={cn('text-xs', trend >= 0 ? 'text-red-600' : 'text-emerald-600')}>
                 {trend >= 0 ? '+' : ''}
                 {trend}%
               </span>
             )}
           </div>
         </div>
+      </CardBody>
+    </Card>
+  );
+}
+
+function QuickAction({
+  to,
+  icon,
+  children,
+  tone,
+}: {
+  to: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  tone?: 'brand';
+}) {
+  return (
+    <Link
+      to={to}
+      className={cn(
+        'flex items-center gap-2.5 p-2.5 rounded-md text-small transition-colors',
+        tone === 'brand'
+          ? 'bg-brand-500/10 text-brand-700 hover:bg-brand-500/20'
+          : 'bg-surface-100 text-surface-700 hover:bg-surface-200 hover:text-surface-900'
+      )}
+    >
+      {icon}
+      <span>{children}</span>
+    </Link>
+  );
+}
+
+function AppetiteTile({
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  tone: 'emerald' | 'amber' | 'red';
+}) {
+  const tones = {
+    emerald: 'bg-emerald-500/10 text-emerald-600',
+    amber: 'bg-amber-500/10 text-amber-700',
+    red: 'bg-red-500/10 text-red-600',
+  };
+  return (
+    <div className="text-center">
+      <div
+        className={cn(
+          'inline-flex items-center justify-center w-14 h-14 rounded-full mb-3',
+          tones[tone]
+        )}
+      >
+        {icon}
       </div>
+      <p className="text-h1 text-surface-900">{value}</p>
+      <p className="text-small text-surface-600">{label}</p>
     </div>
   );
 }

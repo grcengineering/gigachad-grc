@@ -1,562 +1,369 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { FileText, Plus, Search, Trash2 } from 'lucide-react';
+import api from '@/lib/api';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
-  PlusIcon,
-  MagnifyingGlassIcon,
-  PencilIcon,
-  TrashIcon,
-  DocumentDuplicateIcon,
-  ArchiveBoxIcon,
-  TagIcon,
-  ClockIcon,
-  XMarkIcon,
-  CodeBracketIcon,
-} from '@heroicons/react/24/outline';
-import { answerTemplatesApi, AnswerTemplate, CreateAnswerTemplateData } from '../lib/api';
-import { useAuth } from '../contexts/AuthContext';
-import { Button } from '@/components/ui/Button';
-import { EmptyState } from '@/components/EmptyState';
-import toast from 'react-hot-toast';
-import clsx from 'clsx';
+  Badge,
+  Button,
+  CategoryChip,
+  DataTable,
+  Dialog,
+  EmptyState,
+  FilterBar,
+  Input,
+  Label,
+  PageHeader,
+  Select,
+  Textarea,
+  type ActiveFilter,
+  type DataTableColumn,
+} from '@/components/ui';
 
-import { Textarea } from '@/components/ui/Textarea';
+interface AnswerTemplate {
+  id: string;
+  name: string;
+  category: string;
+  body: string;
+  usageCount?: number;
+  updatedAt?: string;
+}
 
-import { Input } from '@/components/ui/Input';
+interface AnswerTemplateListResponse {
+  templates: AnswerTemplate[];
+}
 
-import { SelectNative } from '@/components/ui/SelectNative';
-import { Dialog } from '@/components/ui/Dialog';
-
-const CATEGORIES = [
-  { value: 'security', label: 'Security', color: 'bg-red-500/20 text-red-600' },
-  { value: 'privacy', label: 'Privacy', color: 'bg-purple-500/20 text-purple-600' },
-  { value: 'compliance', label: 'Compliance', color: 'bg-blue-500/20 text-blue-600' },
-  { value: 'legal', label: 'Legal', color: 'bg-amber-500/20 text-amber-600' },
-  { value: 'technical', label: 'Technical', color: 'bg-green-500/20 text-green-600' },
-  { value: 'general', label: 'General', color: 'bg-surface-500/20 text-surface-600' },
+const CATEGORY_OPTS = [
+  { value: 'security', label: 'Security' },
+  { value: 'privacy', label: 'Privacy' },
+  { value: 'compliance', label: 'Compliance' },
+  { value: 'infrastructure', label: 'Infrastructure' },
+  { value: 'governance', label: 'Governance' },
+  { value: 'general', label: 'General' },
 ];
 
+function formatDate(s?: string) {
+  if (!s) return '—';
+  try {
+    return new Date(s).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  } catch {
+    return s;
+  }
+}
+
+interface DraftTemplate {
+  id?: string;
+  name: string;
+  category: string;
+  body: string;
+}
+
+const EMPTY_DRAFT: DraftTemplate = { name: '', category: 'security', body: '' };
+
 export default function AnswerTemplates() {
-  const { user } = useAuth();
   const queryClient = useQueryClient();
-  const organizationId = user?.organizationId;
+  const [searchInput, setSearchInput] = useState('');
+  const [category, setCategory] = useState('');
+  const search = useDebounce(searchInput, 250);
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('');
-  const [showArchived, setShowArchived] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<AnswerTemplate | null>(null);
-  const [selectedTemplate, setSelectedTemplate] = useState<AnswerTemplate | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [draft, setDraft] = useState<DraftTemplate>(EMPTY_DRAFT);
 
-  const { data: templates, isLoading } = useQuery({
-    queryKey: ['answer-templates', organizationId, categoryFilter, showArchived, searchQuery],
+  const { data, isLoading } = useQuery<AnswerTemplateListResponse>({
+    queryKey: ['answer-templates', { search, category }],
     queryFn: async () => {
-      const response = await answerTemplatesApi.list({
-        organizationId: organizationId!,
-        category: categoryFilter || undefined,
-        status: showArchived ? 'archived' : 'active',
-        search: searchQuery || undefined,
-      });
-      return response.data;
+      const params: Record<string, string> = {};
+      if (search) params.search = search;
+      if (category) params.category = category;
+      const res = await api.get('/api/answer-templates', { params });
+      const payload = res.data;
+      if (Array.isArray(payload)) return { templates: payload };
+      return { templates: payload?.templates ?? [] };
     },
-    enabled: !!organizationId,
   });
 
+  const templates = useMemo(() => data?.templates ?? [], [data]);
+
   const createMutation = useMutation({
-    mutationFn: async (data: CreateAnswerTemplateData) => {
-      const response = await answerTemplatesApi.create(data);
-      return response.data;
+    mutationFn: async (payload: DraftTemplate) => {
+      const res = await api.post('/api/answer-templates', payload);
+      return res.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['answer-templates'] });
-      toast.success('Template created successfully');
-      setShowModal(false);
-      setEditingTemplate(null);
-    },
-    onError: () => {
-      toast.error('Failed to create template');
+      setDialogOpen(false);
+      setDraft(EMPTY_DRAFT);
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const response = await answerTemplatesApi.update(id, data);
-      return response.data;
+    mutationFn: async (payload: DraftTemplate) => {
+      const res = await api.put(`/api/answer-templates/${payload.id}`, payload);
+      return res.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['answer-templates'] });
-      toast.success('Template updated successfully');
-      setShowModal(false);
-      setEditingTemplate(null);
-    },
-    onError: () => {
-      toast.error('Failed to update template');
+      setDialogOpen(false);
+      setDraft(EMPTY_DRAFT);
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await answerTemplatesApi.delete(id);
+      await api.delete(`/api/answer-templates/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['answer-templates'] });
-      toast.success('Template deleted');
-      setSelectedTemplate(null);
-    },
-    onError: () => {
-      toast.error('Failed to delete template');
+      setDialogOpen(false);
+      setDraft(EMPTY_DRAFT);
     },
   });
 
-  const archiveMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const response = await answerTemplatesApi.archive(id);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['answer-templates'] });
-      toast.success('Template archived');
-    },
-  });
-
-  const getCategoryStyle = (category?: string) => {
-    const cat = CATEGORIES.find((c) => c.value === category);
-    return cat?.color || 'bg-surface-200 text-surface-700';
+  const openCreate = () => {
+    setDraft(EMPTY_DRAFT);
+    setDialogOpen(true);
   };
 
-  if (!organizationId) {
-    return (
-      <EmptyState
-        variant="warning"
-        title="Sign in required"
-        description="You need to be signed in to view or manage answer templates."
-      />
-    );
+  const openEdit = (t: AnswerTemplate) => {
+    setDraft({
+      id: t.id,
+      name: t.name,
+      category: t.category,
+      body: t.body ?? '',
+    });
+    setDialogOpen(true);
+  };
+
+  const handleSave = () => {
+    if (!draft.name.trim() || !draft.body.trim()) return;
+    if (draft.id) updateMutation.mutate(draft);
+    else createMutation.mutate(draft);
+  };
+
+  const handleDelete = () => {
+    if (!draft.id) return;
+    if (!window.confirm('Delete this template? This cannot be undone.')) return;
+    deleteMutation.mutate(draft.id);
+  };
+
+  const activeFilters: ActiveFilter[] = [];
+  if (search) {
+    activeFilters.push({
+      key: 'search',
+      label: `Search: ${search}`,
+      onClear: () => setSearchInput(''),
+    });
+  }
+  if (category) {
+    const l = CATEGORY_OPTS.find((o) => o.value === category)?.label ?? category;
+    activeFilters.push({
+      key: 'category',
+      label: `Category: ${l}`,
+      onClear: () => setCategory(''),
+    });
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-surface-900">Answer Templates</h1>
-          <p className="mt-1 text-surface-600">
-            Create and manage reusable answer templates for questionnaires
-          </p>
-        </div>
-        <Button
-          onClick={() => {
-            setEditingTemplate(null);
-            setShowModal(true);
-          }}
-          leftIcon={<PlusIcon className="w-5 h-5" />}
-        >
-          New Template
-        </Button>
-      </div>
-      {/* Filters */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-md">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-600" />
-          <Input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search templates..."
-            className="w-full pl-10 pr-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-          />
-        </div>
-
-        <SelectNative
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          className="px-4 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-        >
-          <option value="">All Categories</option>
-          {CATEGORIES.map((cat) => (
-            <option key={cat.value} value={cat.value}>
-              {cat.label}
-            </option>
-          ))}
-        </SelectNative>
-
-        <label className="flex items-center gap-2 text-sm text-surface-600 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={showArchived}
-            onChange={(e) => setShowArchived(e.target.checked)}
-            className="rounded border-surface-300 text-brand-500"
-          />
-          Show Archived
-        </label>
-      </div>
-      {/* Templates Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-        {isLoading ? (
-          Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="bg-white border border-surface-200 rounded-xl p-5 animate-pulse"
-            >
-              <div className="h-5 bg-surface-200 rounded w-3/4 mb-3" />
-              <div className="h-16 bg-white rounded mb-3" />
-              <div className="h-4 bg-surface-200 rounded w-1/2" />
-            </div>
-          ))
-        ) : templates?.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <DocumentDuplicateIcon className="w-12 h-12 text-surface-600 mx-auto mb-3" />
-            <p className="text-surface-600">No templates found</p>
-            <p className="text-sm text-surface-500 mt-1">
-              Create your first template to get started
-            </p>
-          </div>
-        ) : (
-          templates?.map((template) => (
-            <div
-              key={template.id}
-              className={clsx(
-                'bg-white border rounded-xl p-5 cursor-pointer transition-all hover:border-surface-300',
-                selectedTemplate?.id === template.id
-                  ? 'border-brand-500 ring-2 ring-brand-500/20'
-                  : 'border-surface-200'
-              )}
-              onClick={() => setSelectedTemplate(template)}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <h3 className="font-semibold text-surface-900 truncate flex-1">{template.title}</h3>
-                <span
-                  className={clsx(
-                    'px-2 py-0.5 text-xs rounded-full ml-2',
-                    getCategoryStyle(template.category)
-                  )}
-                >
-                  {template.category || 'General'}
-                </span>
-              </div>
-
-              <p className="text-sm text-surface-600 line-clamp-3 mb-4">{template.content}</p>
-
-              <div className="flex items-center justify-between text-xs text-surface-500">
-                <div className="flex items-center gap-3">
-                  {template.variables.length > 0 && (
-                    <span className="flex items-center gap-1">
-                      <CodeBracketIcon className="w-3.5 h-3.5" />
-                      {template.variables.length} vars
-                    </span>
-                  )}
-                  {template.usageCount > 0 && (
-                    <span className="flex items-center gap-1">
-                      <ClockIcon className="w-3.5 h-3.5" />
-                      Used {template.usageCount}x
-                    </span>
-                  )}
-                </div>
-                {template.tags.length > 0 && (
-                  <span className="flex items-center gap-1">
-                    <TagIcon className="w-3.5 h-3.5" />
-                    {template.tags.length}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-      {/* Template Detail Panel */}
-      {selectedTemplate && (
-        <div className="fixed inset-y-0 right-0 w-full max-w-lg bg-white border-l border-surface-200 shadow-xl z-40 overflow-y-auto">
-          <div className="sticky top-0 bg-white border-b border-surface-200 px-6 py-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-surface-900">Template Details</h2>
-            <button
-              onClick={() => setSelectedTemplate(null)}
-              className="p-2 text-surface-600 hover:text-surface-800 rounded-lg hover:bg-white"
-            >
-              <XMarkIcon className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div className="p-6 space-y-6">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xl font-semibold text-surface-900">{selectedTemplate.title}</h3>
-                <span
-                  className={clsx(
-                    'px-2 py-1 text-xs rounded-full',
-                    getCategoryStyle(selectedTemplate.category)
-                  )}
-                >
-                  {selectedTemplate.category || 'General'}
-                </span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-surface-600 mb-2">Content</label>
-              <div className="bg-white rounded-lg p-4 text-sm text-surface-800 whitespace-pre-wrap font-mono">
-                {selectedTemplate.content}
-              </div>
-            </div>
-
-            {selectedTemplate.variables.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-surface-600 mb-2">
-                  Variables ({selectedTemplate.variables.length})
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {selectedTemplate.variables.map((v, i) => (
-                    <span
-                      key={i}
-                      className="px-2 py-1 bg-brand-500/20 text-brand-400 text-xs rounded font-mono"
-                    >
-                      {`{{${v}}}`}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {selectedTemplate.tags.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-surface-600 mb-2">Tags</label>
-                <div className="flex flex-wrap gap-2">
-                  {selectedTemplate.tags.map((tag, i) => (
-                    <span
-                      key={i}
-                      className="px-2 py-1 bg-surface-200 text-surface-700 text-xs rounded"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <label className="text-surface-500">Usage Count</label>
-                <p className="text-surface-800">{selectedTemplate.usageCount}</p>
-              </div>
-              <div>
-                <label className="text-surface-500">Last Used</label>
-                <p className="text-surface-800">
-                  {selectedTemplate.lastUsedAt
-                    ? new Date(selectedTemplate.lastUsedAt).toLocaleDateString()
-                    : 'Never'}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-4 border-t border-surface-200">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setEditingTemplate(selectedTemplate);
-                  setShowModal(true);
-                }}
-                leftIcon={<PencilIcon className="w-4 h-4" />}
-                className="flex-1"
-              >
-                Edit
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => archiveMutation.mutate(selectedTemplate.id)}
-                leftIcon={<ArchiveBoxIcon className="w-4 h-4" />}
-              >
-                Archive
-              </Button>
-              <Button
-                variant="danger"
-                onClick={() => {
-                  if (confirm('Are you sure you want to delete this template?')) {
-                    deleteMutation.mutate(selectedTemplate.id);
-                  }
-                }}
-                leftIcon={<TrashIcon className="w-4 h-4" />}
-              >
-                Delete
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Create/Edit Modal */}
-      {showModal && (
-        <TemplateModal
-          template={editingTemplate}
-          organizationId={organizationId}
-          onClose={() => {
-            setShowModal(false);
-            setEditingTemplate(null);
-          }}
-          onSave={(data) => {
-            if (editingTemplate) {
-              updateMutation.mutate({ id: editingTemplate.id, data });
-            } else {
-              createMutation.mutate(data);
-            }
-          }}
-          isLoading={createMutation.isPending || updateMutation.isPending}
-        />
-      )}
-    </div>
-  );
-}
-
-// Template Create/Edit Modal
-function TemplateModal({
-  template,
-  organizationId,
-  onClose,
-  onSave,
-  isLoading,
-}: {
-  template: AnswerTemplate | null;
-  organizationId: string;
-  onClose: () => void;
-  onSave: (data: CreateAnswerTemplateData) => void;
-  isLoading: boolean;
-}) {
-  const [formData, setFormData] = useState({
-    title: template?.title || '',
-    content: template?.content || '',
-    category: template?.category || '',
-    tags: template?.tags?.join(', ') || '',
-  });
-
-  const extractVariables = (content: string): string[] => {
-    const regex = /\{\{(\w+)\}\}/g;
-    const variables: string[] = [];
-    let match;
-    while ((match = regex.exec(content)) !== null) {
-      if (!variables.includes(match[1])) {
-        variables.push(match[1]);
-      }
-    }
-    return variables;
+  const clearAll = () => {
+    setSearchInput('');
+    setCategory('');
   };
 
-  const detectedVariables = extractVariables(formData.content);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave({
-      organizationId,
-      title: formData.title,
-      content: formData.content,
-      category: formData.category || undefined,
-      tags: formData.tags
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean),
-      variables: detectedVariables,
-    });
-  };
-
-  return (
-    <Dialog open onClose={onClose}>
-      <div className="sticky top-0 bg-white border-b border-surface-200 px-6 py-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-surface-900">
-          {template ? 'Edit Template' : 'Create Template'}
-        </h2>
-        <button
-          onClick={onClose}
-          className="p-2 text-surface-600 hover:text-surface-800 rounded-lg hover:bg-white"
-        >
-          <XMarkIcon className="w-5 h-5" />
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="p-6 space-y-6">
+  const columns: DataTableColumn<AnswerTemplate>[] = [
+    {
+      id: 'name',
+      accessorKey: 'name',
+      header: 'Name',
+      mobileLabel: 'Name',
+      cell: ({ row }) => (
         <div>
-          <label className="block text-sm font-medium text-surface-600 mb-1">
-            Title <span className="text-red-600">*</span>
-          </label>
-          <Input
-            type="text"
-            required
-            value={formData.title}
-            onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-            placeholder="e.g., SOC 2 Compliance Response"
-          />
+          <p className="text-surface-900 font-medium">{row.original.name}</p>
+          <p className="text-xs text-surface-500 truncate max-w-md">{row.original.body}</p>
         </div>
-
-        <div>
-          <label className="block text-sm font-medium text-surface-600 mb-1">Category</label>
-          <SelectNative
-            value={formData.category}
-            onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
-            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
+      ),
+    },
+    {
+      id: 'category',
+      accessorKey: 'category',
+      header: 'Category',
+      mobileLabel: 'Category',
+      cell: ({ row }) => <CategoryChip value={row.original.category} />,
+    },
+    {
+      id: 'updatedAt',
+      accessorKey: 'updatedAt',
+      header: 'Last updated',
+      mobileLabel: 'Updated',
+      cell: ({ row }) => (
+        <span className="text-surface-700">{formatDate(row.original.updatedAt)}</span>
+      ),
+    },
+    {
+      id: 'usageCount',
+      accessorKey: 'usageCount',
+      header: 'Usage',
+      mobileLabel: 'Usage',
+      cell: ({ row }) => <Badge variant="neutral">{row.original.usageCount ?? 0}</Badge>,
+    },
+    {
+      id: 'actions',
+      header: '',
+      cell: ({ row }) => (
+        <div className="flex items-center justify-end">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              openEdit(row.original);
+            }}
           >
-            <option value="">Select category...</option>
-            {CATEGORIES.map((cat) => (
-              <option key={cat.value} value={cat.value}>
-                {cat.label}
-              </option>
-            ))}
-          </SelectNative>
+            Edit
+          </Button>
         </div>
+      ),
+    },
+  ];
 
-        <div>
-          <label className="block text-sm font-medium text-surface-600 mb-1">
-            Content <span className="text-red-600">*</span>
-          </label>
-          <p className="text-xs text-surface-500 mb-2">
-            Use {'{{variable_name}}'} for placeholders that will be replaced when using the
-            template.
-          </p>
-          <Textarea
-            required
-            value={formData.content}
-            onChange={(e) => setFormData((prev) => ({ ...prev, content: e.target.value }))}
-            rows={8}
-            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 font-mono text-sm"
-            placeholder="Enter template content...
+  return (
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Answer Templates"
+        description="Reusable answers for security questionnaires, audits, and customer due diligence."
+        actions={
+          <Button size="sm" leftIcon={<Plus className="h-4 w-4" />} onClick={openCreate}>
+            Create template
+          </Button>
+        }
+      />
 
-Example:
-{{company_name}} maintains SOC 2 Type II compliance. Our last audit was completed on {{audit_date}} by {{auditor_name}}."
+      <FilterBar active={activeFilters} onClearAll={activeFilters.length ? clearAll : undefined}>
+        <Input
+          inputSize="sm"
+          className="w-64"
+          placeholder="Search templates…"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          leftIcon={<Search className="h-4 w-4" />}
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-48"
+          placeholder="All categories"
+          value={category}
+          onChange={setCategory}
+          options={CATEGORY_OPTS}
+          clearable
+        />
+      </FilterBar>
+
+      <DataTable
+        data={templates}
+        columns={columns}
+        loading={isLoading}
+        getRowId={(r) => r.id}
+        onRowClick={openEdit}
+        emptyState={
+          <EmptyState
+            icon={<FileText className="h-8 w-8" />}
+            title="No templates yet"
+            description={
+              activeFilters.length
+                ? 'Try clearing your filters to see all templates.'
+                : 'Create your first answer template to speed up questionnaire responses.'
+            }
+            action={
+              activeFilters.length ? (
+                <Button variant="outline" size="sm" onClick={clearAll}>
+                  Clear filters
+                </Button>
+              ) : (
+                <Button size="sm" leftIcon={<Plus className="h-4 w-4" />} onClick={openCreate}>
+                  Create template
+                </Button>
+              )
+            }
           />
-        </div>
+        }
+      />
 
-        {detectedVariables.length > 0 && (
-          <div className="p-3 bg-brand-500/10 border border-brand-500/30 rounded-lg">
-            <label className="block text-sm font-medium text-brand-400 mb-2">
-              Detected Variables ({detectedVariables.length})
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {detectedVariables.map((v, i) => (
-                <span
-                  key={i}
-                  className="px-2 py-1 bg-brand-500/20 text-brand-300 text-xs rounded font-mono"
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        title={draft.id ? 'Edit template' : 'Create template'}
+        description={
+          draft.id
+            ? 'Update this reusable answer.'
+            : 'Capture a reusable answer for questionnaires and audits.'
+        }
+        size="lg"
+        footer={
+          <div className="flex items-center justify-between gap-2 w-full">
+            <div>
+              {draft.id && (
+                <Button
+                  variant="danger"
+                  leftIcon={<Trash2 className="h-4 w-4" />}
+                  loading={deleteMutation.isPending}
+                  onClick={handleDelete}
                 >
-                  {`{{${v}}}`}
-                </span>
-              ))}
+                  Delete
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" onClick={() => setDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                loading={createMutation.isPending || updateMutation.isPending}
+                disabled={!draft.name.trim() || !draft.body.trim()}
+                onClick={handleSave}
+              >
+                {draft.id ? 'Save changes' : 'Create template'}
+              </Button>
             </div>
           </div>
-        )}
-
-        <div>
-          <label className="block text-sm font-medium text-surface-600 mb-1">Tags</label>
-          <Input
-            type="text"
-            value={formData.tags}
-            onChange={(e) => setFormData((prev) => ({ ...prev, tags: e.target.value }))}
-            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-            placeholder="encryption, data-protection, audit (comma-separated)"
-          />
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="tmpl-name" required>
+              Name
+            </Label>
+            <Input
+              id="tmpl-name"
+              value={draft.name}
+              onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+              placeholder="e.g., Encryption in transit"
+            />
+          </div>
+          <div>
+            <Label required>Category</Label>
+            <Select
+              value={draft.category}
+              onChange={(v) => setDraft((d) => ({ ...d, category: v }))}
+              options={CATEGORY_OPTS}
+            />
+          </div>
+          <div>
+            <Label htmlFor="tmpl-body" required>
+              Answer body
+            </Label>
+            <Textarea
+              id="tmpl-body"
+              value={draft.body}
+              onChange={(e) => setDraft((d) => ({ ...d, body: e.target.value }))}
+              rows={8}
+              placeholder="The canonical answer text. Use {{variables}} for substitutions."
+            />
+          </div>
         </div>
-
-        <div className="flex justify-end gap-3 pt-4 border-t border-surface-200">
-          <Button variant="secondary" type="button" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" isLoading={isLoading}>
-            {template ? 'Save Changes' : 'Create Template'}
-          </Button>
-        </div>
-      </form>
-    </Dialog>
+      </Dialog>
+    </div>
   );
 }

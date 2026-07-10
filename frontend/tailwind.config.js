@@ -20,8 +20,8 @@ export default {
           900: '#064e3b',
           950: '#022c22',
         },
-        // Accent: warm terracotta. Use for emphasis, not for status.
-        // Prefer accent-600 / accent-700 for text on light bg.
+        // Accent: warm terracotta (Anthropic-inspired). Use for emphasis,
+        // not for status. Prefer accent-600 / accent-700 for text on light bg.
         accent: {
           50: '#fdf4f0',
           100: '#fbe7df',
@@ -85,6 +85,7 @@ export default {
         xl: '1rem',
       },
       boxShadow: {
+        // Light-mode shadow system — warm, subtle. No inset highlights (those are dark-mode tricks).
         lift: '0 1px 2px 0 rgb(30 25 20 / 0.06), 0 0 0 1px rgb(30 25 20 / 0.04)',
         'lift-hover': '0 4px 12px -2px rgb(30 25 20 / 0.1), 0 0 0 1px rgb(30 25 20 / 0.06)',
         'glow-brand': '0 0 0 1px rgb(5 150 105 / 0.4), 0 0 24px -8px rgb(5 150 105 / 0.3)',

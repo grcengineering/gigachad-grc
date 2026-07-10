@@ -1,69 +1,37 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import {
-  ArrowLeftIcon,
-  PencilIcon,
-  TrashIcon,
-  ClipboardDocumentListIcon,
-  DocumentTextIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
-} from '@heroicons/react/24/outline';
-import { auditsApi, auditFindingsApi, auditRequestsApi } from '../lib/api';
-import { Button } from '@/components/ui/Button';
-import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
-import { ConfirmModal } from '@/components/Modal';
-import toast from 'react-hot-toast';
-import clsx from 'clsx';
-
-import { Textarea } from '@/components/ui/Textarea';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-
-const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
-  planning: { label: 'Planning', color: 'text-blue-600', bgColor: 'bg-blue-500/20' },
-  fieldwork: { label: 'Fieldwork', color: 'text-yellow-600', bgColor: 'bg-yellow-500/20' },
-  testing: { label: 'Testing', color: 'text-orange-600', bgColor: 'bg-orange-500/20' },
-  reporting: { label: 'Reporting', color: 'text-purple-600', bgColor: 'bg-purple-500/20' },
-  completed: { label: 'Completed', color: 'text-green-600', bgColor: 'bg-green-500/20' },
-  cancelled: { label: 'Cancelled', color: 'text-surface-600', bgColor: 'bg-surface-500/20' },
-};
-
-const TYPE_LABELS: Record<string, string> = {
-  internal: 'Internal',
-  external: 'External',
-  surveillance: 'Surveillance',
-  certification: 'Certification',
-};
-
-interface Audit {
-  id: string;
-  auditId: string;
-  name: string;
-  description?: string;
-  auditType: string;
-  status: string;
-  isExternal: boolean;
-  auditFirm?: string;
-  framework?: string;
-  plannedStartDate?: string;
-  plannedEndDate?: string;
-  actualStartDate?: string;
-  actualEndDate?: string;
-  _count?: {
-    requests: number;
-    findings: number;
-    evidence: number;
-    testResults: number;
-  };
-  createdAt: string;
-  updatedAt: string;
-}
+  ArrowLeft,
+  ClipboardList,
+  Download,
+  FileText,
+  FlaskConical,
+  Pencil,
+  AlertTriangle,
+  Calendar,
+  User,
+  Layers,
+} from 'lucide-react';
+import api from '@/lib/api';
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  DataTable,
+  EmptyState,
+  PageHeader,
+  Skeleton,
+  Tabs,
+  type BadgeVariant,
+  type DataTableColumn,
+} from '@/components/ui';
 
 interface Finding {
   id: string;
-  findingNumber: string;
+  findingNumber?: string;
   title: string;
   severity: string;
   status: string;
@@ -71,418 +39,517 @@ interface Finding {
 
 interface AuditRequest {
   id: string;
-  requestNumber: string;
+  requestNumber?: string;
   title: string;
   status: string;
   dueDate?: string;
 }
 
+interface Workpaper {
+  id: string;
+  name?: string;
+  title?: string;
+  reference?: string;
+  status?: string;
+}
+
+interface Procedure {
+  id: string;
+  name?: string;
+  title?: string;
+  status?: string;
+  description?: string;
+}
+
+interface Audit {
+  id: string;
+  auditId: string;
+  name: string;
+  description?: string;
+  auditType: string;
+  framework?: string;
+  status: string;
+  isExternal: boolean;
+  leadAuditor?: string;
+  leadAuditorName?: string;
+  externalFirmName?: string;
+  externalFirmContact?: string;
+  plannedStartDate?: string;
+  plannedEndDate?: string;
+  actualStartDate?: string;
+  actualEndDate?: string;
+  scope?: string;
+  findings?: Finding[];
+  requests?: AuditRequest[];
+  workpapers?: Workpaper[];
+  procedures?: Procedure[];
+  _count?: {
+    findings?: number;
+    requests?: number;
+    workpapers?: number;
+    procedures?: number;
+  };
+}
+
+const STATUS_VARIANT: Record<string, BadgeVariant> = {
+  planning: 'info',
+  fieldwork: 'warning',
+  testing: 'warning',
+  reporting: 'brand',
+  completed: 'success',
+  cancelled: 'neutral',
+};
+
+const TYPE_LABEL: Record<string, string> = {
+  internal: 'Internal',
+  external: 'External',
+  surveillance: 'Surveillance',
+  certification: 'Certification',
+  regulatory: 'Regulatory',
+  internal_review: 'Internal Review',
+};
+
+const SEVERITY_VARIANT: Record<string, BadgeVariant> = {
+  critical: 'danger',
+  high: 'danger',
+  medium: 'warning',
+  low: 'info',
+  observation: 'neutral',
+};
+
+const FINDING_STATUS_VARIANT: Record<string, BadgeVariant> = {
+  open: 'warning',
+  in_progress: 'info',
+  resolved: 'success',
+  closed: 'success',
+  accepted: 'neutral',
+  deferred: 'neutral',
+};
+
+const REQUEST_STATUS_VARIANT: Record<string, BadgeVariant> = {
+  pending: 'neutral',
+  in_progress: 'info',
+  submitted: 'info',
+  approved: 'success',
+  completed: 'success',
+  rejected: 'danger',
+  overdue: 'danger',
+};
+
+function formatDate(value?: string) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString();
+}
+
+function MetaCell({
+  label,
+  icon,
+  children,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div className="flex items-center gap-1.5 text-xs text-surface-500 uppercase tracking-wider font-medium">
+        {icon}
+        <span>{label}</span>
+      </div>
+      <div className="mt-1 text-body text-surface-900">{children}</div>
+    </div>
+  );
+}
+
 export default function AuditDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const isNewAudit = id === 'new';
-  const [isEditing, setIsEditing] = useState(isNewAudit);
-  const [editForm, setEditForm] = useState<Partial<Audit>>(
-    isNewAudit
-      ? {
-          name: '',
-          auditType: 'internal',
-          status: 'planning',
-          description: '',
-          auditFirm: '',
-          framework: '',
-        }
-      : {}
-  );
 
-  // Fetch audit details (skip if creating new)
   const {
     data: audit,
     isLoading,
     error,
-  } = useQuery({
-    queryKey: ['audit', id],
-    queryFn: () => auditsApi.get(id!).then((res) => res.data as unknown as Audit),
-    enabled: !!id && !isNewAudit,
+  } = useQuery<Audit>({
+    queryKey: ['audits', id],
+    queryFn: async () => {
+      const res = await api.get(`/api/audits/${id}`);
+      return res.data;
+    },
+    enabled: !!id,
   });
 
-  // Fetch related findings (skip if creating new)
-  const { data: findings } = useQuery({
-    queryKey: ['audit-findings', id],
-    queryFn: () =>
-      auditFindingsApi
-        .list({ auditId: id })
-        .then((res) => (res.data || []) as unknown as Finding[]),
-    enabled: !!id && !isNewAudit,
-  });
-
-  // Fetch related requests (skip if creating new)
-  const { data: requests } = useQuery({
-    queryKey: ['audit-requests', id],
-    queryFn: () =>
-      auditRequestsApi
-        .list({ auditId: id })
-        .then((res) => (res.data || []) as unknown as AuditRequest[]),
-    enabled: !!id && !isNewAudit,
-  });
-
-  // Create mutation
-  const createMutation = useMutation({
-    mutationFn: (data: Partial<Audit>) => auditsApi.create(data as any),
-    onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ['audits'] });
-      toast.success('Audit created successfully');
-      navigate(`/audits/${response.data.id}`);
-    },
-    onError: () => {
-      toast.error('Failed to create audit');
-    },
-  });
-
-  // Update mutation
-  const updateMutation = useMutation({
-    mutationFn: (data: Partial<Audit>) => auditsApi.update(id!, data as any),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['audit', id] });
-      queryClient.invalidateQueries({ queryKey: ['audits'] });
-      setIsEditing(false);
-      toast.success('Audit updated successfully');
-    },
-    onError: () => {
-      toast.error('Failed to update audit');
-    },
-  });
-
-  // Delete mutation
-  const deleteMutation = useMutation({
-    mutationFn: () => auditsApi.delete(id!),
-    onSuccess: () => {
-      toast.success('Audit deleted successfully');
-      navigate('/audits');
-    },
-    onError: () => {
-      toast.error('Failed to delete audit');
-    },
-  });
-
-  useEffect(() => {
-    if (audit) {
-      setEditForm({
-        name: audit.name,
-        auditType: audit.auditType,
-        status: audit.status,
-        description: audit.description,
-        auditFirm: audit.auditFirm,
-        framework: audit.framework,
-      });
-    }
-  }, [audit]);
-
-  const handleSave = () => {
-    if (isNewAudit) {
-      createMutation.mutate(editForm);
-    } else {
-      updateMutation.mutate(editForm);
-    }
-  };
-
-  if (isLoading && !isNewAudit) {
+  if (isLoading) {
     return (
-      <div className="space-y-6">
-        <SkeletonDetailHeader />
-        <SkeletonDetailSection />
-        <SkeletonDetailSection />
+      <div className="space-y-5 animate-fade-in">
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-16" />
+        <Skeleton className="h-24" />
+        <Skeleton className="h-64" />
       </div>
     );
   }
 
-  if ((error || !audit) && !isNewAudit) {
+  if (error || !audit) {
     return (
-      <div className="text-center py-12">
-        <ExclamationTriangleIcon className="w-12 h-12 mx-auto text-red-600 mb-4" />
-        <h2 className="text-xl font-semibold text-white mb-2">Audit Not Found</h2>
-        <p className="text-surface-600 mb-4">
-          The audit you're looking for doesn't exist or has been deleted.
-        </p>
-        <Button onClick={() => navigate('/audits')}>Back to Audits</Button>
+      <div className="space-y-5 animate-fade-in">
+        <Link
+          to="/audits"
+          className="inline-flex items-center gap-1.5 text-small text-surface-600 hover:text-surface-900"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Audits
+        </Link>
+        <Card>
+          <EmptyState
+            icon={<AlertTriangle className="h-8 w-8" />}
+            title="Audit not found"
+            description="The audit you're looking for doesn't exist or has been deleted."
+            action={
+              <Button onClick={() => navigate('/audits')} size="sm">
+                Back to Audits
+              </Button>
+            }
+          />
+        </Card>
       </div>
     );
   }
 
-  const statusConfig = STATUS_CONFIG[audit?.status || 'planning'] || STATUS_CONFIG.planning;
-  const findingsArray = Array.isArray(findings) ? findings : [];
-  const requestsArray = Array.isArray(requests) ? requests : [];
+  const findings = audit.findings ?? [];
+  const requests = audit.requests ?? [];
+  const workpapers = audit.workpapers ?? [];
+  const procedures = audit.procedures ?? [];
+  const findingsCount = audit._count?.findings ?? findings.length;
+  const typeLabel = TYPE_LABEL[audit.auditType] ?? audit.auditType;
+
+  const findingColumns: DataTableColumn<Finding>[] = [
+    {
+      id: 'findingNumber',
+      accessorKey: 'findingNumber',
+      header: 'ID',
+      mobileLabel: 'ID',
+      cell: ({ row }) => (
+        <span className="font-mono text-small text-brand-700">
+          {row.original.findingNumber ?? row.original.id.slice(0, 8)}
+        </span>
+      ),
+    },
+    {
+      id: 'title',
+      accessorKey: 'title',
+      header: 'Title',
+      mobileLabel: 'Title',
+      cell: ({ row }) => <span className="text-surface-900">{row.original.title}</span>,
+    },
+    {
+      id: 'severity',
+      accessorKey: 'severity',
+      header: 'Severity',
+      mobileLabel: 'Severity',
+      cell: ({ row }) => (
+        <Badge variant={SEVERITY_VARIANT[row.original.severity] ?? 'neutral'} size="sm">
+          {row.original.severity}
+        </Badge>
+      ),
+    },
+    {
+      id: 'status',
+      accessorKey: 'status',
+      header: 'Status',
+      mobileLabel: 'Status',
+      cell: ({ row }) => (
+        <Badge variant={FINDING_STATUS_VARIANT[row.original.status] ?? 'neutral'} size="sm">
+          {(row.original.status || '').replace(/_/g, ' ')}
+        </Badge>
+      ),
+    },
+  ];
+
+  const overviewTab = (
+    <Card>
+      <CardBody density="comfy" className="space-y-5">
+        {audit.description ? (
+          <div>
+            <h4 className="text-xs text-surface-500 uppercase tracking-wider font-medium mb-1.5">
+              Description
+            </h4>
+            <p className="text-body text-surface-800 whitespace-pre-wrap">{audit.description}</p>
+          </div>
+        ) : null}
+        {audit.scope ? (
+          <div>
+            <h4 className="text-xs text-surface-500 uppercase tracking-wider font-medium mb-1.5">
+              Scope
+            </h4>
+            <p className="text-body text-surface-800 whitespace-pre-wrap">{audit.scope}</p>
+          </div>
+        ) : null}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-surface-200">
+          <div>
+            <p className="text-xs text-surface-500 uppercase tracking-wider font-medium">
+              Actual Start
+            </p>
+            <p className="mt-1 text-body text-surface-900 tabular-nums">
+              {formatDate(audit.actualStartDate)}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-surface-500 uppercase tracking-wider font-medium">
+              Actual End
+            </p>
+            <p className="mt-1 text-body text-surface-900 tabular-nums">
+              {formatDate(audit.actualEndDate)}
+            </p>
+          </div>
+          {audit.externalFirmName && (
+            <div>
+              <p className="text-xs text-surface-500 uppercase tracking-wider font-medium">
+                External Firm
+              </p>
+              <p className="mt-1 text-body text-surface-900">{audit.externalFirmName}</p>
+            </div>
+          )}
+          {audit.externalFirmContact && (
+            <div>
+              <p className="text-xs text-surface-500 uppercase tracking-wider font-medium">
+                Firm Contact
+              </p>
+              <p className="mt-1 text-body text-surface-900">{audit.externalFirmContact}</p>
+            </div>
+          )}
+        </div>
+        {!audit.description && !audit.scope && (
+          <EmptyState
+            icon={<FileText className="h-6 w-6" />}
+            title="No overview yet"
+            description="Add a description and scope to this audit."
+            size="sm"
+          />
+        )}
+      </CardBody>
+    </Card>
+  );
+
+  const findingsTab = (
+    <Card>
+      <CardHeader>
+        <CardTitle>Findings</CardTitle>
+        <Badge variant="neutral" size="sm" capitalize={false}>
+          {findingsCount}
+        </Badge>
+      </CardHeader>
+      <CardBody density="cozy">
+        {findings.length === 0 ? (
+          <EmptyState
+            icon={<AlertTriangle className="h-6 w-6" />}
+            title="No findings"
+            description="No findings have been recorded for this audit."
+            size="sm"
+          />
+        ) : (
+          <DataTable
+            data={findings}
+            columns={findingColumns}
+            density="cozy"
+            getRowId={(row) => row.id}
+          />
+        )}
+      </CardBody>
+    </Card>
+  );
+
+  const requestsTab = (
+    <Card>
+      <CardHeader>
+        <CardTitle>Requests</CardTitle>
+        <Badge variant="neutral" size="sm" capitalize={false}>
+          {requests.length}
+        </Badge>
+      </CardHeader>
+      <CardBody density="comfy">
+        {requests.length === 0 ? (
+          <EmptyState
+            icon={<ClipboardList className="h-6 w-6" />}
+            title="No evidence requests"
+            description="No requests have been created for this audit."
+            size="sm"
+          />
+        ) : (
+          <div className="space-y-2">
+            {requests.map((request) => (
+              <div
+                key={request.id}
+                className="flex items-center justify-between gap-3 p-3 rounded-md bg-white border border-surface-200"
+              >
+                <div className="min-w-0">
+                  <p className="text-surface-900 font-medium truncate">{request.title}</p>
+                  <p className="text-xs text-surface-500">
+                    {request.requestNumber ?? request.id.slice(0, 8)}
+                    {request.dueDate ? ` · Due ${formatDate(request.dueDate)}` : ''}
+                  </p>
+                </div>
+                <Badge variant={REQUEST_STATUS_VARIANT[request.status] ?? 'neutral'} size="sm">
+                  {(request.status || '').replace(/_/g, ' ')}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardBody>
+    </Card>
+  );
+
+  const workpapersTab = (
+    <Card>
+      <CardHeader>
+        <CardTitle>Workpapers</CardTitle>
+        <Badge variant="neutral" size="sm" capitalize={false}>
+          {workpapers.length}
+        </Badge>
+      </CardHeader>
+      <CardBody density="comfy">
+        {workpapers.length === 0 ? (
+          <EmptyState
+            icon={<FileText className="h-6 w-6" />}
+            title="No workpapers"
+            description="Workpapers added to this audit will appear here."
+            size="sm"
+          />
+        ) : (
+          <div className="space-y-2">
+            {workpapers.map((wp) => (
+              <div
+                key={wp.id}
+                className="flex items-center justify-between gap-3 p-3 rounded-md bg-white border border-surface-200"
+              >
+                <div className="min-w-0">
+                  <p className="text-surface-900 font-medium truncate">
+                    {wp.name ?? wp.title ?? wp.reference ?? 'Untitled workpaper'}
+                  </p>
+                  {wp.reference && (
+                    <p className="text-xs text-surface-500 font-mono">{wp.reference}</p>
+                  )}
+                </div>
+                {wp.status && (
+                  <Badge variant="neutral" size="sm">
+                    {wp.status.replace(/_/g, ' ')}
+                  </Badge>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardBody>
+    </Card>
+  );
+
+  const proceduresTab = (
+    <Card>
+      <CardHeader>
+        <CardTitle>Procedures</CardTitle>
+        <Badge variant="neutral" size="sm" capitalize={false}>
+          {procedures.length}
+        </Badge>
+      </CardHeader>
+      <CardBody density="comfy">
+        {procedures.length === 0 ? (
+          <EmptyState
+            icon={<FlaskConical className="h-6 w-6" />}
+            title="No procedures"
+            description="Test procedures linked to this audit will appear here."
+            size="sm"
+          />
+        ) : (
+          <div className="space-y-2">
+            {procedures.map((proc) => (
+              <div key={proc.id} className="p-3 rounded-md bg-white border border-surface-200">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-surface-900 font-medium truncate">
+                    {proc.name ?? proc.title ?? 'Untitled procedure'}
+                  </p>
+                  {proc.status && (
+                    <Badge variant="neutral" size="sm">
+                      {proc.status.replace(/_/g, ' ')}
+                    </Badge>
+                  )}
+                </div>
+                {proc.description && (
+                  <p className="mt-1 text-small text-surface-600">{proc.description}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardBody>
+    </Card>
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/audits')}
-            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600 hover:text-white transition-colors"
-          >
-            <ArrowLeftIcon className="w-5 h-5" />
-          </button>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-semibold text-white">
-                {isNewAudit ? 'New Audit' : audit?.name}
-              </h1>
-              {!isNewAudit && audit?.auditId && (
-                <span className="text-surface-500 font-mono">#{audit.auditId}</span>
-              )}
-              {!isNewAudit && audit?.isExternal && (
-                <span className="px-2 py-1 bg-purple-600/20 text-purple-600 rounded text-xs font-medium">
-                  External
-                </span>
-              )}
-            </div>
-            {!isNewAudit && audit && (
-              <p className="text-surface-600 mt-1">
-                {TYPE_LABELS[audit.auditType] || audit.auditType}
-                {audit.framework && <span> • {audit.framework}</span>}
-                {audit.auditFirm && <span> • {audit.auditFirm}</span>}
-              </p>
-            )}
-            {isNewAudit && <p className="text-surface-600 mt-1">Create a new audit</p>}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {isEditing ? (
-            <>
-              <Button
-                variant="secondary"
-                onClick={() => (isNewAudit ? navigate('/audits') : setIsEditing(false))}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleSave} isLoading={updateMutation.isPending}>
-                Save Changes
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="secondary"
-                leftIcon={<PencilIcon className="w-4 h-4" />}
-                onClick={() => setIsEditing(true)}
-              >
-                Edit
-              </Button>
-              <Button
-                variant="danger"
-                leftIcon={<TrashIcon className="w-4 h-4" />}
-                onClick={() => setShowDeleteConfirm(true)}
-              >
-                Delete
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
-      {/* Status and Key Info */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border border-surface-200 p-4">
-          <p className="text-surface-600 text-sm mb-1">Status</p>
-          {isEditing ? (
-            <SelectNative
-              value={editForm.status}
-              onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-              className="w-full bg-surface-200 border border-surface-300 rounded-md px-3 py-2 text-white"
-            >
-              {Object.entries(STATUS_CONFIG).map(([value, { label }]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </SelectNative>
-          ) : (
-            <span
-              className={clsx(
-                'inline-flex items-center gap-1.5 px-2 py-1 rounded text-sm font-medium',
-                statusConfig.bgColor,
-                statusConfig.color
-              )}
-            >
-              {statusConfig.label}
-            </span>
-          )}
-        </div>
-        <div className="bg-white rounded-lg border border-surface-200 p-4">
-          <p className="text-surface-600 text-sm mb-1">Start Date</p>
-          <p className="text-white font-medium">
-            {audit?.plannedStartDate ? new Date(audit.plannedStartDate).toLocaleDateString() : '—'}
-          </p>
-        </div>
-        <div className="bg-white rounded-lg border border-surface-200 p-4">
-          <p className="text-surface-600 text-sm mb-1">End Date</p>
-          <p className="text-white font-medium">
-            {audit?.plannedEndDate ? new Date(audit.plannedEndDate).toLocaleDateString() : '—'}
-          </p>
-        </div>
-        <div className="bg-white rounded-lg border border-surface-200 p-4">
-          <p className="text-surface-600 text-sm mb-1">Findings</p>
-          <p className="text-white font-medium">
-            {audit?._count?.findings || findingsArray.length}
-          </p>
-        </div>
-      </div>
-      {/* Description */}
-      {(audit?.description || isEditing) && (
-        <div className="bg-white rounded-lg border border-surface-200 p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Description</h2>
-          {isEditing ? (
-            <Textarea
-              value={editForm.description || ''}
-              onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-              rows={4}
-              className="w-full bg-surface-200 border border-surface-300 rounded-md px-3 py-2 text-white"
-              placeholder="Audit description..."
-            />
-          ) : (
-            <p className="text-surface-700">{audit?.description || 'No description provided.'}</p>
-          )}
-        </div>
-      )}
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Findings */}
-        <div className="bg-white rounded-lg border border-surface-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white">Findings</h2>
-            <Link
-              to={`/audit-findings?auditId=${id}`}
-              className="text-brand-400 text-sm hover:text-brand-300"
-            >
-              View all →
-            </Link>
-          </div>
-          {findingsArray.length === 0 ? (
-            <div className="text-center py-8 text-surface-600">
-              <ExclamationTriangleIcon className="w-10 h-10 mx-auto mb-2 opacity-50" />
-              <p>No findings recorded</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {findingsArray.slice(0, 5).map((finding) => (
-                <div
-                  key={finding.id}
-                  className="flex items-center justify-between p-3 bg-surface-200/50 rounded-lg"
-                >
-                  <div>
-                    <p className="text-white font-medium">{finding.title}</p>
-                    <p className="text-surface-600 text-sm">{finding.findingNumber}</p>
-                  </div>
-                  <span
-                    className={clsx(
-                      'px-2 py-1 rounded text-xs font-medium',
-                      finding.severity === 'critical'
-                        ? 'bg-red-500/20 text-red-600'
-                        : finding.severity === 'high'
-                          ? 'bg-orange-500/20 text-orange-600'
-                          : finding.severity === 'medium'
-                            ? 'bg-yellow-500/20 text-yellow-600'
-                            : 'bg-surface-600 text-surface-700'
-                    )}
-                  >
-                    {finding.severity}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+    <div className="space-y-5 animate-fade-in">
+      <Link
+        to="/audits"
+        className="inline-flex items-center gap-1.5 text-small text-surface-600 hover:text-surface-900"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Audits
+      </Link>
 
-        {/* Requests */}
-        <div className="bg-white rounded-lg border border-surface-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white">Evidence Requests</h2>
-            <Link
-              to={`/audit-requests?auditId=${id}`}
-              className="text-brand-400 text-sm hover:text-brand-300"
-            >
-              View all →
-            </Link>
+      <PageHeader
+        title={
+          <span className="flex items-center gap-3 flex-wrap">
+            <span className="font-mono text-h2 text-surface-700">{audit.auditId}</span>
+            <span>{audit.name}</span>
+          </span>
+        }
+        meta={
+          <Badge variant={STATUS_VARIANT[audit.status] ?? 'neutral'} dot>
+            {(audit.status || '').replace(/_/g, ' ')}
+          </Badge>
+        }
+        actions={
+          <>
+            <Button variant="outline" size="sm" leftIcon={<Pencil className="h-4 w-4" />}>
+              Edit
+            </Button>
+            <Button variant="secondary" size="sm" leftIcon={<Download className="h-4 w-4" />}>
+              Export
+            </Button>
+          </>
+        }
+      />
+
+      <Card>
+        <CardBody density="comfy">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <MetaCell label="Type" icon={<Layers className="h-3.5 w-3.5" />}>
+              {typeLabel}
+            </MetaCell>
+            <MetaCell label="Framework" icon={<FileText className="h-3.5 w-3.5" />}>
+              {audit.framework ?? '—'}
+            </MetaCell>
+            <MetaCell label="Lead Auditor" icon={<User className="h-3.5 w-3.5" />}>
+              {audit.leadAuditorName ?? audit.leadAuditor ?? '—'}
+            </MetaCell>
+            <MetaCell label="Window" icon={<Calendar className="h-3.5 w-3.5" />}>
+              <span className="tabular-nums">
+                {formatDate(audit.plannedStartDate)} – {formatDate(audit.plannedEndDate)}
+              </span>
+            </MetaCell>
           </div>
-          {requestsArray.length === 0 ? (
-            <div className="text-center py-8 text-surface-600">
-              <ClipboardDocumentListIcon className="w-10 h-10 mx-auto mb-2 opacity-50" />
-              <p>No evidence requests</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {requestsArray.slice(0, 5).map((request) => (
-                <div
-                  key={request.id}
-                  className="flex items-center justify-between p-3 bg-surface-200/50 rounded-lg"
-                >
-                  <div>
-                    <p className="text-white font-medium">{request.title}</p>
-                    <p className="text-surface-600 text-sm">{request.requestNumber}</p>
-                  </div>
-                  <span
-                    className={clsx(
-                      'px-2 py-1 rounded text-xs font-medium',
-                      request.status === 'completed'
-                        ? 'bg-green-500/20 text-green-600'
-                        : request.status === 'in_progress'
-                          ? 'bg-blue-500/20 text-blue-600'
-                          : 'bg-surface-600 text-surface-700'
-                    )}
-                  >
-                    {request.status?.replace('_', ' ')}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-      {/* Stats Grid - only show for existing audits */}
-      {!isNewAudit && audit && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg border border-surface-200 p-4 text-center">
-            <ClipboardDocumentListIcon className="w-8 h-8 mx-auto mb-2 text-blue-600" />
-            <p className="text-2xl font-bold text-white">
-              {audit._count?.requests || requestsArray.length}
-            </p>
-            <p className="text-surface-600 text-sm">Requests</p>
-          </div>
-          <div className="bg-white rounded-lg border border-surface-200 p-4 text-center">
-            <DocumentTextIcon className="w-8 h-8 mx-auto mb-2 text-purple-600" />
-            <p className="text-2xl font-bold text-white">{audit._count?.evidence || 0}</p>
-            <p className="text-surface-600 text-sm">Evidence</p>
-          </div>
-          <div className="bg-white rounded-lg border border-surface-200 p-4 text-center">
-            <CheckCircleIcon className="w-8 h-8 mx-auto mb-2 text-green-600" />
-            <p className="text-2xl font-bold text-white">{audit._count?.testResults || 0}</p>
-            <p className="text-surface-600 text-sm">Tests</p>
-          </div>
-          <div className="bg-white rounded-lg border border-surface-200 p-4 text-center">
-            <ExclamationTriangleIcon className="w-8 h-8 mx-auto mb-2 text-orange-600" />
-            <p className="text-2xl font-bold text-white">
-              {audit._count?.findings || findingsArray.length}
-            </p>
-            <p className="text-surface-600 text-sm">Findings</p>
-          </div>
-        </div>
-      )}
-      {/* Delete Confirmation Modal - only for existing audits */}
-      {!isNewAudit && audit && (
-        <ConfirmModal
-          isOpen={showDeleteConfirm}
-          onClose={() => setShowDeleteConfirm(false)}
-          onConfirm={() => deleteMutation.mutate()}
-          title="Delete Audit"
-          message={`Are you sure you want to delete "${audit.name}"? This action cannot be undone.`}
-          confirmText="Delete"
-          confirmVariant="danger"
-          isLoading={deleteMutation.isPending}
-        />
-      )}
+        </CardBody>
+      </Card>
+
+      <Tabs
+        tabs={[
+          { label: 'Overview', content: overviewTab },
+          { label: `Findings (${findingsCount})`, content: findingsTab },
+          { label: `Requests (${requests.length})`, content: requestsTab },
+          { label: `Workpapers (${workpapers.length})`, content: workpapersTab },
+          { label: `Procedures (${procedures.length})`, content: proceduresTab },
+        ]}
+      />
     </div>
   );
 }

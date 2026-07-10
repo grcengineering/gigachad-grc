@@ -1,428 +1,367 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft } from 'lucide-react';
 import {
-  BuildingOfficeIcon,
-  TrashIcon,
-  UserPlusIcon,
-  ArrowLeftIcon,
-} from '@heroicons/react/24/outline';
-import { useWorkspace, Workspace, WorkspaceMember } from '@/contexts/WorkspaceContext';
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  DataTable,
+  EmptyState,
+  FieldHint,
+  Input,
+  Label,
+  PageHeader,
+  Skeleton,
+  Tabs,
+  Textarea,
+  type DataTableColumn,
+} from '@/components/ui';
 import api from '@/lib/api';
-import toast from 'react-hot-toast';
 
-import { Textarea } from '@/components/ui/Textarea';
+type ModuleKey =
+  'risk' | 'compliance' | 'tprm' | 'trust' | 'audit' | 'bcdr' | 'people' | 'training';
 
-import { Input } from '@/components/ui/Input';
+interface WorkspaceMember {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  joinedAt: string;
+}
 
-import { SelectNative } from '@/components/ui/SelectNative';
-import { Dialog } from '@/components/ui/Dialog';
+interface BillingInfo {
+  plan: string;
+  price: string;
+  renewsAt: string | null;
+  manageUrl: string | null;
+}
 
-const WORKSPACE_ROLES = [
-  { value: 'owner', label: 'Owner', description: 'Full control of workspace' },
-  { value: 'manager', label: 'Manager', description: 'Can manage controls, evidence, risks' },
-  {
-    value: 'contributor',
-    label: 'Contributor',
-    description: 'Can add evidence, update implementations',
-  },
-  { value: 'viewer', label: 'Viewer', description: 'Read-only access' },
+interface WorkspaceDetail {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  members: WorkspaceMember[];
+  modules: Record<ModuleKey, boolean>;
+  billing: BillingInfo | null;
+}
+
+const MODULES: { key: ModuleKey; label: string; description: string }[] = [
+  { key: 'risk', label: 'Risk', description: 'Enterprise risk register and treatments.' },
+  { key: 'compliance', label: 'Compliance', description: 'Frameworks, controls, and evidence.' },
+  { key: 'tprm', label: 'TPRM', description: 'Third-party risk management.' },
+  { key: 'trust', label: 'Trust', description: 'Trust Center and security questionnaires.' },
+  { key: 'audit', label: 'Audit', description: 'Audits, workpapers, and findings.' },
+  { key: 'bcdr', label: 'BCDR', description: 'Business continuity and disaster recovery.' },
+  { key: 'people', label: 'People', description: 'Employees, roles, and access reviews.' },
+  { key: 'training', label: 'Training', description: 'Awareness training and certifications.' },
 ];
 
-function AddMemberModal({
-  isOpen,
-  onClose,
-  workspaceId,
-  existingMemberIds,
-  onSuccess,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  workspaceId: string;
-  existingMemberIds: string[];
-  onSuccess: () => void;
-}) {
-  const [selectedUserId, setSelectedUserId] = useState('');
-  const [selectedRole, setSelectedRole] = useState('viewer');
-  const [isAdding, setIsAdding] = useState(false);
+function formatDate(value: string | null): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString();
+}
 
-  // Fetch organization users
-  const { data: orgUsers = [] } = useQuery({
-    queryKey: ['org-users'],
-    queryFn: () => api.get('/api/users').then((r) => r.data?.data || r.data || []),
-    enabled: isOpen,
+function GeneralPanel({ workspace }: { workspace: WorkspaceDetail }) {
+  const queryClient = useQueryClient();
+  const [name, setName] = useState(workspace.name);
+  const [description, setDescription] = useState(workspace.description ?? '');
+
+  useEffect(() => {
+    setName(workspace.name);
+    setDescription(workspace.description ?? '');
+  }, [workspace]);
+
+  const save = useMutation({
+    mutationFn: async (payload: { name: string; description: string }) => {
+      const res = await api.put(`/api/workspaces/${workspace.id}`, payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workspace', workspace.id] });
+    },
   });
 
-  const availableUsers = orgUsers.filter((user: any) => !existingMemberIds.includes(user.id));
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>General</CardTitle>
+      </CardHeader>
+      <CardBody className="space-y-4 max-w-2xl">
+        <div>
+          <Label htmlFor="ws-name" required>
+            Name
+          </Label>
+          <Input
+            id="ws-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Workspace name"
+          />
+        </div>
+        <div>
+          <Label htmlFor="ws-slug">Slug</Label>
+          <Input id="ws-slug" value={workspace.slug} disabled className="font-mono" />
+          <FieldHint>Slug is set on creation and cannot be changed.</FieldHint>
+        </div>
+        <div>
+          <Label htmlFor="ws-description">Description</Label>
+          <Textarea
+            id="ws-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="What does this workspace track?"
+            rows={4}
+          />
+        </div>
+        <div className="flex items-center justify-end gap-3">
+          {save.isSuccess && <span className="text-small text-brand-700">Saved.</span>}
+          {save.isError && <span className="text-small text-red-700">Failed to save.</span>}
+          <Button
+            onClick={() => save.mutate({ name: name.trim(), description: description.trim() })}
+            loading={save.isPending}
+            disabled={!name.trim()}
+          >
+            Save changes
+          </Button>
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedUserId) return;
-
-    setIsAdding(true);
-    try {
-      await api.post(`/api/workspaces/${workspaceId}/members`, {
-        userId: selectedUserId,
-        role: selectedRole,
-      });
-      toast.success('Member added to workspace');
-      onSuccess();
-      onClose();
-      setSelectedUserId('');
-      setSelectedRole('viewer');
-    } catch {
-      toast.error('Failed to add member');
-    } finally {
-      setIsAdding(false);
-    }
-  };
-
-  if (!isOpen) return null;
+function MembersPanel({ workspace }: { workspace: WorkspaceDetail }) {
+  const columns: DataTableColumn<WorkspaceMember>[] = [
+    {
+      id: 'name',
+      accessorKey: 'name',
+      header: 'Name',
+      mobileLabel: 'Name',
+      cell: ({ row }) => <span className="text-surface-900 font-medium">{row.original.name}</span>,
+    },
+    {
+      id: 'email',
+      accessorKey: 'email',
+      header: 'Email',
+      mobileLabel: 'Email',
+      cell: ({ row }) => <span className="text-surface-700">{row.original.email}</span>,
+    },
+    {
+      id: 'role',
+      accessorKey: 'role',
+      header: 'Role',
+      mobileLabel: 'Role',
+      cell: ({ row }) => <Badge variant="info">{row.original.role}</Badge>,
+    },
+    {
+      id: 'joinedAt',
+      accessorKey: 'joinedAt',
+      header: 'Joined',
+      mobileLabel: 'Joined',
+      cell: ({ row }) => (
+        <span className="text-small text-surface-700">{formatDate(row.original.joinedAt)}</span>
+      ),
+    },
+  ];
 
   return (
-    <Dialog open onClose={onClose}>
-      <h3 className="text-lg font-semibold text-foreground mb-4">Add Member</h3>
-      <form onSubmit={handleSubmit}>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Select User *</label>
-            <SelectNative
-              value={selectedUserId}
-              onChange={(e) => setSelectedUserId(e.target.value)}
-              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
-              required
+    <Card>
+      <CardHeader>
+        <CardTitle>Members</CardTitle>
+        <Button size="sm">Invite member</Button>
+      </CardHeader>
+      <CardBody>
+        {workspace.members.length === 0 ? (
+          <EmptyState
+            title="No members yet"
+            description="Invite teammates to collaborate in this workspace."
+          />
+        ) : (
+          <DataTable<WorkspaceMember> data={workspace.members} columns={columns} density="cozy" />
+        )}
+      </CardBody>
+    </Card>
+  );
+}
+
+function ModulesPanel({ workspace }: { workspace: WorkspaceDetail }) {
+  const queryClient = useQueryClient();
+  const [modules, setModules] = useState<Record<ModuleKey, boolean>>(workspace.modules);
+
+  useEffect(() => {
+    setModules(workspace.modules);
+  }, [workspace.modules]);
+
+  const save = useMutation({
+    mutationFn: async (payload: Record<ModuleKey, boolean>) => {
+      const res = await api.put(`/api/workspaces/${workspace.id}/modules`, {
+        modules: payload,
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workspace', workspace.id] });
+    },
+  });
+
+  const toggle = (key: ModuleKey) => {
+    setModules((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Modules</CardTitle>
+        <Button size="sm" onClick={() => save.mutate(modules)} loading={save.isPending}>
+          Save modules
+        </Button>
+      </CardHeader>
+      <CardBody className="space-y-3">
+        {MODULES.map((m) => {
+          const enabled = modules[m.key];
+          return (
+            <div
+              key={m.key}
+              className="flex items-start justify-between gap-4 rounded-md border border-surface-200 bg-white px-4 py-3"
             >
-              <option value="">Select a user...</option>
-              {availableUsers.map((user: any) => (
-                <option key={user.id} value={user.id}>
-                  {user.displayName || user.email} ({user.email})
-                </option>
-              ))}
-            </SelectNative>
-            {availableUsers.length === 0 && (
-              <p className="text-sm text-muted-foreground mt-1">
-                All organization members are already in this workspace.
-              </p>
-            )}
+              <div className="min-w-0">
+                <p className="text-body text-surface-900 font-medium">{m.label}</p>
+                <p className="text-small text-surface-600 mt-0.5">{m.description}</p>
+              </div>
+              <Button
+                variant={enabled ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => toggle(m.key)}
+              >
+                {enabled ? 'Enabled' : 'Disabled'}
+              </Button>
+            </div>
+          );
+        })}
+      </CardBody>
+    </Card>
+  );
+}
+
+function BillingPanel({ workspace }: { workspace: WorkspaceDetail }) {
+  const billing = workspace.billing;
+
+  if (!billing) {
+    return (
+      <Card>
+        <CardBody>
+          <EmptyState
+            title="No billing information"
+            description="This workspace does not have a billing record yet."
+          />
+        </CardBody>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Billing</CardTitle>
+      </CardHeader>
+      <CardBody className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="rounded-md border border-surface-200 bg-white px-4 py-3">
+            <p className="text-xs font-medium text-surface-600 uppercase tracking-wider">Plan</p>
+            <p className="text-h3 text-surface-900 mt-1">{billing.plan}</p>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Role</label>
-            <SelectNative
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
-            >
-              {WORKSPACE_ROLES.map((role) => (
-                <option key={role.value} value={role.value}>
-                  {role.label} - {role.description}
-                </option>
-              ))}
-            </SelectNative>
+          <div className="rounded-md border border-surface-200 bg-white px-4 py-3">
+            <p className="text-xs font-medium text-surface-600 uppercase tracking-wider">Price</p>
+            <p className="text-h3 text-surface-900 mt-1">{billing.price}</p>
+          </div>
+          <div className="rounded-md border border-surface-200 bg-white px-4 py-3">
+            <p className="text-xs font-medium text-surface-600 uppercase tracking-wider">
+              Next renewal
+            </p>
+            <p className="text-h3 text-surface-900 mt-1">{formatDate(billing.renewsAt)}</p>
           </div>
         </div>
-        <div className="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={!selectedUserId || isAdding}
-            className="px-4 py-2 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isAdding ? 'Adding...' : 'Add Member'}
-          </button>
-        </div>
-      </form>
-    </Dialog>
+
+        {billing.manageUrl && (
+          <div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                window.open(billing.manageUrl ?? '', '_blank', 'noopener,noreferrer');
+              }}
+            >
+              Manage billing
+            </Button>
+          </div>
+        )}
+      </CardBody>
+    </Card>
   );
 }
 
 export default function WorkspaceSettings() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { updateWorkspace, deleteWorkspace } = useWorkspace();
 
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [showAddMember, setShowAddMember] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  // Fetch workspace details
-  const {
-    data: workspace,
-    isLoading,
-    refetch,
-  } = useQuery({
+  const { data, isLoading, isError } = useQuery<WorkspaceDetail>({
     queryKey: ['workspace', id],
-    queryFn: () => api.get(`/api/workspaces/${id}`).then((r) => r.data),
+    queryFn: async () => {
+      const res = await api.get(`/api/workspaces/${id}`);
+      return res.data as WorkspaceDetail;
+    },
     enabled: !!id,
   });
 
-  // Initialize form when workspace loads
-  useEffect(() => {
-    if (workspace) {
-      setName(workspace.name);
-      setDescription(workspace.description || '');
-    }
-  }, [workspace]);
-
-  // Update workspace mutation
-  const updateMutation = useMutation({
-    mutationFn: (data: Partial<Workspace>) => updateWorkspace(id!, data),
-    onSuccess: () => {
-      toast.success('Workspace updated');
-      refetch();
-    },
-    onError: () => {
-      toast.error('Failed to update workspace');
-    },
-  });
-
-  // Update member role mutation
-  const updateMemberMutation = useMutation({
-    mutationFn: ({ userId, role }: { userId: string; role: string }) =>
-      api.put(`/api/workspaces/${id}/members/${userId}`, { role }),
-    onSuccess: () => {
-      toast.success('Member role updated');
-      refetch();
-    },
-    onError: () => {
-      toast.error('Failed to update member role');
-    },
-  });
-
-  // Remove member mutation
-  const removeMemberMutation = useMutation({
-    mutationFn: (userId: string) => api.delete(`/api/workspaces/${id}/members/${userId}`),
-    onSuccess: () => {
-      toast.success('Member removed');
-      refetch();
-    },
-    onError: () => {
-      toast.error('Failed to remove member');
-    },
-  });
-
-  // Delete workspace mutation
-  const deleteMutation = useMutation({
-    mutationFn: () => deleteWorkspace(id!),
-    onSuccess: () => {
-      toast.success('Workspace archived');
-      queryClient.invalidateQueries({ queryKey: ['workspaces'] });
-      navigate('/settings/workspaces');
-    },
-    onError: () => {
-      toast.error('Failed to archive workspace');
-    },
-  });
-
-  const handleSaveBasicInfo = () => {
-    if (!name.trim()) return;
-    updateMutation.mutate({ name: name.trim(), description: description.trim() || undefined });
-  };
-
-  if (isLoading) {
-    return (
-      <div className="p-6 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-brand-500"></div>
-      </div>
-    );
-  }
-
-  if (!workspace) {
-    return (
-      <div className="p-6">
-        <p className="text-muted-foreground">Workspace not found.</p>
-      </div>
-    );
-  }
-
-  const existingMemberIds = workspace.members?.map((m: WorkspaceMember) => m.userId) || [];
-
   return (
-    <div className="p-6 max-w-4xl">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <button
-          onClick={() => navigate('/settings/workspaces')}
-          className="p-2 text-muted-foreground hover:text-foreground hover:bg-white rounded-lg"
-        >
-          <ArrowLeftIcon className="w-5 h-5" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Workspace Settings</h1>
-          <p className="text-muted-foreground mt-1">{workspace.name}</p>
-        </div>
-      </div>
-      {/* Basic Information */}
-      <section className="bg-white rounded-lg p-6 border border-surface-200 mb-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-          <BuildingOfficeIcon className="w-5 h-5" />
-          Basic Information
-        </h2>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
-              Workspace Name *
-            </label>
-            <Input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Description</label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Slug</label>
-            <Input
-              type="text"
-              value={workspace.slug}
-              disabled
-              className="w-full px-3 py-2 bg-surface-200/50 border border-surface-300 rounded-lg text-muted-foreground cursor-not-allowed"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              The slug cannot be changed after creation.
-            </p>
-          </div>
-          <div className="pt-2">
-            <button
-              onClick={handleSaveBasicInfo}
-              disabled={updateMutation.isPending || !name.trim()}
-              className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50"
-            >
-              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
-        </div>
-      </section>
-      {/* Members */}
-      <section className="bg-white rounded-lg p-6 border border-surface-200 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-foreground">Members</h2>
-          <button
-            onClick={() => setShowAddMember(true)}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-700"
-          >
-            <UserPlusIcon className="w-4 h-4" />
-            Add Member
-          </button>
-        </div>
+    <div className="space-y-5">
+      <Link
+        to="/settings/workspaces"
+        className="inline-flex items-center gap-1.5 text-small text-surface-700 hover:text-surface-900"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to workspaces
+      </Link>
 
-        <div className="space-y-2">
-          {workspace.members?.map((member: WorkspaceMember) => (
-            <div
-              key={member.id}
-              className="flex items-center justify-between p-3 bg-surface-200/50 rounded-lg"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-brand-600 flex items-center justify-center text-white text-sm font-medium">
-                  {member.user?.firstName?.[0] || member.user?.email?.[0]?.toUpperCase() || '?'}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {member.user?.displayName || member.user?.email}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{member.user?.email}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <SelectNative
-                  value={member.role}
-                  onChange={(e) =>
-                    updateMemberMutation.mutate({ userId: member.userId, role: e.target.value })
-                  }
-                  className="px-2 py-1 text-sm bg-surface-200 border border-surface-300 rounded text-foreground focus:outline-none"
-                >
-                  {WORKSPACE_ROLES.map((role) => (
-                    <option key={role.value} value={role.value}>
-                      {role.label}
-                    </option>
-                  ))}
-                </SelectNative>
-                <button
-                  onClick={() => removeMemberMutation.mutate(member.userId)}
-                  className="p-1.5 text-red-600 hover:text-red-700 hover:bg-red-500/10 rounded"
-                  title="Remove member"
-                >
-                  <TrashIcon className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))}
-
-          {(!workspace.members || workspace.members.length === 0) && (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No members in this workspace.
-            </p>
-          )}
-        </div>
-      </section>
-      {/* Danger Zone */}
-      <section className="bg-red-500/10 rounded-lg p-6 border border-red-500/30">
-        <h2 className="text-lg font-semibold text-red-600 mb-4">Danger Zone</h2>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-foreground font-medium">Archive this workspace</p>
-            <p className="text-sm text-muted-foreground">
-              Once archived, the workspace will be hidden but data will be preserved.
-            </p>
-          </div>
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-          >
-            Archive Workspace
-          </button>
-        </div>
-      </section>
-      {/* Add Member Modal */}
-      <AddMemberModal
-        isOpen={showAddMember}
-        onClose={() => setShowAddMember(false)}
-        workspaceId={id!}
-        existingMemberIds={existingMemberIds}
-        onSuccess={() => refetch()}
-      />
-      {/* Delete Confirmation Modal */}
-      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
-        <h3 className="text-lg font-semibold text-foreground mb-4">Archive Workspace?</h3>
-        <p className="text-muted-foreground mb-6">
-          Are you sure you want to archive <strong>{workspace.name}</strong>? This workspace will be
-          hidden but data will be preserved.
-        </p>
-        <div className="flex justify-end gap-3">
-          <button
-            onClick={() => setShowDeleteConfirm(false)}
-            className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => {
-              deleteMutation.mutate();
-              setShowDeleteConfirm(false);
-            }}
-            disabled={deleteMutation.isPending}
-            className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-          >
-            {deleteMutation.isPending ? 'Archiving...' : 'Archive Workspace'}
-          </button>
-        </div>
-      </Dialog>
+      {isLoading ? (
+        <>
+          <PageHeader title="Workspace" description="Loading workspace settings…" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </>
+      ) : isError || !data ? (
+        <>
+          <PageHeader title="Workspace" />
+          <Card>
+            <CardBody>
+              <EmptyState
+                title="Could not load workspace"
+                description="Please refresh the page or try again later."
+              />
+            </CardBody>
+          </Card>
+        </>
+      ) : (
+        <>
+          <PageHeader
+            title={data.name}
+            description={data.description || 'Workspace settings'}
+            meta={<code className="font-mono text-small text-surface-600">{data.slug}</code>}
+          />
+          <Tabs
+            tabs={[
+              { label: 'General', content: <GeneralPanel workspace={data} /> },
+              { label: 'Members', content: <MembersPanel workspace={data} /> },
+              { label: 'Modules', content: <ModulesPanel workspace={data} /> },
+              { label: 'Billing', content: <BillingPanel workspace={data} /> },
+            ]}
+          />
+        </>
+      )}
     </div>
   );
 }

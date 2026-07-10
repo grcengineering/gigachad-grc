@@ -1,328 +1,373 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
-import {
-  PlusIcon,
-  MagnifyingGlassIcon,
-  BookOpenIcon,
-  ClockIcon,
-  ArrowPathIcon,
-  ExclamationCircleIcon,
-} from '@heroicons/react/24/outline';
+import { useNavigate } from 'react-router-dom';
+import { BookOpen, CheckCircle2, FileEdit, AlertTriangle, Search, Plus } from 'lucide-react';
 import api from '@/lib/api';
-import { useDebounce } from '@/hooks/useDebounce';
-import clsx from 'clsx';
+import {
+  Badge,
+  Button,
+  DataTable,
+  EmptyState,
+  FilterBar,
+  Input,
+  PageHeader,
+  Select,
+  StatCard,
+  type ActiveFilter,
+  type BadgeVariant,
+  type DataTableColumn,
+} from '@/components/ui';
 
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-
-import { Button } from '@/components/ui/Button';
+// Inline debounce hook (avoids creating files outside the 6 pages while still
+// debouncing the search input as called for in the spec).
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState<T>(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
 
 interface Runbook {
   id: string;
   runbook_id: string;
   title: string;
-  description: string;
-  category: string;
-  system_name: string;
+  description?: string;
+  category?: string;
+  system_name?: string;
   status: string;
-  version: string;
-  owner_name: string;
-  process_name: string;
-  step_count: number;
-  estimated_duration_minutes: number;
-  last_reviewed_at: string;
-  next_review_due: string;
+  version?: string;
+  owner_name?: string;
+  process_name?: string;
+  step_count?: number;
+  estimated_duration_minutes?: number;
+  last_reviewed_at?: string | null;
+  next_review_due?: string | null;
+  scenario?: string;
 }
 
-const statusColors: Record<string, string> = {
-  draft: 'bg-surface-600 text-surface-700',
-  approved: 'bg-blue-500/20 text-blue-600',
-  published: 'bg-green-500/20 text-green-600',
-  needs_review: 'bg-yellow-500/20 text-yellow-600',
-  archived: 'bg-surface-200 text-surface-600',
+interface RunbookStats {
+  total?: number;
+  published_count?: number;
+  draft_count?: number;
+  needs_review_count?: number;
+}
+
+const STATUS_VARIANT: Record<string, BadgeVariant> = {
+  draft: 'neutral',
+  approved: 'info',
+  published: 'success',
+  needs_review: 'warning',
+  archived: 'neutral',
 };
 
-const categoryIcons: Record<string, string> = {
-  system_recovery: '💻',
-  data_restore: '💾',
-  failover: '🔄',
-  communication: '📢',
-  network: '🌐',
-  security: '🔒',
-  general: '📋',
-};
+const STATUS_OPTIONS = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'published', label: 'Published' },
+  { value: 'needs_review', label: 'Needs Review' },
+  { value: 'archived', label: 'Archived' },
+];
+
+const CATEGORY_OPTIONS = [
+  { value: 'system_recovery', label: 'System Recovery' },
+  { value: 'data_restore', label: 'Data Restore' },
+  { value: 'failover', label: 'Failover' },
+  { value: 'communication', label: 'Communication' },
+  { value: 'network', label: 'Network' },
+  { value: 'security', label: 'Security' },
+  { value: 'general', label: 'General' },
+];
+
+const PAGE_SIZE = 25;
+
+function humanize(s: string | null | undefined): string {
+  if (!s) return '';
+  return s.replace(/_/g, ' ');
+}
 
 export default function Runbooks() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(search, 300);
 
-  // Reset page when filters change
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch, statusFilter, categoryFilter]);
 
-  const {
-    data: runbooksData,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['runbooks', debouncedSearch, statusFilter, categoryFilter, page],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (debouncedSearch) params.append('search', debouncedSearch);
-      if (statusFilter) params.append('status', statusFilter);
-      if (categoryFilter) params.append('category', categoryFilter);
-      params.append('page', page.toString());
-      params.append('limit', '24'); // Multiple of 3 for grid layout
-
-      const res = await api.get(`/api/bcdr/runbooks?${params}`);
+      const params: Record<string, string | number> = { page, limit: PAGE_SIZE };
+      if (debouncedSearch) params.search = debouncedSearch;
+      if (statusFilter) params.status = statusFilter;
+      if (categoryFilter) params.category = categoryFilter;
+      const res = await api.get('/api/bcdr/runbooks', { params });
       return res.data;
     },
-    retry: 1,
   });
 
-  // Handle both { data: [...] } and direct array response
-  const runbooks = Array.isArray(runbooksData) ? runbooksData : (runbooksData?.data ?? []);
-  const totalPages = runbooksData?.totalPages || 1;
-
-  const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ['runbooks-stats'],
+  const { data: stats } = useQuery<RunbookStats>({
+    queryKey: ['runbooks', 'stats'],
     queryFn: async () => {
       const res = await api.get('/api/bcdr/runbooks/stats');
       return res.data;
     },
-    staleTime: 30000, // Cache stats for 30 seconds
+    staleTime: 30_000,
   });
 
-  // Error state
-  if (error) {
-    return (
-      <div className="p-6">
-        <div className="card p-8 text-center">
-          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
-          <h2 className="text-lg font-semibold text-surface-900 mb-2">Failed to load Runbooks</h2>
-          <p className="text-surface-600 mb-4">
-            {(error as Error).message || 'An unexpected error occurred'}
-          </p>
-          <Button onClick={() => refetch()} variant="primary">
-            Try Again
-          </Button>
-        </div>
-      </div>
-    );
+  const runbooks: Runbook[] = Array.isArray(data) ? data : (data?.data ?? []);
+  const total: number = data?.total ?? runbooks.length;
+  const totalPages: number = data?.totalPages ?? Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  const clearAll = () => {
+    setSearch('');
+    setStatusFilter('');
+    setCategoryFilter('');
+  };
+
+  const activeFilters: ActiveFilter[] = [];
+  if (debouncedSearch)
+    activeFilters.push({
+      key: 'search',
+      label: `Search: ${debouncedSearch}`,
+      onClear: () => setSearch(''),
+    });
+  if (categoryFilter) {
+    const l = CATEGORY_OPTIONS.find((o) => o.value === categoryFilter)?.label ?? categoryFilter;
+    activeFilters.push({
+      key: 'category',
+      label: `Category: ${l}`,
+      onClear: () => setCategoryFilter(''),
+    });
+  }
+  if (statusFilter) {
+    const l = STATUS_OPTIONS.find((o) => o.value === statusFilter)?.label ?? statusFilter;
+    activeFilters.push({
+      key: 'status',
+      label: `Status: ${l}`,
+      onClear: () => setStatusFilter(''),
+    });
   }
 
-  return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+  const columns: DataTableColumn<Runbook>[] = [
+    {
+      id: 'runbook_id',
+      accessorKey: 'runbook_id',
+      header: 'ID',
+      mobileLabel: 'ID',
+      cell: ({ row }) => (
+        <span className="font-mono text-small text-brand-700">{row.original.runbook_id}</span>
+      ),
+    },
+    {
+      id: 'title',
+      accessorKey: 'title',
+      header: 'Title',
+      mobileLabel: 'Title',
+      cell: ({ row }) => (
         <div>
-          <h1 className="text-2xl font-bold text-surface-900">Runbooks</h1>
-          <p className="text-surface-600 mt-1">
-            Step-by-step recovery procedures for systems and processes
-          </p>
-        </div>
-        <Link to="/bcdr/runbooks/new" className="">
-          <PlusIcon className="w-5 h-5 mr-2" />
-          Create Runbook
-        </Link>
-      </div>
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card p-4">
-          <p className="text-surface-600 text-sm">Total Runbooks</p>
-          {statsLoading ? (
-            <div className="h-8 w-16 bg-surface-200 rounded animate-pulse mt-1"></div>
-          ) : (
-            <p className="text-2xl font-bold text-surface-900">{stats?.total || 0}</p>
+          <p className="text-surface-900">{row.original.title}</p>
+          {row.original.description && (
+            <p className="text-xs text-surface-500 truncate max-w-md">{row.original.description}</p>
           )}
         </div>
-        <div className="card p-4">
-          <p className="text-surface-600 text-sm">Published</p>
-          {statsLoading ? (
-            <div className="h-8 w-16 bg-surface-200 rounded animate-pulse mt-1"></div>
-          ) : (
-            <p className="text-2xl font-bold text-green-600">{stats?.published_count || 0}</p>
-          )}
-        </div>
-        <div className="card p-4">
-          <p className="text-surface-600 text-sm">Drafts</p>
-          {statsLoading ? (
-            <div className="h-8 w-16 bg-surface-200 rounded animate-pulse mt-1"></div>
-          ) : (
-            <p className="text-2xl font-bold text-surface-700">{stats?.draft_count || 0}</p>
-          )}
-        </div>
-        <div className="card p-4">
-          <p className="text-surface-600 text-sm">Needs Review</p>
-          {statsLoading ? (
-            <div className="h-8 w-16 bg-surface-200 rounded animate-pulse mt-1"></div>
-          ) : (
-            <p className="text-2xl font-bold text-yellow-600">{stats?.needs_review_count || 0}</p>
-          )}
-        </div>
-      </div>
-      {/* Filters */}
-      <div className="card p-4">
-        <div className="flex flex-wrap gap-4">
-          <div className="flex-1 min-w-64">
-            <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-600" />
-              <Input
-                type="text"
-                placeholder="Search runbooks..."
-                className="form-input pl-10 w-full"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="w-40">
-            <SelectNative
-              className="form-select w-full"
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-            >
-              <option value="">All Categories</option>
-              <option value="system_recovery">System Recovery</option>
-              <option value="data_restore">Data Restore</option>
-              <option value="failover">Failover</option>
-              <option value="communication">Communication</option>
-              <option value="network">Network</option>
-              <option value="security">Security</option>
-            </SelectNative>
-          </div>
-          <div className="w-36">
-            <SelectNative
-              className="form-select w-full"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="">All Status</option>
-              <option value="draft">Draft</option>
-              <option value="approved">Approved</option>
-              <option value="published">Published</option>
-              <option value="needs_review">Needs Review</option>
-            </SelectNative>
-          </div>
-          <Button onClick={() => refetch()} variant="secondary">
-            <ArrowPathIcon className="w-5 h-5" />
-          </Button>
-        </div>
-      </div>
-      {/* Grid */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="card p-6 animate-pulse">
-              <div className="h-6 bg-surface-200 rounded w-3/4 mb-4"></div>
-              <div className="h-4 bg-surface-200 rounded w-1/2 mb-2"></div>
-              <div className="h-4 bg-surface-200 rounded w-2/3"></div>
-            </div>
-          ))}
-        </div>
-      ) : !runbooks || runbooks.length === 0 ? (
-        <div className="card p-8 text-center text-surface-600">
-          <BookOpenIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
-          <p>No runbooks found</p>
-          <Link
-            to="/bcdr/runbooks/new"
-            className="text-brand-400 hover:text-brand-300 mt-2 inline-block"
+      ),
+    },
+    {
+      id: 'scenario',
+      accessorKey: 'category',
+      header: 'Scenario',
+      mobileLabel: 'Scenario',
+      cell: ({ row }) => {
+        const scenario = row.original.scenario || row.original.category;
+        if (!scenario) return <span className="text-surface-500">—</span>;
+        const label =
+          CATEGORY_OPTIONS.find((c) => c.value === scenario)?.label ?? humanize(scenario);
+        return <span className="text-surface-700">{label}</span>;
+      },
+    },
+    {
+      id: 'status',
+      accessorKey: 'status',
+      header: 'Status',
+      mobileLabel: 'Status',
+      cell: ({ row }) => {
+        const status = row.original.status;
+        if (!status) return <span className="text-surface-500">—</span>;
+        return (
+          <Badge variant={STATUS_VARIANT[status] ?? 'neutral'} dot>
+            {humanize(status)}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: 'owner',
+      accessorKey: 'owner_name',
+      header: 'Owner',
+      mobileLabel: 'Owner',
+      cell: ({ row }) =>
+        row.original.owner_name ? (
+          <span className="text-surface-700">{row.original.owner_name}</span>
+        ) : (
+          <span className="text-surface-500">—</span>
+        ),
+    },
+    {
+      id: 'lastReviewed',
+      accessorKey: 'last_reviewed_at',
+      header: 'Last Reviewed',
+      mobileLabel: 'Last Reviewed',
+      cell: ({ row }) => {
+        const d = row.original.last_reviewed_at;
+        if (!d) return <span className="text-surface-500">—</span>;
+        return <span className="text-surface-700">{new Date(d).toLocaleDateString()}</span>;
+      },
+    },
+  ];
+
+  return (
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Runbooks"
+        description="Step-by-step recovery procedures for systems and processes."
+        actions={
+          <Button
+            size="sm"
+            leftIcon={<Plus className="h-4 w-4" />}
+            onClick={() => navigate('/bcdr/runbooks/new')}
           >
-            Create your first runbook →
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {runbooks.map((runbook: Runbook) => (
-            <Link
-              key={runbook.id}
-              to={`/bcdr/runbooks/${runbook.id}`}
-              className="card p-6 hover:border-brand-500/50 transition-colors"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{categoryIcons[runbook.category] || '📋'}</span>
-                  <span
-                    className={clsx(
-                      'px-2 py-0.5 rounded text-xs font-medium',
-                      statusColors[runbook.status]
-                    )}
-                  >
-                    {runbook.status.replace('_', ' ')}
-                  </span>
-                </div>
-                <span className="text-surface-600 text-xs">v{runbook.version}</span>
-              </div>
+            Create Runbook
+          </Button>
+        }
+      />
 
-              <h3 className="text-lg font-semibold text-surface-900 mb-1">{runbook.title}</h3>
-              <p className="text-surface-600 text-sm mb-3">{runbook.runbook_id}</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard
+          label="Total Runbooks"
+          value={stats?.total ?? 0}
+          icon={<BookOpen className="h-5 w-5" />}
+          tone="brand"
+        />
+        <StatCard
+          label="Published"
+          value={stats?.published_count ?? 0}
+          icon={<CheckCircle2 className="h-5 w-5" />}
+          tone="emerald"
+          onClick={() => setStatusFilter(statusFilter === 'published' ? '' : 'published')}
+        />
+        <StatCard
+          label="Drafts"
+          value={stats?.draft_count ?? 0}
+          icon={<FileEdit className="h-5 w-5" />}
+          tone="neutral"
+          onClick={() => setStatusFilter(statusFilter === 'draft' ? '' : 'draft')}
+        />
+        <StatCard
+          label="Needs Review"
+          value={stats?.needs_review_count ?? 0}
+          icon={<AlertTriangle className="h-5 w-5" />}
+          tone="amber"
+          onClick={() => setStatusFilter(statusFilter === 'needs_review' ? '' : 'needs_review')}
+        />
+      </div>
 
-              {runbook.description && (
-                <p className="text-surface-600 text-sm mb-4 line-clamp-2">{runbook.description}</p>
-              )}
+      <FilterBar active={activeFilters} onClearAll={activeFilters.length ? clearAll : undefined}>
+        <Input
+          inputSize="sm"
+          className="w-64"
+          placeholder="Search runbooks…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          leftIcon={<Search className="h-4 w-4" />}
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-48"
+          placeholder="All Categories"
+          value={categoryFilter}
+          onChange={(v) => setCategoryFilter(v)}
+          options={CATEGORY_OPTIONS}
+          clearable
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-44"
+          placeholder="All Statuses"
+          value={statusFilter}
+          onChange={(v) => setStatusFilter(v)}
+          options={STATUS_OPTIONS}
+          clearable
+        />
+      </FilterBar>
 
-              <div className="space-y-2 text-sm">
-                {runbook.system_name && (
-                  <div className="flex justify-between">
-                    <span className="text-surface-600">System</span>
-                    <span className="text-surface-700">{runbook.system_name}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-surface-600">Steps</span>
-                  <span className="text-surface-700">{runbook.step_count || 0}</span>
-                </div>
-                {runbook.estimated_duration_minutes && (
-                  <div className="flex justify-between">
-                    <span className="text-surface-600">Duration</span>
-                    <span className="text-surface-700 flex items-center gap-1">
-                      <ClockIcon className="w-4 h-4" />
-                      {runbook.estimated_duration_minutes}m
-                    </span>
-                  </div>
-                )}
-                {runbook.process_name && (
-                  <div className="flex justify-between">
-                    <span className="text-surface-600">Process</span>
-                    <span className="text-surface-700 truncate max-w-32">
-                      {runbook.process_name}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
-      {/* Pagination */}
+      <DataTable
+        data={runbooks}
+        columns={columns}
+        loading={isLoading}
+        getRowId={(r) => r.id}
+        onRowClick={(r) => navigate(`/bcdr/runbooks/${r.id}`)}
+        emptyState={
+          <EmptyState
+            icon={<BookOpen className="h-8 w-8" />}
+            title="No runbooks found"
+            description={
+              activeFilters.length
+                ? 'Try clearing your filters to see all runbooks.'
+                : 'Create your first runbook to start documenting recovery procedures.'
+            }
+            action={
+              activeFilters.length ? (
+                <Button variant="outline" size="sm" onClick={clearAll}>
+                  Clear filters
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  leftIcon={<Plus className="h-4 w-4" />}
+                  onClick={() => navigate('/bcdr/runbooks/new')}
+                >
+                  Create Runbook
+                </Button>
+              )
+            }
+          />
+        }
+      />
+
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-4">
-          <Button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className=""
-            variant="secondary"
-          >
-            Previous
-          </Button>
-          <span className="text-surface-600 text-sm">
-            Page {page} of {totalPages}
+        <div className="flex items-center justify-between text-xs text-surface-500">
+          <span>
+            Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} of {total}
           </span>
-          <Button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            className=""
-            variant="secondary"
-          >
-            Next
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              Previous
+            </Button>
+            <span className="text-surface-500">
+              Page {page} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       )}
     </div>

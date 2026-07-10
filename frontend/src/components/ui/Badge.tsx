@@ -19,17 +19,12 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 }
 
 const variants: Record<BadgeVariant, string> = {
-  neutral:
-    'bg-surface-100 text-surface-700 border border-surface-300 dark:bg-surface-800 dark:text-surface-200 dark:border-surface-700',
-  success:
-    'bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-800',
-  warning:
-    'bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-800',
-  danger:
-    'bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/40 dark:text-red-200 dark:border-red-800',
-  info: 'bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-900/40 dark:text-blue-200 dark:border-blue-800',
-  brand:
-    'bg-brand-50 text-brand-800 border border-brand-200 dark:bg-brand-900/40 dark:text-brand-200 dark:border-brand-800',
+  neutral: 'bg-surface-100 text-surface-700 border border-surface-300',
+  success: 'bg-emerald-50 text-emerald-800 border border-emerald-200',
+  warning: 'bg-amber-50 text-amber-800 border border-amber-200',
+  danger: 'bg-red-50 text-red-800 border border-red-200',
+  info: 'bg-blue-50 text-blue-800 border border-blue-200',
+  brand: 'bg-brand-50 text-brand-800 border border-brand-200',
 };
 
 const dotColors: Record<BadgeVariant, string> = {

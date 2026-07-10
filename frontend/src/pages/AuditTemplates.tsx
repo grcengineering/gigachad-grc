@@ -1,336 +1,276 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { ClipboardList, Plus, Search, Copy, PlayCircle } from 'lucide-react';
+import api from '@/lib/api';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
-  PlusIcon,
-  DocumentDuplicateIcon,
-  TrashIcon,
-  ClipboardDocumentListIcon,
-  CheckCircleIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/outline';
-import { Button } from '@/components/ui/Button';
-import { useToast } from '@/hooks/useToast';
-
-import { Textarea } from '@/components/ui/Textarea';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-import { Dialog } from '@/components/ui/Dialog';
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CategoryChip,
+  EmptyState,
+  FilterBar,
+  Input,
+  PageHeader,
+  Select,
+  SkeletonRows,
+  type ActiveFilter,
+} from '@/components/ui';
 
 interface AuditTemplate {
   id: string;
   name: string;
-  description: string;
-  auditType: string;
-  framework: string;
-  isSystem: boolean;
-  usageCount: number;
-  status: string;
-  checklistItems: any[];
-  requestTemplates: any[];
-  createdAt: string;
+  description?: string | null;
+  framework?: string | null;
+  auditType?: string | null;
+  controlsCount?: number;
+  proceduresCount?: number;
+  requestsCount?: number;
+  checklistItems?: unknown[];
+  requestTemplates?: unknown[];
 }
 
-const auditTypeLabels: Record<string, string> = {
-  internal: 'Internal',
-  external: 'External',
-  surveillance: 'Surveillance',
-  certification: 'Certification',
-};
+interface TemplatesResponse {
+  templates?: AuditTemplate[];
+  data?: AuditTemplate[];
+}
+
+const AUDIT_TYPE_OPTS = [
+  { value: 'internal', label: 'Internal' },
+  { value: 'external', label: 'External' },
+  { value: 'surveillance', label: 'Surveillance' },
+  { value: 'certification', label: 'Certification' },
+];
+
+const AUDIT_TYPE_LABEL: Record<string, string> = Object.fromEntries(
+  AUDIT_TYPE_OPTS.map((o) => [o.value, o.label])
+);
+
+const FRAMEWORK_OPTS = [
+  { value: 'soc2', label: 'SOC 2' },
+  { value: 'iso27001', label: 'ISO 27001' },
+  { value: 'hipaa', label: 'HIPAA' },
+  { value: 'nist', label: 'NIST' },
+  { value: 'pci_dss', label: 'PCI DSS' },
+  { value: 'gdpr', label: 'GDPR' },
+  { value: 'fedramp', label: 'FedRAMP' },
+];
+
+const FRAMEWORK_LABEL: Record<string, string> = Object.fromEntries(
+  FRAMEWORK_OPTS.map((o) => [o.value, o.label])
+);
 
 export default function AuditTemplates() {
-  const queryClient = useQueryClient();
-  const toast = useToast();
-  const [selectedType, setSelectedType] = useState('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createForm, setCreateForm] = useState({
-    name: '',
-    description: '',
-    auditType: 'internal',
-    framework: '',
-  });
+  const [search, setSearch] = useState('');
+  const [framework, setFramework] = useState('');
+  const [auditType, setAuditType] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
 
-  const { data: templates = [], isLoading } = useQuery({
-    queryKey: ['audit-templates', selectedType],
+  const { data, isLoading } = useQuery<TemplatesResponse | AuditTemplate[]>({
+    queryKey: ['audit-templates', { search: debouncedSearch, framework, auditType }],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (selectedType) params.set('auditType', selectedType);
-      const res = await fetch(`/api/audit/templates?${params}`);
-      if (!res.ok) throw new Error('Failed to fetch templates');
-      return res.json();
+      const params: Record<string, string> = {};
+      if (debouncedSearch) params.search = debouncedSearch;
+      if (framework) params.framework = framework;
+      if (auditType) params.auditType = auditType;
+      const res = await api.get('/api/audits/templates', { params });
+      return res.data;
     },
   });
 
-  const cloneMutation = useMutation({
-    mutationFn: async ({ id, name }: { id: string; name: string }) => {
-      const res = await fetch(`/api/audit/templates/${id}/clone`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
-      });
-      if (!res.ok) throw new Error('Failed to clone template');
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['audit-templates'] });
-      toast.success('Template cloned successfully');
-    },
-  });
+  const templates: AuditTemplate[] = useMemo(() => {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    return data.templates ?? data.data ?? [];
+  }, [data]);
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await fetch(`/api/audit/templates/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete template');
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['audit-templates'] });
-      toast.success('Template archived');
-    },
-  });
-
-  const createMutation = useMutation({
-    mutationFn: async (data: typeof createForm) => {
-      const res = await fetch('/api/audit/templates', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...data,
-          checklistItems: [],
-          requestTemplates: [],
-        }),
-      });
-      if (!res.ok) throw new Error('Failed to create template');
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['audit-templates'] });
-      toast.success('Template created successfully');
-      setShowCreateModal(false);
-      setCreateForm({ name: '', description: '', auditType: 'internal', framework: '' });
-    },
-    onError: () => {
-      toast.error('Failed to create template');
-    },
-  });
-
-  const handleClone = (template: AuditTemplate) => {
-    const name = prompt('Enter name for the new template:', `${template.name} (Copy)`);
-    if (name) {
-      cloneMutation.mutate({ id: template.id, name });
-    }
-  };
-
-  const handleCreateSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!createForm.name.trim()) {
-      toast.error('Please enter a template name');
-      return;
-    }
-    createMutation.mutate(createForm);
+  const activeFilters: ActiveFilter[] = [];
+  if (debouncedSearch) {
+    activeFilters.push({
+      key: 'search',
+      label: `Search: ${debouncedSearch}`,
+      onClear: () => setSearch(''),
+    });
+  }
+  if (framework) {
+    activeFilters.push({
+      key: 'framework',
+      label: `Framework: ${FRAMEWORK_LABEL[framework] ?? framework}`,
+      onClear: () => setFramework(''),
+    });
+  }
+  if (auditType) {
+    activeFilters.push({
+      key: 'auditType',
+      label: `Type: ${AUDIT_TYPE_LABEL[auditType] ?? auditType}`,
+      onClear: () => setAuditType(''),
+    });
+  }
+  const clearAll = () => {
+    setSearch('');
+    setFramework('');
+    setAuditType('');
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Audit Templates</h1>
-          <p className="text-surface-600 mt-1">
-            Reusable templates with checklists and request templates
-          </p>
-        </div>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <PlusIcon className="h-4 w-4 mr-2" />
-          New Template
-        </Button>
-      </div>
-      {/* Filters */}
-      <div className="flex gap-4">
-        <SelectNative
-          value={selectedType}
-          onChange={(e) => setSelectedType(e.target.value)}
-          className="bg-white border border-surface-300 rounded-lg px-3 py-2 text-white"
-        >
-          <option value="">All Types</option>
-          {Object.entries(auditTypeLabels).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </SelectNative>
-      </div>
-      {/* Templates Grid */}
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Audit Templates"
+        description="Reusable audit blueprints with checklists, procedures, and request templates."
+        actions={
+          <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+            Create template
+          </Button>
+        }
+      />
+
+      <FilterBar active={activeFilters} onClearAll={activeFilters.length ? clearAll : undefined}>
+        <Input
+          inputSize="sm"
+          className="w-64"
+          placeholder="Search templates…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          leftIcon={<Search className="h-4 w-4" />}
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-44"
+          placeholder="All Frameworks"
+          value={framework}
+          onChange={setFramework}
+          options={FRAMEWORK_OPTS}
+          clearable
+          searchable
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-44"
+          placeholder="All Audit Types"
+          value={auditType}
+          onChange={setAuditType}
+          options={AUDIT_TYPE_OPTS}
+          clearable
+        />
+      </FilterBar>
+
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="animate-pulse bg-white rounded-lg p-6 h-48" />
-          ))}
-        </div>
+        <Card>
+          <CardBody>
+            <SkeletonRows rows={6} />
+          </CardBody>
+        </Card>
+      ) : templates.length === 0 ? (
+        <Card>
+          <EmptyState
+            icon={<ClipboardList className="h-8 w-8" />}
+            title="No templates found"
+            description={
+              activeFilters.length
+                ? 'Try clearing your filters to see all templates.'
+                : 'Create your first audit template to standardize future audits.'
+            }
+            action={
+              activeFilters.length ? (
+                <Button variant="outline" size="sm" onClick={clearAll}>
+                  Clear filters
+                </Button>
+              ) : (
+                <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+                  Create template
+                </Button>
+              )
+            }
+          />
+        </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {(templates as AuditTemplate[]).map((template) => (
-            <div
-              key={template.id}
-              className="bg-white rounded-lg p-6 border border-surface-200 hover:border-surface-500 transition-colors"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-brand-500/10 rounded-lg">
-                    <ClipboardDocumentListIcon className="h-6 w-6 text-brand-400" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {templates.map((t) => {
+            const controls = t.controlsCount ?? 0;
+            const procedures =
+              t.proceduresCount ?? (Array.isArray(t.checklistItems) ? t.checklistItems.length : 0);
+            const requests =
+              t.requestsCount ??
+              (Array.isArray(t.requestTemplates) ? t.requestTemplates.length : 0);
+
+            return (
+              <Card key={t.id} className="flex flex-col">
+                <CardBody density="cozy" className="flex-1 flex flex-col gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-md bg-brand-500/10 text-brand-700 shrink-0">
+                      <ClipboardList className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-h3 text-surface-900 truncate">{t.name}</h3>
+                      <p className="text-small text-surface-600 line-clamp-2 mt-1">
+                        {t.description || 'No description.'}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-white">{template.name}</h3>
-                    {template.isSystem && (
-                      <span className="text-xs bg-blue-500/20 text-blue-600 px-2 py-0.5 rounded">
-                        System Template
-                      </span>
+
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {t.framework && (
+                      <CategoryChip
+                        value={t.framework}
+                        label={FRAMEWORK_LABEL[t.framework] ?? t.framework}
+                        case="upper"
+                      />
+                    )}
+                    {t.auditType && (
+                      <Badge variant="info">
+                        {AUDIT_TYPE_LABEL[t.auditType] ?? t.auditType.replace(/_/g, ' ')}
+                      </Badge>
                     )}
                   </div>
-                </div>
-              </div>
 
-              <p className="text-surface-600 text-sm mt-3 line-clamp-2">
-                {template.description || 'No description'}
-              </p>
+                  <dl className="grid grid-cols-3 gap-2 pt-2 border-t border-surface-200">
+                    <div>
+                      <dt className="text-xs text-surface-500 uppercase tracking-wider">
+                        Controls
+                      </dt>
+                      <dd className="text-h3 text-surface-900 tabular-nums">{controls}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-surface-500 uppercase tracking-wider">
+                        Procedures
+                      </dt>
+                      <dd className="text-h3 text-surface-900 tabular-nums">{procedures}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-surface-500 uppercase tracking-wider">
+                        Requests
+                      </dt>
+                      <dd className="text-h3 text-surface-900 tabular-nums">{requests}</dd>
+                    </div>
+                  </dl>
 
-              <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                <span className="bg-surface-200 text-surface-700 px-2 py-1 rounded">
-                  {auditTypeLabels[template.auditType] || template.auditType}
-                </span>
-                {template.framework && (
-                  <span className="bg-surface-200 text-surface-700 px-2 py-1 rounded">
-                    {template.framework}
-                  </span>
-                )}
-              </div>
-
-              <div className="mt-4 flex items-center justify-between text-sm text-surface-600">
-                <div className="flex items-center gap-4">
-                  <span className="flex items-center gap-1">
-                    <CheckCircleIcon className="h-4 w-4" />
-                    {template.checklistItems?.length || 0} items
-                  </span>
-                  <span>{template.usageCount} uses</span>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-surface-200 flex gap-2">
-                <Link to={`/audits/new?templateId=${template.id}`} className="flex-1">
-                  <Button variant="primary" size="sm" className="w-full">
-                    Use Template
-                  </Button>
-                </Link>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleClone(template)}
-                  title="Clone Template"
-                >
-                  <DocumentDuplicateIcon className="h-4 w-4" />
-                </Button>
-                {!template.isSystem && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteMutation.mutate(template.id)}
-                    title="Archive Template"
-                  >
-                    <TrashIcon className="h-4 w-4 text-red-600" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          ))}
+                  <div className="flex items-center gap-2 pt-2 mt-auto">
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      leftIcon={<PlayCircle className="h-4 w-4" />}
+                      className="flex-1"
+                    >
+                      Use
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      leftIcon={<Copy className="h-4 w-4" />}
+                      className="flex-1"
+                    >
+                      Clone
+                    </Button>
+                  </div>
+                </CardBody>
+              </Card>
+            );
+          })}
         </div>
       )}
-      {/* Empty State */}
-      {!isLoading && templates.length === 0 && (
-        <div className="text-center py-12">
-          <ClipboardDocumentListIcon className="h-12 w-12 text-surface-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-white">No templates found</h3>
-          <p className="text-surface-600 mt-2">
-            Create a new template or check back later for system templates.
-          </p>
-        </div>
-      )}
-      {/* Create Template Modal */}
-      <Dialog open={showCreateModal} onClose={() => setShowCreateModal(false)}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-white">Create Audit Template</h2>
-          <button
-            onClick={() => setShowCreateModal(false)}
-            className="p-1 hover:bg-surface-200 rounded"
-          >
-            <XMarkIcon className="h-5 w-5 text-surface-600" />
-          </button>
-        </div>
-
-        <form onSubmit={handleCreateSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-1">
-              Template Name *
-            </label>
-            <Input
-              type="text"
-              value={createForm.name}
-              onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-              className="w-full bg-surface-200 border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-              placeholder="e.g., SOC 2 Annual Audit"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-1">Description</label>
-            <Textarea
-              value={createForm.description}
-              onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
-              rows={3}
-              className="w-full bg-surface-200 border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-              placeholder="Describe the purpose of this template..."
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">Audit Type</label>
-              <SelectNative
-                value={createForm.auditType}
-                onChange={(e) => setCreateForm({ ...createForm, auditType: e.target.value })}
-                className="w-full bg-surface-200 border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-              >
-                {Object.entries(auditTypeLabels).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </SelectNative>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">Framework</label>
-              <Input
-                type="text"
-                value={createForm.framework}
-                onChange={(e) => setCreateForm({ ...createForm, framework: e.target.value })}
-                className="w-full bg-surface-200 border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                placeholder="e.g., SOC 2, ISO 27001"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="secondary" onClick={() => setShowCreateModal(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={createMutation.isPending || !createForm.name.trim()}>
-              {createMutation.isPending ? 'Creating...' : 'Create Template'}
-            </Button>
-          </div>
-        </form>
-      </Dialog>
     </div>
   );
 }

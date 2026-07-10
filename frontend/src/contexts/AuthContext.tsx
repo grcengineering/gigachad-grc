@@ -1,15 +1,5 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  ReactNode,
-  useCallback,
-  useRef,
-} from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import Keycloak from 'keycloak-js';
-import { setErrorTrackingUser, addBreadcrumb } from '@/lib/errorTracking';
-import { secureStorage, STORAGE_KEYS } from '@/lib/secureStorage';
 
 interface User {
   id: string;
@@ -24,8 +14,6 @@ interface AuthContextType {
   isLoading: boolean;
   user: User | null;
   token: string | null;
-  /** Epoch ms when the SSO session expires (null if unknown or dev mode) */
-  sessionExpiry: number | null;
   login: () => void;
   logout: () => void;
   devLogin?: () => void;
@@ -41,9 +29,7 @@ const keycloakConfig = {
   clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'grc-frontend',
 };
 
-// Suppress Keycloak config log in development
-// // Suppress Keycloak config log in development
-// console.log('Keycloak config:', keycloakConfig);
+console.log('Keycloak config:', keycloakConfig);
 
 let keycloak: Keycloak | null = null;
 let initPromise: Promise<boolean> | null = null;
@@ -60,39 +46,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [sessionExpiry, setSessionExpiry] = useState<number | null>(null);
-
-  // BroadcastChannel for cross-tab auth synchronization
-  const authChannel = useRef<BroadcastChannel | null>(null);
-
-  // Set up cross-tab logout synchronization
-  useEffect(() => {
-    // Create broadcast channel for cross-tab auth sync
-    authChannel.current = new BroadcastChannel('grc_auth_channel');
-
-    authChannel.current.onmessage = (event) => {
-      if (event.data.type === 'logout') {
-        // Force logout on this tab when another tab logs out
-        setIsAuthenticated(false);
-        setUser(null);
-        setToken(null);
-      }
-    };
-
-    return () => {
-      authChannel.current?.close();
-    };
-  }, []);
 
   const loadUserProfile = useCallback(async (kc: Keycloak) => {
     try {
       const profile = await kc.loadUserProfile();
       const tokenParsed = kc.tokenParsed as any;
 
-      // Token and profile logged only in development for debugging
-      if (import.meta.env.DEV) {
-        console.debug('Auth profile loaded for user:', profile.email);
-      }
+      console.log('Token parsed:', tokenParsed);
+      console.log('Profile:', profile);
 
       const role =
         tokenParsed?.roles?.[0] ||
@@ -104,29 +65,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userId = kc.subject || '';
       const organizationId = tokenParsed?.organization_id || 'default';
 
-      const newUser = {
+      setUser({
         id: userId,
         email: profile.email || '',
         name: `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || profile.email || '',
         role,
         organizationId,
-      };
-      setUser(newUser);
-
-      // Set user for error tracking (Sentry)
-      setErrorTrackingUser({
-        id: userId,
-        email: profile.email || undefined,
-        organizationId,
       });
-      addBreadcrumb({ category: 'auth', message: 'User logged in' });
 
-      // Store in secure storage for API interceptor
-      secureStorage.set(STORAGE_KEYS.USER_ID, userId);
-      secureStorage.set(STORAGE_KEYS.ORGANIZATION_ID, organizationId);
-      if (kc.token) {
-        secureStorage.set(STORAGE_KEYS.TOKEN, kc.token);
-      }
+      // Store in localStorage for API interceptor
+      localStorage.setItem('userId', userId);
+      localStorage.setItem('organizationId', organizationId);
 
       setToken(kc.token || null);
     } catch (error) {
@@ -138,29 +87,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const initKeycloak = async () => {
+      const isLocalHost =
+        typeof window !== 'undefined' &&
+        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+      if (isLocalHost && new URLSearchParams(window.location.search).get('devAuth') === '1') {
+        // Explicit one-time local opt-in used by Playwright setup; persisted
+        // in localStorage so subsequent routes/contexts keep using dev auth.
+        localStorage.setItem('grc-dev-auth-enabled', '1');
+      }
+
+      const hasLocalDevAuthOptIn =
+        isLocalHost && localStorage.getItem('grc-dev-auth-enabled') === '1';
+
       // Check for dev auth first
-      const isDevMode = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEV_AUTH === 'true';
-      if (isDevMode) {
+      if (import.meta.env.DEV || hasLocalDevAuthOptIn) {
         const storedAuth = localStorage.getItem('grc-dev-auth');
         if (storedAuth) {
           try {
             const devUser = JSON.parse(storedAuth) as User;
+            console.log('Restoring dev auth session');
             setUser(devUser);
             setToken('dev-token-not-for-production');
             setIsAuthenticated(true);
-            secureStorage.set(STORAGE_KEYS.USER_ID, devUser.id);
-            secureStorage.set(STORAGE_KEYS.ORGANIZATION_ID, devUser.organizationId);
-            secureStorage.set(STORAGE_KEYS.TOKEN, 'dev-token-not-for-production');
+            // Ensure userId and organizationId are set for API calls
+            localStorage.setItem('userId', devUser.id);
+            localStorage.setItem('organizationId', devUser.organizationId);
             setIsLoading(false);
             return;
-          } catch {
+          } catch (e) {
             localStorage.removeItem('grc-dev-auth');
           }
         }
-        // Dev mode with no stored session — skip Keycloak entirely
-        // and let the user reach the login page with the dev login button
-        setIsLoading(false);
-        return;
       }
 
       const kc = getKeycloak();
@@ -182,9 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        if (import.meta.env.DEV) {
-          console.log('Initializing Keycloak...');
-        }
+        console.log('Initializing Keycloak...');
 
         initPromise = kc.init({
           onLoad: 'check-sso',
@@ -194,9 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
 
         const authenticated = await initPromise;
-        if (import.meta.env.DEV) {
-          console.log('Keycloak initialized, authenticated:', authenticated);
-        }
+        console.log('Keycloak initialized, authenticated:', authenticated);
 
         if (authenticated) {
           await loadUserProfile(kc);
@@ -204,34 +158,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setIsAuthenticated(authenticated);
 
-        // Track SSO session expiry from the refresh token
-        // The refresh token exp reflects the SSO session, not the short-lived access token
-        const updateSessionExpiry = () => {
-          const refreshParsed = kc.refreshTokenParsed as Record<string, unknown> | undefined;
-          if (refreshParsed?.exp) {
-            setSessionExpiry((refreshParsed.exp as number) * 1000);
-          }
-        };
-        updateSessionExpiry();
-
         // Token refresh
         kc.onTokenExpired = () => {
-          if (import.meta.env.DEV) {
-            console.log('Token expired, refreshing...');
-          }
+          console.log('Token expired, refreshing...');
           kc.updateToken(30)
             .then((refreshed) => {
-              if (refreshed && import.meta.env.DEV) {
-                console.log('Token refreshed');
-              }
               if (refreshed) {
+                console.log('Token refreshed');
                 setToken(kc.token || null);
-                updateSessionExpiry();
               }
             })
             .catch(() => {
-              console.error('Failed to refresh token — SSO session expired');
-              setSessionExpiry(Date.now()); // Mark as expired now
+              console.error('Failed to refresh token');
               setIsAuthenticated(false);
               setUser(null);
               setToken(null);
@@ -240,9 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Handle auth success callback
         kc.onAuthSuccess = () => {
-          if (import.meta.env.DEV) {
-            console.log('Auth success');
-          }
+          console.log('Auth success');
           loadUserProfile(kc);
           setIsAuthenticated(true);
         };
@@ -263,9 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(() => {
     const kc = getKeycloak();
-    if (import.meta.env.DEV) {
-      console.log('Logging in...');
-    }
+    console.log('Logging in...');
     // Redirect back to root so Keycloak can process the callback
     kc.login({
       redirectUri: window.location.origin + '/',
@@ -274,22 +208,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     const kc = getKeycloak();
-
-    // Broadcast logout to other tabs for cross-tab sync
-    authChannel.current?.postMessage({ type: 'logout' });
-
     // Clear dev login state and user info
     localStorage.removeItem('grc-dev-auth');
+    localStorage.removeItem('grc-dev-auth-enabled');
     localStorage.removeItem('userId');
     localStorage.removeItem('organizationId');
     localStorage.removeItem('token');
     setIsAuthenticated(false);
     setUser(null);
     setToken(null);
-
-    // Clear user from error tracking
-    setErrorTrackingUser(null);
-    addBreadcrumb({ category: 'auth', message: 'User logged out' });
 
     // Only call keycloak logout if we were authenticated via keycloak
     if (kc.authenticated) {
@@ -299,41 +226,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Dev login bypass - only available in development. Defense in depth on
-  // top of the Dockerfile guard: refuse to run if we are clearly in a
-  // production build, even if VITE_ENABLE_DEV_AUTH got flipped by mistake.
+  // Dev login bypass - only available in development
   const devLogin = useCallback(() => {
-    const inDevBuild = import.meta.env.DEV === true;
-    const devAuthFlag = import.meta.env.VITE_ENABLE_DEV_AUTH === 'true';
-    const isProdBuild = import.meta.env.PROD === true;
-
-    if (isProdBuild && !devAuthFlag) {
-      // Should never be reachable in a properly-built prod bundle, since
-      // the dev-login UI is hidden. If something does reach here, fail loud.
-      console.error('devLogin invoked in a production build without VITE_ENABLE_DEV_AUTH');
-      return;
-    }
-    if (!inDevBuild && !devAuthFlag) {
-      return;
-    }
-
-    if (inDevBuild) {
+    if (import.meta.env.DEV) {
       console.log('Dev login activated');
+      const devUser: User = {
+        id: '8f88a42b-e799-455c-b68a-308d7d2e9aa4', // John Doe - seeded user
+        email: 'john.doe@example.com',
+        name: 'John Doe',
+        role: 'admin',
+        organizationId: '8924f0c1-7bb1-4be8-84ee-ad8725c712bf',
+      };
+      setUser(devUser);
+      setToken('dev-token-not-for-production');
+      setIsAuthenticated(true);
+      // Persist dev auth state and user info for API calls
+      localStorage.setItem('grc-dev-auth', JSON.stringify(devUser));
+      localStorage.setItem('userId', devUser.id);
+      localStorage.setItem('organizationId', devUser.organizationId);
     }
-    const devUser: User = {
-      id: '8f88a42b-e799-455c-b68a-308d7d2e9aa4', // John Doe - seeded user
-      email: 'john.doe@example.com',
-      name: 'John Doe',
-      role: 'admin',
-      organizationId: '8924f0c1-7bb1-4be8-84ee-ad8725c712bf',
-    };
-    setUser(devUser);
-    setToken('dev-token-not-for-production');
-    setIsAuthenticated(true);
-    // Persist dev auth state and user info for API calls
-    localStorage.setItem('grc-dev-auth', JSON.stringify(devUser));
-    localStorage.setItem('userId', devUser.id);
-    localStorage.setItem('organizationId', devUser.organizationId);
   }, []);
 
   const hasRole = (role: string): boolean => {
@@ -377,13 +288,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         user,
         token,
-        sessionExpiry,
         login,
         logout,
-        devLogin:
-          import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEV_AUTH === 'true'
-            ? devLogin
-            : undefined,
+        devLogin: import.meta.env.DEV ? devLogin : undefined,
         hasRole,
         hasPermission,
       }}
@@ -393,25 +300,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Default context for cases when useAuth is called outside the provider (e.g., lazy-loaded components)
-const defaultAuthContext: AuthContextType = {
-  isAuthenticated: false,
-  isLoading: true,
-  user: null,
-  token: null,
-  sessionExpiry: null,
-  login: () => {},
-  logout: () => {},
-  hasRole: () => false,
-  hasPermission: () => false,
-};
-
 export function useAuth() {
   const context = useContext(AuthContext);
-  // Return default context instead of throwing - safer for lazy-loaded components
   if (context === undefined) {
-    console.warn('useAuth called outside of AuthProvider - using defaults');
-    return defaultAuthContext;
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 }

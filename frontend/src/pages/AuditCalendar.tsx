@@ -1,237 +1,336 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, PlayIcon } from '@heroicons/react/24/outline';
-import { Button } from '@/components/ui/Button';
-import { useToast } from '@/hooks/useToast';
-import clsx from 'clsx';
+import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import api from '@/lib/api';
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  EmptyState,
+  PageHeader,
+  Skeleton,
+  type BadgeVariant,
+} from '@/components/ui';
 
-interface PlanEntry {
+type EventType = 'audit_start' | 'audit_end' | 'request_due' | 'milestone';
+
+interface CalendarEvent {
   id: string;
-  year: number;
-  quarter: number;
-  auditName: string;
-  auditType: string;
-  framework: string;
-  riskRating: string;
-  status: string;
-  estimatedHours: number;
-  linkedAuditId: string | null;
+  date: string;
+  type: EventType;
+  title: string;
+  auditId?: string;
+  description?: string;
 }
 
-interface CalendarData {
-  [year: number]: {
-    [quarter: number]: PlanEntry[];
-  };
+const EVENT_VARIANT: Record<EventType, BadgeVariant> = {
+  audit_start: 'brand',
+  audit_end: 'success',
+  request_due: 'warning',
+  milestone: 'info',
+};
+
+const EVENT_LABEL: Record<EventType, string> = {
+  audit_start: 'Start',
+  audit_end: 'End',
+  request_due: 'Due',
+  milestone: 'Milestone',
+};
+
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+const MONTH_LABELS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+function startOfMonth(year: number, month: number) {
+  return new Date(year, month, 1);
 }
 
-const riskColors: Record<string, string> = {
-  critical: 'bg-red-500/20 border-red-500 text-red-700',
-  high: 'bg-orange-500/20 border-orange-500 text-orange-700',
-  medium: 'bg-yellow-500/20 border-yellow-500 text-yellow-700',
-  low: 'bg-green-500/20 border-green-500 text-green-700',
-};
+function endOfMonth(year: number, month: number) {
+  return new Date(year, month + 1, 0, 23, 59, 59, 999);
+}
 
-const statusColors: Record<string, string> = {
-  planned: 'bg-surface-200 text-surface-700',
-  scheduled: 'bg-blue-500/20 text-blue-600',
-  in_progress: 'bg-purple-500/20 text-purple-600',
-  completed: 'bg-green-500/20 text-green-600',
-  deferred: 'bg-gray-500/20 text-gray-400',
-  cancelled: 'bg-red-500/20 text-red-600',
-};
+function toIsoDate(d: Date) {
+  // Return YYYY-MM-DD in UTC date sense
+  return d.toISOString();
+}
 
-const quarterLabels = ['Q1', 'Q2', 'Q3', 'Q4'];
+function dateKey(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function parseEventDate(value: string): Date {
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? new Date(0) : d;
+}
+
+function buildMonthGrid(year: number, month: number): Date[] {
+  // 6 weeks x 7 days = 42 cells, starting from the Sunday on/before the 1st.
+  const first = startOfMonth(year, month);
+  const startDay = first.getDay();
+  const start = new Date(year, month, 1 - startDay);
+  return Array.from({ length: 42 }, (_, i) => {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    return d;
+  });
+}
+
+function formatLongDate(value: string) {
+  const d = parseEventDate(value);
+  return d.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
 
 export default function AuditCalendar() {
-  const queryClient = useQueryClient();
-  const toast = useToast();
-  const currentYear = new Date().getFullYear();
-  const [startYear, setStartYear] = useState(currentYear);
-  const endYear = startYear + 2;
+  const today = useMemo(() => new Date(), []);
+  const [cursor, setCursor] = useState<{ year: number; month: number }>(() => ({
+    year: today.getFullYear(),
+    month: today.getMonth(),
+  }));
 
-  const { data: calendarData, isLoading } = useQuery<CalendarData>({
-    queryKey: ['audit-calendar', startYear, endYear],
+  const monthLabel = `${MONTH_LABELS[cursor.month]} ${cursor.year}`;
+
+  const rangeStartIso = useMemo(
+    () => toIsoDate(startOfMonth(cursor.year, cursor.month)),
+    [cursor.year, cursor.month]
+  );
+  const rangeEndIso = useMemo(
+    () => toIsoDate(endOfMonth(cursor.year, cursor.month)),
+    [cursor.year, cursor.month]
+  );
+
+  const { data: events, isLoading } = useQuery<CalendarEvent[]>({
+    queryKey: ['audits', 'calendar', rangeStartIso, rangeEndIso],
     queryFn: async () => {
-      const res = await fetch(
-        `/api/audit/planning/calendar?startYear=${startYear}&endYear=${endYear}`
-      );
-      if (!res.ok) throw new Error('Failed to fetch calendar');
-      return res.json();
-    },
-  });
-
-  const { data: capacity } = useQuery({
-    queryKey: ['audit-capacity', currentYear],
-    queryFn: async () => {
-      const res = await fetch(`/api/audit/planning/capacity?year=${currentYear}`);
-      if (!res.ok) throw new Error('Failed to fetch capacity');
-      return res.json();
-    },
-  });
-
-  const convertToAuditMutation = useMutation({
-    mutationFn: async (entryId: string) => {
-      const res = await fetch(`/api/audit/planning/${entryId}/convert-to-audit`, {
-        method: 'POST',
+      const res = await api.get('/api/audits/calendar', {
+        params: { start: rangeStartIso, end: rangeEndIso },
       });
-      if (!res.ok) throw new Error('Failed to convert to audit');
-      return res.json();
+      return Array.isArray(res.data) ? res.data : [];
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['audit-calendar'] });
-      toast.success('Audit created from plan entry');
-    },
+    staleTime: 60_000,
   });
 
-  const years = Array.from({ length: 3 }, (_, i) => startYear + i);
+  const grid = useMemo(
+    () => buildMonthGrid(cursor.year, cursor.month),
+    [cursor.year, cursor.month]
+  );
+
+  const eventsByDay = useMemo(() => {
+    const map = new Map<string, CalendarEvent[]>();
+    (events ?? []).forEach((e) => {
+      const d = parseEventDate(e.date);
+      const key = dateKey(d);
+      const list = map.get(key);
+      if (list) list.push(e);
+      else map.set(key, [e]);
+    });
+    return map;
+  }, [events]);
+
+  const upcoming = useMemo(() => {
+    const list = (events ?? []).slice();
+    list.sort((a, b) => parseEventDate(a.date).getTime() - parseEventDate(b.date).getTime());
+    return list;
+  }, [events]);
+
+  const goPrev = () => {
+    setCursor(({ year, month }) => {
+      const m = month - 1;
+      if (m < 0) return { year: year - 1, month: 11 };
+      return { year, month: m };
+    });
+  };
+  const goNext = () => {
+    setCursor(({ year, month }) => {
+      const m = month + 1;
+      if (m > 11) return { year: year + 1, month: 0 };
+      return { year, month: m };
+    });
+  };
+  const goToday = () => setCursor({ year: today.getFullYear(), month: today.getMonth() });
+
+  const todayKey = dateKey(today);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Audit Calendar</h1>
-          <p className="text-surface-600 mt-1">Multi-year audit planning and scheduling</p>
-        </div>
-        <div className="flex items-center gap-4">
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Audit Calendar"
+        description="Upcoming audit milestones, requests, and deadlines."
+        actions={
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setStartYear(startYear - 1)}>
-              <ChevronLeftIcon className="h-4 w-4" />
+            <Button variant="ghost" size="icon" onClick={goPrev} aria-label="Previous month">
+              <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="text-white font-medium">
-              {startYear} - {endYear}
-            </span>
-            <Button variant="ghost" size="sm" onClick={() => setStartYear(startYear + 1)}>
-              <ChevronRightIcon className="h-4 w-4" />
+            <Button variant="secondary" size="sm" onClick={goToday}>
+              Today
             </Button>
-          </div>
-          <Button>
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Add Plan Entry
-          </Button>
-        </div>
-      </div>
-
-      {/* Capacity Overview */}
-      {capacity && (
-        <div className="bg-white rounded-lg p-4 border border-surface-200">
-          <h3 className="text-sm font-medium text-surface-600 mb-2">
-            {currentYear} Capacity Overview
-          </h3>
-          <div className="grid grid-cols-4 gap-4">
-            {quarterLabels.map((q, i) => {
-              const hours = capacity.hoursByQuarter?.[i + 1] || 0;
-              return (
-                <div key={q} className="text-center">
-                  <p className="text-surface-600 text-sm">{q}</p>
-                  <p className="text-xl font-bold text-white">{hours}h</p>
-                </div>
-              );
-            })}
-          </div>
-          <div className="mt-3 pt-3 border-t border-surface-200 flex justify-between text-sm">
-            <span className="text-surface-600">
-              Total: <span className="text-white font-medium">{capacity.totalHours}h</span>
-            </span>
-            <span className="text-surface-600">
-              Entries: <span className="text-white font-medium">{capacity.totalEntries}</span>
+            <Button variant="ghost" size="icon" onClick={goNext} aria-label="Next month">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <span className="ml-2 text-h3 text-surface-900 tabular-nums whitespace-nowrap">
+              {monthLabel}
             </span>
           </div>
-        </div>
-      )}
+        }
+      />
 
-      {/* Calendar Grid */}
-      {isLoading ? (
-        <div className="animate-pulse bg-white rounded-lg h-96" />
-      ) : (
-        <div className="bg-white rounded-lg border border-surface-200 overflow-hidden">
-          {/* Year Headers */}
-          <div className="grid grid-cols-3 border-b border-surface-200">
-            {years.map((year) => (
-              <div
-                key={year}
-                className="text-center py-3 text-lg font-semibold text-white border-r border-surface-200 last:border-r-0"
-              >
-                {year}
-              </div>
-            ))}
-          </div>
-
-          {/* Quarter Rows */}
-          {[1, 2, 3, 4].map((quarter) => (
-            <div
-              key={quarter}
-              className="grid grid-cols-3 border-b border-surface-200 last:border-b-0"
-            >
-              {years.map((year) => {
-                const entries = calendarData?.[year]?.[quarter] || [];
-                return (
+      <Card>
+        <CardBody density="cozy">
+          {isLoading ? (
+            <Skeleton className="h-[420px]" />
+          ) : (
+            <>
+              <div className="grid grid-cols-7 gap-px mb-1">
+                {WEEKDAYS.map((wd) => (
                   <div
-                    key={`${year}-${quarter}`}
-                    className="min-h-32 p-3 border-r border-surface-200 last:border-r-0"
+                    key={wd}
+                    className="text-xs font-medium text-surface-500 uppercase tracking-wider text-center py-1"
                   >
-                    <div className="text-xs font-medium text-surface-500 mb-2">Q{quarter}</div>
-                    <div className="space-y-2">
-                      {entries.map((entry: PlanEntry) => (
-                        <div
-                          key={entry.id}
-                          className={clsx(
-                            'p-2 rounded-md border text-sm cursor-pointer hover:opacity-80 transition-opacity',
-                            riskColors[entry.riskRating] ||
-                              'bg-surface-200 border-surface-300 text-surface-700'
-                          )}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium truncate">{entry.auditName}</span>
-                            {!entry.linkedAuditId && entry.status === 'planned' && (
-                              <button
-                                onClick={() => convertToAuditMutation.mutate(entry.id)}
-                                className="p-1 hover:bg-white/10 rounded"
-                                title="Convert to Audit"
-                              >
-                                <PlayIcon className="h-3 w-3" />
-                              </button>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 mt-1 text-xs opacity-75">
-                            <span>{entry.auditType}</span>
-                            {entry.framework && <span>• {entry.framework}</span>}
-                          </div>
-                          <div className="mt-1">
-                            <span
-                              className={clsx(
-                                'text-xs px-1.5 py-0.5 rounded',
-                                statusColors[entry.status]
-                              )}
-                            >
-                              {entry.status.replace('_', ' ')}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                      {entries.length === 0 && (
-                        <div className="text-surface-600 text-sm italic text-center py-4">
-                          No audits planned
-                        </div>
-                      )}
-                    </div>
+                    {wd}
                   </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-px bg-surface-200 rounded-md overflow-hidden">
+                {grid.map((d, idx) => {
+                  const inMonth = d.getMonth() === cursor.month;
+                  const key = dateKey(d);
+                  const dayEvents = eventsByDay.get(key) ?? [];
+                  const isToday = key === todayKey;
+                  return (
+                    <div
+                      key={idx}
+                      className={`min-h-24 bg-white p-1.5 flex flex-col gap-1 ${
+                        inMonth ? '' : 'bg-surface-50/60'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span
+                          className={`text-xs tabular-nums ${
+                            isToday
+                              ? 'inline-flex items-center justify-center h-5 w-5 rounded-md bg-brand-600 text-white font-semibold'
+                              : inMonth
+                                ? 'text-surface-800 font-medium'
+                                : 'text-surface-500'
+                          }`}
+                        >
+                          {d.getDate()}
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        {dayEvents.slice(0, 3).map((e) => (
+                          <Badge
+                            key={e.id}
+                            variant={EVENT_VARIANT[e.type] ?? 'neutral'}
+                            size="sm"
+                            capitalize={false}
+                            className="block max-w-full truncate"
+                            title={e.title}
+                          >
+                            {e.title}
+                          </Badge>
+                        ))}
+                        {dayEvents.length > 3 && (
+                          <span className="text-xs text-surface-500">
+                            +{dayEvents.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-3 pt-3 border-t border-surface-200 flex flex-wrap items-center gap-3 text-xs">
+                <span className="text-surface-500 uppercase tracking-wider font-medium">
+                  Legend
+                </span>
+                {(Object.keys(EVENT_VARIANT) as EventType[]).map((t) => (
+                  <Badge key={t} variant={EVENT_VARIANT[t]} size="sm" capitalize={false}>
+                    {EVENT_LABEL[t]}
+                  </Badge>
+                ))}
+              </div>
+            </>
+          )}
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>This month</CardTitle>
+          <Badge variant="neutral" size="sm" capitalize={false}>
+            {upcoming.length}
+          </Badge>
+        </CardHeader>
+        <CardBody density="comfy">
+          {isLoading ? (
+            <Skeleton className="h-24" />
+          ) : upcoming.length === 0 ? (
+            <EmptyState
+              icon={<CalendarIcon className="h-6 w-6" />}
+              title="No events this month"
+              description="Audit milestones and request deadlines will appear here."
+              size="sm"
+            />
+          ) : (
+            <div className="space-y-2">
+              {upcoming.map((e) => {
+                const content = (
+                  <div className="flex items-center justify-between gap-3 p-3 rounded-md bg-white border border-surface-200 hover:border-surface-300 transition-colors">
+                    <div className="min-w-0 flex items-center gap-3">
+                      <Badge
+                        variant={EVENT_VARIANT[e.type] ?? 'neutral'}
+                        size="sm"
+                        capitalize={false}
+                      >
+                        {EVENT_LABEL[e.type] ?? e.type}
+                      </Badge>
+                      <div className="min-w-0">
+                        <p className="text-surface-900 font-medium truncate">{e.title}</p>
+                        {e.description && (
+                          <p className="text-xs text-surface-500 truncate">{e.description}</p>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-small text-surface-700 tabular-nums shrink-0">
+                      {formatLongDate(e.date)}
+                    </span>
+                  </div>
+                );
+                return e.auditId ? (
+                  <Link key={e.id} to={`/audits/${e.auditId}`} className="block">
+                    {content}
+                  </Link>
+                ) : (
+                  <div key={e.id}>{content}</div>
                 );
               })}
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4 text-sm">
-        <span className="text-surface-600">Risk Rating:</span>
-        {Object.entries(riskColors).map(([risk, classes]) => (
-          <span key={risk} className={clsx('px-2 py-1 rounded border', classes)}>
-            {risk}
-          </span>
-        ))}
-      </div>
+          )}
+        </CardBody>
+      </Card>
     </div>
   );
 }

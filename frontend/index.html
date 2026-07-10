@@ -1,84 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="/logo.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="GigaChad GRC - Governance, Risk, and Compliance Platform" />
-    
-    <!-- Security Headers - Note: X-Frame-Options and CSP frame-ancestors must be set via HTTP headers, not meta tags -->
-    <!-- These are configured in vite.config.ts (dev) and nginx.conf (production) -->
-    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
-    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), interest-cohort=()" />
-    <!-- Content Security Policy (without frame-ancestors - set via HTTP header) -->
-    <meta http-equiv="Content-Security-Policy" content="
-      default-src 'self';
-      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net;
-      style-src 'self' 'unsafe-inline' https://rsms.me https://cdn.jsdelivr.net;
-      font-src 'self' https://rsms.me https://cdn.jsdelivr.net data:;
-      img-src 'self' data: https: blob:;
-      connect-src 'self' http://localhost:* ws://localhost:* https://*.gigachad-grc.com https://cdn.jsdelivr.net;
-      base-uri 'self';
-      form-action 'self';
-    " />
-    
-    <!-- DNS Prefetch for external resources -->
-    <link rel="dns-prefetch" href="https://rsms.me" />
-    
-    <!-- Preconnect for API (adjust domain for production) -->
-    <link rel="preconnect" href="http://localhost:3001" crossorigin />
-    <link rel="preconnect" href="http://localhost:3002" crossorigin />
-    <link rel="preconnect" href="http://localhost:3003" crossorigin />
-    
-    <!-- PWA Meta Tags -->
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#3b82f6" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="GigaChad GRC" />
-    <link rel="apple-touch-icon" href="/logo.png" />
-    
-    <!-- Open Graph / Social Media -->
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="GigaChad GRC Platform" />
-    <meta property="og:description" content="Comprehensive Governance, Risk, and Compliance management platform" />
-    <meta property="og:image" content="/og-image.png" />
-    <meta name="twitter:card" content="summary_large_image" />
-    
-    <!-- Fonts - preconnect first, then load stylesheet -->
-    <link rel="preconnect" href="https://rsms.me/" crossorigin />
-    <link rel="preload" href="https://rsms.me/inter/inter.css" as="style" />
-    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
-    
-    <!-- Critical CSS hint for initial render -->
-    <style>
-      /* Critical inline CSS for loading state */
-      #root:empty {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        background: #0f1117;
-      }
-      #root:empty::after {
-        content: '';
-        width: 40px;
-        height: 40px;
-        border: 3px solid #3b82f6;
-        border-radius: 50%;
-        border-top-color: transparent;
-        animation: spinner 0.8s linear infinite;
-      }
-      @keyframes spinner {
-        to { transform: rotate(360deg); }
-      }
-    </style>
-    
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <title>GigaChad GRC</title>
   </head>
-  <body>
+  <body class="bg-surface-950 text-surface-100">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -1,495 +1,388 @@
-import { useState, useEffect } from 'react';
-import { Badge } from '@/components/ui/Badge';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft, Megaphone, Mail, Phone, Users, ListOrdered, Edit2 } from 'lucide-react';
 import api from '@/lib/api';
-import toast from 'react-hot-toast';
 import {
-  ArrowLeftIcon,
-  PencilIcon,
-  TrashIcon,
-  XMarkIcon,
-  MegaphoneIcon,
-  UserGroupIcon,
-  PhoneIcon,
-  EnvelopeIcon,
-  PlusIcon,
-  ExclamationCircleIcon,
-} from '@heroicons/react/24/outline';
-import clsx from 'clsx';
-import { Button } from '@/components/ui/Button';
-import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  PageHeader,
+  Tabs,
+  EmptyState,
+  Skeleton,
+  type BadgeVariant,
+} from '@/components/ui';
 
-import { Textarea } from '@/components/ui/Textarea';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-import { Dialog } from '@/components/ui/Dialog';
-
-interface CommunicationPlan {
+interface MessageTemplate {
   id: string;
-  name: string;
-  description: string;
-  plan_type: string;
-  is_active: boolean;
-  bcdr_plan_id: string | null;
-  bcdr_plan_title: string | null;
-  contacts: Array<{
-    id: string;
-    name: string;
-    title: string;
-    contact_type: string;
-    primary_phone: string;
-    email: string;
-    role_in_plan: string;
-    escalation_level: number;
-  }>;
-  created_at: string;
-  updated_at: string;
+  name?: string;
+  title?: string;
+  channel?: string;
+  audience?: string;
+  subject?: string;
+  body?: string;
+  message?: string;
 }
 
-const PLAN_TYPES = [
-  { value: 'emergency', label: 'Emergency' },
-  { value: 'crisis', label: 'Crisis' },
-  { value: 'incident', label: 'Incident' },
-  { value: 'stakeholder', label: 'Stakeholder' },
-];
+interface Stakeholder {
+  id: string;
+  name: string;
+  title?: string;
+  organization?: string;
+  organizationName?: string;
+  organization_name?: string;
+  contactType?: string;
+  contact_type?: string;
+  email?: string;
+  phone?: string;
+  primaryPhone?: string;
+  primary_phone?: string;
+  roleInPlan?: string;
+  role_in_plan?: string;
+}
 
-const planTypeColors: Record<string, string> = {
-  emergency: 'bg-red-500/20 text-red-600',
-  crisis: 'bg-orange-500/20 text-orange-600',
-  incident: 'bg-yellow-500/20 text-yellow-600',
-  stakeholder: 'bg-blue-500/20 text-blue-600',
+interface EscalationStep {
+  id: string;
+  level?: number;
+  escalationLevel?: number;
+  escalation_level?: number;
+  contactName?: string;
+  contact_name?: string;
+  name?: string;
+  role?: string;
+  triggerAfterMinutes?: number;
+  trigger_after_minutes?: number;
+}
+
+interface CommunicationPlanDetailData {
+  id: string;
+  planId?: string;
+  plan_id?: string;
+  name?: string;
+  title?: string;
+  description?: string;
+  planType?: string;
+  plan_type?: string;
+  audience?: string;
+  channel?: string;
+  status?: string;
+  isActive?: boolean;
+  is_active?: boolean;
+  ownerName?: string;
+  owner_name?: string;
+  updatedAt?: string;
+  updated_at?: string;
+  createdAt?: string;
+  created_at?: string;
+  messageTemplates?: MessageTemplate[];
+  message_templates?: MessageTemplate[];
+  templates?: MessageTemplate[];
+  stakeholders?: Stakeholder[];
+  contacts?: Stakeholder[];
+  escalationPath?: EscalationStep[];
+  escalation_path?: EscalationStep[];
+}
+
+const STATUS_VARIANT: Record<string, BadgeVariant> = {
+  active: 'success',
+  draft: 'warning',
+  archived: 'neutral',
+  inactive: 'neutral',
 };
+
+function pick<T>(...vals: (T | undefined)[]) {
+  for (const v of vals) if (v !== undefined && v !== null) return v;
+  return undefined;
+}
+
+function formatDate(v?: string) {
+  if (!v) return '—';
+  try {
+    return new Date(v).toLocaleDateString();
+  } catch {
+    return v;
+  }
+}
 
 export default function CommunicationPlanDetail() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
 
-  const isNewPlan = id === 'new';
-  const [showEditModal, setShowEditModal] = useState(isNewPlan);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  const [editForm, setEditForm] = useState({
-    name: '',
-    description: '',
-    plan_type: 'emergency',
-    is_active: true,
-  });
-
-  const {
-    data: plan,
-    isLoading,
-    error,
-  } = useQuery<CommunicationPlan>({
+  const { data: plan, isLoading } = useQuery<CommunicationPlanDetailData>({
     queryKey: ['communication-plan', id],
     queryFn: async () => {
       const res = await api.get(`/api/bcdr/communication/${id}`);
       return res.data;
     },
-    enabled: !!id && !isNewPlan,
+    enabled: !!id,
   });
 
-  useEffect(() => {
-    if (plan) {
-      setEditForm({
-        name: plan.name || '',
-        description: plan.description || '',
-        plan_type: plan.plan_type || 'emergency',
-        is_active: plan.is_active ?? true,
-      });
-    }
-  }, [plan]);
-
-  const createMutation = useMutation({
-    mutationFn: async (data: typeof editForm) => {
-      const res = await api.post('/api/bcdr/communication', data);
-      return res.data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['communication-plans'] });
-      toast.success('Communication plan created successfully');
-      navigate(`/bcdr/communication/${data.id}`);
-    },
-    onError: (err: Error) => {
-      console.error('Failed to create communication plan:', err);
-      toast.error('Failed to create communication plan');
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async (data: typeof editForm) => {
-      const res = await api.patch(`/api/bcdr/communication/${id}`, data);
-      return res.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['communication-plan', id] });
-      queryClient.invalidateQueries({ queryKey: ['communication-plans'] });
-      setShowEditModal(false);
-      toast.success('Communication plan updated successfully');
-    },
-    onError: () => {
-      toast.error('Failed to update communication plan');
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      await api.delete(`/api/bcdr/communication/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['communication-plans'] });
-      toast.success('Communication plan deleted');
-      navigate('/bcdr/communication');
-    },
-    onError: () => {
-      toast.error('Failed to delete communication plan');
-    },
-  });
-
-  if (isLoading && !isNewPlan) {
+  if (isLoading) {
     return (
-      <div className="p-6 space-y-6">
-        <SkeletonDetailHeader />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <SkeletonDetailSection />
-          </div>
-          <div>
-            <SkeletonDetailSection />
-          </div>
-        </div>
+      <div className="space-y-5 animate-fade-in">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-48 w-full" />
       </div>
     );
   }
 
-  if (!isNewPlan && (error || !plan)) {
+  if (!plan) {
     return (
-      <div className="p-6">
-        <div className="card p-8 text-center">
-          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
-          <h2 className="text-lg font-semibold text-surface-900 mb-2">
-            Communication Plan Not Found
-          </h2>
-          <p className="text-surface-600 mb-4">The requested plan could not be loaded.</p>
-          <Button onClick={() => navigate('/bcdr/communication')}>Back to Plans</Button>
-        </div>
+      <div className="space-y-5 animate-fade-in">
+        <Link
+          to="/bcdr/communication"
+          className="inline-flex items-center gap-1 text-small text-brand-700 hover:text-brand-800"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Plans
+        </Link>
+        <Card>
+          <CardBody density="comfy">
+            <EmptyState
+              icon={<Megaphone className="h-8 w-8" />}
+              title="Communication plan not found"
+              description="The plan may have been deleted or you may not have access."
+            />
+          </CardBody>
+        </Card>
       </div>
     );
   }
 
-  // For new plans, show the create form
-  if (isNewPlan) {
-    return (
-      <div className="p-6 space-y-6">
-        <div className="flex items-start gap-4">
-          <button
-            onClick={() => navigate('/bcdr/communication')}
-            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600 mt-1"
-          >
-            <ArrowLeftIcon className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-surface-900">Create Communication Plan</h1>
-            <p className="text-surface-600 mt-1">
-              Set up emergency contact lists and communication protocols
-            </p>
-          </div>
-        </div>
-        <div className="card p-6">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              createMutation.mutate(editForm);
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">Plan Name *</label>
-              <Input
-                type="text"
-                value={editForm.name}
-                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="e.g., Emergency Response Communication Plan"
-                required
-              />
-            </div>
+  const code = pick(plan.planId, plan.plan_id);
+  const title = pick(plan.title, plan.name) ?? 'Untitled plan';
+  const explicitStatus = plan.status;
+  const isActive = pick(plan.isActive, plan.is_active);
+  const status =
+    explicitStatus ?? (isActive === undefined ? undefined : isActive ? 'active' : 'inactive');
+  const planType = pick(plan.planType, plan.plan_type);
+  const owner = pick(plan.ownerName, plan.owner_name);
+  const updatedAt = pick(plan.updatedAt, plan.updated_at);
+  const createdAt = pick(plan.createdAt, plan.created_at);
 
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">Plan Type</label>
-              <SelectNative
-                value={editForm.plan_type}
-                onChange={(e) => setEditForm({ ...editForm, plan_type: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                {PLAN_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </SelectNative>
-            </div>
+  const templates = plan.messageTemplates ?? plan.message_templates ?? plan.templates ?? [];
+  const stakeholders = plan.stakeholders ?? plan.contacts ?? [];
+  const escalation = plan.escalationPath ?? plan.escalation_path ?? [];
 
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">Description</label>
-              <Textarea
-                value={editForm.description}
-                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                rows={4}
-                className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-surface-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Describe the purpose and scope of this communication plan..."
-              />
-            </div>
+  const templatesTab = (
+    <Card>
+      <CardBody density="comfy">
+        {templates.length === 0 ? (
+          <EmptyState
+            size="sm"
+            icon={<Megaphone className="h-6 w-6" />}
+            title="No message templates"
+            description="Pre-write messages for common scenarios so you can send fast in an incident."
+          />
+        ) : (
+          <ul className="space-y-3">
+            {templates.map((t) => (
+              <li key={t.id} className="rounded-md border border-surface-200 bg-white p-4">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <h4 className="text-h3 text-surface-900">
+                    {pick(t.name, t.title) ?? 'Untitled template'}
+                  </h4>
+                  <div className="flex items-center gap-1.5">
+                    {t.channel && (
+                      <Badge variant="info" size="sm">
+                        {t.channel}
+                      </Badge>
+                    )}
+                    {t.audience && (
+                      <Badge variant="neutral" size="sm">
+                        {t.audience.replace(/_/g, ' ')}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                {t.subject && (
+                  <p className="mt-2 text-small text-surface-700">
+                    <span className="text-surface-500">Subject:</span> {t.subject}
+                  </p>
+                )}
+                {(t.body || t.message) && (
+                  <p className="mt-1 text-small text-surface-700 whitespace-pre-wrap">
+                    {t.body ?? t.message}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardBody>
+    </Card>
+  );
 
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="is_active"
-                checked={editForm.is_active}
-                onChange={(e) => setEditForm({ ...editForm, is_active: e.target.checked })}
-                className="w-4 h-4 rounded bg-surface-200 border-surface-300 text-primary-500 focus:ring-primary-500"
-              />
-              <label htmlFor="is_active" className="text-sm text-surface-700">
-                Active (plan is ready for use)
-              </label>
-            </div>
+  const stakeholdersTab = (
+    <Card>
+      <CardBody density="comfy">
+        {stakeholders.length === 0 ? (
+          <EmptyState
+            size="sm"
+            icon={<Users className="h-6 w-6" />}
+            title="No stakeholders"
+            description="Add contacts that should be notified under this plan."
+          />
+        ) : (
+          <ul className="divide-y divide-surface-200">
+            {stakeholders.map((s) => (
+              <li key={s.id} className="py-3 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-body text-surface-900">{s.name}</span>
+                    {pick(s.contactType, s.contact_type) && (
+                      <Badge variant="info" size="sm">
+                        {(pick(s.contactType, s.contact_type) ?? '').replace(/_/g, ' ')}
+                      </Badge>
+                    )}
+                  </div>
+                  {(s.title || pick(s.organization, s.organizationName, s.organization_name)) && (
+                    <p className="text-xs text-surface-500 mt-0.5">
+                      {[s.title, pick(s.organization, s.organizationName, s.organization_name)]
+                        .filter(Boolean)
+                        .join(' • ')}
+                    </p>
+                  )}
+                  <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-surface-500">
+                    {s.email && (
+                      <span className="inline-flex items-center gap-1">
+                        <Mail className="h-3.5 w-3.5" />
+                        {s.email}
+                      </span>
+                    )}
+                    {pick(s.phone, s.primaryPhone, s.primary_phone) && (
+                      <span className="inline-flex items-center gap-1">
+                        <Phone className="h-3.5 w-3.5" />
+                        {pick(s.phone, s.primaryPhone, s.primary_phone)}
+                      </span>
+                    )}
+                  </div>
+                  {pick(s.roleInPlan, s.role_in_plan) && (
+                    <p className="text-small text-surface-700 mt-1">
+                      Role: {pick(s.roleInPlan, s.role_in_plan)}
+                    </p>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardBody>
+    </Card>
+  );
 
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => navigate('/bcdr/communication')}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={createMutation.isPending || !editForm.name}>
-                {createMutation.isPending ? 'Creating...' : 'Create Plan'}
-              </Button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
-  // Detail view for existing plans - TypeScript guard (plan is guaranteed to exist at this point)
-  if (!plan) return null;
+  const escalationTab = (
+    <Card>
+      <CardBody density="comfy">
+        {escalation.length === 0 ? (
+          <EmptyState
+            size="sm"
+            icon={<ListOrdered className="h-6 w-6" />}
+            title="No escalation path defined"
+            description="Define an escalation sequence so unanswered alerts climb the ladder."
+          />
+        ) : (
+          <ol className="relative border-l border-surface-200 pl-6 space-y-4">
+            {escalation.map((step) => {
+              const lvl = pick(step.level, step.escalationLevel, step.escalation_level) ?? '?';
+              const contactName =
+                pick(step.contactName, step.contact_name, step.name) ?? 'Unassigned';
+              const after = pick(step.triggerAfterMinutes, step.trigger_after_minutes);
+              return (
+                <li key={step.id} className="relative">
+                  <span className="absolute -left-[33px] top-0 inline-flex h-6 w-6 items-center justify-center rounded-full bg-brand-500/10 text-brand-700 text-xs font-medium">
+                    L{lvl}
+                  </span>
+                  <p className="text-body text-surface-900">{contactName}</p>
+                  <div className="flex items-center gap-3 text-xs text-surface-500 mt-1">
+                    {step.role && (
+                      <span className="capitalize">{step.role.replace(/_/g, ' ')}</span>
+                    )}
+                    {after !== undefined && <span>• after {after} min</span>}
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </CardBody>
+    </Card>
+  );
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-4">
-          <button
-            onClick={() => navigate('/bcdr/communication')}
-            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600 mt-1"
-          >
-            <ArrowLeftIcon className="w-5 h-5" />
-          </button>
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <MegaphoneIcon className="w-8 h-8 text-orange-600" />
-              <h1 className="text-2xl font-bold text-surface-900">{plan.name}</h1>
-              <span
-                className={clsx(
-                  'px-2 py-1 text-xs font-medium rounded-full',
-                  planTypeColors[plan.plan_type] || 'bg-surface-600 text-surface-700'
-                )}
-              >
-                {PLAN_TYPES.find((t) => t.value === plan.plan_type)?.label || plan.plan_type}
-              </span>
-              <span
-                className={clsx(
-                  'px-2 py-1 text-xs font-medium rounded-full',
-                  plan.is_active
-                    ? 'bg-green-500/20 text-green-600'
-                    : 'bg-surface-600 text-surface-600'
-                )}
-              >
-                {plan.is_active ? 'Active' : 'Inactive'}
-              </span>
-            </div>
-            <p className="text-surface-600">{plan.description || 'No description provided'}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" onClick={() => setShowEditModal(true)}>
-            <PencilIcon className="w-4 h-4 mr-2" />
+    <div className="space-y-5 animate-fade-in">
+      <Link
+        to="/bcdr/communication"
+        className="inline-flex items-center gap-1 text-small text-brand-700 hover:text-brand-800"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Plans
+      </Link>
+
+      <PageHeader
+        title={
+          <span className="flex items-center gap-3 flex-wrap">
+            {code && <span className="font-mono text-brand-700 text-h2">{code}</span>}
+            <span>{title}</span>
+          </span>
+        }
+        description={plan.description}
+        meta={
+          <>
+            {planType && (
+              <Badge variant="info" size="sm">
+                {planType.replace(/_/g, ' ')}
+              </Badge>
+            )}
+            {status && (
+              <Badge variant={STATUS_VARIANT[status] ?? 'neutral'} dot>
+                {status.replace(/_/g, ' ')}
+              </Badge>
+            )}
+          </>
+        }
+        actions={
+          <Button variant="outline" size="sm" leftIcon={<Edit2 className="h-4 w-4" />}>
             Edit
           </Button>
-          <Button variant="danger" onClick={() => setShowDeleteConfirm(true)}>
-            <TrashIcon className="w-4 h-4 mr-2" />
-            Delete
-          </Button>
-        </div>
-      </div>
-      {/* Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <div className="card">
-            <div className="p-4 border-b border-surface-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-surface-900">
-                <UserGroupIcon className="w-5 h-5 inline mr-2 text-surface-600" />
-                Contacts ({plan.contacts?.length || 0})
-              </h2>
-              <Button size="sm">
-                <PlusIcon className="w-4 h-4 mr-1" />
-                Add Contact
-              </Button>
-            </div>
-            <div className="divide-y divide-surface-200">
-              {plan.contacts && plan.contacts.length > 0 ? (
-                plan.contacts.map((contact) => (
-                  <div key={contact.id} className="p-4 hover:bg-surface-200/50">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-surface-900">{contact.name}</span>
-                          <Badge variant="info">Level {contact.escalation_level}</Badge>
-                        </div>
-                        <p className="text-sm text-surface-600">{contact.title}</p>
-                        <p className="text-sm text-surface-600">{contact.role_in_plan}</p>
-                      </div>
-                      <div className="text-right text-sm">
-                        <div className="flex items-center gap-1 text-surface-700">
-                          <PhoneIcon className="w-4 h-4" />
-                          {contact.primary_phone || 'N/A'}
-                        </div>
-                        <div className="flex items-center gap-1 text-surface-700 mt-1">
-                          <EnvelopeIcon className="w-4 h-4" />
-                          {contact.email || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="p-8 text-center text-surface-600">
-                  <UserGroupIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>No contacts added yet</p>
-                  <p className="text-sm">Add contacts to this communication plan</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        }
+      />
 
-        <div>
-          <div className="card p-4">
-            <h3 className="text-sm font-medium text-surface-600 mb-3">Details</h3>
-            <div className="space-y-3">
-              <div>
-                <span className="text-xs text-surface-500">Linked BC/DR Plan</span>
-                <p className="text-surface-900">{plan.bcdr_plan_title || 'None'}</p>
-              </div>
-              <div>
-                <span className="text-xs text-surface-500">Created</span>
-                <p className="text-surface-900">{new Date(plan.created_at).toLocaleDateString()}</p>
-              </div>
-              <div>
-                <span className="text-xs text-surface-500">Last Updated</span>
-                <p className="text-surface-900">{new Date(plan.updated_at).toLocaleDateString()}</p>
-              </div>
+      <Card>
+        <CardBody density="cozy">
+          <dl className="grid grid-cols-2 md:grid-cols-4 gap-4 text-small">
+            <div>
+              <dt className="text-xs uppercase tracking-wider text-surface-500">Audience</dt>
+              <dd className="text-surface-900 mt-1 capitalize">
+                {plan.audience ? plan.audience.replace(/_/g, ' ') : '—'}
+              </dd>
             </div>
-          </div>
-        </div>
-      </div>
-      {/* Edit Modal */}
-      <Dialog open={showEditModal} onClose={() => setShowEditModal(false)}>
-        <div className="p-4 border-b border-surface-200 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-surface-900">Edit Communication Plan</h2>
-          <button
-            onClick={() => setShowEditModal(false)}
-            className="p-1 hover:bg-surface-200 rounded"
-          >
-            <XMarkIcon className="w-5 h-5 text-surface-600" />
-          </button>
-        </div>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            updateMutation.mutate(editForm);
-          }}
-          className="p-6 space-y-4"
-        >
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-2">Plan Name *</label>
-            <Input
-              type="text"
-              value={editForm.name}
-              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-surface-900"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-2">Plan Type</label>
-            <SelectNative
-              value={editForm.plan_type}
-              onChange={(e) => setEditForm({ ...editForm, plan_type: e.target.value })}
-              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-surface-900"
-            >
-              {PLAN_TYPES.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </SelectNative>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-2">Description</label>
-            <Textarea
-              value={editForm.description}
-              onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-surface-900"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="edit_is_active"
-              checked={editForm.is_active}
-              onChange={(e) => setEditForm({ ...editForm, is_active: e.target.checked })}
-              className="w-4 h-4 rounded bg-surface-200 border-surface-300 text-primary-500"
-            />
-            <label htmlFor="edit_is_active" className="text-sm text-surface-700">
-              Active
-            </label>
-          </div>
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="secondary" onClick={() => setShowEditModal(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </div>
-        </form>
-      </Dialog>
-      {/* Delete Confirmation */}
-      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
-        <h2 className="text-lg font-semibold text-surface-900 mb-2">Delete Communication Plan?</h2>
-        <p className="text-surface-600 mb-4">
-          This will permanently delete "{plan.name}" and all associated contacts. This action cannot
-          be undone.
-        </p>
-        <div className="flex justify-end gap-3">
-          <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => deleteMutation.mutate()}
-            disabled={deleteMutation.isPending}
-          >
-            {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-          </Button>
-        </div>
-      </Dialog>
+            <div>
+              <dt className="text-xs uppercase tracking-wider text-surface-500">Channel</dt>
+              <dd className="text-surface-900 mt-1 capitalize">
+                {plan.channel ? plan.channel.replace(/_/g, ' ') : '—'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wider text-surface-500">Owner</dt>
+              <dd className="text-surface-900 mt-1">{owner ?? '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wider text-surface-500">Last Updated</dt>
+              <dd className="text-surface-900 mt-1">{formatDate(updatedAt ?? createdAt)}</dd>
+            </div>
+          </dl>
+        </CardBody>
+      </Card>
+
+      <Tabs
+        tabs={[
+          { label: `Message Templates (${templates.length})`, content: templatesTab },
+          { label: `Stakeholders (${stakeholders.length})`, content: stakeholdersTab },
+          { label: `Escalation Path (${escalation.length})`, content: escalationTab },
+        ]}
+      />
     </div>
   );
 }

@@ -1,293 +1,340 @@
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Activity, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
+import api from '@/lib/api';
 import {
-  ChartBarIcon,
-  ExclamationTriangleIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  DocumentMagnifyingGlassIcon,
-} from '@heroicons/react/24/outline';
-import { LazyRechartsWrapper } from '@/components/charts/LazyCharts';
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  EmptyState,
+  PageHeader,
+  Skeleton,
+  StatCard,
+} from '@/components/ui';
 
-interface DashboardStats {
-  totalAudits: number;
-  activeAudits: number;
-  completedAudits: number;
-  totalFindings: number;
-  openFindings: number;
-  criticalFindings: number;
-  overdueFindings: number;
-  totalRequests: number;
-  openRequests: number;
+interface SeverityBucket {
+  severity: string;
+  count: number;
 }
 
-interface FindingAnalytics {
-  bySeverity: { severity: string; count: number }[];
-  byCategory: { category: string; count: number }[];
-  byStatus: { status: string; count: number }[];
-  avgRemediationDays: number;
-}
-
-interface TrendData {
+interface TimelineBucket {
   period: string;
-  audits: { period: string; count: number }[];
-  findings: { period: string; count: number }[];
+  planned: number;
+  completed: number;
 }
 
-const severityColors: Record<string, string> = {
-  critical: '#ef4444',
-  high: '#f97316',
-  medium: '#eab308',
-  low: '#22c55e',
-  observation: '#6b7280',
+interface NameCount {
+  name: string;
+  count: number;
+}
+
+interface AnalyticsResponse {
+  auditsInFlight?: number;
+  findingsOpen?: number;
+  completionRate?: number;
+  avgCycleDays?: number;
+  findingsBySeverity?: SeverityBucket[];
+  completionTimeline?: TimelineBucket[];
+  byFramework?: NameCount[];
+  byAuditType?: NameCount[];
+}
+
+const SEVERITY_ORDER = ['critical', 'high', 'medium', 'low', 'observation'];
+
+const SEVERITY_BAR: Record<string, string> = {
+  critical: 'bg-red-500',
+  high: 'bg-orange-500',
+  medium: 'bg-amber-500',
+  low: 'bg-blue-500',
+  observation: 'bg-surface-400',
 };
 
-function StatCard({
-  title,
-  value,
-  icon: Icon,
-  trend,
-  color,
-}: {
-  title: string;
-  value: number | string;
-  icon: typeof ChartBarIcon;
-  trend?: string;
-  color?: string;
-}) {
-  return (
-    <div className="bg-white rounded-lg p-6 border border-surface-200">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-surface-600 text-sm">{title}</p>
-          <p className={`text-3xl font-bold mt-1 ${color || 'text-white'}`}>{value}</p>
-          {trend && <p className="text-sm text-surface-500 mt-1">{trend}</p>}
-        </div>
-        <div
-          className={`p-3 rounded-lg ${color ? 'bg-opacity-10' : 'bg-surface-200'}`}
-          style={{ backgroundColor: color ? `${color}20` : undefined }}
-        >
-          <Icon className="h-6 w-6" style={{ color: color || '#9ca3af' }} />
-        </div>
-      </div>
-    </div>
-  );
+const SEVERITY_LABEL_COLOR: Record<string, string> = {
+  critical: 'text-red-700',
+  high: 'text-orange-700',
+  medium: 'text-amber-700',
+  low: 'text-blue-700',
+  observation: 'text-surface-700',
+};
+
+function formatPercent(value?: number) {
+  if (value === undefined || value === null || Number.isNaN(value)) return '0%';
+  return `${Math.round(value)}%`;
+}
+
+function maxValue(values: number[]) {
+  return values.length === 0 ? 0 : Math.max(...values);
 }
 
 export default function AuditAnalytics() {
-  const { data: dashboard } = useQuery<DashboardStats>({
-    queryKey: ['audit-analytics-dashboard'],
+  const { data, isLoading } = useQuery<AnalyticsResponse>({
+    queryKey: ['audits', 'analytics'],
     queryFn: async () => {
-      const res = await fetch('/api/audit/analytics/dashboard');
-      if (!res.ok) throw new Error('Failed to fetch dashboard');
-      return res.json();
+      const res = await api.get('/api/audits/analytics');
+      return res.data ?? {};
     },
+    staleTime: 30_000,
   });
 
-  const { data: findings } = useQuery<FindingAnalytics>({
-    queryKey: ['audit-analytics-findings'],
-    queryFn: async () => {
-      const res = await fetch('/api/audit/analytics/findings');
-      if (!res.ok) throw new Error('Failed to fetch findings');
-      return res.json();
-    },
-  });
+  const severityData = useMemo(() => {
+    const list = data?.findingsBySeverity ?? [];
+    const sorted = [...list].sort(
+      (a, b) => SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity)
+    );
+    const total = sorted.reduce((s, b) => s + (b.count ?? 0), 0);
+    return { sorted, total };
+  }, [data?.findingsBySeverity]);
 
-  const { data: trends } = useQuery<TrendData>({
-    queryKey: ['audit-analytics-trends'],
-    queryFn: async () => {
-      const res = await fetch('/api/audit/analytics/trends?period=monthly');
-      if (!res.ok) throw new Error('Failed to fetch trends');
-      return res.json();
-    },
-  });
+  const timeline = useMemo(() => data?.completionTimeline ?? [], [data?.completionTimeline]);
+  const timelineMax = useMemo(() => {
+    return maxValue(timeline.flatMap((b) => [b.planned ?? 0, b.completed ?? 0]));
+  }, [timeline]);
+
+  const byFramework = useMemo(() => data?.byFramework ?? [], [data?.byFramework]);
+  const byAuditType = useMemo(() => data?.byAuditType ?? [], [data?.byAuditType]);
+  const frameworkMax = useMemo(() => maxValue(byFramework.map((b) => b.count ?? 0)), [byFramework]);
+  const typeMax = useMemo(() => maxValue(byAuditType.map((b) => b.count ?? 0)), [byAuditType]);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-5 animate-fade-in">
+        <PageHeader
+          title="Audit Analytics"
+          description="Insights and trends across your audit program."
+        />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-28" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <Skeleton className="h-72" />
+          <Skeleton className="h-72" />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white">Audit Analytics</h1>
-        <p className="text-surface-600 mt-1">Insights and trends across your audit program</p>
-      </div>
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Audit Analytics"
+        description="Insights and trends across your audit program."
+      />
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Audits"
-          value={dashboard?.totalAudits || 0}
-          icon={DocumentMagnifyingGlassIcon}
+          label="Audits in Flight"
+          value={data?.auditsInFlight ?? 0}
+          icon={<Activity className="h-5 w-5" />}
+          tone="brand"
         />
         <StatCard
-          title="Active Audits"
-          value={dashboard?.activeAudits || 0}
-          icon={ClockIcon}
-          color="#3b82f6"
+          label="Findings Open"
+          value={data?.findingsOpen ?? 0}
+          icon={<AlertTriangle className="h-5 w-5" />}
+          tone="red"
         />
         <StatCard
-          title="Open Findings"
-          value={dashboard?.openFindings || 0}
-          icon={ExclamationTriangleIcon}
-          color="#f97316"
+          label="Completion Rate"
+          value={formatPercent(data?.completionRate)}
+          icon={<CheckCircle2 className="h-5 w-5" />}
+          tone="emerald"
         />
         <StatCard
-          title="Critical Findings"
-          value={dashboard?.criticalFindings || 0}
-          icon={ExclamationTriangleIcon}
-          color="#ef4444"
+          label="Avg Cycle Days"
+          value={data?.avgCycleDays ?? 0}
+          icon={<Clock className="h-5 w-5" />}
+          tone="blue"
+          caption="Time to close per audit"
         />
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Findings by Severity */}
-        <div className="bg-white rounded-lg p-6 border border-surface-200">
-          <h3 className="text-lg font-semibold text-white mb-4">Findings by Severity</h3>
-          <div className="h-64">
-            <LazyRechartsWrapper height={256}>
-              {(Recharts) => {
-                const { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } = Recharts;
-                const data = (findings?.bySeverity || []).map((item) => ({
-                  name: item.severity,
-                  value: item.count,
-                }));
-                return (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={data}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={5}
-                        dataKey="value"
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Card>
+          <CardHeader>
+            <CardTitle>Findings by Severity</CardTitle>
+          </CardHeader>
+          <CardBody density="comfy">
+            {severityData.sorted.length === 0 || severityData.total === 0 ? (
+              <EmptyState
+                icon={<AlertTriangle className="h-6 w-6" />}
+                title="No findings yet"
+                description="Severity distribution will appear once findings exist."
+                size="sm"
+              />
+            ) : (
+              <div className="space-y-3">
+                {severityData.sorted.map((bucket) => {
+                  const pct =
+                    severityData.total > 0
+                      ? Math.round((bucket.count / severityData.total) * 100)
+                      : 0;
+                  return (
+                    <div key={bucket.severity}>
+                      <div className="flex items-center justify-between text-small">
+                        <span
+                          className={`capitalize font-medium ${
+                            SEVERITY_LABEL_COLOR[bucket.severity] ?? 'text-surface-700'
+                          }`}
+                        >
+                          {bucket.severity}
+                        </span>
+                        <span className="text-surface-700 tabular-nums">
+                          {bucket.count} <span className="text-surface-500">({pct}%)</span>
+                        </span>
+                      </div>
+                      <div className="mt-1.5 h-2 rounded-md bg-surface-100 overflow-hidden">
+                        <div
+                          className={`h-full rounded-md ${
+                            SEVERITY_BAR[bucket.severity] ?? 'bg-surface-500'
+                          }`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Completion Timeline</CardTitle>
+          </CardHeader>
+          <CardBody density="comfy">
+            {timeline.length === 0 ? (
+              <EmptyState
+                icon={<Clock className="h-6 w-6" />}
+                title="No timeline data"
+                description="Monthly planned vs completed audits will appear here."
+                size="sm"
+              />
+            ) : (
+              <>
+                <div className="flex items-end gap-3 h-48">
+                  {timeline.map((bucket) => {
+                    const plannedPct =
+                      timelineMax > 0 ? ((bucket.planned ?? 0) / timelineMax) * 100 : 0;
+                    const completedPct =
+                      timelineMax > 0 ? ((bucket.completed ?? 0) / timelineMax) * 100 : 0;
+                    return (
+                      <div
+                        key={bucket.period}
+                        className="flex-1 flex flex-col items-center gap-1.5"
                       >
-                        {data.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={severityColors[entry.name] || '#6b7280'}
+                        <div className="w-full flex-1 flex items-end gap-1">
+                          <div
+                            className="flex-1 bg-blue-500 rounded-t-md transition-all"
+                            style={{ height: `${plannedPct}%` }}
+                            title={`Planned: ${bucket.planned ?? 0}`}
                           />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                );
-              }}
-            </LazyRechartsWrapper>
-          </div>
-        </div>
-
-        {/* Findings Trend */}
-        <div className="bg-white rounded-lg p-6 border border-surface-200">
-          <h3 className="text-lg font-semibold text-white mb-4">Findings Trend</h3>
-          <div className="h-64">
-            <LazyRechartsWrapper height={256}>
-              {(Recharts) => {
-                const { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } = Recharts;
-                const data = trends?.findings || [];
-                return (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={data}>
-                      <XAxis dataKey="period" stroke="#6b7280" fontSize={12} />
-                      <YAxis stroke="#6b7280" fontSize={12} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#1f2937',
-                          border: '1px solid #374151',
-                          borderRadius: '8px',
-                        }}
-                      />
-                      <Area type="monotone" dataKey="count" stroke="#8b5cf6" fill="#8b5cf680" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                );
-              }}
-            </LazyRechartsWrapper>
-          </div>
-        </div>
+                          <div
+                            className="flex-1 bg-brand-500 rounded-t-md transition-all"
+                            style={{ height: `${completedPct}%` }}
+                            title={`Completed: ${bucket.completed ?? 0}`}
+                          />
+                        </div>
+                        <span className="text-xs text-surface-500 tabular-nums">
+                          {bucket.period}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 pt-3 border-t border-surface-200 flex items-center gap-4 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-sm bg-blue-500" />
+                    <span className="text-surface-700">Planned</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-sm bg-brand-500" />
+                    <span className="text-surface-700">Completed</span>
+                  </div>
+                </div>
+              </>
+            )}
+          </CardBody>
+        </Card>
       </div>
 
-      {/* Additional Metrics */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Avg Remediation Time */}
-        <div className="bg-white rounded-lg p-6 border border-surface-200">
-          <div className="flex items-center gap-3 mb-4">
-            <ClockIcon className="h-6 w-6 text-brand-400" />
-            <h3 className="text-lg font-semibold text-white">Avg Remediation Time</h3>
-          </div>
-          <p className="text-4xl font-bold text-white">
-            {findings?.avgRemediationDays || 0}
-            <span className="text-lg font-normal text-surface-600 ml-2">days</span>
-          </p>
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Card>
+          <CardHeader>
+            <CardTitle>By Framework</CardTitle>
+          </CardHeader>
+          <CardBody density="comfy">
+            {byFramework.length === 0 ? (
+              <EmptyState
+                icon={<Activity className="h-6 w-6" />}
+                title="No framework data"
+                description="Audits grouped by framework will appear here."
+                size="sm"
+              />
+            ) : (
+              <div className="space-y-3">
+                {byFramework.map((row) => {
+                  const pct = frameworkMax > 0 ? (row.count / frameworkMax) * 100 : 0;
+                  return (
+                    <div key={row.name}>
+                      <div className="flex items-center justify-between text-small">
+                        <span className="text-surface-900 font-medium truncate">{row.name}</span>
+                        <span className="text-surface-700 tabular-nums">{row.count}</span>
+                      </div>
+                      <div className="mt-1 h-1.5 rounded-md bg-surface-100 overflow-hidden">
+                        <div
+                          className="h-full rounded-md bg-brand-500"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardBody>
+        </Card>
 
-        {/* Completion Rate */}
-        <div className="bg-white rounded-lg p-6 border border-surface-200">
-          <div className="flex items-center gap-3 mb-4">
-            <CheckCircleIcon className="h-6 w-6 text-green-600" />
-            <h3 className="text-lg font-semibold text-white">Audit Completion Rate</h3>
-          </div>
-          <p className="text-4xl font-bold text-white">
-            {dashboard?.totalAudits
-              ? Math.round((dashboard.completedAudits / dashboard.totalAudits) * 100)
-              : 0}
-            <span className="text-lg font-normal text-surface-600 ml-1">%</span>
-          </p>
-        </div>
-
-        {/* Request Status */}
-        <div className="bg-white rounded-lg p-6 border border-surface-200">
-          <div className="flex items-center gap-3 mb-4">
-            <DocumentMagnifyingGlassIcon className="h-6 w-6 text-blue-600" />
-            <h3 className="text-lg font-semibold text-white">Request Completion</h3>
-          </div>
-          <p className="text-4xl font-bold text-white">
-            {dashboard?.totalRequests
-              ? Math.round(
-                  ((dashboard.totalRequests - dashboard.openRequests) / dashboard.totalRequests) *
-                    100
-                )
-              : 0}
-            <span className="text-lg font-normal text-surface-600 ml-1">%</span>
-          </p>
-        </div>
-      </div>
-
-      {/* Findings by Category */}
-      <div className="bg-white rounded-lg p-6 border border-surface-200">
-        <h3 className="text-lg font-semibold text-white mb-4">Findings by Category</h3>
-        <div className="h-64">
-          <LazyRechartsWrapper height={256}>
-            {(Recharts) => {
-              const { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } = Recharts;
-              const data = findings?.byCategory || [];
-              return (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data} layout="vertical">
-                    <XAxis type="number" stroke="#6b7280" fontSize={12} />
-                    <YAxis
-                      type="category"
-                      dataKey="category"
-                      stroke="#6b7280"
-                      fontSize={12}
-                      width={150}
-                      tickFormatter={(val) => val.replace(/_/g, ' ')}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#1f2937',
-                        border: '1px solid #374151',
-                        borderRadius: '8px',
-                      }}
-                    />
-                    <Bar dataKey="count" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              );
-            }}
-          </LazyRechartsWrapper>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>By Audit Type</CardTitle>
+          </CardHeader>
+          <CardBody density="comfy">
+            {byAuditType.length === 0 ? (
+              <EmptyState
+                icon={<Activity className="h-6 w-6" />}
+                title="No type data"
+                description="Audits grouped by type will appear here."
+                size="sm"
+              />
+            ) : (
+              <div className="space-y-3">
+                {byAuditType.map((row) => {
+                  const pct = typeMax > 0 ? (row.count / typeMax) * 100 : 0;
+                  return (
+                    <div key={row.name}>
+                      <div className="flex items-center justify-between text-small">
+                        <span className="text-surface-900 font-medium capitalize truncate">
+                          {row.name.replace(/_/g, ' ')}
+                        </span>
+                        <span className="text-surface-700 tabular-nums">{row.count}</span>
+                      </div>
+                      <div className="mt-1 h-1.5 rounded-md bg-surface-100 overflow-hidden">
+                        <div
+                          className="h-full rounded-md bg-blue-500"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardBody>
+        </Card>
       </div>
     </div>
   );

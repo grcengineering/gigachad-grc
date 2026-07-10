@@ -1,40 +1,49 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Plus, Search, Users, UserCheck, Shield } from 'lucide-react';
+import api from '@/lib/api';
 import {
-  MagnifyingGlassIcon,
-  PlusIcon,
-  UserGroupIcon,
-  FunnelIcon,
-  LinkIcon,
-} from '@heroicons/react/24/outline';
-import { Button } from '@/components/ui/Button';
-import { api } from '@/lib/api';
-import clsx from 'clsx';
-
-import { Textarea } from '@/components/ui/Textarea';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-import { Dialog } from '@/components/ui/Dialog';
-
-// ============================================
-// Types
-// ============================================
+  Button,
+  Badge,
+  Card,
+  CardBody,
+  PageHeader,
+  FilterBar,
+  Select,
+  Input,
+  EmptyState,
+  StatCard,
+  Skeleton,
+  type ActiveFilter,
+} from '@/components/ui';
 
 interface RecoveryTeam {
   id: string;
   name: string;
-  description: string;
-  teamType: string;
-  isActive: boolean;
-  memberCount: number;
-  planCount: number;
-  createdAt: string;
+  description?: string;
+  teamType?: string;
+  team_type?: string;
+  function?: string;
+  isActive?: boolean;
+  is_active?: boolean;
+  memberCount?: number;
+  member_count?: number;
+  leadName?: string;
+  lead_name?: string;
+  leadId?: string;
+  onCall?: boolean;
+  on_call?: boolean;
+}
+
+interface TeamStats {
+  total?: number;
+  total_members?: number;
+  on_call_count?: number;
+  active_count?: number;
 }
 
 const TEAM_TYPE_OPTIONS = [
-  { value: '', label: 'All Types' },
   { value: 'crisis_management', label: 'Crisis Management' },
   { value: 'it_recovery', label: 'IT Recovery' },
   { value: 'business_recovery', label: 'Business Recovery' },
@@ -42,271 +51,240 @@ const TEAM_TYPE_OPTIONS = [
   { value: 'executive', label: 'Executive' },
 ];
 
-const TEAM_TYPE_COLORS: Record<string, string> = {
-  crisis_management: 'bg-red-500',
-  it_recovery: 'bg-blue-500',
-  business_recovery: 'bg-green-500',
-  communications: 'bg-purple-500',
-  executive: 'bg-orange-500',
-};
-
-// ============================================
-// Recovery Teams Page Component
-// ============================================
+function pick<T>(...vals: (T | undefined)[]) {
+  for (const v of vals) if (v !== undefined && v !== null) return v;
+  return undefined;
+}
 
 export default function RecoveryTeams() {
   const navigate = useNavigate();
-  const [teams, setTeams] = useState<RecoveryTeam[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [teamType, setTeamType] = useState('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [stats, setStats] = useState<any>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Create modal state
-  const [newTeamName, setNewTeamName] = useState('');
-  const [newTeamDescription, setNewTeamDescription] = useState('');
-  const [newTeamType, setNewTeamType] = useState('crisis_management');
-  const [isCreating, setIsCreating] = useState(false);
+  const filters = {
+    search: searchParams.get('search') ?? '',
+    teamType: searchParams.get('teamType') ?? '',
+  };
+
+  const [searchInput, setSearchInput] = useState(filters.search);
+  const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
 
   useEffect(() => {
-    loadTeams();
-    loadStats();
-  }, [search, teamType]);
+    const t = setTimeout(() => setDebouncedSearch(searchInput), 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
-  const loadTeams = async () => {
-    setIsLoading(true);
-    try {
+  useEffect(() => {
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (debouncedSearch) params.set('search', debouncedSearch);
+        else params.delete('search');
+        return params;
+      },
+      { replace: true }
+    );
+  }, [debouncedSearch, setSearchParams]);
+
+  const updateFilter = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams);
+    if (value) params.set(key, value);
+    else params.delete(key);
+    setSearchParams(params);
+  };
+
+  const clearAll = () => {
+    setSearchInput('');
+    setSearchParams(new URLSearchParams());
+  };
+
+  const { data: teams = [], isLoading } = useQuery<RecoveryTeam[]>({
+    queryKey: ['recovery-teams', debouncedSearch, filters.teamType],
+    queryFn: async () => {
       const params = new URLSearchParams();
-      if (search) params.append('search', search);
-      if (teamType) params.append('teamType', teamType);
+      if (debouncedSearch) params.append('search', debouncedSearch);
+      if (filters.teamType) params.append('teamType', filters.teamType);
+      const qs = params.toString();
+      const res = await api.get(`/api/bcdr/recovery-teams${qs ? `?${qs}` : ''}`);
+      const body = res.data;
+      if (Array.isArray(body)) return body;
+      return body?.data ?? [];
+    },
+  });
 
-      const response = await api.get(`/bcdr/recovery-teams?${params.toString()}`);
-      setTeams(response.data.data || []);
-    } catch (error) {
-      console.error('Failed to load teams:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { data: stats } = useQuery<TeamStats>({
+    queryKey: ['recovery-teams-stats'],
+    queryFn: async () => {
+      const res = await api.get('/api/bcdr/recovery-teams/stats');
+      return res.data ?? {};
+    },
+  });
 
-  const loadStats = async () => {
-    try {
-      const response = await api.get('/bcdr/recovery-teams/stats');
-      setStats(response.data);
-    } catch (error) {
-      console.error('Failed to load stats:', error);
-    }
-  };
+  const activeFilters: ActiveFilter[] = [];
+  if (filters.search) {
+    activeFilters.push({
+      key: 'search',
+      label: `Search: ${filters.search}`,
+      onClear: () => {
+        setSearchInput('');
+        updateFilter('search', '');
+      },
+    });
+  }
+  if (filters.teamType) {
+    const l =
+      TEAM_TYPE_OPTIONS.find((o) => o.value === filters.teamType)?.label ?? filters.teamType;
+    activeFilters.push({
+      key: 'teamType',
+      label: `Type: ${l}`,
+      onClear: () => updateFilter('teamType', ''),
+    });
+  }
 
-  const handleCreateTeam = async () => {
-    if (!newTeamName.trim()) return;
-
-    setIsCreating(true);
-    try {
-      const response = await api.post('/bcdr/recovery-teams', {
-        name: newTeamName,
-        description: newTeamDescription || undefined,
-        teamType: newTeamType,
-      });
-      navigate(`/bcdr/recovery-teams/${response.data.id}`);
-    } catch (error) {
-      console.error('Failed to create team:', error);
-    } finally {
-      setIsCreating(false);
-    }
-  };
+  const totalTeams = stats?.total ?? teams.length;
+  const totalMembers =
+    stats?.total_members ??
+    teams.reduce((acc, t) => acc + (pick(t.memberCount, t.member_count) ?? 0), 0);
+  const onCallCount =
+    stats?.on_call_count ?? teams.filter((t) => pick(t.onCall, t.on_call) === true).length;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Recovery Teams</h1>
-          <p className="text-slate-400 mt-1">Define and manage teams for BC/DR incident response</p>
-        </div>
-        <Button variant="primary" onClick={() => setShowCreateModal(true)}>
-          <PlusIcon className="h-4 w-4 mr-2" />
-          Create Team
-        </Button>
-      </div>
-      {/* Stats */}
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-            <p className="text-slate-400 text-sm">Total Teams</p>
-            <p className="text-2xl font-bold text-white mt-1">{stats.total || 0}</p>
-          </div>
-          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-            <p className="text-slate-400 text-sm">Active Teams</p>
-            <p className="text-2xl font-bold text-green-600 mt-1">{stats.active_count || 0}</p>
-          </div>
-          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-            <p className="text-slate-400 text-sm">Total Members</p>
-            <p className="text-2xl font-bold text-cyan-600 mt-1">{stats.total_members || 0}</p>
-          </div>
-          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-            <p className="text-slate-400 text-sm">Crisis Management</p>
-            <p className="text-2xl font-bold text-red-600 mt-1">
-              {stats.crisis_management_count || 0}
-            </p>
-          </div>
-        </div>
-      )}
-      {/* Filters */}
-      <div className="flex items-center gap-4">
-        <div className="flex-1 relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-          <Input
-            type="text"
-            placeholder="Search teams..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <FunnelIcon className="h-5 w-5 text-slate-400" />
-          <SelectNative
-            value={teamType}
-            onChange={(e) => setTeamType(e.target.value)}
-            className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-          >
-            {TEAM_TYPE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </SelectNative>
-        </div>
-      </div>
-      {/* Teams List */}
-      {isLoading ? (
-        <div className="text-center py-12">
-          <div className="animate-spin h-8 w-8 border-2 border-cyan-500 border-t-transparent rounded-full mx-auto" />
-          <p className="text-slate-400 mt-4">Loading teams...</p>
-        </div>
-      ) : teams.length === 0 ? (
-        <div className="text-center py-12">
-          <UserGroupIcon className="h-12 w-12 text-slate-500 mx-auto" />
-          <p className="text-slate-400 mt-4">No recovery teams found</p>
-          <Button variant="primary" className="mt-4" onClick={() => setShowCreateModal(true)}>
-            Create Your First Team
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Recovery Teams"
+        description="Define and manage teams responsible for BC/DR incident response."
+        actions={
+          <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+            Create Team
           </Button>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {teams.map((team) => (
-            <div
-              key={team.id}
-              className="bg-slate-800 rounded-lg p-6 border border-slate-700 hover:border-slate-600 transition-all cursor-pointer"
-              onClick={() => navigate(`/bcdr/recovery-teams/${team.id}`)}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4">
-                  <div
-                    className={clsx(
-                      'w-10 h-10 rounded-lg flex items-center justify-center',
-                      TEAM_TYPE_COLORS[team.teamType] || 'bg-slate-600'
-                    )}
-                  >
-                    <UserGroupIcon className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-medium text-white">{team.name}</h3>
-                    <p className="text-sm text-slate-400 capitalize mt-1">
-                      {team.teamType.replace('_', ' ')}
-                    </p>
-                    {team.description && (
-                      <p className="text-sm text-slate-400 mt-2">{team.description}</p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <div className="flex items-center gap-2 text-slate-400">
-                      <UserGroupIcon className="h-4 w-4" />
-                      <span>{team.memberCount} members</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-slate-400 mt-1">
-                      <LinkIcon className="h-4 w-4" />
-                      <span>{team.planCount} plans</span>
-                    </div>
-                  </div>
-                  <span
-                    className={clsx(
-                      'px-2 py-1 rounded text-xs font-medium',
-                      team.isActive
-                        ? 'bg-green-500/20 text-green-600'
-                        : 'bg-slate-600 text-slate-400'
-                    )}
-                  >
-                    {team.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </div>
-              </div>
-            </div>
+        }
+      />
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <StatCard
+          label="Total Teams"
+          value={totalTeams}
+          icon={<Shield className="h-5 w-5" />}
+          tone="brand"
+        />
+        <StatCard
+          label="Total Members"
+          value={totalMembers}
+          icon={<Users className="h-5 w-5" />}
+          tone="blue"
+        />
+        <StatCard
+          label="On-Call Now"
+          value={onCallCount}
+          icon={<UserCheck className="h-5 w-5" />}
+          tone="emerald"
+        />
+      </div>
+
+      <FilterBar active={activeFilters} onClearAll={activeFilters.length ? clearAll : undefined}>
+        <Input
+          inputSize="sm"
+          className="w-64"
+          placeholder="Search teams…"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          leftIcon={<Search className="h-4 w-4" />}
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-52"
+          placeholder="All Team Types"
+          value={filters.teamType}
+          onChange={(v) => updateFilter('teamType', v)}
+          options={TEAM_TYPE_OPTIONS}
+          clearable
+        />
+      </FilterBar>
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-36" />
           ))}
         </div>
+      ) : teams.length === 0 ? (
+        <Card>
+          <CardBody density="comfy">
+            <EmptyState
+              icon={<Users className="h-8 w-8" />}
+              title="No recovery teams found"
+              description={
+                activeFilters.length
+                  ? 'Try clearing your filters to see all teams.'
+                  : 'Create your first recovery team to coordinate BC/DR response.'
+              }
+              action={
+                activeFilters.length ? (
+                  <Button variant="outline" size="sm" onClick={clearAll}>
+                    Clear filters
+                  </Button>
+                ) : (
+                  <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+                    Create Team
+                  </Button>
+                )
+              }
+            />
+          </CardBody>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {teams.map((team) => {
+            const teamFn = pick(team.function, team.teamType, team.team_type);
+            const memberCount = pick(team.memberCount, team.member_count) ?? 0;
+            const lead = pick(team.leadName, team.lead_name);
+            const isActive = pick(team.isActive, team.is_active);
+            return (
+              <Card
+                key={team.id}
+                interactive
+                onClick={() => navigate(`/bcdr/recovery-teams/${team.id}`)}
+              >
+                <CardBody density="comfy" className="space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3 className="text-h3 text-surface-900 truncate">{team.name}</h3>
+                      {teamFn && (
+                        <p className="text-xs text-surface-500 capitalize mt-0.5">
+                          {teamFn.replace(/_/g, ' ')}
+                        </p>
+                      )}
+                    </div>
+                    {isActive !== undefined && (
+                      <Badge variant={isActive ? 'success' : 'neutral'} size="sm" dot>
+                        {isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {team.description && (
+                    <p className="text-small text-surface-700 line-clamp-2">{team.description}</p>
+                  )}
+
+                  <div className="flex items-center justify-between pt-2 border-t border-surface-200">
+                    <div className="flex items-center gap-2 text-small text-surface-700">
+                      <Users className="h-4 w-4 text-surface-500" />
+                      <span>
+                        {memberCount} {memberCount === 1 ? 'member' : 'members'}
+                      </span>
+                    </div>
+                    {lead && (
+                      <span className="text-small text-surface-700 truncate max-w-[10rem]">
+                        Lead: <span className="text-surface-900">{lead}</span>
+                      </span>
+                    )}
+                  </div>
+                </CardBody>
+              </Card>
+            );
+          })}
+        </div>
       )}
-      {/* Create Team Modal */}
-      <Dialog open={showCreateModal} onClose={() => setShowCreateModal(false)}>
-        <h2 className="text-xl font-semibold text-white mb-6">Create Recovery Team</h2>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Team Name <span className="text-red-600">*</span>
-            </label>
-            <Input
-              type="text"
-              value={newTeamName ?? ''}
-              onChange={(e) => setNewTeamName(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-              placeholder="e.g., Crisis Management Team"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Team Type</label>
-            <SelectNative
-              value={newTeamType}
-              onChange={(e) => setNewTeamType(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-            >
-              {TEAM_TYPE_OPTIONS.filter((t) => t.value).map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </SelectNative>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
-            <Textarea
-              value={newTeamDescription ?? ''}
-              onChange={(e) => setNewTeamDescription(e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-              placeholder="Brief description of the team's purpose..."
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-end gap-3 mt-6">
-          <Button
-            variant="secondary"
-            onClick={() => setShowCreateModal(false)}
-            disabled={isCreating}
-          >
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleCreateTeam} disabled={isCreating}>
-            {isCreating ? 'Creating...' : 'Create Team'}
-          </Button>
-        </div>
-      </Dialog>
     </div>
   );
 }

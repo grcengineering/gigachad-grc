@@ -1,79 +1,28 @@
-# =============================================================================
-# GigaChad GRC Frontend - Multi-stage Docker Build
-# =============================================================================
-# This Dockerfile builds the React frontend and serves it via Nginx.
-# Build args are used to configure the frontend at build time.
-# =============================================================================
-
 # Build stage
-FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS builder
+FROM node:20-alpine AS builder
 
-WORKDIR /app
+WORKDIR /app/frontend
 
-# Copy package files from frontend directory (context is repo root)
+# Compose and CI build with repository root as context.
+# Copy frontend-specific files explicitly so this Dockerfile resolves paths correctly.
 COPY frontend/package*.json ./
+RUN npm install
 
-# Install ALL dependencies (including devDependencies) for build.
-# --ignore-scripts blocks postinstall hooks, the main supply-chain attack
-# vector via npm. The repo .npmrc sets ignore-scripts=true but isn't
-# COPY'd into the build context, so we pass the flag explicitly here.
-RUN npm install --ignore-scripts
-
-# Copy frontend source
 COPY frontend/ ./
+RUN npm run build
 
-# Build-time environment variables
-# These are baked into the static build
-# Empty API URL means requests go to the same origin (nginx) which proxies them
-ARG VITE_API_URL=
-ARG VITE_ENABLE_AI_MODULE=true
-ARG VITE_ENABLE_DEV_AUTH=false
-# Double opt-in for the dev-auth bypass. Setting VITE_ENABLE_DEV_AUTH=true
-# alone is not enough; you must also pass ALLOW_DEV_AUTH=true. This
-# prevents a misconfigured CI variable from silently baking the
-# Keycloak-bypassing dev-login UI into a production image.
-ARG ALLOW_DEV_AUTH=
+# Production stage
+FROM nginx:alpine AS production
 
-ENV VITE_API_URL=$VITE_API_URL
-ENV VITE_ENABLE_AI_MODULE=$VITE_ENABLE_AI_MODULE
-# SECURITY: Dev auth defaults to false; set via build arg for dev/demo
-ENV VITE_ENABLE_DEV_AUTH=$VITE_ENABLE_DEV_AUTH
+# Copy built assets
+COPY --from=builder /app/frontend/dist /usr/share/nginx/html
 
-# Fail the build if dev-auth is requested without the explicit opt-in.
-RUN if [ "$VITE_ENABLE_DEV_AUTH" = "true" ] && [ "$ALLOW_DEV_AUTH" != "true" ]; then \
-      echo "ERROR: VITE_ENABLE_DEV_AUTH=true requires also passing --build-arg ALLOW_DEV_AUTH=true." >&2; \
-      echo "Dev-auth bakes a Keycloak-bypassing login button into the static build. Refusing." >&2; \
-      exit 1; \
-    fi
-
-# Limit Node.js heap to prevent OOM kills during parallel Docker builds
-ENV NODE_OPTIONS=--max-old-space-size=2048
-
-# Build: use development mode when dev-auth is enabled so
-# the vite security guard does not block the build.
-RUN if [ "$VITE_ENABLE_DEV_AUTH" = "true" ]; then \
-      npm run build -- --mode development; \
-    else \
-      npm run build -- --mode production; \
-    fi
-
-# Production stage - Nginx
-FROM nginx:alpine@sha256:dc48b7a872a79fb541ba5081d320b11b549231bc63ba465a7495afaa7d2ebcb8 AS production
-
-# Patch OS-level CVEs (zlib CVE-2026-22184, CVE-2026-27171)
-RUN apk upgrade --no-cache
-
-# Copy built assets from builder
-COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Copy nginx config (path relative to context which is repo root)
+# Copy nginx config
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
-# Nginx runs on port 80 by default
-EXPOSE 80
-
-# Healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget -q --spider http://localhost:80/ || exit 1
+EXPOSE 3000
 
 CMD ["nginx", "-g", "daemon off;"]
+
+
+

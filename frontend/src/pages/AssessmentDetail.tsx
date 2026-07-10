@@ -1,57 +1,51 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
-import { assessmentsApi, vendorsApi } from '../lib/api';
-import { VendorAssessment, Vendor } from '../lib/apiTypes';
-import { useAuth } from '@/contexts/AuthContext';
+import { Button, Input, Textarea, Select } from '@/components/ui';
 
-import { Textarea } from '@/components/ui/Textarea';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
+interface Assessment {
+  id: string;
+  vendorId: string;
+  assessmentType: string;
+  status: string;
+  dueDate?: string;
+  completedAt?: string;
+  overallScore?: number;
+  securityScore?: number;
+  privacyScore?: number;
+  complianceScore?: number;
+  findings?: string;
+  recommendations?: string;
+  assessor?: string;
+  vendor: {
+    id: string;
+    name: string;
+  };
+}
 
 interface AssessmentFormProps {
-  assessment: VendorAssessment | null;
-  onSave: (data: Partial<VendorAssessment>) => Promise<void>;
+  assessment: Assessment | null;
+  onSave: (data: Partial<Assessment>) => Promise<void>;
   onCancel: () => void;
 }
 
 function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [formData, setFormData] = useState<Partial<VendorAssessment>>({
+  const [formData, setFormData] = useState<Partial<Assessment>>({
     vendorId: assessment?.vendorId || '',
-    assessmentType: assessment?.assessmentType || 'initial_onboarding',
+    assessmentType: assessment?.assessmentType || 'security_review',
     status: assessment?.status || 'pending',
     dueDate: assessment?.dueDate ? new Date(assessment.dueDate).toISOString().split('T')[0] : '',
     completedAt: assessment?.completedAt
       ? new Date(assessment.completedAt).toISOString().split('T')[0]
       : '',
-    inherentRiskScore: assessment?.inherentRiskScore || '',
-    residualRiskScore: assessment?.residualRiskScore || '',
     overallScore: assessment?.overallScore,
-    securityRisk: assessment?.securityRisk || '',
-    complianceRisk: assessment?.complianceRisk || '',
-    operationalRisk: assessment?.operationalRisk || '',
-    financialRisk: assessment?.financialRisk || '',
-    outcome: assessment?.outcome || '',
-    outcomeNotes: assessment?.outcomeNotes || '',
-    findings: typeof assessment?.findings === 'string' ? assessment.findings : '',
+    securityScore: assessment?.securityScore,
+    privacyScore: assessment?.privacyScore,
+    complianceScore: assessment?.complianceScore,
+    findings: assessment?.findings || '',
     recommendations: assessment?.recommendations || '',
+    assessor: assessment?.assessor || '',
   });
-
-  useEffect(() => {
-    fetchVendors();
-  }, []);
-
-  const fetchVendors = async () => {
-    try {
-      const response = await vendorsApi.list();
-      setVendors(response.data?.data || []);
-    } catch (error) {
-      console.error('Error fetching vendors:', error);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,68 +60,51 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
           <h3 className="text-lg font-medium text-surface-900 mb-4">Basic Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-surface-600 mb-1">Vendor *</label>
-              <SelectNative
+              <label className="block text-sm font-medium text-surface-600 mb-1">Vendor ID *</label>
+              <Input
+                type="text"
                 value={formData.vendorId}
                 onChange={(e) => setFormData({ ...formData, vendorId: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
                 required
-              >
-                <option value="">Select a vendor...</option>
-                {vendors.map((vendor) => (
-                  <option key={vendor.id} value={vendor.id}>
-                    {vendor.name}
-                  </option>
-                ))}
-              </SelectNative>
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">
                 Assessment Type *
               </label>
-              <SelectNative
-                value={formData.assessmentType}
-                onChange={(e) => setFormData({ ...formData, assessmentType: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-                required
-              >
-                <option value="initial_onboarding">Initial Onboarding</option>
-                <option value="annual_review">Annual Review</option>
-                <option value="continuous_monitoring">Continuous Monitoring</option>
-                <option value="incident_triggered">Incident Triggered</option>
-                <option value="contract_renewal">Contract Renewal</option>
-              </SelectNative>
+              <Select
+                value={formData.assessmentType || ''}
+                onChange={(value) => setFormData({ ...formData, assessmentType: value })}
+                options={[
+                  { value: 'security_review', label: 'Security Review' },
+                  { value: 'privacy_assessment', label: 'Privacy Assessment' },
+                  { value: 'compliance_audit', label: 'Compliance Audit' },
+                  { value: 'vendor_questionnaire', label: 'Vendor Questionnaire' },
+                  { value: 'on_site_audit', label: 'On-site Audit' },
+                  { value: 'penetration_test', label: 'Penetration Test' },
+                ]}
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">Status *</label>
-              <SelectNative
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-                required
-              >
-                <option value="pending">Pending</option>
-                <option value="in_progress">In Progress</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </SelectNative>
+              <Select
+                value={formData.status || ''}
+                onChange={(value) => setFormData({ ...formData, status: value })}
+                options={[
+                  { value: 'pending', label: 'Pending' },
+                  { value: 'in_progress', label: 'In Progress' },
+                  { value: 'completed', label: 'Completed' },
+                  { value: 'cancelled', label: 'Cancelled' },
+                ]}
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-600 mb-1">
-                Inherent Risk
-              </label>
-              <SelectNative
-                value={formData.inherentRiskScore || ''}
-                onChange={(e) => setFormData({ ...formData, inherentRiskScore: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-              >
-                <option value="">Select risk level...</option>
-                <option value="very_low">Very Low</option>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
-              </SelectNative>
+              <label className="block text-sm font-medium text-surface-600 mb-1">Assessor</label>
+              <Input
+                type="text"
+                value={formData.assessor || ''}
+                onChange={(e) => setFormData({ ...formData, assessor: e.target.value })}
+              />
             </div>
           </div>
         </div>
@@ -142,7 +119,6 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 type="date"
                 value={formData.dueDate || ''}
                 onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               />
             </div>
             <div>
@@ -153,15 +129,14 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 type="date"
                 value={formData.completedAt || ''}
                 onChange={(e) => setFormData({ ...formData, completedAt: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               />
             </div>
           </div>
         </div>
 
-        {/* Risk Assessment */}
+        {/* Scores */}
         <div>
-          <h3 className="text-lg font-medium text-surface-900 mb-4">Risk Assessment</h3>
+          <h3 className="text-lg font-medium text-surface-900 mb-4">Assessment Scores</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">
@@ -175,125 +150,51 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 onChange={(e) =>
                   setFormData({ ...formData, overallScore: parseInt(e.target.value) || undefined })
                 }
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">
-                Residual Risk
-              </label>
-              <SelectNative
-                value={formData.residualRiskScore || ''}
-                onChange={(e) => setFormData({ ...formData, residualRiskScore: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-              >
-                <option value="">Select risk level...</option>
-                <option value="very_low">Very Low</option>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
-              </SelectNative>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-surface-600 mb-1">
-                Security Risk
-              </label>
-              <SelectNative
-                value={formData.securityRisk || ''}
-                onChange={(e) => setFormData({ ...formData, securityRisk: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-              >
-                <option value="">Select risk level...</option>
-                <option value="very_low">Very Low</option>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
-              </SelectNative>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-surface-600 mb-1">
-                Compliance Risk
-              </label>
-              <SelectNative
-                value={formData.complianceRisk || ''}
-                onChange={(e) => setFormData({ ...formData, complianceRisk: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-              >
-                <option value="">Select risk level...</option>
-                <option value="very_low">Very Low</option>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
-              </SelectNative>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-surface-600 mb-1">
-                Operational Risk
-              </label>
-              <SelectNative
-                value={formData.operationalRisk || ''}
-                onChange={(e) => setFormData({ ...formData, operationalRisk: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-              >
-                <option value="">Select risk level...</option>
-                <option value="very_low">Very Low</option>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
-              </SelectNative>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-surface-600 mb-1">
-                Financial Risk
-              </label>
-              <SelectNative
-                value={formData.financialRisk || ''}
-                onChange={(e) => setFormData({ ...formData, financialRisk: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-              >
-                <option value="">Select risk level...</option>
-                <option value="very_low">Very Low</option>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
-              </SelectNative>
-            </div>
-          </div>
-        </div>
-
-        {/* Outcome */}
-        <div>
-          <h3 className="text-lg font-medium text-surface-900 mb-4">Assessment Outcome</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-surface-600 mb-1">Outcome</label>
-              <SelectNative
-                value={formData.outcome || ''}
-                onChange={(e) => setFormData({ ...formData, outcome: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-              >
-                <option value="">Select outcome...</option>
-                <option value="approved">Approved</option>
-                <option value="approved_with_conditions">Approved with Conditions</option>
-                <option value="rejected">Rejected</option>
-                <option value="requires_remediation">Requires Remediation</option>
-              </SelectNative>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-surface-600 mb-1">
-                Outcome Notes
+                Security Score (0-100)
               </label>
               <Input
-                type="text"
-                value={formData.outcomeNotes || ''}
-                onChange={(e) => setFormData({ ...formData, outcomeNotes: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-                placeholder="Additional notes about the outcome..."
+                type="number"
+                min="0"
+                max="100"
+                value={formData.securityScore || ''}
+                onChange={(e) =>
+                  setFormData({ ...formData, securityScore: parseInt(e.target.value) || undefined })
+                }
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-600 mb-1">
+                Privacy Score (0-100)
+              </label>
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                value={formData.privacyScore || ''}
+                onChange={(e) =>
+                  setFormData({ ...formData, privacyScore: parseInt(e.target.value) || undefined })
+                }
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-600 mb-1">
+                Compliance Score (0-100)
+              </label>
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                value={formData.complianceScore || ''}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    complianceScore: parseInt(e.target.value) || undefined,
+                  })
+                }
               />
             </div>
           </div>
@@ -303,10 +204,9 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
         <div>
           <label className="block text-sm font-medium text-surface-600 mb-1">Findings</label>
           <Textarea
-            value={typeof formData.findings === 'string' ? formData.findings : ''}
+            value={formData.findings || ''}
             onChange={(e) => setFormData({ ...formData, findings: e.target.value })}
             rows={4}
-            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
             placeholder="Document any findings, issues, or concerns discovered during the assessment..."
           />
         </div>
@@ -318,26 +218,17 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
             value={formData.recommendations || ''}
             onChange={(e) => setFormData({ ...formData, recommendations: e.target.value })}
             rows={4}
-            className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
             placeholder="Provide recommendations for improvement or remediation..."
           />
         </div>
       </div>
+
       {/* Actions */}
       <div className="flex items-center justify-end gap-3">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 text-surface-700 hover:text-surface-900 transition-colors"
-        >
+        <Button type="button" variant="ghost" onClick={onCancel}>
           Cancel
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
-        >
-          Save Assessment
-        </button>
+        </Button>
+        <Button type="submit">Save Assessment</Button>
       </div>
     </form>
   );
@@ -348,7 +239,7 @@ function AssessmentView({
   onEdit,
   onDelete,
 }: {
-  assessment: VendorAssessment;
+  assessment: Assessment;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -361,18 +252,18 @@ function AssessmentView({
             <h2 className="text-2xl font-bold text-surface-900 capitalize">
               {assessment.assessmentType.replace('_', ' ')}
             </h2>
-            <p className="mt-1 text-surface-600">{assessment.vendor?.name}</p>
+            <p className="mt-1 text-surface-600">{assessment.vendor.name}</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={onEdit}
-              className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
+              className="p-2 text-surface-600 hover:text-surface-900 hover:bg-surface-100 rounded-lg transition-colors"
             >
               <PencilIcon className="w-5 h-5" />
             </button>
             <button
               onClick={onDelete}
-              className="p-2 text-red-600 hover:text-red-700 hover:bg-white rounded-lg transition-colors"
+              className="p-2 text-red-600 hover:text-red-700 hover:bg-surface-100 rounded-lg transition-colors"
             >
               <TrashIcon className="w-5 h-5" />
             </button>
@@ -385,7 +276,7 @@ function AssessmentView({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <dt className="text-sm font-medium text-surface-600 mb-1">Vendor</dt>
-              <dd className="text-sm text-surface-900">{assessment.vendor?.name}</dd>
+              <dd className="text-sm text-surface-900">{assessment.vendor.name}</dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-surface-600 mb-1">Type</dt>
@@ -399,11 +290,11 @@ function AssessmentView({
                 <span
                   className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
                     assessment.status === 'completed'
-                      ? 'bg-green-500/20 text-green-600'
+                      ? 'bg-green-500/20 text-emerald-700'
                       : assessment.status === 'in_progress'
                         ? 'bg-blue-500/20 text-blue-600'
                         : assessment.status === 'pending'
-                          ? 'bg-yellow-500/20 text-yellow-600'
+                          ? 'bg-yellow-500/20 text-yellow-700'
                           : 'bg-surface-200 text-surface-600'
                   }`}
                 >
@@ -411,12 +302,10 @@ function AssessmentView({
                 </span>
               </dd>
             </div>
-            {assessment.inherentRiskScore && (
+            {assessment.assessor && (
               <div>
-                <dt className="text-sm font-medium text-surface-600 mb-1">Inherent Risk</dt>
-                <dd className="text-sm text-surface-900 capitalize">
-                  {assessment.inherentRiskScore.replace('_', ' ')}
-                </dd>
+                <dt className="text-sm font-medium text-surface-600 mb-1">Assessor</dt>
+                <dd className="text-sm text-surface-900">{assessment.assessor}</dd>
               </div>
             )}
           </div>
@@ -445,14 +334,13 @@ function AssessmentView({
           </div>
         </div>
 
-        {/* Risk Assessment */}
+        {/* Scores */}
         {(assessment.overallScore ||
-          assessment.securityRisk ||
-          assessment.complianceRisk ||
-          assessment.operationalRisk ||
-          assessment.residualRiskScore) && (
+          assessment.securityScore ||
+          assessment.privacyScore ||
+          assessment.complianceScore) && (
           <div>
-            <h3 className="text-lg font-medium text-surface-900 mb-4">Risk Assessment</h3>
+            <h3 className="text-lg font-medium text-surface-900 mb-4">Assessment Scores</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {assessment.overallScore !== null && assessment.overallScore !== undefined && (
                 <div>
@@ -476,137 +364,70 @@ function AssessmentView({
                   </dd>
                 </div>
               )}
-              {assessment.residualRiskScore && (
+              {assessment.securityScore !== null && assessment.securityScore !== undefined && (
                 <div>
-                  <dt className="text-sm font-medium text-surface-600 mb-1">Residual Risk</dt>
-                  <dd
-                    className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
-                      assessment.residualRiskScore === 'critical'
-                        ? 'bg-red-500/20 text-red-600'
-                        : assessment.residualRiskScore === 'high'
-                          ? 'bg-orange-500/20 text-orange-600'
-                          : assessment.residualRiskScore === 'medium'
-                            ? 'bg-yellow-500/20 text-yellow-600'
-                            : assessment.residualRiskScore === 'low'
-                              ? 'bg-blue-500/20 text-blue-600'
-                              : 'bg-green-500/20 text-green-600'
-                    }`}
-                  >
-                    {assessment.residualRiskScore.replace('_', ' ')}
+                  <dt className="text-sm font-medium text-surface-600 mb-2">Security Score</dt>
+                  <dd className="flex items-center gap-3">
+                    <span className="text-2xl font-bold text-surface-900">
+                      {assessment.securityScore}
+                    </span>
+                    <div className="flex-1 h-3 bg-surface-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${
+                          assessment.securityScore >= 80
+                            ? 'bg-green-500'
+                            : assessment.securityScore >= 60
+                              ? 'bg-yellow-500'
+                              : 'bg-red-500'
+                        }`}
+                        style={{ width: `${assessment.securityScore}%` }}
+                      />
+                    </div>
                   </dd>
                 </div>
               )}
-              {assessment.securityRisk && (
+              {assessment.privacyScore !== null && assessment.privacyScore !== undefined && (
                 <div>
-                  <dt className="text-sm font-medium text-surface-600 mb-1">Security Risk</dt>
-                  <dd
-                    className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
-                      assessment.securityRisk === 'critical'
-                        ? 'bg-red-500/20 text-red-600'
-                        : assessment.securityRisk === 'high'
-                          ? 'bg-orange-500/20 text-orange-600'
-                          : assessment.securityRisk === 'medium'
-                            ? 'bg-yellow-500/20 text-yellow-600'
-                            : assessment.securityRisk === 'low'
-                              ? 'bg-blue-500/20 text-blue-600'
-                              : 'bg-green-500/20 text-green-600'
-                    }`}
-                  >
-                    {assessment.securityRisk.replace('_', ' ')}
+                  <dt className="text-sm font-medium text-surface-600 mb-2">Privacy Score</dt>
+                  <dd className="flex items-center gap-3">
+                    <span className="text-2xl font-bold text-surface-900">
+                      {assessment.privacyScore}
+                    </span>
+                    <div className="flex-1 h-3 bg-surface-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${
+                          assessment.privacyScore >= 80
+                            ? 'bg-green-500'
+                            : assessment.privacyScore >= 60
+                              ? 'bg-yellow-500'
+                              : 'bg-red-500'
+                        }`}
+                        style={{ width: `${assessment.privacyScore}%` }}
+                      />
+                    </div>
                   </dd>
                 </div>
               )}
-              {assessment.complianceRisk && (
+              {assessment.complianceScore !== null && assessment.complianceScore !== undefined && (
                 <div>
-                  <dt className="text-sm font-medium text-surface-600 mb-1">Compliance Risk</dt>
-                  <dd
-                    className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
-                      assessment.complianceRisk === 'critical'
-                        ? 'bg-red-500/20 text-red-600'
-                        : assessment.complianceRisk === 'high'
-                          ? 'bg-orange-500/20 text-orange-600'
-                          : assessment.complianceRisk === 'medium'
-                            ? 'bg-yellow-500/20 text-yellow-600'
-                            : assessment.complianceRisk === 'low'
-                              ? 'bg-blue-500/20 text-blue-600'
-                              : 'bg-green-500/20 text-green-600'
-                    }`}
-                  >
-                    {assessment.complianceRisk.replace('_', ' ')}
+                  <dt className="text-sm font-medium text-surface-600 mb-2">Compliance Score</dt>
+                  <dd className="flex items-center gap-3">
+                    <span className="text-2xl font-bold text-surface-900">
+                      {assessment.complianceScore}
+                    </span>
+                    <div className="flex-1 h-3 bg-surface-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${
+                          assessment.complianceScore >= 80
+                            ? 'bg-green-500'
+                            : assessment.complianceScore >= 60
+                              ? 'bg-yellow-500'
+                              : 'bg-red-500'
+                        }`}
+                        style={{ width: `${assessment.complianceScore}%` }}
+                      />
+                    </div>
                   </dd>
-                </div>
-              )}
-              {assessment.operationalRisk && (
-                <div>
-                  <dt className="text-sm font-medium text-surface-600 mb-1">Operational Risk</dt>
-                  <dd
-                    className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
-                      assessment.operationalRisk === 'critical'
-                        ? 'bg-red-500/20 text-red-600'
-                        : assessment.operationalRisk === 'high'
-                          ? 'bg-orange-500/20 text-orange-600'
-                          : assessment.operationalRisk === 'medium'
-                            ? 'bg-yellow-500/20 text-yellow-600'
-                            : assessment.operationalRisk === 'low'
-                              ? 'bg-blue-500/20 text-blue-600'
-                              : 'bg-green-500/20 text-green-600'
-                    }`}
-                  >
-                    {assessment.operationalRisk.replace('_', ' ')}
-                  </dd>
-                </div>
-              )}
-              {assessment.financialRisk && (
-                <div>
-                  <dt className="text-sm font-medium text-surface-600 mb-1">Financial Risk</dt>
-                  <dd
-                    className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
-                      assessment.financialRisk === 'critical'
-                        ? 'bg-red-500/20 text-red-600'
-                        : assessment.financialRisk === 'high'
-                          ? 'bg-orange-500/20 text-orange-600'
-                          : assessment.financialRisk === 'medium'
-                            ? 'bg-yellow-500/20 text-yellow-600'
-                            : assessment.financialRisk === 'low'
-                              ? 'bg-blue-500/20 text-blue-600'
-                              : 'bg-green-500/20 text-green-600'
-                    }`}
-                  >
-                    {assessment.financialRisk.replace('_', ' ')}
-                  </dd>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Outcome */}
-        {(assessment.outcome || assessment.outcomeNotes) && (
-          <div>
-            <h3 className="text-lg font-medium text-surface-900 mb-4">Outcome</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {assessment.outcome && (
-                <div>
-                  <dt className="text-sm font-medium text-surface-600 mb-1">Decision</dt>
-                  <dd
-                    className={`inline-flex px-2 py-1 text-xs font-medium rounded-full capitalize ${
-                      assessment.outcome === 'approved'
-                        ? 'bg-green-500/20 text-green-600'
-                        : assessment.outcome === 'approved_with_conditions'
-                          ? 'bg-yellow-500/20 text-yellow-600'
-                          : assessment.outcome === 'rejected'
-                            ? 'bg-red-500/20 text-red-600'
-                            : 'bg-orange-500/20 text-orange-600'
-                    }`}
-                  >
-                    {assessment.outcome.replace(/_/g, ' ')}
-                  </dd>
-                </div>
-              )}
-              {assessment.outcomeNotes && (
-                <div>
-                  <dt className="text-sm font-medium text-surface-600 mb-1">Notes</dt>
-                  <dd className="text-sm text-surface-900">{assessment.outcomeNotes}</dd>
                 </div>
               )}
             </div>
@@ -618,9 +439,7 @@ function AssessmentView({
           <div>
             <h3 className="text-lg font-medium text-surface-900 mb-4">Findings</h3>
             <div className="text-sm text-surface-700 whitespace-pre-wrap">
-              {typeof assessment.findings === 'string'
-                ? assessment.findings
-                : JSON.stringify(assessment.findings, null, 2)}
+              {assessment.findings}
             </div>
           </div>
         )}
@@ -642,10 +461,21 @@ function AssessmentView({
 export default function AssessmentDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [assessment, setAssessment] = useState<VendorAssessment | null>(null);
+  const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+
+  const fetchAssessment = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/assessments/${id}`);
+      const data = await response.json();
+      setAssessment(data);
+    } catch (error) {
+      console.error('Error fetching assessment:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
 
   useEffect(() => {
     if (id && id !== 'new') {
@@ -654,66 +484,33 @@ export default function AssessmentDetail() {
       setEditing(true);
       setLoading(false);
     }
-  }, [id]);
+  }, [id, fetchAssessment]);
 
-  const fetchAssessment = async () => {
+  const handleSave = async (formData: Partial<Assessment>) => {
     try {
-      const response = await assessmentsApi.get(id!);
-      setAssessment(response.data);
+      const url = id === 'new' ? '/api/assessments' : `/api/assessments/${id}`;
+      const method = id === 'new' ? 'POST' : 'PATCH';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': 'system', // TODO: Get from auth context
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (id === 'new') {
+          navigate(`/assessments/${data.id}`);
+        } else {
+          setAssessment(data);
+          setEditing(false);
+        }
+      }
     } catch (error) {
-      console.error('Error fetching assessment:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSave = async (formData: Partial<VendorAssessment>) => {
-    try {
-      // Organization ID must come from the authenticated user. Previously
-      // this fell back to a hardcoded UUID, which routed unauthenticated
-      // writes into a random tenant's data.
-      const organizationId = user?.organizationId;
-      if (!organizationId) {
-        console.error('Cannot save assessment: no authenticated user / organizationId');
-        return;
-      }
-
-      // Clean up form data - remove empty strings and undefined values for optional fields
-      const cleanedData: Record<string, unknown> = {
-        organizationId,
-        vendorId: formData.vendorId,
-        assessmentType: formData.assessmentType,
-        status: formData.status || 'pending',
-      };
-
-      // Add optional fields only if they have values
-      if (formData.dueDate) cleanedData.dueDate = formData.dueDate;
-      if (formData.completedAt) cleanedData.completedAt = formData.completedAt;
-      if (formData.inherentRiskScore) cleanedData.inherentRiskScore = formData.inherentRiskScore;
-      if (formData.residualRiskScore) cleanedData.residualRiskScore = formData.residualRiskScore;
-      if (formData.overallScore !== undefined && formData.overallScore !== null)
-        cleanedData.overallScore = formData.overallScore;
-      if (formData.securityRisk) cleanedData.securityRisk = formData.securityRisk;
-      if (formData.complianceRisk) cleanedData.complianceRisk = formData.complianceRisk;
-      if (formData.operationalRisk) cleanedData.operationalRisk = formData.operationalRisk;
-      if (formData.financialRisk) cleanedData.financialRisk = formData.financialRisk;
-      if (formData.outcome) cleanedData.outcome = formData.outcome;
-      if (formData.outcomeNotes) cleanedData.outcomeNotes = formData.outcomeNotes;
-      if (formData.findings) cleanedData.findings = formData.findings;
-      if (formData.recommendations) cleanedData.recommendations = formData.recommendations;
-
-      if (id === 'new') {
-        const response = await assessmentsApi.create(cleanedData);
-        navigate(`/assessments/${response.data.id}`);
-      } else {
-        const response = await assessmentsApi.update(id!, cleanedData);
-        setAssessment(response.data);
-        setEditing(false);
-      }
-    } catch (error: unknown) {
       console.error('Error saving assessment:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      alert(`Failed to save assessment: ${errorMessage}`);
     }
   };
 
@@ -723,8 +520,16 @@ export default function AssessmentDetail() {
     }
 
     try {
-      await assessmentsApi.delete(id!);
-      navigate('/assessments');
+      const response = await fetch(`/api/assessments/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-user-id': 'system', // TODO: Get from auth context
+        },
+      });
+
+      if (response.ok) {
+        navigate('/assessments');
+      }
     } catch (error) {
       console.error('Error deleting assessment:', error);
     }
@@ -743,7 +548,7 @@ export default function AssessmentDetail() {
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate('/assessments')}
-          className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
+          className="p-2 text-surface-600 hover:text-surface-900 hover:bg-surface-100 rounded-lg transition-colors"
         >
           <ArrowLeftIcon className="w-5 h-5" />
         </button>
@@ -753,7 +558,7 @@ export default function AssessmentDetail() {
           </h1>
           {assessment && (
             <p className="mt-1 text-surface-600">
-              {assessment.vendor?.name} - {assessment.assessmentType?.replace('_', ' ')}
+              {assessment.vendor.name} - {assessment.assessmentType.replace('_', ' ')}
             </p>
           )}
         </div>

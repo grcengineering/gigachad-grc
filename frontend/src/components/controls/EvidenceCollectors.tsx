@@ -16,11 +16,10 @@ import {
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
-import { format, formatDistanceToNow } from 'date-fns';
+import { Button } from '@/components/ui';
+import { formatDateTime, formatRelativeTimeFromNow } from '@/lib/date';
 import { collectorsApi } from '@/lib/api';
 import CollectorConfigModal from './CollectorConfigModal';
-
-import { Button } from '@/components/ui/Button';
 
 interface Props {
   controlId: string;
@@ -109,18 +108,22 @@ export default function EvidenceCollectors({ controlId, implementationId }: Prop
             Configure API endpoints to automatically collect evidence for this control
           </p>
         </div>
-        <Button onClick={handleCreateNew} className="text-sm" variant="primary">
-          <PlusIcon className="w-4 h-4 mr-1" />
+        <Button size="sm" leftIcon={<PlusIcon className="w-4 h-4" />} onClick={handleCreateNew}>
           Add Collector
         </Button>
       </div>
+
       {/* Collectors List */}
       {collectors?.length === 0 ? (
-        <div className="text-center py-8 border border-dashed border-surface-200 rounded-lg">
-          <Cog6ToothIcon className="w-10 h-10 mx-auto text-surface-600 mb-3" />
+        <div className="text-center py-8 border border-dashed border-surface-300 rounded-lg">
+          <Cog6ToothIcon className="w-10 h-10 mx-auto text-surface-500 mb-3" />
           <p className="text-surface-600 mb-3">No evidence collectors configured</p>
-          <Button onClick={handleCreateNew} className="text-sm" variant="secondary">
-            <PlusIcon className="w-4 h-4 mr-1" />
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<PlusIcon className="w-4 h-4" />}
+            onClick={handleCreateNew}
+          >
             Create your first collector
           </Button>
         </div>
@@ -144,6 +147,7 @@ export default function EvidenceCollectors({ controlId, implementationId }: Prop
           ))}
         </div>
       )}
+
       {/* Config Modal */}
       {showConfigModal && (
         <CollectorConfigModal
@@ -191,7 +195,7 @@ function CollectorCard({
   });
 
   const statusConfig = {
-    success: { icon: CheckCircleIcon, color: 'text-green-600', bg: 'bg-green-500/20' },
+    success: { icon: CheckCircleIcon, color: 'text-emerald-700', bg: 'bg-green-500/20' },
     error: { icon: XCircleIcon, color: 'text-red-600', bg: 'bg-red-500/20' },
     running: { icon: ArrowPathIcon, color: 'text-blue-600', bg: 'bg-blue-500/20' },
   };
@@ -201,10 +205,10 @@ function CollectorCard({
   const statusColor = lastStatus ? statusConfig[lastStatus]?.color : 'text-surface-600';
 
   return (
-    <div className="border border-surface-200 rounded-lg overflow-hidden">
+    <div className="border border-surface-300 rounded-lg overflow-hidden">
       {/* Header */}
       <div
-        className="flex items-center justify-between p-4 bg-white/50 cursor-pointer"
+        className="flex items-center justify-between p-4 bg-surface-100/50 cursor-pointer"
         onClick={onToggle}
       >
         <div className="flex items-center gap-3">
@@ -215,7 +219,7 @@ function CollectorCard({
             )}
           >
             {collector.mode === 'integration' ? (
-              <LinkIcon className="w-5 h-5 text-brand-400" />
+              <LinkIcon className="w-5 h-5 text-brand-700" />
             ) : (
               <Cog6ToothIcon className="w-5 h-5 text-surface-600" />
             )}
@@ -243,7 +247,7 @@ function CollectorCard({
                 className={clsx('w-4 h-4', statusColor, lastStatus === 'running' && 'animate-spin')}
               />
               <span className="text-surface-600">
-                {formatDistanceToNow(new Date(collector.lastRunAt), { addSuffix: true })}
+                {formatRelativeTimeFromNow(collector.lastRunAt)}
               </span>
             </div>
           )}
@@ -258,7 +262,7 @@ function CollectorCard({
             <button
               onClick={onRun}
               disabled={isRunning}
-              className="p-1.5 text-surface-600 hover:text-green-600 hover:bg-surface-200 rounded transition-colors"
+              className="p-1.5 text-surface-600 hover:text-emerald-700 hover:bg-surface-200 rounded transition-colors"
               title="Run now"
             >
               {isRunning ? (
@@ -294,7 +298,7 @@ function CollectorCard({
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="p-4 border-t border-surface-200 space-y-4">
+        <div className="p-4 border-t border-surface-300 space-y-4">
           {/* Description */}
           {collector.description && (
             <p className="text-sm text-surface-600">{collector.description}</p>
@@ -306,7 +310,7 @@ function CollectorCard({
               <span className="text-surface-500">Mode:</span>{' '}
               <span className="text-surface-700 capitalize">{collector.mode}</span>
               {collector.integration && (
-                <span className="ml-2 text-brand-400">({collector.integration.name})</span>
+                <span className="ml-2 text-brand-700">({collector.integration.name})</span>
               )}
             </div>
             <div>
@@ -329,7 +333,7 @@ function CollectorCard({
 
           {/* Schedule Info */}
           {collector.scheduleEnabled && (
-            <div className="p-3 bg-white/50 rounded-lg">
+            <div className="p-3 bg-surface-100/50 rounded-lg">
               <div className="flex items-center gap-2 text-sm">
                 <ClockIcon className="w-4 h-4 text-surface-500" />
                 <span className="text-surface-700">
@@ -337,7 +341,7 @@ function CollectorCard({
                 </span>
                 {collector.nextRunAt && (
                   <span className="text-surface-500">
-                    • Next run: {format(new Date(collector.nextRunAt), 'MMM dd, yyyy HH:mm')}
+                    • Next run: {formatDateTime(collector.nextRunAt, true)}
                   </span>
                 )}
               </div>
@@ -355,7 +359,7 @@ function CollectorCard({
                   return (
                     <div
                       key={run.id}
-                      className="flex items-center justify-between p-2 bg-white/30 rounded text-xs"
+                      className="flex items-center justify-between p-2 bg-surface-100/30 rounded text-xs"
                     >
                       <div className="flex items-center gap-2">
                         <RunIcon className={clsx('w-4 h-4', statusConfig[runStatus]?.color)} />
@@ -365,14 +369,14 @@ function CollectorCard({
                         {run.evidenceCreated > 0 && (
                           <>
                             <span className="text-surface-500">•</span>
-                            <span className="text-green-600">
+                            <span className="text-emerald-700">
                               {run.evidenceCreated} evidence created
                             </span>
                           </>
                         )}
                       </div>
                       <span className="text-surface-500">
-                        {format(new Date(run.startedAt), 'MMM dd HH:mm')}
+                        {formatDateTime(run.startedAt, false)}
                       </span>
                     </div>
                   );

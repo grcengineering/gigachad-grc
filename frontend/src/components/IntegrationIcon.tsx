@@ -44,7 +44,6 @@ const DOMAIN_MAP: Record<string, string> = {
   codeclimate: 'docs.codeclimate.com',
   sonarqube: 'sonarqube.org',
   pagerduty: 'pagerduty.com',
-  incidentio: 'incident.io',
   launchdarkly: 'launchdarkly.com',
   sentry: 'sentry.io',
 
@@ -247,7 +246,8 @@ const DOMAIN_MAP: Record<string, string> = {
 
 // Direct logo URLs for integrations where favicon services don't work
 const LOGO_URL_OVERRIDE: Record<string, string> = {
-  google_meet: 'https://fonts.gstatic.com/s/i/productlogos/meet_2020q4/v6/web-512dp/logo_meet_2020q4_color_2x_web_512dp.png',
+  google_meet:
+    'https://fonts.gstatic.com/s/i/productlogos/meet_2020q4/v6/web-512dp/logo_meet_2020q4_color_2x_web_512dp.png',
   rocket_chat: 'https://avatars.githubusercontent.com/u/12508788?s=200&v=4',
   mattermost: 'https://avatars.githubusercontent.com/u/9828093?s=200&v=4',
   aqua_security: 'https://avatars.githubusercontent.com/u/12783832?s=200&v=4',
@@ -255,18 +255,47 @@ const LOGO_URL_OVERRIDE: Record<string, string> = {
   codeclimate: 'https://avatars.githubusercontent.com/u/1309077?s=200&v=4',
   travis_ci: 'https://avatars.githubusercontent.com/u/639823?s=200&v=4',
   bamboohr: 'https://www.bamboohr.com/favicon.ico',
-  aws_cognito: 'https://d1.awsstatic.com/product-marketing/Cognito/Cognito.741f7afdb13b5db18b3e2de79c90a436cb00ce22.png',
+  aws_cognito:
+    'https://d1.awsstatic.com/product-marketing/Cognito/Cognito.741f7afdb13b5db18b3e2de79c90a436cb00ce22.png',
   sharepoint: 'https://www.microsoft.com/favicon.ico',
   microsoft_intune: 'https://www.microsoft.com/favicon.ico',
-  incidentio: 'https://incident.io/favicon-32x32.png',
 };
 
-export function IntegrationIcon({ iconSlug, integrationName, className = 'w-6 h-6', fallback = '🔗' }: IntegrationIconProps) {
+export function IntegrationIcon({
+  iconSlug,
+  integrationName,
+  className = 'w-6 h-6',
+  fallback = '🔗',
+}: IntegrationIconProps) {
+  // All hooks must be at the top, before any early returns.
   const [failedAttempts, setFailedAttempts] = useState(0);
-  const [useOverrideFallback, setUseOverrideFallback] = useState(false);
+
+  // Check if there's a direct logo URL override first
+  if (iconSlug && LOGO_URL_OVERRIDE[iconSlug]) {
+    return (
+      <img
+        src={LOGO_URL_OVERRIDE[iconSlug]}
+        alt={integrationName || iconSlug || 'Integration logo'}
+        className={className}
+        style={{ objectFit: 'contain' }}
+        onError={(e) => {
+          // If override fails, fall back to favicon sources
+          const target = e.target as HTMLImageElement;
+          const domain = DOMAIN_MAP[iconSlug] || `${iconSlug}.com`;
+          target.src = `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=128`;
+        }}
+      />
+    );
+  }
 
   // Try to get domain from mapping first, then fall back to iconSlug as domain
-  const domain = iconSlug ? (DOMAIN_MAP[iconSlug] || `${iconSlug}.com`) : integrationName?.toLowerCase().replace(/\s+/g, '') + '.com';
+  const domain = iconSlug
+    ? DOMAIN_MAP[iconSlug] || `${iconSlug}.com`
+    : integrationName?.toLowerCase().replace(/\s+/g, '') + '.com';
+
+  if (!iconSlug && !integrationName) {
+    return <span className={className}>{fallback}</span>;
+  }
 
   // Multiple favicon sources to try
   const sources = [
@@ -274,23 +303,6 @@ export function IntegrationIcon({ iconSlug, integrationName, className = 'w-6 h-
     `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
     `https://${domain}/favicon.ico`,
   ];
-
-  // Check if there's a direct logo URL override first
-  if (iconSlug && LOGO_URL_OVERRIDE[iconSlug] && !useOverrideFallback) {
-    return (
-      <img
-        src={LOGO_URL_OVERRIDE[iconSlug]}
-        alt={integrationName || iconSlug || 'Integration logo'}
-        className={className}
-        style={{ objectFit: 'contain' }}
-        onError={() => setUseOverrideFallback(true)}
-      />
-    );
-  }
-
-  if (!iconSlug && !integrationName) {
-    return <span className={className}>{fallback}</span>;
-  }
 
   if (failedAttempts >= sources.length) {
     return <span className={className}>{fallback}</span>;
@@ -303,7 +315,7 @@ export function IntegrationIcon({ iconSlug, integrationName, className = 'w-6 h-
       src={logoUrl}
       alt={integrationName || iconSlug || 'Integration logo'}
       className={className}
-      onError={() => setFailedAttempts(prev => prev + 1)}
+      onError={() => setFailedAttempts((prev) => prev + 1)}
       style={{ objectFit: 'contain' }}
     />
   );

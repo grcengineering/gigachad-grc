@@ -1,134 +1,145 @@
-import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft, Edit2, Link as LinkIcon, Shield, AlertTriangle, Users } from 'lucide-react';
 import api from '@/lib/api';
-import toast from 'react-hot-toast';
 import {
-  ArrowLeftIcon,
-  PencilIcon,
-  TrashIcon,
-  XMarkIcon,
-  ExclamationCircleIcon,
-  ShieldExclamationIcon,
-  CubeIcon,
-  LinkIcon,
-  DocumentTextIcon,
-} from '@heroicons/react/24/outline';
-import clsx from 'clsx';
-import { Button } from '@/components/ui/Button';
-import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  EmptyState,
+  PageHeader,
+  Skeleton,
+  Tabs,
+  type BadgeVariant,
+} from '@/components/ui';
 
-import { Textarea } from '@/components/ui/Textarea';
+interface ProcessDependency {
+  id: string;
+  dependent_process_id?: string;
+  dependent_process_name?: string;
+  name?: string;
+  dependency_type?: string;
+}
 
-import { Input } from '@/components/ui/Input';
+interface ProcessAsset {
+  id: string;
+  asset_id?: string;
+  asset_name?: string;
+  asset_type?: string;
+}
 
-import { SelectNative } from '@/components/ui/SelectNative';
-import { Dialog } from '@/components/ui/Dialog';
+interface RecoveryStrategy {
+  id: string;
+  strategy_id?: string;
+  name: string;
+  status?: string;
+  description?: string;
+}
 
-interface BusinessProcess {
+interface LinkedRisk {
+  id: string;
+  risk_id?: string;
+  title: string;
+  status?: string;
+  inherent_risk?: string;
+}
+
+interface Stakeholder {
+  id: string;
+  name: string;
+  role?: string;
+  email?: string;
+}
+
+interface BusinessProcessDetailData {
   id: string;
   process_id: string;
   name: string;
-  description: string;
-  department: string;
+  description?: string;
+  department?: string;
+  category?: string;
   criticality_tier: string;
-  rto_hours: number;
-  rpo_hours: number;
-  mtpd_hours: number;
-  is_active: boolean;
-  owner_id: string;
-  owner_name: string;
-  owner_email: string;
-  impact_description: string;
-  recovery_priority: number;
-  minimum_staff_required: number;
-  alternate_site_required: boolean;
-  manual_workaround_available: boolean;
-  workaround_description: string;
-  next_review_due: string;
-  last_reviewed_at: string;
-  created_at: string;
-  updated_at: string;
-  dependencies: Array<{
-    id: string;
-    dependent_process_id: string;
-    dependent_process_name: string;
-    dependency_type: string;
-  }>;
-  assets: Array<{
-    id: string;
-    asset_id: string;
-    asset_name: string;
-    asset_type: string;
-  }>;
-  recovery_strategies: Array<{
-    id: string;
-    strategy_id: string;
-    name: string;
-    status: string;
-  }>;
-  bcdr_plans: Array<{
-    id: string;
-    plan_id: string;
-    title: string;
-    status: string;
-  }>;
+  criticality?: string;
+  rto_hours?: number | null;
+  rpo_hours?: number | null;
+  mtpd_hours?: number | null;
+  is_active?: boolean;
+  owner_id?: string;
+  owner_name?: string;
+  owner_email?: string;
+  impact_description?: string;
+  recovery_priority?: number;
+  minimum_staff_required?: number;
+  alternate_site_required?: boolean;
+  manual_workaround_available?: boolean;
+  workaround_description?: string;
+  next_review_due?: string | null;
+  last_reviewed_at?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  dependencies?: ProcessDependency[];
+  assets?: ProcessAsset[];
+  recovery_strategies?: RecoveryStrategy[];
+  linked_risks?: LinkedRisk[];
+  stakeholders?: Stakeholder[];
+  bcdr_plans?: Array<{ id: string; plan_id?: string; title: string; status?: string }>;
 }
 
-const CRITICALITY_TIERS = [
-  {
-    value: 'tier_1_critical',
-    label: 'Tier 1 - Critical',
-    color: 'bg-red-500/20 text-red-600 border-red-500/30',
-  },
-  {
-    value: 'tier_2_essential',
-    label: 'Tier 2 - Essential',
-    color: 'bg-orange-500/20 text-orange-600 border-orange-500/30',
-  },
-  {
-    value: 'tier_3_important',
-    label: 'Tier 3 - Important',
-    color: 'bg-yellow-500/20 text-yellow-600 border-yellow-500/30',
-  },
-  {
-    value: 'tier_4_standard',
-    label: 'Tier 4 - Standard',
-    color: 'bg-blue-500/20 text-blue-600 border-blue-500/30',
-  },
-];
+const TIER_VARIANT: Record<string, BadgeVariant> = {
+  tier_1_critical: 'danger',
+  tier_2_essential: 'warning',
+  tier_3_important: 'info',
+  tier_4_standard: 'neutral',
+};
+
+const TIER_LABELS: Record<string, string> = {
+  tier_1_critical: 'Tier 1 — Critical',
+  tier_2_essential: 'Tier 2 — Essential',
+  tier_3_important: 'Tier 3 — Important',
+  tier_4_standard: 'Tier 4 — Standard',
+};
+
+const STRATEGY_VARIANT: Record<string, BadgeVariant> = {
+  active: 'success',
+  draft: 'neutral',
+  archived: 'neutral',
+  in_progress: 'warning',
+};
+
+const RISK_LEVEL_VARIANT: Record<string, BadgeVariant> = {
+  very_low: 'success',
+  low: 'success',
+  medium: 'warning',
+  high: 'danger',
+  very_high: 'danger',
+  critical: 'danger',
+};
+
+function humanize(s: string | null | undefined): string {
+  if (!s) return '';
+  return s.replace(/_/g, ' ');
+}
+
+function formatDate(d?: string | null): string {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString();
+}
+
+function MetaCell({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-xs text-surface-500 uppercase tracking-wider">{label}</p>
+      <div className="mt-1 text-body text-surface-900">{value}</div>
+    </div>
+  );
+}
 
 export default function BusinessProcessDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
 
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'dependencies' | 'assets' | 'plans'>(
-    'overview'
-  );
-  const [editForm, setEditForm] = useState({
-    name: '',
-    description: '',
-    department: '',
-    criticality_tier: 'tier_3_important',
-    rto_hours: 24,
-    rpo_hours: 4,
-    mtpd_hours: 72,
-    impact_description: '',
-    recovery_priority: 1,
-    minimum_staff_required: 1,
-    alternate_site_required: false,
-    manual_workaround_available: false,
-    workaround_description: '',
-  });
-
-  const {
-    data: process,
-    isLoading,
-    error,
-  } = useQuery<BusinessProcess>({
+  const { data: process, isLoading } = useQuery<BusinessProcessDetailData>({
     queryKey: ['business-process', id],
     queryFn: async () => {
       const res = await api.get(`/api/bcdr/processes/${id}`);
@@ -137,647 +148,405 @@ export default function BusinessProcessDetail() {
     enabled: !!id,
   });
 
-  useEffect(() => {
-    if (process) {
-      setEditForm({
-        name: process.name || '',
-        description: process.description || '',
-        department: process.department || '',
-        criticality_tier: process.criticality_tier || 'tier_3_important',
-        rto_hours: process.rto_hours || 24,
-        rpo_hours: process.rpo_hours || 4,
-        mtpd_hours: process.mtpd_hours || 72,
-        impact_description: process.impact_description || '',
-        recovery_priority: process.recovery_priority || 1,
-        minimum_staff_required: process.minimum_staff_required || 1,
-        alternate_site_required: process.alternate_site_required || false,
-        manual_workaround_available: process.manual_workaround_available || false,
-        workaround_description: process.workaround_description || '',
-      });
-    }
-  }, [process]);
-
-  const updateMutation = useMutation({
-    mutationFn: async (data: typeof editForm) => {
-      const res = await api.patch(`/api/bcdr/processes/${id}`, data);
-      return res.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['business-process', id] });
-      queryClient.invalidateQueries({ queryKey: ['business-processes'] });
-      setShowEditModal(false);
-      toast.success('Business process updated successfully');
-    },
-    onError: () => {
-      toast.error('Failed to update business process');
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      await api.delete(`/api/bcdr/processes/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['business-processes'] });
-      toast.success('Business process deleted');
-      navigate('/bcdr/processes');
-    },
-    onError: () => {
-      toast.error('Failed to delete business process');
-    },
-  });
-
-  const getCriticalityConfig = (tier: string) => {
-    return CRITICALITY_TIERS.find((t) => t.value === tier) || CRITICALITY_TIERS[2];
-  };
-
-  const isOverdue = (date: string) => {
-    if (!date) return false;
-    return new Date(date) < new Date();
-  };
-
   if (isLoading) {
     return (
-      <div className="p-6 space-y-6">
-        <SkeletonDetailHeader />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <SkeletonDetailSection />
-          </div>
-          <div>
-            <SkeletonDetailSection />
-          </div>
-        </div>
+      <div className="space-y-5">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-64 w-full" />
       </div>
     );
   }
 
-  if (error || !process) {
+  if (!process) {
     return (
-      <div className="p-6">
-        <div className="card p-8 text-center">
-          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
-          <h2 className="text-lg font-semibold text-surface-900 mb-2">
-            Business Process Not Found
-          </h2>
-          <p className="text-surface-600 mb-4">
-            The requested business process could not be loaded.
-          </p>
-          <Button onClick={() => navigate('/bcdr/processes')}>Back to Processes</Button>
-        </div>
-      </div>
+      <EmptyState
+        title="Business process not found"
+        description="The requested process could not be loaded."
+        action={
+          <Button variant="outline" onClick={() => navigate('/bcdr/processes')}>
+            Back to processes
+          </Button>
+        }
+      />
     );
   }
 
-  const criticalityConfig = getCriticalityConfig(process.criticality_tier);
+  const tierVariant = TIER_VARIANT[process.criticality_tier] ?? 'neutral';
+  const tierLabel = TIER_LABELS[process.criticality_tier] ?? humanize(process.criticality_tier);
 
-  return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-4">
-          <button
-            onClick={() => navigate('/bcdr/processes')}
-            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600 mt-1"
-          >
-            <ArrowLeftIcon className="w-5 h-5" />
-          </button>
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <ShieldExclamationIcon className="w-8 h-8 text-brand-400" />
-              <div>
-                <h1 className="text-2xl font-bold text-surface-900">{process.name}</h1>
-                <p className="text-surface-600 text-sm">{process.process_id}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <span
-                className={clsx(
-                  'px-3 py-1 rounded-full text-sm font-medium border',
-                  criticalityConfig.color
-                )}
-              >
-                {criticalityConfig.label}
-              </span>
-              <span
-                className={clsx(
-                  'px-3 py-1 rounded-full text-sm font-medium',
-                  process.is_active
-                    ? 'bg-green-500/20 text-green-600'
-                    : 'bg-surface-600 text-surface-600'
-                )}
-              >
-                {process.is_active ? 'Active' : 'Inactive'}
-              </span>
-              {process.next_review_due && isOverdue(process.next_review_due) && (
-                <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-500/20 text-red-600">
-                  Review Overdue
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => setShowEditModal(true)}>
-            <PencilIcon className="w-4 h-4 mr-2" />
-            Edit
-          </Button>
-          <Button variant="danger" onClick={() => setShowDeleteConfirm(true)}>
-            <TrashIcon className="w-4 h-4 mr-2" />
-            Delete
-          </Button>
-        </div>
-      </div>
-      {/* Tabs */}
-      <div className="border-b border-surface-200">
-        <nav className="flex gap-6">
-          {(['overview', 'dependencies', 'assets', 'plans'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={clsx(
-                'pb-3 px-1 text-sm font-medium border-b-2 transition-colors capitalize',
-                activeTab === tab
-                  ? 'border-brand-500 text-brand-400'
-                  : 'border-transparent text-surface-600 hover:text-surface-800'
-              )}
-            >
-              {tab}
-            </button>
-          ))}
-        </nav>
-      </div>
-      {/* Content */}
-      {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Info */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="card p-6">
-              <h3 className="text-lg font-semibold text-surface-900 mb-4">Description</h3>
-              <p className="text-surface-700">
-                {process.description || 'No description provided.'}
-              </p>
-            </div>
+  const dependencies = process.dependencies ?? [];
+  const strategies = process.recovery_strategies ?? [];
+  const risks = process.linked_risks ?? [];
+  const stakeholders = process.stakeholders ?? [];
 
-            <div className="card p-6">
-              <h3 className="text-lg font-semibold text-surface-900 mb-4">Recovery Objectives</h3>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="p-4 rounded-lg bg-white/50">
-                  <p className="text-surface-600 text-sm">RTO</p>
-                  <p className="text-2xl font-bold text-surface-900">
-                    {process.rto_hours || 'N/A'}h
-                  </p>
-                  <p className="text-surface-500 text-xs">Recovery Time Objective</p>
-                </div>
-                <div className="p-4 rounded-lg bg-white/50">
-                  <p className="text-surface-600 text-sm">RPO</p>
-                  <p className="text-2xl font-bold text-surface-900">
-                    {process.rpo_hours || 'N/A'}h
-                  </p>
-                  <p className="text-surface-500 text-xs">Recovery Point Objective</p>
-                </div>
-                <div className="p-4 rounded-lg bg-white/50">
-                  <p className="text-surface-600 text-sm">MTPD</p>
-                  <p className="text-2xl font-bold text-surface-900">
-                    {process.mtpd_hours || 'N/A'}h
-                  </p>
-                  <p className="text-surface-500 text-xs">Max Tolerable Downtime</p>
-                </div>
-              </div>
-            </div>
-
-            {process.impact_description && (
-              <div className="card p-6">
-                <h3 className="text-lg font-semibold text-surface-900 mb-4">Business Impact</h3>
-                <p className="text-surface-700">{process.impact_description}</p>
-              </div>
-            )}
-
-            <div className="card p-6">
-              <h3 className="text-lg font-semibold text-surface-900 mb-4">Continuity Details</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-surface-600 text-sm">Recovery Priority</p>
-                  <p className="text-surface-900">{process.recovery_priority || 'Not set'}</p>
-                </div>
-                <div>
-                  <p className="text-surface-600 text-sm">Minimum Staff Required</p>
-                  <p className="text-surface-900">{process.minimum_staff_required || 'Not set'}</p>
-                </div>
-                <div>
-                  <p className="text-surface-600 text-sm">Alternate Site Required</p>
-                  <p className="text-surface-900">
-                    {process.alternate_site_required ? 'Yes' : 'No'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-surface-600 text-sm">Manual Workaround Available</p>
-                  <p className="text-surface-900">
-                    {process.manual_workaround_available ? 'Yes' : 'No'}
-                  </p>
-                </div>
-              </div>
-              {process.workaround_description && (
-                <div className="mt-4 pt-4 border-t border-surface-200">
-                  <p className="text-surface-600 text-sm mb-2">Workaround Description</p>
-                  <p className="text-surface-700">{process.workaround_description}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            <div className="card p-6">
-              <h3 className="text-lg font-semibold text-surface-900 mb-4">Details</h3>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-surface-600 text-sm">Department</p>
-                  <p className="text-surface-900">{process.department || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-surface-600 text-sm">Owner</p>
-                  <p className="text-surface-900">{process.owner_name || '-'}</p>
-                  {process.owner_email && (
-                    <p className="text-surface-500 text-sm">{process.owner_email}</p>
-                  )}
-                </div>
-                <div>
-                  <p className="text-surface-600 text-sm">Next Review Due</p>
-                  <p
-                    className={clsx(
-                      'text-surface-900',
-                      process.next_review_due &&
-                        isOverdue(process.next_review_due) &&
-                        'text-red-600'
-                    )}
-                  >
-                    {process.next_review_due
-                      ? new Date(process.next_review_due).toLocaleDateString()
-                      : '-'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-surface-600 text-sm">Last Reviewed</p>
-                  <p className="text-surface-900">
-                    {process.last_reviewed_at
-                      ? new Date(process.last_reviewed_at).toLocaleDateString()
-                      : 'Never'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="card p-6">
-              <h3 className="text-lg font-semibold text-surface-900 mb-4">Statistics</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-surface-600">Dependencies</span>
-                  <span className="text-surface-900">{process.dependencies?.length || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-surface-600">Assets</span>
-                  <span className="text-surface-900">{process.assets?.length || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-surface-600">BC/DR Plans</span>
-                  <span className="text-surface-900">{process.bcdr_plans?.length || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-surface-600">Recovery Strategies</span>
-                  <span className="text-surface-900">
-                    {process.recovery_strategies?.length || 0}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {activeTab === 'dependencies' && (
-        <div className="card p-6">
-          <h3 className="text-lg font-semibold text-surface-900 mb-4">Process Dependencies</h3>
-          {process.dependencies && process.dependencies.length > 0 ? (
-            <div className="space-y-2">
-              {process.dependencies.map((dep) => (
-                <Link
-                  key={dep.id}
-                  to={`/bcdr/processes/${dep.dependent_process_id}`}
-                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <LinkIcon className="w-5 h-5 text-surface-600" />
-                    <div>
-                      <p className="text-surface-900 font-medium">{dep.dependent_process_name}</p>
-                      <p className="text-surface-600 text-sm capitalize">{dep.dependency_type}</p>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+  const overviewTab = (
+    <div className="space-y-4">
+      <Card>
+        <CardBody>
+          <h3 className="text-h3 text-surface-900 mb-2">Description</h3>
+          {process.description ? (
+            <p className="text-body text-surface-800 whitespace-pre-wrap">{process.description}</p>
           ) : (
-            <p className="text-surface-600 text-center py-8">No dependencies configured</p>
+            <p className="text-small text-surface-500">No description recorded.</p>
           )}
-        </div>
-      )}
-      {activeTab === 'assets' && (
-        <div className="card p-6">
-          <h3 className="text-lg font-semibold text-surface-900 mb-4">Supporting Assets</h3>
-          {process.assets && process.assets.length > 0 ? (
-            <div className="space-y-2">
-              {process.assets.map((asset) => (
-                <Link
-                  key={asset.id}
-                  to={`/assets/${asset.asset_id}`}
-                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <CubeIcon className="w-5 h-5 text-surface-600" />
-                    <div>
-                      <p className="text-surface-900 font-medium">{asset.asset_name}</p>
-                      <p className="text-surface-600 text-sm capitalize">{asset.asset_type}</p>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <p className="text-surface-600 text-center py-8">No assets linked</p>
-          )}
-        </div>
-      )}
-      {activeTab === 'plans' && (
-        <div className="card p-6">
-          <h3 className="text-lg font-semibold text-surface-900 mb-4">BC/DR Plans</h3>
-          {process.bcdr_plans && process.bcdr_plans.length > 0 ? (
-            <div className="space-y-2">
-              {process.bcdr_plans.map((plan) => (
-                <Link
-                  key={plan.id}
-                  to={`/bcdr/plans/${plan.id}`}
-                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <DocumentTextIcon className="w-5 h-5 text-surface-600" />
-                    <div>
-                      <p className="text-surface-900 font-medium">{plan.title}</p>
-                      <p className="text-surface-600 text-sm">{plan.plan_id}</p>
-                    </div>
-                  </div>
-                  <span className="px-2 py-1 rounded text-xs font-medium bg-surface-200 text-surface-700 capitalize">
-                    {plan.status}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <p className="text-surface-600 text-center py-8">No BC/DR plans linked</p>
-          )}
-        </div>
-      )}
-      {/* Edit Modal */}
-      <Dialog open={showEditModal} onClose={() => setShowEditModal(false)}>
-        <div className="p-6 border-b border-surface-200 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-white">Edit Business Process</h2>
-          <button
-            onClick={() => setShowEditModal(false)}
-            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600"
-          >
-            <XMarkIcon className="w-5 h-5" />
-          </button>
-        </div>
+        </CardBody>
+      </Card>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            updateMutation.mutate(editForm);
-          }}
-          className="p-6 space-y-4"
-        >
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-2">Name *</label>
-            <Input
-              type="text"
-              value={editForm.name}
-              onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
-              required
-              className="input w-full"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-2">Description</label>
-            <Textarea
-              value={editForm.description}
-              onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
-              rows={3}
-              className="input w-full"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">Department</label>
-              <Input
-                type="text"
-                value={editForm.department}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, department: e.target.value }))}
-                className="input w-full"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">
-                Criticality Tier
-              </label>
-              <SelectNative
-                value={editForm.criticality_tier}
-                onChange={(e) =>
-                  setEditForm((prev) => ({ ...prev, criticality_tier: e.target.value }))
-                }
-                className="input w-full"
-              >
-                {CRITICALITY_TIERS.map((tier) => (
-                  <option key={tier.value} value={tier.value}>
-                    {tier.label}
-                  </option>
-                ))}
-              </SelectNative>
-            </div>
-          </div>
-
+      <Card>
+        <CardBody>
+          <h3 className="text-h3 text-surface-900 mb-3">Recovery Objectives</h3>
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">RTO (hours)</label>
-              <Input
-                type="number"
-                value={editForm.rto_hours}
-                onChange={(e) =>
-                  setEditForm((prev) => ({ ...prev, rto_hours: parseInt(e.target.value) || 0 }))
-                }
-                min="0"
-                className="input w-full"
-              />
+              <p className="text-xs text-surface-500 uppercase tracking-wider">RTO</p>
+              <p className="text-h1 text-surface-900 mt-1 tabular-nums">
+                {process.rto_hours ?? '—'}
+                {process.rto_hours !== undefined && process.rto_hours !== null && 'h'}
+              </p>
+              <p className="text-xs text-surface-500">Recovery Time Objective</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">RPO (hours)</label>
-              <Input
-                type="number"
-                value={editForm.rpo_hours}
-                onChange={(e) =>
-                  setEditForm((prev) => ({ ...prev, rpo_hours: parseInt(e.target.value) || 0 }))
-                }
-                min="0"
-                className="input w-full"
-              />
+              <p className="text-xs text-surface-500 uppercase tracking-wider">RPO</p>
+              <p className="text-h1 text-surface-900 mt-1 tabular-nums">
+                {process.rpo_hours ?? '—'}
+                {process.rpo_hours !== undefined && process.rpo_hours !== null && 'h'}
+              </p>
+              <p className="text-xs text-surface-500">Recovery Point Objective</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">
-                MTPD (hours)
-              </label>
-              <Input
-                type="number"
-                value={editForm.mtpd_hours}
-                onChange={(e) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    mtpd_hours: parseInt(e.target.value) || 0,
-                  }))
-                }
-                min="0"
-                className="input w-full"
-              />
+              <p className="text-xs text-surface-500 uppercase tracking-wider">MTPD</p>
+              <p className="text-h1 text-surface-900 mt-1 tabular-nums">
+                {process.mtpd_hours ?? '—'}
+                {process.mtpd_hours !== undefined && process.mtpd_hours !== null && 'h'}
+              </p>
+              <p className="text-xs text-surface-500">Max Tolerable Downtime</p>
             </div>
           </div>
+        </CardBody>
+      </Card>
 
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-2">
-              Business Impact Description
-            </label>
-            <Textarea
-              value={editForm.impact_description}
-              onChange={(e) =>
-                setEditForm((prev) => ({ ...prev, impact_description: e.target.value }))
-              }
-              rows={2}
-              className="input w-full"
-              placeholder="Describe the impact if this process is unavailable..."
-            />
-          </div>
+      {process.impact_description && (
+        <Card>
+          <CardBody>
+            <h3 className="text-h3 text-surface-900 mb-2">Business Impact</h3>
+            <p className="text-body text-surface-800 whitespace-pre-wrap">
+              {process.impact_description}
+            </p>
+          </CardBody>
+        </Card>
+      )}
 
-          <div className="grid grid-cols-2 gap-4">
+      <Card>
+        <CardBody>
+          <h3 className="text-h3 text-surface-900 mb-3">Continuity Details</h3>
+          <div className="grid grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">
-                Recovery Priority
-              </label>
-              <Input
-                type="number"
-                value={editForm.recovery_priority}
-                onChange={(e) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    recovery_priority: parseInt(e.target.value) || 1,
-                  }))
-                }
-                min="1"
-                className="input w-full"
-              />
+              <p className="text-xs text-surface-500 uppercase tracking-wider">Recovery Priority</p>
+              <p className="mt-1 text-body text-surface-900">{process.recovery_priority ?? '—'}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">
+              <p className="text-xs text-surface-500 uppercase tracking-wider">
                 Minimum Staff Required
-              </label>
-              <Input
-                type="number"
-                value={editForm.minimum_staff_required}
-                onChange={(e) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    minimum_staff_required: parseInt(e.target.value) || 0,
-                  }))
-                }
-                min="0"
-                className="input w-full"
-              />
+              </p>
+              <p className="mt-1 text-body text-surface-900">
+                {process.minimum_staff_required ?? '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-surface-500 uppercase tracking-wider">
+                Alternate Site Required
+              </p>
+              <p className="mt-1 text-body text-surface-900">
+                {process.alternate_site_required ? 'Yes' : 'No'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-surface-500 uppercase tracking-wider">Manual Workaround</p>
+              <p className="mt-1 text-body text-surface-900">
+                {process.manual_workaround_available ? 'Available' : 'Unavailable'}
+              </p>
             </div>
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={editForm.alternate_site_required}
-                onChange={(e) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    alternate_site_required: e.target.checked,
-                  }))
-                }
-                className="rounded border-surface-300 bg-surface-200 text-brand-600"
-              />
-              <span className="text-surface-700 text-sm">Alternate Site Required</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={editForm.manual_workaround_available}
-                onChange={(e) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    manual_workaround_available: e.target.checked,
-                  }))
-                }
-                className="rounded border-surface-300 bg-surface-200 text-brand-600"
-              />
-              <span className="text-surface-700 text-sm">Manual Workaround Available</span>
-            </label>
-          </div>
-
-          {editForm.manual_workaround_available && (
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">
+          {process.workaround_description && (
+            <div className="mt-4 pt-4 border-t border-surface-200">
+              <p className="text-xs text-surface-500 uppercase tracking-wider mb-1">
                 Workaround Description
-              </label>
-              <Textarea
-                value={editForm.workaround_description}
-                onChange={(e) =>
-                  setEditForm((prev) => ({ ...prev, workaround_description: e.target.value }))
-                }
-                rows={2}
-                className="input w-full"
-              />
+              </p>
+              <p className="text-body text-surface-800 whitespace-pre-wrap">
+                {process.workaround_description}
+              </p>
             </div>
           )}
+        </CardBody>
+      </Card>
+    </div>
+  );
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-surface-200">
-            <Button variant="secondary" type="button" onClick={() => setShowEditModal(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </div>
-        </form>
-      </Dialog>
-      {/* Delete Confirmation */}
-      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
-        <h3 className="text-lg font-semibold text-white mb-2">Delete Business Process</h3>
-        <p className="text-surface-600 mb-6">
-          Are you sure you want to delete "{process.name}"? This action cannot be undone and will
-          remove all associated data.
-        </p>
-        <div className="flex justify-end gap-3">
-          <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
-            Cancel
-          </Button>
+  const dependenciesTab = (
+    <div className="space-y-2">
+      {dependencies.length === 0 ? (
+        <Card>
+          <CardBody>
+            <EmptyState
+              icon={<LinkIcon className="h-8 w-8" />}
+              title="No dependencies"
+              description="This process has no recorded dependencies."
+              size="sm"
+            />
+          </CardBody>
+        </Card>
+      ) : (
+        dependencies.map((d) => {
+          const name = d.dependent_process_name || d.name || 'Dependency';
+          const linkId = d.dependent_process_id;
+          const content = (
+            <Card key={d.id} interactive={!!linkId}>
+              <CardBody>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <LinkIcon className="h-4 w-4 text-surface-500" />
+                    <span className="text-body text-surface-900">{name}</span>
+                  </div>
+                  {d.dependency_type && (
+                    <Badge variant="neutral">{humanize(d.dependency_type)}</Badge>
+                  )}
+                </div>
+              </CardBody>
+            </Card>
+          );
+          return linkId ? (
+            <Link key={d.id} to={`/bcdr/processes/${linkId}`} className="block">
+              {content}
+            </Link>
+          ) : (
+            content
+          );
+        })
+      )}
+    </div>
+  );
+
+  const strategiesTab = (
+    <div className="space-y-2">
+      {strategies.length === 0 ? (
+        <Card>
+          <CardBody>
+            <EmptyState
+              icon={<Shield className="h-8 w-8" />}
+              title="No recovery strategies"
+              description="Define a recovery strategy for this process."
+              size="sm"
+            />
+          </CardBody>
+        </Card>
+      ) : (
+        strategies.map((s) => (
+          <Card key={s.id}>
+            <CardBody>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    {s.strategy_id && (
+                      <span className="font-mono text-xs text-brand-700">{s.strategy_id}</span>
+                    )}
+                    <p className="text-body font-medium text-surface-900">{s.name}</p>
+                  </div>
+                  {s.description && (
+                    <p className="text-small text-surface-700 mt-1 whitespace-pre-wrap">
+                      {s.description}
+                    </p>
+                  )}
+                </div>
+                {s.status && (
+                  <Badge variant={STRATEGY_VARIANT[s.status] ?? 'neutral'}>
+                    {humanize(s.status)}
+                  </Badge>
+                )}
+              </div>
+            </CardBody>
+          </Card>
+        ))
+      )}
+    </div>
+  );
+
+  const risksTab = (
+    <div className="space-y-2">
+      {risks.length === 0 ? (
+        <Card>
+          <CardBody>
+            <EmptyState
+              icon={<AlertTriangle className="h-8 w-8" />}
+              title="No linked risks"
+              description="No risks are currently linked to this process."
+              size="sm"
+            />
+          </CardBody>
+        </Card>
+      ) : (
+        risks.map((r) => (
+          <Card key={r.id}>
+            <CardBody>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    {r.risk_id && (
+                      <span className="font-mono text-xs text-brand-700">{r.risk_id}</span>
+                    )}
+                    <p className="text-body font-medium text-surface-900">{r.title}</p>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  {r.inherent_risk && (
+                    <Badge variant={RISK_LEVEL_VARIANT[r.inherent_risk] ?? 'neutral'}>
+                      {humanize(r.inherent_risk)}
+                    </Badge>
+                  )}
+                  {r.status && <Badge variant="neutral">{humanize(r.status)}</Badge>}
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+        ))
+      )}
+    </div>
+  );
+
+  const stakeholdersTab = (
+    <div className="space-y-2">
+      {stakeholders.length === 0 ? (
+        <Card>
+          <CardBody>
+            <EmptyState
+              icon={<Users className="h-8 w-8" />}
+              title="No stakeholders"
+              description="Add stakeholders responsible for this process."
+              size="sm"
+            />
+          </CardBody>
+        </Card>
+      ) : (
+        stakeholders.map((s) => (
+          <Card key={s.id}>
+            <CardBody>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-body font-medium text-surface-900">{s.name}</p>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-surface-600">
+                    {s.role && <span>{s.role}</span>}
+                    {s.email && <span>{s.email}</span>}
+                  </div>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+        ))
+      )}
+    </div>
+  );
+
+  return (
+    <div className="space-y-5 animate-fade-in">
+      <Link
+        to="/bcdr/processes"
+        className="inline-flex items-center gap-1.5 text-small text-surface-600 hover:text-surface-900"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Business Processes
+      </Link>
+
+      <PageHeader
+        title={
+          <span className="flex items-center gap-3 flex-wrap">
+            <span className="font-mono text-h2 text-brand-700">{process.process_id}</span>
+            <span className="text-h1 text-surface-900">{process.name}</span>
+          </span>
+        }
+        meta={<Badge variant={tierVariant}>{tierLabel}</Badge>}
+        description={process.department || undefined}
+        actions={
           <Button
-            variant="danger"
-            onClick={() => deleteMutation.mutate()}
-            disabled={deleteMutation.isPending}
+            variant="outline"
+            size="sm"
+            leftIcon={<Edit2 className="h-4 w-4" />}
+            onClick={() => navigate(`/bcdr/processes/${process.id}/edit`)}
           >
-            {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+            Edit
           </Button>
-        </div>
-      </Dialog>
+        }
+      />
+
+      <Card>
+        <CardBody>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <MetaCell
+              label="RTO"
+              value={
+                process.rto_hours !== undefined && process.rto_hours !== null ? (
+                  <span className="text-surface-900">{process.rto_hours}h</span>
+                ) : (
+                  <span className="text-surface-500">—</span>
+                )
+              }
+            />
+            <MetaCell
+              label="RPO"
+              value={
+                process.rpo_hours !== undefined && process.rpo_hours !== null ? (
+                  <span className="text-surface-900">{process.rpo_hours}h</span>
+                ) : (
+                  <span className="text-surface-500">—</span>
+                )
+              }
+            />
+            <MetaCell
+              label="Owner"
+              value={
+                process.owner_name ? (
+                  <span className="text-surface-900">{process.owner_name}</span>
+                ) : (
+                  <span className="text-surface-500">—</span>
+                )
+              }
+            />
+            <MetaCell label="Last Reviewed" value={formatDate(process.last_reviewed_at)} />
+          </div>
+        </CardBody>
+      </Card>
+
+      <Tabs
+        tabs={[
+          { label: 'Overview', content: overviewTab },
+          {
+            label: (
+              <span className="inline-flex items-center gap-2">
+                Dependencies
+                {dependencies.length > 0 && (
+                  <Badge variant="neutral" size="sm">
+                    {dependencies.length}
+                  </Badge>
+                )}
+              </span>
+            ),
+            content: dependenciesTab,
+          },
+          { label: 'Recovery Strategy', content: strategiesTab },
+          {
+            label: (
+              <span className="inline-flex items-center gap-2">
+                Linked Risks
+                {risks.length > 0 && (
+                  <Badge variant="warning" size="sm">
+                    {risks.length}
+                  </Badge>
+                )}
+              </span>
+            ),
+            content: risksTab,
+          },
+          { label: 'Stakeholders', content: stakeholdersTab },
+        ]}
+      />
     </div>
   );
 }

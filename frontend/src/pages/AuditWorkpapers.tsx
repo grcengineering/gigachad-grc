@@ -1,369 +1,322 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { FileText, Search } from 'lucide-react';
+import api from '@/lib/api';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
-  PlusIcon,
-  DocumentTextIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  XCircleIcon,
-  XMarkIcon,
-  PaperAirplaneIcon,
-} from '@heroicons/react/24/outline';
-import { Button } from '@/components/ui/Button';
-import { useToast } from '@/hooks/useToast';
-import clsx from 'clsx';
+  Badge,
+  Button,
+  DataTable,
+  EmptyState,
+  FilterBar,
+  Input,
+  PageHeader,
+  Select,
+  type ActiveFilter,
+  type BadgeVariant,
+  type DataTableColumn,
+} from '@/components/ui';
 
-import { Textarea } from '@/components/ui/Textarea';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-import { Dialog } from '@/components/ui/Dialog';
+interface WorkpaperAudit {
+  id: string;
+  auditId?: string;
+  name?: string;
+}
 
 interface Workpaper {
   id: string;
-  workpaperNumber: string;
+  workpaperId?: string;
+  workpaperNumber?: string;
   title: string;
-  workpaperType: string;
   status: string;
-  version: number;
-  preparedBy: string;
-  preparedAt: string;
-  reviewedBy: string | null;
-  reviewedAt: string | null;
-  approvedBy: string | null;
-  approvedAt: string | null;
-  preparedByUser?: { displayName: string };
-  reviewedByUser?: { displayName: string };
-  approvedByUser?: { displayName: string };
+  owner?: string;
+  ownerId?: string;
+  ownerName?: string;
+  preparedByUser?: { displayName?: string };
+  lastUpdated?: string;
+  updatedAt?: string;
+  audit?: WorkpaperAudit | null;
+  auditId?: string;
 }
 
-const statusConfig: Record<string, { icon: typeof CheckCircleIcon; color: string; label: string }> =
-  {
-    draft: { icon: DocumentTextIcon, color: 'text-surface-600', label: 'Draft' },
-    pending_review: { icon: ClockIcon, color: 'text-yellow-600', label: 'Pending Review' },
-    reviewed: { icon: CheckCircleIcon, color: 'text-blue-600', label: 'Reviewed' },
-    approved: { icon: CheckCircleIcon, color: 'text-green-600', label: 'Approved' },
-    rejected: { icon: XCircleIcon, color: 'text-red-600', label: 'Rejected' },
-  };
+interface WorkpapersResponse {
+  workpapers?: Workpaper[];
+  data?: Workpaper[];
+}
+
+const STATUS_VARIANT: Record<string, BadgeVariant> = {
+  draft: 'neutral',
+  pending_review: 'warning',
+  in_review: 'warning',
+  reviewed: 'info',
+  approved: 'success',
+  rejected: 'danger',
+  archived: 'neutral',
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  draft: 'Draft',
+  pending_review: 'Pending Review',
+  in_review: 'In Review',
+  reviewed: 'Reviewed',
+  approved: 'Approved',
+  rejected: 'Rejected',
+  archived: 'Archived',
+};
+
+const STATUS_OPTS = Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label }));
+
+function formatDate(iso?: string) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
 
 export default function AuditWorkpapers() {
-  const [searchParams] = useSearchParams();
-  const auditId = searchParams.get('auditId') || '';
-  const queryClient = useQueryClient();
-  const toast = useToast();
-  const [_selectedWorkpaper, _setSelectedWorkpaper] = useState<Workpaper | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createForm, setCreateForm] = useState({
-    title: '',
-    workpaperType: 'procedure',
-    content: '',
-  });
+  const navigate = useNavigate();
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
+  const [auditFilter, setAuditFilter] = useState('');
+  const [ownerFilter, setOwnerFilter] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
 
-  const { data: workpapers = [], isLoading } = useQuery<Workpaper[]>({
-    queryKey: ['workpapers', auditId],
+  const { data, isLoading } = useQuery<WorkpapersResponse | Workpaper[]>({
+    queryKey: ['audit-workpapers', { search: debouncedSearch, status, auditFilter, ownerFilter }],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (auditId) params.set('auditId', auditId);
-      const res = await fetch(`/api/audit/workpapers?${params}`);
-      if (!res.ok) throw new Error('Failed to fetch workpapers');
-      return res.json();
+      const params: Record<string, string> = {};
+      if (debouncedSearch) params.search = debouncedSearch;
+      if (status) params.status = status;
+      if (auditFilter) params.audit = auditFilter;
+      if (ownerFilter) params.owner = ownerFilter;
+      const res = await api.get('/api/audits/workpapers', { params });
+      return res.data;
     },
   });
 
-  const submitMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await fetch(`/api/audit/workpapers/${id}/submit`, { method: 'POST' });
-      if (!res.ok) throw new Error('Failed to submit workpaper');
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workpapers'] });
-      toast.success('Workpaper submitted for review');
-    },
-  });
+  const workpapers: Workpaper[] = useMemo(() => {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    return data.workpapers ?? data.data ?? [];
+  }, [data]);
 
-  const reviewMutation = useMutation({
-    mutationFn: async ({
-      id,
-      approved,
-      notes,
-    }: {
-      id: string;
-      approved: boolean;
-      notes: string;
-    }) => {
-      const res = await fetch(`/api/audit/workpapers/${id}/review`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ approved, notes }),
-      });
-      if (!res.ok) throw new Error('Failed to review workpaper');
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workpapers'] });
-      toast.success('Review completed');
-    },
-  });
+  // Derive filter options from data
+  const auditOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    workpapers.forEach((w) => {
+      const id = w.audit?.id ?? w.auditId;
+      if (!id) return;
+      const label = w.audit?.name
+        ? w.audit.auditId
+          ? `${w.audit.name} (${w.audit.auditId})`
+          : w.audit.name
+        : id;
+      if (!map.has(id)) map.set(id, label);
+    });
+    return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
+  }, [workpapers]);
 
-  const approveMutation = useMutation({
-    mutationFn: async ({ id, notes }: { id: string; notes: string }) => {
-      const res = await fetch(`/api/audit/workpapers/${id}/approve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes }),
-      });
-      if (!res.ok) throw new Error('Failed to approve workpaper');
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workpapers'] });
-      toast.success('Workpaper approved');
-    },
-  });
+  const ownerOptions = useMemo(() => {
+    const set = new Set<string>();
+    workpapers.forEach((w) => {
+      const name = w.ownerName ?? w.owner ?? w.preparedByUser?.displayName;
+      if (name) set.add(name);
+    });
+    return Array.from(set).map((name) => ({ value: name, label: name }));
+  }, [workpapers]);
 
-  const createMutation = useMutation({
-    mutationFn: async (data: typeof createForm) => {
-      const res = await fetch('/api/audit/workpapers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, auditId: auditId || undefined }),
-      });
-      if (!res.ok) throw new Error('Failed to create workpaper');
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workpapers'] });
-      toast.success('Workpaper created');
-      setShowCreateModal(false);
-      setCreateForm({ title: '', workpaperType: 'procedure', content: '' });
-    },
-    onError: () => {
-      toast.error('Failed to create workpaper');
-    },
-  });
-
-  const handleCreateSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!createForm.title.trim()) return;
-    createMutation.mutate(createForm);
+  const activeFilters: ActiveFilter[] = [];
+  if (debouncedSearch) {
+    activeFilters.push({
+      key: 'search',
+      label: `Search: ${debouncedSearch}`,
+      onClear: () => setSearch(''),
+    });
+  }
+  if (status) {
+    activeFilters.push({
+      key: 'status',
+      label: `Status: ${STATUS_LABEL[status] ?? status}`,
+      onClear: () => setStatus(''),
+    });
+  }
+  if (auditFilter) {
+    const opt = auditOptions.find((o) => o.value === auditFilter);
+    activeFilters.push({
+      key: 'audit',
+      label: `Audit: ${opt?.label ?? auditFilter}`,
+      onClear: () => setAuditFilter(''),
+    });
+  }
+  if (ownerFilter) {
+    activeFilters.push({
+      key: 'owner',
+      label: `Owner: ${ownerFilter}`,
+      onClear: () => setOwnerFilter(''),
+    });
+  }
+  const clearAll = () => {
+    setSearch('');
+    setStatus('');
+    setAuditFilter('');
+    setOwnerFilter('');
   };
 
-  const handleReview = (id: string, approved: boolean) => {
-    const notes = prompt(approved ? 'Review notes (optional):' : 'Rejection reason:');
-    if (notes !== null) {
-      reviewMutation.mutate({ id, approved, notes });
-    }
-  };
-
-  const handleApprove = (id: string) => {
-    const notes = prompt('Approval notes (optional):');
-    if (notes !== null) {
-      approveMutation.mutate({ id, notes });
-    }
-  };
+  const columns: DataTableColumn<Workpaper>[] = [
+    {
+      id: 'workpaperId',
+      header: 'ID',
+      mobileLabel: 'ID',
+      cell: ({ row }) => (
+        <span className="font-mono text-small text-brand-700">
+          {row.original.workpaperId ?? row.original.workpaperNumber ?? row.original.id.slice(0, 8)}
+        </span>
+      ),
+    },
+    {
+      id: 'audit',
+      header: 'Audit',
+      mobileLabel: 'Audit',
+      cell: ({ row }) => {
+        const a = row.original.audit;
+        if (!a) return <span className="text-surface-500">—</span>;
+        return (
+          <div className="min-w-0">
+            <div className="text-surface-900 truncate">{a.name ?? '—'}</div>
+            {a.auditId && (
+              <div className="text-xs text-surface-500 font-mono truncate">{a.auditId}</div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      id: 'title',
+      accessorKey: 'title',
+      header: 'Title',
+      mobileLabel: 'Title',
+      cell: ({ row }) => <span className="text-surface-900">{row.original.title}</span>,
+    },
+    {
+      id: 'status',
+      accessorKey: 'status',
+      header: 'Status',
+      mobileLabel: 'Status',
+      cell: ({ row }) => {
+        const s = row.original.status;
+        if (!s) return <span className="text-surface-500">—</span>;
+        return (
+          <Badge variant={STATUS_VARIANT[s] ?? 'neutral'} dot>
+            {STATUS_LABEL[s] ?? s.replace(/_/g, ' ')}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: 'owner',
+      header: 'Owner',
+      mobileLabel: 'Owner',
+      cell: ({ row }) => {
+        const name =
+          row.original.ownerName ?? row.original.owner ?? row.original.preparedByUser?.displayName;
+        return name ? (
+          <span className="text-surface-700">{name}</span>
+        ) : (
+          <span className="text-surface-500">—</span>
+        );
+      },
+    },
+    {
+      id: 'lastUpdated',
+      header: 'Last Updated',
+      mobileLabel: 'Updated',
+      cell: ({ row }) => (
+        <span className="text-surface-700 tabular-nums">
+          {formatDate(row.original.lastUpdated ?? row.original.updatedAt)}
+        </span>
+      ),
+    },
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Audit Workpapers</h1>
-          <p className="text-surface-600 mt-1">
-            Formal documentation with version control and review workflow
-          </p>
-        </div>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <PlusIcon className="h-4 w-4 mr-2" />
-          New Workpaper
-        </Button>
-      </div>
-      {/* Status Summary */}
-      <div className="grid grid-cols-5 gap-4">
-        {Object.entries(statusConfig).map(([status, config]) => {
-          const count = workpapers.filter((w) => w.status === status).length;
-          return (
-            <div key={status} className="bg-white rounded-lg p-4 border border-surface-200">
-              <div className="flex items-center gap-2">
-                <config.icon className={clsx('h-5 w-5', config.color)} />
-                <span className="text-surface-600 text-sm">{config.label}</span>
-              </div>
-              <p className="text-2xl font-bold text-white mt-2">{count}</p>
-            </div>
-          );
-        })}
-      </div>
-      {/* Workpapers List */}
-      {isLoading ? (
-        <div className="animate-pulse space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-lg h-20" />
-          ))}
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg border border-surface-200 overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-white">
-              <tr>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">Number</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">Title</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">Type</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">Status</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">
-                  Prepared By
-                </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-surface-600">
-                  Version
-                </th>
-                <th className="text-right px-4 py-3 text-sm font-medium text-surface-600">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-200">
-              {workpapers.map((wp) => {
-                const config = statusConfig[wp.status];
-                return (
-                  <tr key={wp.id} className="hover:bg-surface-200/50">
-                    <td className="px-4 py-3">
-                      <span className="font-mono text-sm text-brand-400">{wp.workpaperNumber}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-white">{wp.title}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-surface-600 capitalize">{wp.workpaperType}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={clsx('flex items-center gap-2', config.color)}>
-                        <config.icon className="h-4 w-4" />
-                        {config.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-surface-600">
-                      {wp.preparedByUser?.displayName || 'Unknown'}
-                    </td>
-                    <td className="px-4 py-3 text-surface-600">v{wp.version}</td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {wp.status === 'draft' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => submitMutation.mutate(wp.id)}
-                          >
-                            <PaperAirplaneIcon className="h-4 w-4 mr-1" />
-                            Submit
-                          </Button>
-                        )}
-                        {wp.status === 'pending_review' && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleReview(wp.id, true)}
-                            >
-                              <CheckCircleIcon className="h-4 w-4 mr-1 text-green-600" />
-                              Approve
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleReview(wp.id, false)}
-                            >
-                              <XCircleIcon className="h-4 w-4 mr-1 text-red-600" />
-                              Reject
-                            </Button>
-                          </>
-                        )}
-                        {wp.status === 'reviewed' && (
-                          <Button variant="ghost" size="sm" onClick={() => handleApprove(wp.id)}>
-                            <CheckCircleIcon className="h-4 w-4 mr-1 text-green-600" />
-                            Final Approve
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Audit Workpapers"
+        description="Formal documentation produced during fieldwork, with version control and review workflow."
+      />
 
-          {workpapers.length === 0 && (
-            <div className="text-center py-12">
-              <DocumentTextIcon className="h-12 w-12 text-surface-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-white">No workpapers yet</h3>
-              <p className="text-surface-600 mt-2">
-                Create your first workpaper to document audit procedures.
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-      {/* Create Workpaper Modal */}
-      <Dialog open={showCreateModal} onClose={() => setShowCreateModal(false)}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-white">Create Workpaper</h2>
-          <button
-            onClick={() => setShowCreateModal(false)}
-            className="p-1 hover:bg-surface-200 rounded"
-          >
-            <XMarkIcon className="h-5 w-5 text-surface-600" />
-          </button>
-        </div>
+      <FilterBar active={activeFilters} onClearAll={activeFilters.length ? clearAll : undefined}>
+        <Input
+          inputSize="sm"
+          className="w-64"
+          placeholder="Search workpapers…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          leftIcon={<Search className="h-4 w-4" />}
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-48"
+          placeholder="All Audits"
+          value={auditFilter}
+          onChange={setAuditFilter}
+          options={auditOptions}
+          clearable
+          searchable
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-48"
+          placeholder="All Statuses"
+          value={status}
+          onChange={setStatus}
+          options={STATUS_OPTS}
+          clearable
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-44"
+          placeholder="All Owners"
+          value={ownerFilter}
+          onChange={setOwnerFilter}
+          options={ownerOptions}
+          clearable
+          searchable
+        />
+      </FilterBar>
 
-        <form onSubmit={handleCreateSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-1">Title *</label>
-            <Input
-              type="text"
-              value={createForm.title}
-              onChange={(e) => setCreateForm((prev) => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-              placeholder="Workpaper title"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-1">Type</label>
-            <SelectNative
-              value={createForm.workpaperType}
-              onChange={(e) =>
-                setCreateForm((prev) => ({ ...prev, workpaperType: e.target.value }))
-              }
-              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-            >
-              <option value="procedure">Procedure</option>
-              <option value="walkthrough">Walkthrough</option>
-              <option value="testing">Testing</option>
-              <option value="analysis">Analysis</option>
-              <option value="summary">Summary</option>
-            </SelectNative>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-1">Content</label>
-            <Textarea
-              value={createForm.content}
-              onChange={(e) => setCreateForm((prev) => ({ ...prev, content: e.target.value }))}
-              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white h-32"
-              placeholder="Workpaper content..."
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="secondary" onClick={() => setShowCreateModal(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={createMutation.isPending || !createForm.title.trim()}>
-              {createMutation.isPending ? 'Creating...' : 'Create Workpaper'}
-            </Button>
-          </div>
-        </form>
-      </Dialog>
+      <DataTable
+        data={workpapers}
+        columns={columns}
+        loading={isLoading}
+        getRowId={(w) => w.id}
+        onRowClick={(w) => {
+          const auditId = w.audit?.id ?? w.auditId;
+          if (auditId) navigate(`/audits/${auditId}`);
+        }}
+        emptyState={
+          <EmptyState
+            icon={<FileText className="h-8 w-8" />}
+            title="No workpapers found"
+            description={
+              activeFilters.length
+                ? 'Try clearing your filters to see all workpapers.'
+                : 'Workpapers will appear here once audits begin generating them.'
+            }
+            action={
+              activeFilters.length ? (
+                <Button variant="outline" size="sm" onClick={clearAll}>
+                  Clear filters
+                </Button>
+              ) : undefined
+            }
+          />
+        }
+      />
     </div>
   );
 }

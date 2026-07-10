@@ -1,28 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-  ArrowLeftIcon,
-  DocumentArrowUpIcon,
-  PencilIcon,
-  TrashIcon,
-  CheckIcon,
-  BookOpenIcon,
-  ChevronRightIcon,
-} from '@heroicons/react/24/outline';
-import { questionnairesApi } from '../lib/api';
-import { Button } from '@/components/ui/Button';
-import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
-import { KnowledgeBaseSearchPanel } from '@/components/trust/KnowledgeBaseSearchPanel';
-import { useAuth } from '@/contexts/AuthContext';
-import toast from 'react-hot-toast';
-import clsx from 'clsx';
-
-import { Textarea } from '@/components/ui/Textarea';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-import { Dialog } from '@/components/ui/Dialog';
+import { ArrowLeftIcon, DocumentArrowUpIcon } from '@heroicons/react/24/outline';
+import { Badge, Button, Dialog, Input, Select, Textarea } from '@/components/ui';
 
 interface Questionnaire {
   id: string;
@@ -49,7 +28,6 @@ interface Question {
 export default function QuestionnaireDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [questionnaire, setQuestionnaire] = useState<Questionnaire | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -80,54 +58,33 @@ export default function QuestionnaireDetail() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [parsing, setParsing] = useState(false);
 
+  const fetchQuestionnaire = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/questionnaires/${id}`);
+      const data = await response.json();
+      setQuestionnaire(data);
+    } catch (error) {
+      console.error('Error fetching questionnaire:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
   useEffect(() => {
     if (id && id !== 'new') {
       fetchQuestionnaire();
     } else {
       setLoading(false);
     }
-  }, [id]);
-
-  // Initialize edit form when questionnaire loads
-  useEffect(() => {
-    if (questionnaire) {
-      setEditForm({
-        title: questionnaire.title || '',
-        requesterName: questionnaire.requesterName || '',
-        requesterEmail: questionnaire.requesterEmail || '',
-        company: questionnaire.company || '',
-        priority: questionnaire.priority || 'medium',
-        dueDate: questionnaire.dueDate ? questionnaire.dueDate.split('T')[0] : '',
-        description: questionnaire.description || '',
-      });
-    }
-  }, [questionnaire]);
-
-  const fetchQuestionnaire = async () => {
-    try {
-      const response = await questionnairesApi.get(id!);
-      setQuestionnaire(response.data as any);
-    } catch (error) {
-      console.error('Error fetching questionnaire:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [id, fetchQuestionnaire]);
 
   const updateAnswer = async (questionId: string, answer: string) => {
-    // x-user-id used to be hardcoded to 'system', which meant every
-    // answer was attributed to a fake user — breaking audit trails for
-    // a compliance product. Use the authenticated user's id instead.
-    if (!user?.id) {
-      toast.error('Cannot update answer: not signed in');
-      return;
-    }
     try {
       await fetch(`/api/questionnaires/questions/${questionId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': user.id,
+          'x-user-id': 'system',
         },
         body: JSON.stringify({
           answerText: answer,
@@ -185,10 +142,10 @@ export default function QuestionnaireDetail() {
         questionsText: questions.join('\n'),
       });
 
-      toast.success(`Successfully parsed ${questions.length} questions from ${file.name}`);
+      alert(`Successfully parsed ${questions.length} questions from ${file.name}`);
     } catch (error) {
       console.error('Error parsing file:', error);
-      toast.error('Failed to parse file. Please check the format or paste questions manually.');
+      alert('Failed to parse file. Please check the format or paste questions manually.');
     } finally {
       setParsing(false);
     }
@@ -196,16 +153,6 @@ export default function QuestionnaireDetail() {
 
   const handleSubmitNewQuestionnaire = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Both the user id (audit-trail attribution) and the organization id
-    // (tenant scoping) must come from the authenticated user. Previously
-    // these were hardcoded to 'system' and 'default-org', which attributed
-    // every questionnaire to a fake user in a fictitious tenant.
-    if (!user?.id || !user?.organizationId) {
-      toast.error('Cannot create questionnaire: not signed in');
-      return;
-    }
-
     setSubmitting(true);
 
     try {
@@ -220,10 +167,10 @@ export default function QuestionnaireDetail() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': user.id,
+          'x-user-id': 'system',
         },
         body: JSON.stringify({
-          organizationId: user.organizationId,
+          organizationId: 'default-org',
           title: formData.title,
           requesterName: formData.requesterName,
           requesterEmail: formData.requesterEmail,
@@ -243,7 +190,7 @@ export default function QuestionnaireDetail() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-user-id': user.id,
+            'x-user-id': 'system',
           },
           body: JSON.stringify({
             questionnaireId: newQuestionnaire.id,
@@ -254,11 +201,11 @@ export default function QuestionnaireDetail() {
         });
       }
 
-      toast.success(`Successfully created questionnaire with ${questionLines.length} questions!`);
+      alert(`Successfully created questionnaire with ${questionLines.length} questions!`);
       navigate(`/questionnaires/${newQuestionnaire.id}`);
     } catch (error) {
       console.error('Error creating questionnaire:', error);
-      toast.error('Failed to create questionnaire. Please try again.');
+      alert('Failed to create questionnaire. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -266,57 +213,36 @@ export default function QuestionnaireDetail() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <SkeletonDetailHeader />
-        <SkeletonDetailSection title />
-        <SkeletonDetailSection title />
+      <div className="flex items-center justify-center h-64">
+        <div className="text-surface-600">Loading questionnaire...</div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/questionnaires')}
-            className="p-2 text-surface-600 hover:text-surface-900 hover:bg-white rounded-lg transition-colors"
-          >
-            <ArrowLeftIcon className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold text-surface-900">
-              {id === 'new'
-                ? 'Log Incoming Questionnaire'
-                : questionnaire?.title || 'Customer Questionnaire'}
-            </h1>
-            {questionnaire && (
-              <p className="mt-1 text-surface-600">
-                Received from {questionnaire.requesterName}{' '}
-                {questionnaire.company && `at ${questionnaire.company}`}
-              </p>
-            )}
-          </div>
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => navigate('/questionnaires')}
+          className="p-2 text-surface-600 hover:text-surface-900 hover:bg-surface-100 rounded-lg transition-colors"
+        >
+          <ArrowLeftIcon className="w-5 h-5" />
+        </button>
+        <div className="flex-1">
+          <h1 className="text-3xl font-bold text-surface-900">
+            {id === 'new'
+              ? 'Log Incoming Questionnaire'
+              : questionnaire?.title || 'Customer Questionnaire'}
+          </h1>
+          {questionnaire && (
+            <p className="mt-1 text-surface-600">
+              Received from {questionnaire.requesterName}{' '}
+              {questionnaire.company && `at ${questionnaire.company}`}
+            </p>
+          )}
         </div>
-        {questionnaire && id !== 'new' && (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowEditModal(true)}
-              leftIcon={<PencilIcon className="w-5 h-5" />}
-            >
-              Edit
-            </Button>
-            <Button
-              variant="danger"
-              onClick={() => setShowDeleteConfirm(true)}
-              leftIcon={<TrashIcon className="w-5 h-5" />}
-            >
-              Delete
-            </Button>
-          </div>
-        )}
       </div>
+
       {id === 'new' ? (
         <form onSubmit={handleSubmitNewQuestionnaire} className="space-y-6">
           <div className="bg-white border border-surface-200 rounded-lg p-6 space-y-4">
@@ -332,7 +258,6 @@ export default function QuestionnaireDetail() {
                   required
                   value={formData.requesterName}
                   onChange={(e) => setFormData({ ...formData, requesterName: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
                   placeholder="John Doe"
                 />
               </div>
@@ -346,7 +271,6 @@ export default function QuestionnaireDetail() {
                   required
                   value={formData.requesterEmail}
                   onChange={(e) => setFormData({ ...formData, requesterEmail: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
                   placeholder="john@company.com"
                 />
               </div>
@@ -357,7 +281,6 @@ export default function QuestionnaireDetail() {
                   type="text"
                   value={formData.company}
                   onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
                   placeholder="Acme Corp"
                 />
               </div>
@@ -371,23 +294,22 @@ export default function QuestionnaireDetail() {
                   required
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
                   placeholder="Security Assessment 2025"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-surface-600 mb-1">Priority</label>
-                <SelectNative
+                <Select
                   value={formData.priority}
-                  onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="urgent">Urgent</option>
-                </SelectNative>
+                  onChange={(v) => setFormData({ ...formData, priority: v })}
+                  options={[
+                    { value: 'low', label: 'Low' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'high', label: 'High' },
+                    { value: 'urgent', label: 'Urgent' },
+                  ]}
+                />
               </div>
 
               <div>
@@ -396,7 +318,6 @@ export default function QuestionnaireDetail() {
                   type="date"
                   value={formData.dueDate}
                   onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
                 />
               </div>
             </div>
@@ -407,7 +328,6 @@ export default function QuestionnaireDetail() {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={2}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
                 placeholder="Additional context about this questionnaire..."
               />
             </div>
@@ -423,7 +343,7 @@ export default function QuestionnaireDetail() {
             </p>
 
             {!formData.questionsText ? (
-              <div className="border-2 border-dashed border-surface-200 rounded-lg p-12">
+              <div className="border-2 border-dashed border-surface-300 rounded-lg p-12">
                 <input
                   type="file"
                   accept=".csv,.txt,.xlsx,.xls,.doc,.docx,.pdf"
@@ -451,7 +371,7 @@ export default function QuestionnaireDetail() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-surface-200">
                   <div className="flex items-center gap-3">
-                    <DocumentArrowUpIcon className="w-6 h-6 text-green-600" />
+                    <DocumentArrowUpIcon className="w-6 h-6 text-emerald-700" />
                     <div>
                       <p className="text-surface-900 font-medium">{uploadedFile?.name}</p>
                       <p className="text-sm text-surface-600">
@@ -460,20 +380,21 @@ export default function QuestionnaireDetail() {
                       </p>
                     </div>
                   </div>
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
+                    size="sm"
                     onClick={() => {
                       setFormData({ ...formData, questionsText: '' });
                       setUploadedFile(null);
                     }}
-                    className="px-3 py-1.5 text-sm bg-surface-200 text-surface-800 rounded hover:bg-surface-600 transition-colors"
                   >
                     Replace File
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Preview of parsed questions */}
-                <div className="border border-surface-200 rounded-lg p-4 max-h-60 overflow-y-auto">
+                <div className="border border-surface-300 rounded-lg p-4 max-h-60 overflow-y-auto">
                   <h4 className="text-sm font-medium text-surface-600 mb-2">
                     Parsed Questions Preview:
                   </h4>
@@ -503,28 +424,148 @@ export default function QuestionnaireDetail() {
 
           <div className="flex justify-end gap-2">
             <Button
-              variant="secondary"
               type="button"
+              variant="secondary"
               onClick={() => navigate('/questionnaires')}
               disabled={submitting}
             >
               Cancel
             </Button>
-            <Button type="submit" isLoading={submitting}>
-              Create Questionnaire
+            <Button type="submit" variant="primary" disabled={submitting}>
+              {submitting ? 'Creating...' : 'Create Questionnaire'}
             </Button>
           </div>
         </form>
       ) : questionnaire ? (
-        <QuestionnaireWorkspace
-          questionnaire={questionnaire}
-          onUpdateAnswer={updateAnswer}
-          onRefresh={fetchQuestionnaire}
-        />
+        <div className="space-y-6">
+          {/* Header Info */}
+          <div className="bg-white border border-surface-200 rounded-lg p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <dt className="text-sm font-medium text-surface-600 mb-1">Status</dt>
+                <dd>
+                  <Badge
+                    variant={
+                      questionnaire.status === 'completed'
+                        ? 'success'
+                        : questionnaire.status === 'in_progress'
+                          ? 'info'
+                          : 'warning'
+                    }
+                    size="sm"
+                  >
+                    {questionnaire.status.replace('_', ' ')}
+                  </Badge>
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-surface-600 mb-1">Priority</dt>
+                <dd>
+                  <Badge
+                    variant={
+                      questionnaire.priority === 'urgent'
+                        ? 'danger'
+                        : questionnaire.priority === 'high'
+                          ? 'warning'
+                          : 'warning'
+                    }
+                    size="sm"
+                  >
+                    {questionnaire.priority}
+                  </Badge>
+                </dd>
+              </div>
+              {questionnaire.dueDate && (
+                <div>
+                  <dt className="text-sm font-medium text-surface-600 mb-1">Due Date</dt>
+                  <dd className="text-sm text-surface-900">
+                    {new Date(questionnaire.dueDate).toLocaleDateString()}
+                  </dd>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Questions */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-surface-900">Questions</h2>
+            {questionnaire.questions.map((question, index) => (
+              <div key={question.id} className="bg-white border border-surface-200 rounded-lg p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-sm font-medium text-surface-500">
+                        {question.questionNumber || `Q${index + 1}`}
+                      </span>
+                      {question.category && (
+                        <Badge variant="neutral" size="sm" capitalize={false}>
+                          {question.category}
+                        </Badge>
+                      )}
+                      <Badge
+                        variant={
+                          question.status === 'answered'
+                            ? 'success'
+                            : question.status === 'in_progress'
+                              ? 'info'
+                              : 'warning'
+                        }
+                        size="sm"
+                      >
+                        {question.status.replace('_', ' ')}
+                      </Badge>
+                    </div>
+                    <p className="text-surface-900 font-medium mb-4">{question.questionText}</p>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-surface-600 mb-2">Answer</label>
+                  <Textarea
+                    value={question.answerText || ''}
+                    onChange={(e) => updateAnswer(question.id, e.target.value)}
+                    rows={4}
+                    placeholder="Enter your answer here..."
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       ) : null}
+
       {/* Edit Modal */}
-      <Dialog open={showEditModal} onClose={() => setShowEditModal(false)}>
-        <h3 className="text-lg font-semibold text-surface-900 mb-4">Edit Questionnaire Details</h3>
+      <Dialog
+        open={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        title="Edit Questionnaire Details"
+        size="lg"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={async () => {
+                try {
+                  await fetch(`/api/questionnaires/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'x-user-id': 'system' },
+                    body: JSON.stringify(editForm),
+                  });
+                  setShowEditModal(false);
+                  fetchQuestionnaire();
+                } catch (error) {
+                  console.error('Error updating questionnaire:', error);
+                  alert('Failed to update questionnaire');
+                }
+              }}
+            >
+              Save Changes
+            </Button>
+          </>
+        }
+      >
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-surface-600 mb-1">Title</label>
@@ -532,7 +573,6 @@ export default function QuestionnaireDetail() {
               type="text"
               value={editForm.title}
               onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -544,7 +584,6 @@ export default function QuestionnaireDetail() {
                 type="text"
                 value={editForm.requesterName}
                 onChange={(e) => setEditForm({ ...editForm, requesterName: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               />
             </div>
             <div>
@@ -555,7 +594,6 @@ export default function QuestionnaireDetail() {
                 type="email"
                 value={editForm.requesterEmail}
                 onChange={(e) => setEditForm({ ...editForm, requesterEmail: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               />
             </div>
           </div>
@@ -566,20 +604,19 @@ export default function QuestionnaireDetail() {
                 type="text"
                 value={editForm.company}
                 onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-surface-600 mb-1">Priority</label>
-              <SelectNative
+              <Select
                 value={editForm.priority}
-                onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </SelectNative>
+                onChange={(v) => setEditForm({ ...editForm, priority: v })}
+                options={[
+                  { value: 'low', label: 'Low' },
+                  { value: 'medium', label: 'Medium' },
+                  { value: 'high', label: 'High' },
+                ]}
+              />
             </div>
           </div>
           <div>
@@ -588,7 +625,6 @@ export default function QuestionnaireDetail() {
               type="date"
               value={editForm.dueDate}
               onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
-              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
             />
           </div>
           <div>
@@ -597,372 +633,46 @@ export default function QuestionnaireDetail() {
               value={editForm.description}
               onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
               rows={3}
-              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
             />
           </div>
         </div>
-        <div className="flex justify-end gap-2 mt-6">
-          <Button variant="secondary" onClick={() => setShowEditModal(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={async () => {
-              try {
-                await questionnairesApi.update(id!, {
-                  ...editForm,
-                  dueDate: editForm.dueDate ? new Date(editForm.dueDate).toISOString() : undefined,
-                });
-                toast.success('Questionnaire updated successfully');
-                setShowEditModal(false);
-                fetchQuestionnaire();
-              } catch (error) {
-                console.error('Error updating questionnaire:', error);
-                toast.error('Failed to update questionnaire');
-              }
-            }}
-          >
-            Save Changes
-          </Button>
-        </div>
       </Dialog>
+
       {/* Delete Confirmation */}
-      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
-        <h3 className="text-lg font-semibold text-surface-900 mb-2">Delete Questionnaire</h3>
-        <p className="text-surface-600 mb-6">
+      <Dialog
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="Delete Questionnaire"
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={async () => {
+                try {
+                  await fetch(`/api/questionnaires/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'x-user-id': 'system' },
+                  });
+                  navigate('/questionnaires');
+                } catch (error) {
+                  console.error('Error deleting questionnaire:', error);
+                  alert('Failed to delete questionnaire');
+                }
+              }}
+            >
+              Delete
+            </Button>
+          </>
+        }
+      >
+        <p className="text-surface-600">
           Are you sure you want to delete "{questionnaire?.title}"? This action cannot be undone.
         </p>
-        <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="danger"
-            onClick={async () => {
-              try {
-                await questionnairesApi.delete(id!);
-                toast.success('Questionnaire deleted successfully');
-                navigate('/questionnaires');
-              } catch (error) {
-                console.error('Error deleting questionnaire:', error);
-                toast.error('Failed to delete questionnaire');
-              }
-            }}
-          >
-            Delete
-          </Button>
-        </div>
       </Dialog>
-    </div>
-  );
-}
-
-// Questionnaire Workspace with split panel layout
-function QuestionnaireWorkspace({
-  questionnaire,
-  onUpdateAnswer,
-  onRefresh,
-}: {
-  questionnaire: Questionnaire;
-  onUpdateAnswer: (questionId: string, answer: string, kbEntryId?: string) => void;
-  onRefresh: () => void;
-}) {
-  const [activeQuestionId, setActiveQuestionId] = useState<string | null>(
-    questionnaire.questions.find((q) => q.status === 'pending')?.id ||
-      questionnaire.questions[0]?.id ||
-      null
-  );
-  const [showKbPanel, setShowKbPanel] = useState(true);
-  const [answers, setAnswers] = useState<Record<string, string>>(() => {
-    const initial: Record<string, string> = {};
-    questionnaire.questions.forEach((q) => {
-      initial[q.id] = q.answerText || '';
-    });
-    return initial;
-  });
-
-  const activeQuestion = questionnaire.questions.find((q) => q.id === activeQuestionId);
-  const answeredCount = questionnaire.questions.filter(
-    (q) => q.status === 'answered' || q.status === 'approved'
-  ).length;
-  const pendingCount = questionnaire.questions.filter((q) => q.status === 'pending').length;
-  const totalCount = questionnaire.questions.length;
-  const progressPercent = totalCount > 0 ? Math.round((answeredCount / totalCount) * 100) : 0;
-
-  const handleAnswerSelect = (answer: string, _kbEntryId?: string) => {
-    if (activeQuestionId) {
-      setAnswers((prev) => ({ ...prev, [activeQuestionId]: answer }));
-    }
-  };
-
-  const handleAnswerChange = (questionId: string, answer: string) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: answer }));
-  };
-
-  const handleSaveAnswer = async (questionId: string, answer: string, kbEntryId?: string) => {
-    await onUpdateAnswer(questionId, answer, kbEntryId);
-    onRefresh();
-  };
-
-  // Navigate to next unanswered question
-  const goToNextPending = () => {
-    const currentIndex = questionnaire.questions.findIndex((q) => q.id === activeQuestionId);
-    const nextPending = questionnaire.questions.find(
-      (q, i) => i > currentIndex && q.status === 'pending'
-    );
-    if (nextPending) {
-      setActiveQuestionId(nextPending.id);
-    }
-  };
-
-  return (
-    <div className="space-y-4">
-      {/* Progress Header */}
-      <div className="bg-white border border-surface-200 rounded-lg p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-surface-900">Progress</h2>
-              <p className="text-sm text-surface-600">
-                {answeredCount} of {totalCount} questions answered
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span
-                className={clsx(
-                  'px-2 py-1 text-xs font-medium rounded-full capitalize',
-                  questionnaire.status === 'completed'
-                    ? 'bg-green-500/20 text-green-600'
-                    : questionnaire.status === 'in_progress'
-                      ? 'bg-blue-500/20 text-blue-600'
-                      : 'bg-amber-500/20 text-amber-600'
-                )}
-              >
-                {questionnaire.status.replace('_', ' ')}
-              </span>
-              <span
-                className={clsx(
-                  'px-2 py-1 text-xs font-medium rounded-full capitalize',
-                  questionnaire.priority === 'urgent'
-                    ? 'bg-red-500/20 text-red-600'
-                    : questionnaire.priority === 'high'
-                      ? 'bg-orange-500/20 text-orange-600'
-                      : 'bg-surface-200 text-surface-700'
-                )}
-              >
-                {questionnaire.priority} priority
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {questionnaire.dueDate && (
-              <div className="text-right">
-                <p className="text-xs text-surface-500">Due Date</p>
-                <p className="text-sm font-medium text-surface-800">
-                  {new Date(questionnaire.dueDate).toLocaleDateString()}
-                </p>
-              </div>
-            )}
-            <button
-              onClick={() => setShowKbPanel(!showKbPanel)}
-              className={clsx(
-                'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                showKbPanel
-                  ? 'bg-brand-600 text-white'
-                  : 'bg-surface-200 text-surface-800 hover:bg-surface-600'
-              )}
-            >
-              <BookOpenIcon className="w-4 h-4" />
-              {showKbPanel ? 'Hide' : 'Show'} KB
-            </button>
-          </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="relative h-2 bg-surface-200 rounded-full overflow-hidden">
-          <div
-            className="absolute inset-y-0 left-0 bg-gradient-to-r from-brand-600 to-brand-400 transition-all duration-500"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
-        <div className="flex items-center justify-between mt-2 text-xs text-surface-500">
-          <span>{progressPercent}% complete</span>
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-green-500" />
-              {answeredCount} answered
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
-              {pendingCount} pending
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Split Panel Layout */}
-      <div className="flex gap-4">
-        {/* Questions Panel */}
-        <div className={clsx('space-y-3 transition-all', showKbPanel ? 'w-2/3' : 'w-full')}>
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-surface-900">Questions</h3>
-            {pendingCount > 0 && (
-              <button
-                onClick={goToNextPending}
-                className="text-sm text-brand-400 hover:text-brand-300 transition-colors"
-              >
-                Jump to next pending →
-              </button>
-            )}
-          </div>
-
-          <div className="space-y-3 max-h-[calc(100vh-380px)] overflow-y-auto pr-2">
-            {questionnaire.questions.map((question, index) => (
-              <QuestionAnswerCard
-                key={question.id}
-                question={question}
-                index={index}
-                onUpdateAnswer={handleSaveAnswer}
-                isActive={activeQuestionId === question.id}
-                onSelect={() => setActiveQuestionId(question.id)}
-                onAnswerChange={(answer) => handleAnswerChange(question.id, answer)}
-                currentAnswer={answers[question.id] || ''}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Knowledge Base Panel */}
-        {showKbPanel && (
-          <div className="w-1/3 sticky top-4">
-            <KnowledgeBaseSearchPanel
-              questionText={activeQuestion?.questionText || ''}
-              onSelectAnswer={handleAnswerSelect}
-              onClose={() => setShowKbPanel(false)}
-              isOpen={true}
-              className="h-[calc(100vh-380px)]"
-            />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Question Answer Card with Knowledge Base sidebar integration
-function QuestionAnswerCard({
-  question,
-  index,
-  onUpdateAnswer,
-  isActive,
-  onSelect,
-  onAnswerChange,
-  currentAnswer,
-}: {
-  question: Question;
-  index: number;
-  onUpdateAnswer: (questionId: string, answer: string, kbEntryId?: string) => void;
-  isActive: boolean;
-  onSelect: () => void;
-  onAnswerChange: (answer: string) => void;
-  currentAnswer: string;
-}) {
-  const [saving, setSaving] = useState(false);
-
-  const handleSave = async () => {
-    setSaving(true);
-    await onUpdateAnswer(question.id, currentAnswer);
-    setSaving(false);
-  };
-
-  const statusColors = {
-    answered: 'bg-green-500/20 text-green-600 border-green-500/30',
-    approved: 'bg-green-500/20 text-green-600 border-green-500/30',
-    in_progress: 'bg-blue-500/20 text-blue-600 border-blue-500/30',
-    pending: 'bg-amber-500/20 text-amber-600 border-amber-500/30',
-    rejected: 'bg-red-500/20 text-red-600 border-red-500/30',
-  };
-
-  return (
-    <div
-      className={clsx(
-        'bg-white border rounded-lg transition-all cursor-pointer',
-        isActive
-          ? 'border-brand-500 ring-2 ring-brand-500/20'
-          : 'border-surface-200 hover:border-surface-300'
-      )}
-      onClick={onSelect}
-    >
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="flex items-center justify-center w-6 h-6 text-xs font-bold bg-surface-200 text-surface-700 rounded-full">
-                {question.questionNumber || index + 1}
-              </span>
-              {question.category && (
-                <span className="px-2 py-0.5 text-xs bg-surface-200 text-surface-700 rounded">
-                  {question.category}
-                </span>
-              )}
-              <span
-                className={clsx(
-                  'px-2 py-0.5 text-xs rounded-full capitalize border',
-                  statusColors[question.status as keyof typeof statusColors] || statusColors.pending
-                )}
-              >
-                {question.status.replace('_', ' ')}
-              </span>
-            </div>
-            <p className="text-surface-900 font-medium leading-relaxed">{question.questionText}</p>
-          </div>
-          <ChevronRightIcon
-            className={clsx(
-              'w-5 h-5 text-surface-600 transition-transform flex-shrink-0 ml-2',
-              isActive && 'rotate-90'
-            )}
-          />
-        </div>
-
-        {isActive && (
-          <div
-            className="space-y-3 mt-4 pt-4 border-t border-surface-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between">
-              <label className="block text-sm font-medium text-surface-600">Your Answer</label>
-              <div className="flex items-center gap-2 text-xs text-surface-500">
-                <BookOpenIcon className="w-4 h-4" />
-                Use KB panel to find answers →
-              </div>
-            </div>
-
-            <Textarea
-              value={currentAnswer}
-              onChange={(e) => onAnswerChange(e.target.value)}
-              rows={5}
-              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500 resize-y"
-              placeholder="Enter your answer here, or use the Knowledge Base panel to find a pre-approved answer..."
-            />
-
-            <div className="flex items-center justify-between">
-              <div className="text-xs text-surface-500">
-                {currentAnswer.length > 0 && (
-                  <span>{currentAnswer.split(/\s+/).filter(Boolean).length} words</span>
-                )}
-              </div>
-              <Button
-                onClick={handleSave}
-                disabled={currentAnswer === (question.answerText || '')}
-                isLoading={saving}
-                size="sm"
-              >
-                <CheckIcon className="w-4 h-4 mr-1" />
-                Save Answer
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

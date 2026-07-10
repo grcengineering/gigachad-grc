@@ -1,71 +1,129 @@
 import { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
+import { EvidenceDrawer } from '@/components/EvidenceDrawer';
 import { evidenceApi, controlsApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCurrentWorkspaceId } from '@/contexts/WorkspaceContext';
-import { useDebounce } from '@/hooks/useDebounce';
 import toast from 'react-hot-toast';
 import {
-  MagnifyingGlassIcon,
-  CloudArrowUpIcon,
-  FolderIcon,
-  DocumentTextIcon,
-  PhotoIcon,
-  XMarkIcon,
-  ArrowDownTrayIcon,
-  CheckIcon,
-  LinkIcon,
-  ArrowLeftIcon,
-} from '@heroicons/react/24/outline';
-import clsx from 'clsx';
-import { Button } from '@/components/ui/Button';
-import { SkeletonGrid } from '@/components/Skeleton';
+  Search,
+  CloudUpload,
+  Folder,
+  FileText,
+  Image as ImageIcon,
+  X,
+  Download,
+  Check,
+  Link as LinkIconL,
+  ArrowLeft,
+} from 'lucide-react';
+import { cn } from '@/lib/cn';
+import {
+  Button,
+  Badge,
+  Card,
+  CardBody,
+  Input,
+  Textarea,
+  Label,
+  Select,
+  PageHeader,
+  FilterBar,
+  EmptyState,
+  Skeleton,
+  Dialog,
+  type ActiveFilter,
+  type BadgeVariant,
+} from '@/components/ui';
 
-import { Textarea } from '@/components/ui/Textarea';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-
-const TYPE_ICONS: Record<string, any> = {
-  screenshot: PhotoIcon,
-  document: DocumentTextIcon,
-  default: DocumentTextIcon,
+const TYPE_ICONS: Record<string, typeof FileText> = {
+  screenshot: ImageIcon,
+  document: FileText,
+  default: FileText,
 };
 
-const STATUS_STYLES: Record<string, string> = {
-  pending_review: '',
-  approved: '',
-  rejected: '',
-  expired: '',
+const TYPE_OPTS = [
+  { value: 'screenshot', label: 'Screenshots' },
+  { value: 'document', label: 'Documents' },
+  { value: 'export', label: 'Exports' },
+  { value: 'report', label: 'Reports' },
+  { value: 'configuration', label: 'Configurations' },
+  { value: 'log', label: 'Logs' },
+];
+
+const UPLOAD_TYPE_OPTS = [
+  { value: 'document', label: 'Document' },
+  { value: 'screenshot', label: 'Screenshot' },
+  { value: 'export', label: 'Export' },
+  { value: 'report', label: 'Report' },
+  { value: 'configuration', label: 'Configuration' },
+  { value: 'log', label: 'Log' },
+  { value: 'other', label: 'Other' },
+];
+
+const STATUS_VARIANT: Record<string, BadgeVariant> = {
+  pending_review: 'warning',
+  approved: 'success',
+  rejected: 'danger',
+  expired: 'neutral',
 };
+
+interface EvidenceItem {
+  id: string;
+  title: string;
+  filename: string;
+  type: string;
+  status: string;
+  createdAt: string;
+  controlLinks?: { controlId: string }[];
+}
+
+function StatCard({
+  label,
+  value,
+  tone = 'neutral',
+}: {
+  label: string;
+  value: number;
+  tone?: 'neutral' | 'yellow' | 'orange' | 'red';
+}) {
+  const colors: Record<typeof tone, string> = {
+    neutral: 'text-surface-900',
+    yellow: 'text-yellow-700',
+    orange: 'text-orange-600',
+    red: 'text-red-600',
+  };
+  return (
+    <Card>
+      <CardBody density="cozy">
+        <p className="text-xs text-surface-500 uppercase tracking-wider">{label}</p>
+        <p className={cn('text-h1 mt-1', colors[tone])}>{value}</p>
+      </CardBody>
+    </Card>
+  );
+}
 
 export default function Evidence() {
   const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
-  const [searchInput, setSearchInput] = useState('');
-  const debouncedSearch = useDebounce(searchInput, 300);
+  const [search, setSearch] = useState('');
   const [selectedType, setSelectedType] = useState<string>('');
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const workspaceId = useCurrentWorkspaceId();
+  const [drawerEvidenceId, setDrawerEvidenceId] = useState<string | null>(null);
 
-  // Check if we're in linking mode (coming from a control)
   const linkToControlId = searchParams.get('controlId');
 
   const { data: evidenceData, isLoading } = useQuery({
-    queryKey: ['evidence', debouncedSearch, selectedType, workspaceId],
+    queryKey: ['evidence', search, selectedType],
     queryFn: () =>
       evidenceApi
         .list({
-          search: debouncedSearch || undefined,
+          search: search || undefined,
           type: selectedType ? [selectedType] : undefined,
-          workspaceId: workspaceId || undefined,
-          limit: 25, // Reduced from 50
+          limit: 50,
         })
         .then((res) => res.data),
-    staleTime: 30 * 1000, // 30 second cache
   });
 
   const { data: stats } = useQuery({
@@ -73,7 +131,6 @@ export default function Evidence() {
     queryFn: () => evidenceApi.getStats().then((res) => res.data),
   });
 
-  // Get control details if linking
   const { data: linkControl } = useQuery({
     queryKey: ['control', linkToControlId],
     queryFn: () => controlsApi.get(linkToControlId!).then((res) => res.data),
@@ -86,12 +143,10 @@ export default function Evidence() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['evidence'] });
       queryClient.invalidateQueries({ queryKey: ['control', linkToControlId] });
-      queryClient.invalidateQueries({ queryKey: ['controls'] }); // Update controls list
+      queryClient.invalidateQueries({ queryKey: ['controls'] });
       toast.success('Evidence linked to control');
     },
-    onError: () => {
-      toast.error('Failed to link evidence');
-    },
+    onError: () => toast.error('Failed to link evidence'),
   });
 
   const unlinkMutation = useMutation({
@@ -100,242 +155,243 @@ export default function Evidence() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['evidence'] });
       queryClient.invalidateQueries({ queryKey: ['control', linkToControlId] });
-      queryClient.invalidateQueries({ queryKey: ['controls'] }); // Update controls list
+      queryClient.invalidateQueries({ queryKey: ['controls'] });
       toast.success('Evidence unlinked from control');
     },
-    onError: () => {
-      toast.error('Failed to unlink evidence');
-    },
+    onError: () => toast.error('Failed to unlink evidence'),
   });
 
-  const evidence = Array.isArray(evidenceData) ? evidenceData : (evidenceData as any)?.data || [];
+  const evidence: EvidenceItem[] = evidenceData?.data || [];
 
-  const isLinkedToControl = (item: any) => {
+  const isLinkedToControl = (item: EvidenceItem) => {
     if (!linkToControlId) return false;
-    return item.controlLinks?.some((link: any) => link.controlId === linkToControlId);
+    return item.controlLinks?.some((link) => link.controlId === linkToControlId);
+  };
+
+  const activeFilters: ActiveFilter[] = [];
+  if (search)
+    activeFilters.push({ key: 'search', label: `Search: ${search}`, onClear: () => setSearch('') });
+  if (selectedType) {
+    const label = TYPE_OPTS.find((o) => o.value === selectedType)?.label ?? selectedType;
+    activeFilters.push({
+      key: 'type',
+      label: `Type: ${label}`,
+      onClear: () => setSelectedType(''),
+    });
+  }
+  const clearAll = () => {
+    setSearch('');
+    setSelectedType('');
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Linking Mode Banner */}
+    <div className="space-y-5 animate-fade-in">
       {linkToControlId && linkControl && (
-        <div className="card p-4 border-brand-500 bg-brand-500/10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <LinkIcon className="w-5 h-5 text-brand-400" />
-              <div>
-                <p className="text-sm font-medium text-surface-900">Linking evidence to control</p>
-                <p className="text-xs text-surface-600">
-                  <span className="font-mono text-brand-400">{linkControl.controlId}</span>
-                  {' - '}
+        <Card className="border-brand-500/40 bg-brand-500/5">
+          <CardBody density="cozy" className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <LinkIconL className="h-5 w-5 text-brand-700 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-small text-surface-900 font-medium">
+                  Linking evidence to control
+                </p>
+                <p className="text-xs text-surface-600 truncate">
+                  <span className="font-mono text-brand-700">{linkControl.controlId}</span>
+                  {' — '}
                   {linkControl.title}
                 </p>
               </div>
             </div>
-            <Link to={`/controls/${linkToControlId}`} className="text-sm">
-              <ArrowLeftIcon className="w-4 h-4 mr-1" />
-              Back to Control
+            <Link to={`/controls/${linkToControlId}`}>
+              <Button variant="outline" size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
+                Back to Control
+              </Button>
             </Link>
-          </div>
-        </div>
+          </CardBody>
+        </Card>
       )}
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-surface-900">Evidence Library</h1>
-          <p className="text-surface-600 mt-1">
-            {linkToControlId
-              ? 'Select evidence to link to the control, or upload new evidence'
-              : 'Manage evidence files and link them to controls'}
-          </p>
-        </div>
-        {hasPermission('evidence:upload') && (
-          <Button
-            onClick={() => setShowUploadModal(true)}
-            leftIcon={<CloudArrowUpIcon className="w-4 h-4" />}
-          >
-            Upload Evidence
-          </Button>
-        )}
-      </div>
-      {/* Stats */}
+
+      <PageHeader
+        title="Evidence Library"
+        description={
+          linkToControlId
+            ? 'Select evidence to link to the control, or upload new evidence.'
+            : 'Manage evidence files and link them to controls.'
+        }
+        actions={
+          hasPermission('evidence:upload') ? (
+            <Button
+              size="sm"
+              leftIcon={<CloudUpload className="h-4 w-4" />}
+              onClick={() => setShowUploadModal(true)}
+            >
+              Upload Evidence
+            </Button>
+          ) : null
+        }
+      />
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Total" value={stats?.total || 0} />
-        <StatCard label="Pending Review" value={stats?.pendingReview || 0} color="yellow" />
-        <StatCard label="Expiring Soon" value={stats?.expiringSoon || 0} color="orange" />
-        <StatCard label="Expired" value={stats?.expired || 0} color="red" />
+        <StatCard label="Pending Review" value={stats?.pendingReview || 0} tone="yellow" />
+        <StatCard label="Expiring Soon" value={stats?.expiringSoon || 0} tone="orange" />
+        <StatCard label="Expired" value={stats?.expired || 0} tone="red" />
       </div>
-      {/* Filters */}
-      <div className="card p-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-500" />
-            <Input
-              type="text"
-              placeholder="Search evidence..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="input pl-10"
-            />
-          </div>
-          <SelectNative
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value)}
-            className="input w-full md:w-48"
-          >
-            <option value="">All Types</option>
-            <option value="screenshot">Screenshots</option>
-            <option value="document">Documents</option>
-            <option value="export">Exports</option>
-            <option value="report">Reports</option>
-            <option value="configuration">Configurations</option>
-            <option value="log">Logs</option>
-          </SelectNative>
-        </div>
-      </div>
-      {/* Evidence Grid */}
+
+      <FilterBar active={activeFilters} onClearAll={activeFilters.length ? clearAll : undefined}>
+        <Input
+          inputSize="sm"
+          className="w-64"
+          placeholder="Search evidence…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          leftIcon={<Search className="h-4 w-4" />}
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-48"
+          placeholder="All Types"
+          value={selectedType}
+          onChange={setSelectedType}
+          options={TYPE_OPTS}
+          clearable
+        />
+      </FilterBar>
+
       {isLoading ? (
-        <SkeletonGrid count={9} />
-      ) : evidence.length === 0 ? (
-        <div className="card flex flex-col items-center justify-center py-16 text-surface-500">
-          <FolderIcon className="w-16 h-16 mb-4" />
-          <p className="text-lg mb-2">No evidence found</p>
-          <p className="text-sm">Upload your first evidence file to get started</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-36" />
+          ))}
         </div>
+      ) : evidence.length === 0 ? (
+        <Card>
+          <EmptyState
+            icon={<Folder className="h-8 w-8" />}
+            title="No evidence found"
+            description={
+              activeFilters.length
+                ? 'Try clearing your filters.'
+                : 'Upload your first evidence file to get started.'
+            }
+            action={
+              activeFilters.length ? (
+                <Button variant="outline" size="sm" onClick={clearAll}>
+                  Clear filters
+                </Button>
+              ) : hasPermission('evidence:upload') ? (
+                <Button
+                  size="sm"
+                  leftIcon={<CloudUpload className="h-4 w-4" />}
+                  onClick={() => setShowUploadModal(true)}
+                >
+                  Upload Evidence
+                </Button>
+              ) : null
+            }
+          />
+        </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {evidence.map((item: any) => {
+          {evidence.map((item) => {
             const Icon = TYPE_ICONS[item.type] || TYPE_ICONS.default;
             const isLinked = isLinkedToControl(item);
 
             return (
-              <Link
+              <Card
                 key={item.id}
-                to={`/evidence/${item.id}`}
-                className={clsx(
-                  'card p-4 transition-colors block',
-                  isLinked ? 'border-green-500/50 bg-green-500/5' : 'hover:border-surface-200'
+                interactive
+                onClick={() => setDrawerEvidenceId(item.id)}
+                className={cn(
+                  'h-full transition-colors',
+                  isLinked ? 'border-emerald-500/40 bg-emerald-500/5' : 'hover:border-surface-400'
                 )}
               >
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-white rounded-lg">
-                    <Icon className="w-6 h-6 text-surface-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-surface-900 truncate">{item.title}</h3>
-                    <p className="text-xs text-surface-500 mt-1">{item.filename}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className={clsx('text-xs', STATUS_STYLES[item.status])}>
-                        {item.status.replace('_', ' ')}
-                      </span>
-                      <span className="text-xs text-surface-500 capitalize">{item.type}</span>
+                <CardBody density="cozy">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-surface-100 rounded-md shrink-0">
+                      <Icon className="h-5 w-5 text-surface-600" />
                     </div>
-                    {item.controlLinks?.length > 0 && (
-                      <p className="text-xs text-surface-500 mt-2">
-                        Linked to {item.controlLinks.length} control(s)
-                      </p>
-                    )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-h3 text-surface-900 truncate">{item.title}</h3>
+                      <p className="text-xs text-surface-500 mt-0.5 truncate">{item.filename}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge variant={STATUS_VARIANT[item.status] ?? 'neutral'} size="sm">
+                          {item.status.replace(/_/g, ' ')}
+                        </Badge>
+                        <span className="text-xs text-surface-500 capitalize">{item.type}</span>
+                      </div>
+                      {item.controlLinks && item.controlLinks.length > 0 && (
+                        <p className="text-xs text-surface-500 mt-1.5">
+                          Linked to {item.controlLinks.length} control(s)
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2 mt-4 pt-3 border-t border-surface-200">
-                  <span className="text-xs text-surface-500 flex-1">
-                    {new Date(item.createdAt).toLocaleDateString()}
-                  </span>
+                  <div className="flex items-center gap-2 mt-3 pt-3 border-t border-surface-200">
+                    <span className="text-xs text-surface-500 flex-1">
+                      {new Date(item.createdAt).toLocaleDateString()}
+                    </span>
 
-                  {/* Link/Unlink button when in linking mode */}
-                  {linkToControlId && (
+                    {linkToControlId && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (isLinked) {
+                            unlinkMutation.mutate({
+                              evidenceId: item.id,
+                              controlId: linkToControlId,
+                            });
+                          } else {
+                            linkMutation.mutate({
+                              evidenceId: item.id,
+                              controlId: linkToControlId,
+                            });
+                          }
+                        }}
+                        disabled={linkMutation.isPending || unlinkMutation.isPending}
+                        className={cn(
+                          'inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors',
+                          isLinked
+                            ? 'bg-emerald-500/10 text-emerald-600 hover:bg-red-500/10 hover:text-red-600'
+                            : 'bg-brand-500/10 text-brand-700 hover:bg-brand-500/20'
+                        )}
+                      >
+                        <LinkIconL className="h-3 w-3" />
+                        {isLinked ? 'Linked' : 'Link'}
+                      </button>
+                    )}
+
                     <button
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        if (isLinked) {
-                          unlinkMutation.mutate({
-                            evidenceId: item.id,
-                            controlId: linkToControlId,
-                          });
-                        } else {
-                          linkMutation.mutate({
-                            evidenceId: item.id,
-                            controlId: linkToControlId,
-                          });
-                        }
+                        // TODO: Download
                       }}
-                      disabled={linkMutation.isPending || unlinkMutation.isPending}
-                      className={clsx(
-                        'px-2 py-1 text-xs rounded-md transition-colors flex items-center gap-1',
-                        isLinked
-                          ? 'bg-green-500/20 text-green-600 hover:bg-red-500/20 hover:text-red-600'
-                          : 'bg-brand-500/20 text-brand-400 hover:bg-brand-500/30'
-                      )}
+                      className="p-1 text-surface-500 hover:text-surface-900 rounded"
+                      aria-label="Download"
                     >
-                      <LinkIcon className="w-3 h-3" />
-                      {isLinked ? 'Linked ✓' : 'Link'}
+                      <Download className="h-4 w-4" />
                     </button>
-                  )}
-
-                  <button
-                    onClick={async (e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      try {
-                        const response = await evidenceApi.getDownloadUrl(item.id);
-                        const urlData = response.data?.url || response.data;
-                        const url =
-                          typeof urlData === 'string' ? urlData : (urlData as any)?.url || '';
-                        if (url) {
-                          // Create a temporary link and click it to download
-                          const link = document.createElement('a');
-                          link.href = url;
-                          link.download = item.filename || 'evidence-file';
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
-                        } else {
-                          toast.error('Download URL not available');
-                        }
-                      } catch {
-                        toast.error('Failed to download file');
-                      }
-                    }}
-                    className="p-1 text-surface-600 hover:text-surface-900"
-                    title="Download"
-                  >
-                    <ArrowDownTrayIcon className="w-4 h-4" />
-                  </button>
-                </div>
-              </Link>
+                  </div>
+                </CardBody>
+              </Card>
             );
           })}
         </div>
       )}
-      {/* Upload Modal */}
+
       {showUploadModal && (
         <UploadModal onClose={() => setShowUploadModal(false)} linkToControlId={linkToControlId} />
       )}
-    </div>
-  );
-}
 
-function StatCard({
-  label,
-  value,
-  color = 'surface',
-}: {
-  label: string;
-  value: number;
-  color?: 'surface' | 'yellow' | 'orange' | 'red';
-}) {
-  const colorClasses = {
-    surface: 'text-surface-900',
-    yellow: 'text-yellow-600',
-    orange: 'text-orange-600',
-    red: 'text-red-600',
-  };
-
-  return (
-    <div className="card p-4">
-      <p className="text-sm text-surface-600">{label}</p>
-      <p className={clsx('text-2xl font-bold mt-1', colorClasses[color])}>{value}</p>
+      <EvidenceDrawer
+        evidenceId={drawerEvidenceId}
+        open={!!drawerEvidenceId}
+        onClose={() => setDrawerEvidenceId(null)}
+      />
     </div>
   );
 }
@@ -349,20 +405,61 @@ function UploadModal({
 }) {
   const queryClient = useQueryClient();
   const [file, setFile] = useState<File | null>(null);
-  const [isDragActive, setIsDragActive] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [title, setTitle] = useState('');
   const [type, setType] = useState('document');
   const [description, setDescription] = useState('');
+  const [isDragActive, setIsDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const acceptedExtensions = new Set([
+    '.pdf',
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.gif',
+    '.doc',
+    '.docx',
+    '.xls',
+    '.xlsx',
+    '.csv',
+    '.txt',
+  ]);
+
+  const acceptedMimeTypes = new Set([
+    'application/pdf',
+    'image/png',
+    'image/jpeg',
+    'image/gif',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/csv',
+    'text/plain',
+  ]);
+
+  const fileAcceptValue = Array.from(acceptedExtensions).join(',');
+
+  const isAcceptedFile = (candidate: File): boolean => {
+    const ext = `.${candidate.name.split('.').pop()?.toLowerCase() ?? ''}`;
+    return acceptedMimeTypes.has(candidate.type) || acceptedExtensions.has(ext);
+  };
+
+  const handleFileSelected = (selectedFile?: File) => {
+    if (!selectedFile) return;
+    if (!isAcceptedFile(selectedFile)) {
+      toast.error('Unsupported file type. Upload PDF, Office docs, images, CSV, or text.');
+      return;
+    }
+    setFile(selectedFile);
+    if (!title) setTitle(selectedFile.name.replace(/\.[^/.]+$/, ''));
+  };
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
       if (!file) throw new Error('No file selected');
-      // Include controlIds if linking
-      const data: any = { title, type, description };
-      if (linkToControlId) {
-        data.controlIds = [linkToControlId];
-      }
+      const data: Record<string, unknown> = { title, type, description };
+      if (linkToControlId) data.controlIds = [linkToControlId];
       return evidenceApi.upload(file, data);
     },
     onSuccess: () => {
@@ -370,7 +467,7 @@ function UploadModal({
       queryClient.invalidateQueries({ queryKey: ['evidence-stats'] });
       if (linkToControlId) {
         queryClient.invalidateQueries({ queryKey: ['control', linkToControlId] });
-        queryClient.invalidateQueries({ queryKey: ['controls'] }); // Update controls list
+        queryClient.invalidateQueries({ queryKey: ['controls'] });
       }
       toast.success(
         linkToControlId
@@ -379,178 +476,147 @@ function UploadModal({
       );
       onClose();
     },
-    onError: (error: any) => {
-      console.error('Upload error:', error);
-      const message =
-        error?.response?.data?.message || error?.message || 'Failed to upload evidence';
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      const message = err?.response?.data?.message || err?.message || 'Failed to upload evidence';
       toast.error(message);
     },
   });
 
-  const assignSelectedFile = (nextFile: File | null) => {
-    if (!nextFile) return;
-    setFile(nextFile);
-    if (!title) {
-      setTitle(nextFile.name.replace(/\.[^/.]+$/, ''));
-    }
-  };
-
-  const handleFiles = (files: FileList | null) => {
-    assignSelectedFile(files?.[0] ?? null);
-  };
-
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/60" onClick={onClose} />
-      {/* Modal content - positioned on top */}
-      <div className="relative min-h-screen flex items-center justify-center p-4">
-        <div className="relative bg-white border border-surface-200 rounded-xl w-full max-w-lg p-6 shadow-2xl">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-surface-900">Upload Evidence</h2>
-            <button onClick={onClose} className="text-surface-600 hover:text-surface-900">
-              <XMarkIcon className="w-5 h-5" />
-            </button>
+    <Dialog
+      open
+      onClose={onClose}
+      title="Upload Evidence"
+      size="md"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            loading={uploadMutation.isPending}
+            disabled={!file || !title}
+            onClick={() => uploadMutation.mutate()}
+          >
+            Upload
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        {linkToControlId && (
+          <div className="flex items-center gap-2 rounded-md border border-brand-500/30 bg-brand-500/10 px-3 py-2 text-small text-brand-700">
+            <LinkIconL className="h-4 w-4 shrink-0" />
+            <span>This evidence will be linked to the control automatically.</span>
           </div>
+        )}
 
-          {linkToControlId && (
-            <div className="mb-4 p-3 bg-brand-500/10 border border-brand-500/30 rounded-lg text-sm">
-              <div className="flex items-center gap-2 text-brand-400">
-                <LinkIcon className="w-4 h-4" />
-                <span>This evidence will be linked to the control automatically</span>
-              </div>
-            </div>
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => fileInputRef.current?.click()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              fileInputRef.current?.click();
+            }
+          }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragActive(true);
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+              setIsDragActive(false);
+            }
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDragActive(false);
+            handleFileSelected(e.dataTransfer.files?.[0]);
+          }}
+          className={cn(
+            'border-2 border-dashed rounded-md p-6 text-center cursor-pointer transition-all',
+            isDragActive
+              ? 'border-brand-500 bg-brand-500/10'
+              : file
+                ? 'border-emerald-500 bg-emerald-500/10'
+                : 'border-surface-300 hover:border-surface-400'
           )}
-
-          <div className="space-y-4">
-            {/* Dropzone */}
-            <div
-              className={clsx(
-                'border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all',
-                isDragActive
-                  ? 'border-brand-500 bg-brand-500/10 scale-[1.02]'
-                  : file
-                    ? 'border-green-500 bg-green-500/10'
-                    : 'border-surface-200 hover:border-surface-300'
-              )}
-              onClick={() => fileInputRef.current?.click()}
-              onDragOver={(event) => {
-                event.preventDefault();
-                setIsDragActive(true);
-              }}
-              onDragLeave={(event) => {
-                event.preventDefault();
-                setIsDragActive(false);
-              }}
-              onDrop={(event) => {
-                event.preventDefault();
-                setIsDragActive(false);
-                handleFiles(event.dataTransfer.files);
-              }}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                accept=".pdf,.png,.jpg,.jpeg,.gif,.doc,.docx,.xls,.xlsx,.csv,.txt"
-                onChange={(event) => handleFiles(event.target.files)}
-              />
-              {file ? (
-                <div className="flex items-center justify-center gap-2 text-green-600">
-                  <CheckIcon className="w-6 h-6" />
-                  <span className="truncate max-w-xs">{file.name}</span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFile(null);
-                      setTitle('');
-                    }}
-                    className="ml-2 p-1 hover:bg-surface-200 rounded"
-                  >
-                    <XMarkIcon className="w-4 h-4 text-surface-600" />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <CloudArrowUpIcon
-                    className={clsx(
-                      'w-12 h-12 mx-auto mb-4 transition-colors',
-                      isDragActive ? 'text-brand-400' : 'text-surface-500'
-                    )}
-                  />
-                  <p
-                    className={clsx(
-                      'transition-colors',
-                      isDragActive ? 'text-brand-300' : 'text-surface-700'
-                    )}
-                  >
-                    {isDragActive
-                      ? 'Drop the file here...'
-                      : 'Drag and drop a file here, or click to select'}
-                  </p>
-                  <p className="text-surface-500 text-sm mt-2">
-                    PDF, Word, Excel, Images, CSV, Text
-                  </p>
-                </>
-              )}
-            </div>
-
-            {/* Form fields */}
-            <div>
-              <label className="label">Title</label>
-              <Input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="input mt-1"
-                placeholder="Evidence title"
-              />
-            </div>
-
-            <div>
-              <label className="label">Type</label>
-              <SelectNative
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="input mt-1"
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            accept={fileAcceptValue}
+            onChange={(e) => {
+              handleFileSelected(e.target.files?.[0]);
+              e.currentTarget.value = '';
+            }}
+          />
+          {file ? (
+            <div className="flex items-center justify-center gap-2 text-emerald-600">
+              <Check className="h-5 w-5" />
+              <span className="truncate max-w-xs">{file.name}</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFile(null);
+                  setTitle('');
+                }}
+                className="ml-2 p-1 hover:bg-surface-100 rounded"
+                aria-label="Clear file"
               >
-                <option value="document">Document</option>
-                <option value="screenshot">Screenshot</option>
-                <option value="export">Export</option>
-                <option value="report">Report</option>
-                <option value="configuration">Configuration</option>
-                <option value="log">Log</option>
-                <option value="other">Other</option>
-              </SelectNative>
+                <X className="h-4 w-4 text-surface-600" />
+              </button>
             </div>
-
-            <div>
-              <label className="label">Description (optional)</label>
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="input mt-1"
-                rows={3}
-                placeholder="Brief description of this evidence"
+          ) : (
+            <>
+              <CloudUpload
+                className={cn(
+                  'h-10 w-10 mx-auto mb-3 transition-colors',
+                  isDragActive ? 'text-brand-700' : 'text-surface-500'
+                )}
               />
-            </div>
-          </div>
+              <p className={cn('text-body', isDragActive ? 'text-brand-800' : 'text-surface-700')}>
+                {isDragActive ? 'Drop the file here…' : 'Drag and drop a file, or click to select'}
+              </p>
+              <p className="text-xs text-surface-500 mt-1.5">PDF, Word, Excel, Images, CSV, Text</p>
+            </>
+          )}
+        </div>
 
-          <div className="flex justify-end gap-3 mt-6">
-            <Button variant="secondary" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => uploadMutation.mutate()}
-              disabled={!file || !title}
-              isLoading={uploadMutation.isPending}
-            >
-              Upload
-            </Button>
-          </div>
+        <div>
+          <Label htmlFor="ev-title" required>
+            Title
+          </Label>
+          <Input
+            id="ev-title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Evidence title"
+          />
+        </div>
+
+        <div>
+          <Label>Type</Label>
+          <Select value={type} onChange={setType} options={UPLOAD_TYPE_OPTS} />
+        </div>
+
+        <div>
+          <Label htmlFor="ev-desc">Description (optional)</Label>
+          <Textarea
+            id="ev-desc"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            placeholder="Brief description of this evidence"
+          />
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

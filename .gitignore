@@ -1,78 +1,89 @@
-node_modules
+# Environment Variables - NEVER COMMIT THESE
 .env
-.env.*
-!.env.example
+.env.local
+.env.production
+.env.*.local
+*.env
 
-# macOS
-.DS_Store
-**/.DS_Store
-
-# Sensitive files - DO NOT COMMIT
-env.development
-*.pdf
-services/policies/storage/
-
-# Credentials
-*.pem
+# Secrets and Credentials
+secrets/
 *.key
+*.pem
+*.crt
 *.p12
+*.pfx
 
-# Infisical
-.infisical.json
-.infisical-initialized
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 
-# Storage directories - contain user data
-services/*/storage/
-**/storage/evidence/
-**/storage/policies/
-**/storage/integrations/
+# Build outputs
+dist/
+build/
+*.js.map
+*.d.ts.map
 
-# Excel/Office files that may contain data
-*.xlsx
-*.xls
-*.docx
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
 
-# Screenshots (may contain PII)
-Screenshot*.png
+# Logs
+logs/
+*.log
+lerna-debug.log*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker volumes (local development)
+postgres_data/
+redis_data/
+minio_data/
+
+# Local storage
+storage/
+uploads/
+temp/
+tmp/
+
+# Coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Cache
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+
+# Testing
+.test-results/
+playwright-report/
+
+# OS
+Thumbs.db
+.DS_Store
 
 # Backup files
 *.bak
 *.backup
-*~
+*.old
 
-# Log files
-*.log
-logs/
-
-# Database dumps
-*.sql
-*.dump
-
-# Terraform
-.terraform/
-*.tfstate
-*.tfstate.*
-terraform.tfvars
-
-# Test coverage
-coverage/
-.nyc_output/
-
+# Sensitive data
+audit-logs/
+evidence/
+backups/
 # Playwright artifacts
-frontend/test-results/
-frontend/playwright-report/
-frontend/playwright/.auth/
-
-# Build artifacts (service-specific)
-services/*/dist/
-frontend/dist/
-
-# IDE
-.idea/
-*.swp
-*.swo
-.vscode/settings.json
-
-# OS files
-Thumbs.db
-Desktop.ini
+tests/.auth/
+playwright-report/
+test-results/

@@ -1,570 +1,438 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import {
-  ArrowLeftIcon,
-  ExclamationTriangleIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  PlusIcon,
-  DocumentTextIcon,
-  UserGroupIcon,
-} from '@heroicons/react/24/outline';
-import { Button } from '@/components/ui/Button';
-import { PostIncidentReviewForm } from '@/components/bcdr/PostIncidentReviewForm';
-import { api } from '@/lib/api';
-import clsx from 'clsx';
-import { format } from 'date-fns';
-
-import { Textarea } from '@/components/ui/Textarea';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-import { Dialog } from '@/components/ui/Dialog';
-
-// ============================================
-// Types
-// ============================================
-
-interface BCDRIncident {
-  id: string;
-  incidentId: string;
-  title: string;
-  description: string;
-  incidentType: string;
-  severity: string;
-  status: string;
-  declaredAt: string;
-  declaredByName: string;
-  recoveryStartedAt: string;
-  operationalAt: string;
-  resolvedAt: string;
-  closedAt: string;
-  closedByName: string;
-  activatedPlans: string[];
-  activatedTeams: string[];
-  actualDowntimeMinutes: number;
-  dataLossMinutes: number;
-  financialImpact: number;
-  rootCause: string;
-  lessonsLearned: string;
-  improvementActions: any[];
-  timeline: TimelineEntry[];
-}
+  ArrowLeft,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  Edit2,
+  FileText,
+  MessageSquare,
+  Server,
+  ClipboardList,
+} from 'lucide-react';
+import api from '@/lib/api';
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  PageHeader,
+  Tabs,
+  EmptyState,
+  Skeleton,
+  type BadgeVariant,
+} from '@/components/ui';
 
 interface TimelineEntry {
   id: string;
-  timestamp: string;
-  entryType: string;
+  timestamp?: string;
+  entryType?: string;
+  entry_type?: string;
   description: string;
-  createdByName: string;
-  metadata: any;
+  createdByName?: string;
+  created_by_name?: string;
 }
 
-const SEVERITY_COLORS: Record<string, string> = {
-  critical: 'bg-red-500',
-  major: 'bg-orange-500',
-  moderate: 'bg-yellow-500',
-  minor: 'bg-green-500',
+interface AffectedAsset {
+  id: string;
+  name?: string;
+  assetName?: string;
+  asset_name?: string;
+  type?: string;
+  impact?: string;
+}
+
+interface Communication {
+  id: string;
+  channel?: string;
+  audience?: string;
+  message?: string;
+  sentAt?: string;
+  sent_at?: string;
+}
+
+interface BCDRIncidentDetailData {
+  id: string;
+  incidentId?: string;
+  incident_id?: string;
+  title: string;
+  description?: string;
+  severity: string;
+  status: string;
+  declaredAt?: string;
+  declared_at?: string;
+  declaredByName?: string;
+  declared_by_name?: string;
+  commanderName?: string;
+  commander_name?: string;
+  resolvedAt?: string;
+  resolved_at?: string;
+  rootCause?: string;
+  root_cause?: string;
+  lessonsLearned?: string;
+  lessons_learned?: string;
+  improvementActions?: { description: string }[];
+  timeline?: TimelineEntry[];
+  affectedAssets?: AffectedAsset[];
+  affected_assets?: AffectedAsset[];
+  communications?: Communication[];
+}
+
+const SEVERITY_VARIANT: Record<string, BadgeVariant> = {
+  critical: 'danger',
+  high: 'danger',
+  major: 'danger',
+  medium: 'warning',
+  moderate: 'warning',
+  low: 'info',
+  minor: 'info',
 };
 
-const STATUS_OPTIONS = ['active', 'recovering', 'resolved'];
-
-const ENTRY_TYPE_ICONS: Record<string, typeof ExclamationTriangleIcon> = {
-  status_change: ClockIcon,
-  plan_activated: DocumentTextIcon,
-  team_activated: UserGroupIcon,
-  note: DocumentTextIcon,
-  action_taken: CheckCircleIcon,
+const STATUS_VARIANT: Record<string, BadgeVariant> = {
+  active: 'danger',
+  declared: 'danger',
+  in_progress: 'warning',
+  recovering: 'warning',
+  resolved: 'success',
+  closed: 'neutral',
 };
 
-// ============================================
-// BC/DR Incident Detail Page Component
-// ============================================
+function pick<T>(...values: (T | undefined)[]) {
+  for (const v of values) if (v !== undefined && v !== null) return v;
+  return undefined;
+}
+
+function formatDateTime(v?: string) {
+  if (!v) return '—';
+  try {
+    return new Date(v).toLocaleString();
+  } catch {
+    return v;
+  }
+}
 
 export default function BCDRIncidentDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [incident, setIncident] = useState<BCDRIncident | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [plans, setPlans] = useState<{ id: string; title: string }[]>([]);
-  const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
-  const [showAddNote, setShowAddNote] = useState(false);
-  const [showActivatePlan, setShowActivatePlan] = useState(false);
-  const [showActivateTeam, setShowActivateTeam] = useState(false);
-  const [showCloseIncident, setShowCloseIncident] = useState(false);
 
-  // Form state
-  const [noteDescription, setNoteDescription] = useState('');
-  const [selectedPlanId, setSelectedPlanId] = useState('');
-  const [selectedTeamId, setSelectedTeamId] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (id) {
-      loadIncident();
-      loadPlans();
-      loadTeams();
-    }
-  }, [id]);
-
-  const loadIncident = async () => {
-    setIsLoading(true);
-    try {
-      const response = await api.get(`/bcdr/incidents/${id}`);
-      setIncident(response.data);
-    } catch (error) {
-      console.error('Failed to load incident:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadPlans = async () => {
-    try {
-      const response = await api.get('/bcdr/plans');
-      setPlans(response.data.data || []);
-    } catch (error) {
-      console.error('Failed to load plans:', error);
-    }
-  };
-
-  const loadTeams = async () => {
-    try {
-      const response = await api.get('/bcdr/recovery-teams');
-      setTeams(response.data.data || []);
-    } catch (error) {
-      console.error('Failed to load teams:', error);
-    }
-  };
-
-  const handleStatusChange = async (newStatus: string) => {
-    setIsSubmitting(true);
-    try {
-      await api.put(`/bcdr/incidents/${id}/status`, { status: newStatus });
-      loadIncident();
-    } catch (error) {
-      console.error('Failed to update status:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleAddNote = async () => {
-    if (!noteDescription.trim()) return;
-
-    setIsSubmitting(true);
-    try {
-      await api.post(`/bcdr/incidents/${id}/timeline`, {
-        entryType: 'note',
-        description: noteDescription,
-      });
-      loadIncident();
-      setShowAddNote(false);
-      setNoteDescription('');
-    } catch (error) {
-      console.error('Failed to add note:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleActivatePlan = async () => {
-    if (!selectedPlanId) return;
-
-    setIsSubmitting(true);
-    try {
-      await api.post(`/bcdr/incidents/${id}/activate-plan`, { planId: selectedPlanId });
-      loadIncident();
-      setShowActivatePlan(false);
-      setSelectedPlanId('');
-    } catch (error) {
-      console.error('Failed to activate plan:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleActivateTeam = async () => {
-    if (!selectedTeamId) return;
-
-    setIsSubmitting(true);
-    try {
-      await api.post(`/bcdr/incidents/${id}/activate-team`, { teamId: selectedTeamId });
-      loadIncident();
-      setShowActivateTeam(false);
-      setSelectedTeamId('');
-    } catch (error) {
-      console.error('Failed to activate team:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const { data: incident, isLoading } = useQuery<BCDRIncidentDetailData>({
+    queryKey: ['bcdr-incident', id],
+    queryFn: async () => {
+      const res = await api.get(`/api/bcdr/incidents/${id}`);
+      return res.data;
+    },
+    enabled: !!id,
+  });
 
   if (isLoading) {
     return (
-      <div className="text-center py-12">
-        <div className="animate-spin h-8 w-8 border-2 border-cyan-500 border-t-transparent rounded-full mx-auto" />
-        <p className="text-slate-400 mt-4">Loading incident...</p>
+      <div className="space-y-5 animate-fade-in">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-32 w-full" />
       </div>
     );
   }
 
   if (!incident) {
     return (
-      <div className="text-center py-12">
-        <p className="text-slate-400">Incident not found</p>
+      <div className="space-y-5 animate-fade-in">
+        <Link
+          to="/bcdr/incidents"
+          className="inline-flex items-center gap-1 text-small text-brand-700 hover:text-brand-800"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Incidents
+        </Link>
+        <Card>
+          <CardBody density="comfy">
+            <EmptyState
+              icon={<AlertTriangle className="h-8 w-8" />}
+              title="Incident not found"
+              description="The incident may have been deleted or you may not have access."
+            />
+          </CardBody>
+        </Card>
       </div>
     );
   }
 
-  const isActive = ['active', 'recovering'].includes(incident.status);
+  const incidentCode = pick(incident.incidentId, incident.incident_id) ?? '';
+  const declaredAt = pick(incident.declaredAt, incident.declared_at);
+  const declaredBy = pick(incident.declaredByName, incident.declared_by_name);
+  const commander = pick(incident.commanderName, incident.commander_name);
+  const resolvedAt = pick(incident.resolvedAt, incident.resolved_at);
+  const rootCause = pick(incident.rootCause, incident.root_cause);
+  const lessonsLearned = pick(incident.lessonsLearned, incident.lessons_learned);
+  const timeline = incident.timeline ?? [];
+  const affected = incident.affectedAssets ?? incident.affected_assets ?? [];
+  const communications = incident.communications ?? [];
+
+  const isResolved = incident.status === 'resolved' || incident.status === 'closed';
+
+  const overviewTab = (
+    <div className="space-y-4">
+      {incident.description ? (
+        <Card>
+          <CardBody density="comfy">
+            <h3 className="text-h3 text-surface-900 mb-2">Description</h3>
+            <p className="text-body text-surface-800 whitespace-pre-wrap">{incident.description}</p>
+          </CardBody>
+        </Card>
+      ) : (
+        <Card>
+          <CardBody density="comfy">
+            <EmptyState
+              size="sm"
+              icon={<FileText className="h-6 w-6" />}
+              title="No description provided"
+            />
+          </CardBody>
+        </Card>
+      )}
+    </div>
+  );
+
+  const timelineTab = (
+    <Card>
+      <CardBody density="comfy">
+        {timeline.length === 0 ? (
+          <EmptyState
+            size="sm"
+            icon={<Clock className="h-6 w-6" />}
+            title="No timeline entries"
+            description="Activity on this incident will appear here."
+          />
+        ) : (
+          <ol className="relative border-l border-surface-200 pl-6 space-y-5">
+            {timeline.map((entry) => (
+              <li key={entry.id} className="relative">
+                <span className="absolute -left-[29px] top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-brand-500/10 text-brand-700">
+                  <span className="h-2 w-2 rounded-full bg-brand-500" />
+                </span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-surface-500">
+                    {formatDateTime(entry.timestamp)}
+                  </span>
+                  {pick(entry.createdByName, entry.created_by_name) && (
+                    <span className="text-xs text-surface-500">
+                      • {pick(entry.createdByName, entry.created_by_name)}
+                    </span>
+                  )}
+                  {pick(entry.entryType, entry.entry_type) && (
+                    <Badge variant="neutral" size="sm">
+                      {(pick(entry.entryType, entry.entry_type) ?? '').replace(/_/g, ' ')}
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-body text-surface-800 mt-1">{entry.description}</p>
+              </li>
+            ))}
+          </ol>
+        )}
+      </CardBody>
+    </Card>
+  );
+
+  const commsTab = (
+    <Card>
+      <CardBody density="comfy">
+        {communications.length === 0 ? (
+          <EmptyState
+            size="sm"
+            icon={<MessageSquare className="h-6 w-6" />}
+            title="No communications logged"
+            description="Stakeholder updates sent during the incident will appear here."
+          />
+        ) : (
+          <ul className="space-y-3">
+            {communications.map((c) => (
+              <li key={c.id} className="rounded-md border border-surface-200 bg-white p-3">
+                <div className="flex items-center gap-2 flex-wrap text-xs text-surface-500">
+                  {c.channel && (
+                    <Badge variant="info" size="sm">
+                      {c.channel}
+                    </Badge>
+                  )}
+                  {c.audience && (
+                    <Badge variant="neutral" size="sm">
+                      {c.audience}
+                    </Badge>
+                  )}
+                  <span>{formatDateTime(pick(c.sentAt, c.sent_at))}</span>
+                </div>
+                {c.message && (
+                  <p className="text-body text-surface-800 mt-2 whitespace-pre-wrap">{c.message}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardBody>
+    </Card>
+  );
+
+  const assetsTab = (
+    <Card>
+      <CardBody density="comfy">
+        {affected.length === 0 ? (
+          <EmptyState
+            size="sm"
+            icon={<Server className="h-6 w-6" />}
+            title="No affected assets"
+            description="Assets impacted by this incident will appear here."
+          />
+        ) : (
+          <ul className="divide-y divide-surface-200">
+            {affected.map((a) => (
+              <li key={a.id} className="py-3 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-body text-surface-900">
+                    {pick(a.name, a.assetName, a.asset_name) ?? 'Unnamed asset'}
+                  </p>
+                  {a.type && (
+                    <p className="text-xs text-surface-500 capitalize">
+                      {a.type.replace(/_/g, ' ')}
+                    </p>
+                  )}
+                </div>
+                {a.impact && (
+                  <Badge variant="warning" size="sm">
+                    {a.impact.replace(/_/g, ' ')}
+                  </Badge>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardBody>
+    </Card>
+  );
+
+  const postMortemTab = (
+    <Card>
+      <CardBody density="comfy">
+        {!rootCause &&
+        !lessonsLearned &&
+        (!incident.improvementActions || incident.improvementActions.length === 0) ? (
+          <EmptyState
+            size="sm"
+            icon={<ClipboardList className="h-6 w-6" />}
+            title="No post-mortem yet"
+            description="Once the incident is resolved, root cause analysis and lessons learned appear here."
+          />
+        ) : (
+          <div className="space-y-4">
+            {rootCause && (
+              <div>
+                <h3 className="text-h3 text-surface-900 mb-1">Root Cause</h3>
+                <p className="text-body text-surface-800 whitespace-pre-wrap">{rootCause}</p>
+              </div>
+            )}
+            {lessonsLearned && (
+              <div>
+                <h3 className="text-h3 text-surface-900 mb-1">Lessons Learned</h3>
+                <p className="text-body text-surface-800 whitespace-pre-wrap">{lessonsLearned}</p>
+              </div>
+            )}
+            {incident.improvementActions && incident.improvementActions.length > 0 && (
+              <div>
+                <h3 className="text-h3 text-surface-900 mb-1">Improvement Actions</h3>
+                <ul className="list-disc list-inside space-y-1 text-body text-surface-800">
+                  {incident.improvementActions.map((a, i) => (
+                    <li key={i}>{a.description}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+      </CardBody>
+    </Card>
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/bcdr/incidents')}
-            className="p-2 hover:bg-slate-700 rounded-lg"
-          >
-            <ArrowLeftIcon className="h-5 w-5 text-slate-400" />
-          </button>
-          <div className="flex items-center gap-4">
-            <div
-              className={clsx(
-                'w-12 h-12 rounded-lg flex items-center justify-center',
-                SEVERITY_COLORS[incident.severity] || 'bg-slate-600'
-              )}
-            >
-              <ExclamationTriangleIcon className="h-6 w-6 text-white" />
+    <div className="space-y-5 animate-fade-in">
+      <Link
+        to="/bcdr/incidents"
+        className="inline-flex items-center gap-1 text-small text-brand-700 hover:text-brand-800"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Incidents
+      </Link>
+
+      <PageHeader
+        title={
+          <span className="flex items-center gap-3 flex-wrap">
+            <span className="font-mono text-brand-700 text-h2">{incidentCode}</span>
+            <span>{incident.title}</span>
+          </span>
+        }
+        meta={
+          <>
+            {incident.severity && (
+              <Badge variant={SEVERITY_VARIANT[incident.severity] ?? 'neutral'} dot>
+                {incident.severity.replace(/_/g, ' ')}
+              </Badge>
+            )}
+            {incident.status && (
+              <Badge variant={STATUS_VARIANT[incident.status] ?? 'neutral'} dot>
+                {incident.status.replace(/_/g, ' ')}
+              </Badge>
+            )}
+          </>
+        }
+        actions={
+          <>
+            <Button variant="outline" size="sm" leftIcon={<Edit2 className="h-4 w-4" />}>
+              Edit
+            </Button>
+            {!isResolved && (
+              <Button
+                size="sm"
+                leftIcon={<CheckCircle2 className="h-4 w-4" />}
+                onClick={() => navigate(`/bcdr/incidents/${id}`)}
+              >
+                Resolve
+              </Button>
+            )}
+          </>
+        }
+      />
+
+      <Card>
+        <CardBody density="cozy">
+          <dl className="grid grid-cols-2 md:grid-cols-4 gap-4 text-small">
+            <div>
+              <dt className="text-xs uppercase tracking-wider text-surface-500">Declared By</dt>
+              <dd className="text-surface-900 mt-1">{declaredBy ?? '—'}</dd>
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold text-white">{incident.title}</h1>
-                <span className="text-slate-400">#{incident.incidentId}</span>
-              </div>
-              <p className="text-slate-400 capitalize">
-                {incident.severity} • {incident.incidentType.replace('_', ' ')}
-              </p>
+              <dt className="text-xs uppercase tracking-wider text-surface-500">Commander</dt>
+              <dd className="text-surface-900 mt-1">{commander ?? '—'}</dd>
             </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {isActive && (
-            <>
-              <SelectNative
-                value={incident.status}
-                onChange={(e) => handleStatusChange(e.target.value)}
-                className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-                disabled={isSubmitting}
-              >
-                {STATUS_OPTIONS.map((s) => (
-                  <option key={s} value={s} className="capitalize">
-                    {s}
-                  </option>
-                ))}
-              </SelectNative>
-              {incident.status === 'resolved' && (
-                <Button variant="primary" onClick={() => setShowCloseIncident(true)}>
-                  Close with PIR
-                </Button>
-              )}
-            </>
-          )}
-          <span
-            className={clsx(
-              'px-3 py-1 rounded text-sm font-medium capitalize',
-              incident.status === 'active'
-                ? 'bg-red-500/20 text-red-600'
-                : incident.status === 'recovering'
-                  ? 'bg-orange-500/20 text-orange-600'
-                  : incident.status === 'resolved'
-                    ? 'bg-green-500/20 text-green-600'
-                    : 'bg-slate-600 text-slate-400'
-            )}
-          >
-            {incident.status}
-          </span>
-        </div>
-      </div>
-      {/* Quick Actions */}
-      {isActive && (
-        <div className="flex items-center gap-3">
-          <Button variant="secondary" onClick={() => setShowActivatePlan(true)}>
-            <DocumentTextIcon className="h-4 w-4 mr-1" />
-            Activate Plan
-          </Button>
-          <Button variant="secondary" onClick={() => setShowActivateTeam(true)}>
-            <UserGroupIcon className="h-4 w-4 mr-1" />
-            Activate Team
-          </Button>
-          <Button variant="secondary" onClick={() => setShowAddNote(true)}>
-            <PlusIcon className="h-4 w-4 mr-1" />
-            Add Note
-          </Button>
-        </div>
-      )}
-      <div className="grid grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="col-span-2 space-y-6">
-          {/* Description */}
-          {incident.description && (
-            <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-              <h3 className="text-lg font-medium text-white mb-3">Description</h3>
-              <p className="text-slate-300 whitespace-pre-wrap">{incident.description}</p>
+            <div>
+              <dt className="text-xs uppercase tracking-wider text-surface-500">Declared At</dt>
+              <dd className="text-surface-900 mt-1">{formatDateTime(declaredAt)}</dd>
             </div>
-          )}
-
-          {/* Timeline */}
-          <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-            <h3 className="text-lg font-medium text-white mb-4">Timeline</h3>
-
-            <div className="space-y-4">
-              {incident.timeline.map((entry, index) => {
-                const Icon = ENTRY_TYPE_ICONS[entry.entryType] || DocumentTextIcon;
-                return (
-                  <div key={entry.id} className="flex gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center">
-                        <Icon className="h-4 w-4 text-slate-400" />
-                      </div>
-                      {index < incident.timeline.length - 1 && (
-                        <div className="w-0.5 flex-1 bg-slate-700 mt-2" />
-                      )}
-                    </div>
-                    <div className="flex-1 pb-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-slate-400">
-                          {format(new Date(entry.timestamp), 'MMM d, yyyy h:mm a')}
-                        </span>
-                        {entry.createdByName && (
-                          <span className="text-sm text-slate-400">{entry.createdByName}</span>
-                        )}
-                      </div>
-                      <p className="text-white mt-1">{entry.description}</p>
-                    </div>
-                  </div>
-                );
-              })}
+            <div>
+              <dt className="text-xs uppercase tracking-wider text-surface-500">Resolved At</dt>
+              <dd className="text-surface-900 mt-1">{formatDateTime(resolvedAt)}</dd>
             </div>
-          </div>
+          </dl>
+        </CardBody>
+      </Card>
 
-          {/* Post-Incident Review */}
-          {incident.status === 'closed' && incident.rootCause && (
-            <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-              <h3 className="text-lg font-medium text-white mb-4">Post-Incident Review</h3>
-
-              {incident.rootCause && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-slate-400 mb-1">Root Cause</h4>
-                  <p className="text-white">{incident.rootCause}</p>
-                </div>
-              )}
-
-              {incident.lessonsLearned && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-slate-400 mb-1">Lessons Learned</h4>
-                  <p className="text-white">{incident.lessonsLearned}</p>
-                </div>
-              )}
-
-              {incident.improvementActions && incident.improvementActions.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium text-slate-400 mb-2">Improvement Actions</h4>
-                  <ul className="list-disc list-inside space-y-1 text-slate-300">
-                    {incident.improvementActions.map((action: any, index: number) => (
-                      <li key={index}>{action.description}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Close with PIR Form */}
-          {showCloseIncident && (
-            <PostIncidentReviewForm
-              incidentId={incident.id}
-              onComplete={() => {
-                setShowCloseIncident(false);
-                loadIncident();
-              }}
-              onCancel={() => setShowCloseIncident(false)}
-            />
-          )}
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Details */}
-          <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-            <h3 className="text-lg font-medium text-white mb-4">Details</h3>
-            <dl className="space-y-3 text-sm">
-              <div>
-                <dt className="text-slate-400">Declared</dt>
-                <dd className="text-white">
-                  {format(new Date(incident.declaredAt), 'MMM d, yyyy h:mm a')}
-                </dd>
-              </div>
-              {incident.declaredByName && (
-                <div>
-                  <dt className="text-slate-400">Declared By</dt>
-                  <dd className="text-white">{incident.declaredByName}</dd>
-                </div>
-              )}
-              {incident.recoveryStartedAt && (
-                <div>
-                  <dt className="text-slate-400">Recovery Started</dt>
-                  <dd className="text-white">
-                    {format(new Date(incident.recoveryStartedAt), 'MMM d, yyyy h:mm a')}
-                  </dd>
-                </div>
-              )}
-              {incident.resolvedAt && (
-                <div>
-                  <dt className="text-slate-400">Resolved</dt>
-                  <dd className="text-white">
-                    {format(new Date(incident.resolvedAt), 'MMM d, yyyy h:mm a')}
-                  </dd>
-                </div>
-              )}
-              {incident.closedAt && (
-                <div>
-                  <dt className="text-slate-400">Closed</dt>
-                  <dd className="text-white">
-                    {format(new Date(incident.closedAt), 'MMM d, yyyy h:mm a')}
-                  </dd>
-                </div>
-              )}
-              {incident.actualDowntimeMinutes !== null &&
-                incident.actualDowntimeMinutes !== undefined && (
-                  <div>
-                    <dt className="text-slate-400">Actual Downtime</dt>
-                    <dd className="text-white">{incident.actualDowntimeMinutes} minutes</dd>
-                  </div>
-                )}
-              {incident.financialImpact !== null && incident.financialImpact !== undefined && (
-                <div>
-                  <dt className="text-slate-400">Financial Impact</dt>
-                  <dd className="text-white">${incident.financialImpact.toLocaleString()}</dd>
-                </div>
-              )}
-            </dl>
-          </div>
-
-          {/* Activated Plans */}
-          <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-            <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
-              <DocumentTextIcon className="h-5 w-5 text-slate-400" />
-              Activated Plans ({incident.activatedPlans?.length || 0})
-            </h3>
-            {incident.activatedPlans?.length > 0 ? (
-              <ul className="space-y-2">
-                {incident.activatedPlans.map((planId) => {
-                  const plan = plans.find((p) => p.id === planId);
-                  return (
-                    <li key={planId} className="text-slate-300">
-                      {plan?.title || planId}
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className="text-slate-400 text-sm">No plans activated</p>
-            )}
-          </div>
-
-          {/* Activated Teams */}
-          <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-            <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
-              <UserGroupIcon className="h-5 w-5 text-slate-400" />
-              Activated Teams ({incident.activatedTeams?.length || 0})
-            </h3>
-            {incident.activatedTeams?.length > 0 ? (
-              <ul className="space-y-2">
-                {incident.activatedTeams.map((teamId) => {
-                  const team = teams.find((t) => t.id === teamId);
-                  return (
-                    <li key={teamId} className="text-slate-300">
-                      {team?.name || teamId}
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className="text-slate-400 text-sm">No teams activated</p>
-            )}
-          </div>
-        </div>
-      </div>
-      {/* Add Note Modal */}
-      <Dialog open={showAddNote} onClose={() => setShowAddNote(false)}>
-        <h2 className="text-xl font-semibold text-white mb-4">Add Timeline Entry</h2>
-        <Textarea
-          value={noteDescription}
-          onChange={(e) => setNoteDescription(e.target.value)}
-          rows={4}
-          className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-          placeholder="Describe the action taken or update..."
-        />
-        <div className="flex items-center justify-end gap-3 mt-4">
-          <Button variant="secondary" onClick={() => setShowAddNote(false)}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleAddNote} disabled={isSubmitting}>
-            {isSubmitting ? 'Adding...' : 'Add Entry'}
-          </Button>
-        </div>
-      </Dialog>
-      {/* Activate Plan Modal */}
-      <Dialog open={showActivatePlan} onClose={() => setShowActivatePlan(false)}>
-        <h2 className="text-xl font-semibold text-white mb-4">Activate Plan</h2>
-        <SelectNative
-          value={selectedPlanId}
-          onChange={(e) => setSelectedPlanId(e.target.value)}
-          className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-        >
-          <option value="">Select plan...</option>
-          {plans.map((plan) => (
-            <option key={plan.id} value={plan.id}>
-              {plan.title}
-            </option>
-          ))}
-        </SelectNative>
-        <div className="flex items-center justify-end gap-3 mt-4">
-          <Button variant="secondary" onClick={() => setShowActivatePlan(false)}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleActivatePlan} disabled={isSubmitting}>
-            {isSubmitting ? 'Activating...' : 'Activate'}
-          </Button>
-        </div>
-      </Dialog>
-      {/* Activate Team Modal */}
-      <Dialog open={showActivateTeam} onClose={() => setShowActivateTeam(false)}>
-        <h2 className="text-xl font-semibold text-white mb-4">Activate Team</h2>
-        <SelectNative
-          value={selectedTeamId}
-          onChange={(e) => setSelectedTeamId(e.target.value)}
-          className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-        >
-          <option value="">Select team...</option>
-          {teams.map((team) => (
-            <option key={team.id} value={team.id}>
-              {team.name}
-            </option>
-          ))}
-        </SelectNative>
-        <div className="flex items-center justify-end gap-3 mt-4">
-          <Button variant="secondary" onClick={() => setShowActivateTeam(false)}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleActivateTeam} disabled={isSubmitting}>
-            {isSubmitting ? 'Activating...' : 'Activate'}
-          </Button>
-        </div>
-      </Dialog>
+      <Tabs
+        tabs={[
+          { label: 'Overview', content: overviewTab },
+          { label: 'Timeline', content: timelineTab },
+          { label: 'Communications', content: commsTab },
+          { label: 'Affected Assets', content: assetsTab },
+          { label: 'Post-Mortem', content: postMortemTab },
+        ]}
+      />
     </div>
   );
 }

@@ -4,38 +4,39 @@ import {
   MagnifyingGlassIcon,
   ShieldCheckIcon,
   UserGroupIcon,
-  XMarkIcon,
   CheckIcon,
   NoSymbolIcon,
 } from '@heroicons/react/24/outline';
 import { usersApi, permissionsApi } from '../lib/api';
-import { UserStatus, UserRole, PermissionGroup } from '../lib/apiTypes';
-import toast from 'react-hot-toast';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-import { Dialog } from '@/components/ui/Dialog';
+import { Dialog, Input, Select } from '@/components/ui';
 
 interface User {
   id: string;
-  keycloakId?: string;
+  keycloakId: string;
   email: string;
   firstName: string;
   lastName: string;
   displayName: string;
-  role: UserRole;
-  status: UserStatus;
+  role: string;
+  status: string;
   lastLoginAt?: string;
-  groups?: { id: string; name: string }[];
+  groups: { id: string; name: string }[];
   createdAt: string;
+}
+
+interface PermissionGroup {
+  id: string;
+  name: string;
+  description?: string;
+  isSystem: boolean;
+  memberCount: number;
 }
 
 export default function UserManagement() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [roleFilter, setRoleFilter] = useState<string>('');
+  const [roleFilter, setRoleFilter] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
   const [showGroupsModal, setShowGroupsModal] = useState(false);
@@ -44,13 +45,7 @@ export default function UserManagement() {
   const { data: usersData, isLoading: usersLoading } = useQuery({
     queryKey: ['users', search, statusFilter, roleFilter],
     queryFn: () =>
-      usersApi
-        .list({
-          search,
-          status: (statusFilter as UserStatus) || undefined,
-          role: (roleFilter as UserRole) || undefined,
-        })
-        .then((res) => res.data),
+      usersApi.list({ search, status: statusFilter, role: roleFilter }).then((res) => res.data),
   });
 
   // Fetch user stats
@@ -70,9 +65,7 @@ export default function UserManagement() {
     mutationFn: (userId: string) => usersApi.deactivate(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('User deactivated');
     },
-    onError: () => toast.error('Failed to deactivate user'),
   });
 
   // Reactivate user mutation
@@ -80,9 +73,7 @@ export default function UserManagement() {
     mutationFn: (userId: string) => usersApi.reactivate(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('User reactivated');
     },
-    onError: () => toast.error('Failed to reactivate user'),
   });
 
   // Add to group mutation
@@ -92,9 +83,7 @@ export default function UserManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['permission-groups'] });
-      toast.success('User added to group');
     },
-    onError: () => toast.error('Failed to add user to group'),
   });
 
   // Remove from group mutation
@@ -104,35 +93,35 @@ export default function UserManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['permission-groups'] });
-      toast.success('User removed from group');
     },
-    onError: () => toast.error('Failed to remove user from group'),
   });
 
-  const users = usersData?.data || [];
+  const users = usersData?.users || [];
   const groups: PermissionGroup[] = groupsData || [];
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-emerald-500/20 text-emerald-600';
+        return 'bg-emerald-50 text-emerald-800 border border-emerald-200';
       case 'inactive':
-        return 'bg-red-500/20 text-red-600';
+        return 'bg-red-50 text-red-800 border border-red-200';
       default:
-        return 'bg-surface-600 text-surface-700';
+        return 'bg-surface-100 text-surface-700 border border-surface-300';
     }
   };
 
   const getRoleBadgeClass = (role: string) => {
     switch (role) {
       case 'admin':
-        return 'bg-purple-500/20 text-purple-600';
+        return 'bg-violet-50 text-violet-800 border border-violet-200';
       case 'compliance_manager':
-        return 'bg-blue-500/20 text-blue-600';
+        return 'bg-sky-50 text-sky-800 border border-sky-200';
       case 'auditor':
-        return 'bg-yellow-500/20 text-yellow-600';
+        return 'bg-amber-50 text-amber-800 border border-amber-200';
+      case 'viewer':
+        return 'bg-surface-100 text-surface-700 border border-surface-300';
       default:
-        return 'bg-surface-600 text-surface-700';
+        return 'bg-surface-100 text-surface-700 border border-surface-300';
     }
   };
 
@@ -141,15 +130,16 @@ export default function UserManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">User Management</h1>
+          <h1 className="text-2xl font-bold text-surface-900">User Management</h1>
           <p className="text-surface-600 mt-1">Manage users, roles, and permissions</p>
         </div>
       </div>
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg p-4 border border-surface-200">
           <div className="text-surface-600 text-sm">Total Users</div>
-          <div className="text-2xl font-bold text-white mt-1">{statsData?.total || 0}</div>
+          <div className="text-2xl font-bold text-surface-900 mt-1">{statsData?.total || 0}</div>
         </div>
         <div className="bg-white rounded-lg p-4 border border-surface-200">
           <div className="text-surface-600 text-sm">Active Users</div>
@@ -161,46 +151,49 @@ export default function UserManagement() {
         </div>
         <div className="bg-white rounded-lg p-4 border border-surface-200">
           <div className="text-surface-600 text-sm">Permission Groups</div>
-          <div className="text-2xl font-bold text-brand-400 mt-1">{groups.length}</div>
+          <div className="text-2xl font-bold text-brand-700 mt-1">{groups.length}</div>
         </div>
       </div>
+
       {/* Filters */}
       <div className="bg-white rounded-lg p-4 border border-surface-200">
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-64">
-            <div className="relative">
-              <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-surface-600" />
-              <Input
-                type="text"
-                placeholder="Search users by name or email..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-white border border-surface-300 rounded-lg pl-10 pr-4 py-2 text-white placeholder:text-surface-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
-              />
-            </div>
+            <Input
+              type="text"
+              placeholder="Search users by name or email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              leftIcon={<MagnifyingGlassIcon className="w-5 h-5" />}
+            />
           </div>
-          <SelectNative
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-white border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-          >
-            <option value="">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </SelectNative>
-          <SelectNative
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="bg-white border border-surface-300 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-          >
-            <option value="">All Roles</option>
-            <option value="admin">Admin</option>
-            <option value="compliance_manager">Compliance Manager</option>
-            <option value="auditor">Auditor</option>
-            <option value="viewer">Viewer</option>
-          </SelectNative>
+          <div className="w-48">
+            <Select
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { value: '', label: 'All Statuses' },
+                { value: 'active', label: 'Active' },
+                { value: 'inactive', label: 'Inactive' },
+              ]}
+            />
+          </div>
+          <div className="w-56">
+            <Select
+              value={roleFilter}
+              onChange={setRoleFilter}
+              options={[
+                { value: '', label: 'All Roles' },
+                { value: 'admin', label: 'Admin' },
+                { value: 'compliance_manager', label: 'Compliance Manager' },
+                { value: 'auditor', label: 'Auditor' },
+                { value: 'viewer', label: 'Viewer' },
+              ]}
+            />
+          </div>
         </div>
       </div>
+
       {/* Users Table */}
       <div className="bg-white rounded-lg border border-surface-200 overflow-hidden">
         <table className="w-full">
@@ -214,7 +207,7 @@ export default function UserManagement() {
               <th className="text-right text-surface-600 font-medium px-4 py-3">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-surface-200">
+          <tbody className="divide-y divide-surface-300">
             {usersLoading ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-surface-600">
@@ -232,46 +225,44 @@ export default function UserManagement() {
                 <tr key={user.id} className="hover:bg-surface-200/50">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-400 font-medium">
+                      <div className="w-10 h-10 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-700 font-medium">
                         {user.displayName.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div className="text-white font-medium">{user.displayName}</div>
+                        <div className="text-surface-900 font-medium">{user.displayName}</div>
                         <div className="text-surface-600 text-sm">{user.email}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-3">
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleBadgeClass(user.role)}`}
+                      className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium capitalize whitespace-nowrap ${getRoleBadgeClass(user.role)}`}
                     >
-                      {user.role.replace('_', ' ')}
+                      {user.role.replace(/_/g, ' ')}
                     </span>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
-                      {!user.groups?.length ? (
+                      {user.groups.length === 0 ? (
                         <span className="text-surface-500 text-sm">No groups</span>
                       ) : (
                         user.groups.slice(0, 2).map((group) => (
                           <span
                             key={group.id}
-                            className="px-2 py-0.5 bg-surface-600 rounded text-xs text-surface-800"
+                            className="px-2 py-0.5 bg-surface-300 rounded text-xs text-surface-800"
                           >
                             {group.name}
                           </span>
                         ))
                       )}
-                      {(user.groups?.length || 0) > 2 && (
-                        <span className="text-surface-600 text-xs">
-                          +{(user.groups?.length || 0) - 2}
-                        </span>
+                      {user.groups.length > 2 && (
+                        <span className="text-surface-600 text-xs">+{user.groups.length - 2}</span>
                       )}
                     </div>
                   </td>
                   <td className="px-4 py-3">
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(user.status)}`}
+                      className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium capitalize whitespace-nowrap ${getStatusBadgeClass(user.status)}`}
                     >
                       {user.status}
                     </span>
@@ -286,7 +277,7 @@ export default function UserManagement() {
                           setSelectedUser(user);
                           setShowGroupsModal(true);
                         }}
-                        className="p-2 text-surface-600 hover:text-white hover:bg-surface-200 rounded-lg transition-colors"
+                        className="p-2 text-surface-600 hover:text-surface-900 hover:bg-surface-200 rounded-lg transition-colors"
                         title="Manage Groups"
                       >
                         <UserGroupIcon className="w-5 h-5" />
@@ -296,7 +287,7 @@ export default function UserManagement() {
                           setSelectedUser(user);
                           setShowPermissionsModal(true);
                         }}
-                        className="p-2 text-surface-600 hover:text-white hover:bg-surface-200 rounded-lg transition-colors"
+                        className="p-2 text-surface-600 hover:text-surface-900 hover:bg-surface-200 rounded-lg transition-colors"
                         title="View Permissions"
                       >
                         <ShieldCheckIcon className="w-5 h-5" />
@@ -326,43 +317,32 @@ export default function UserManagement() {
           </tbody>
         </table>
       </div>
+
       {/* Groups Modal */}
-      {selectedUser && (
+      {showGroupsModal && selectedUser && (
         <Dialog
-          open={showGroupsModal}
+          open={true}
           onClose={() => {
             setShowGroupsModal(false);
             setSelectedUser(null);
           }}
+          size="md"
+          title={`Manage Groups - ${selectedUser.displayName}`}
         >
-          <div className="p-4 border-b border-surface-200 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-white">
-              Manage Groups - {selectedUser.displayName}
-            </h2>
-            <button
-              onClick={() => {
-                setShowGroupsModal(false);
-                setSelectedUser(null);
-              }}
-              className="p-1 text-surface-600 hover:text-white"
-            >
-              <XMarkIcon className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="p-4 space-y-4 overflow-y-auto max-h-[60vh]">
+          <div className="space-y-4 overflow-y-auto max-h-[60vh]">
             <div className="text-surface-600 text-sm">
               Select permission groups for this user. Groups provide the initial set of permissions.
             </div>
             <div className="space-y-2">
               {groups.map((group) => {
-                const isMember = selectedUser.groups?.some((g) => g.id === group.id) || false;
+                const isMember = selectedUser.groups.some((g) => g.id === group.id);
                 return (
                   <div
                     key={group.id}
                     className={`p-3 rounded-lg border cursor-pointer transition-colors ${
                       isMember
-                        ? 'bg-brand-500/20 border-brand-500'
-                        : 'bg-surface-200 border-surface-300 hover:border-surface-500'
+                        ? 'bg-brand-50 border-brand-500'
+                        : 'bg-white border-surface-200 hover:border-surface-300 hover:bg-surface-50'
                     }`}
                     onClick={() => {
                       if (isMember) {
@@ -372,7 +352,7 @@ export default function UserManagement() {
                         });
                         setSelectedUser({
                           ...selectedUser,
-                          groups: (selectedUser.groups || []).filter((g) => g.id !== group.id),
+                          groups: selectedUser.groups.filter((g) => g.id !== group.id),
                         });
                       } else {
                         addToGroupMutation.mutate({
@@ -381,27 +361,24 @@ export default function UserManagement() {
                         });
                         setSelectedUser({
                           ...selectedUser,
-                          groups: [
-                            ...(selectedUser.groups || []),
-                            { id: group.id, name: group.name },
-                          ],
+                          groups: [...selectedUser.groups, { id: group.id, name: group.name }],
                         });
                       }
                     }}
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-white font-medium flex items-center gap-2">
+                        <div className="text-surface-900 font-medium flex items-center gap-2">
                           {group.name}
                           {group.isSystem && (
-                            <span className="text-xs bg-surface-600 text-surface-700 px-1.5 py-0.5 rounded">
+                            <span className="text-xs bg-surface-300 text-surface-700 px-1.5 py-0.5 rounded">
                               System
                             </span>
                           )}
                         </div>
                         <div className="text-surface-600 text-sm">{group.description}</div>
                       </div>
-                      {isMember && <CheckIcon className="w-5 h-5 text-brand-400" />}
+                      {isMember && <CheckIcon className="w-5 h-5 text-brand-700" />}
                     </div>
                   </div>
                 );
@@ -410,6 +387,7 @@ export default function UserManagement() {
           </div>
         </Dialog>
       )}
+
       {/* Permissions Modal */}
       {showPermissionsModal && selectedUser && (
         <PermissionsModal
@@ -431,14 +409,8 @@ function PermissionsModal({ user, onClose }: { user: User; onClose: () => void }
   });
 
   return (
-    <Dialog open onClose={onClose}>
-      <div className="p-4 border-b border-surface-200 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Permissions - {user.displayName}</h2>
-        <button onClick={onClose} className="p-1 text-surface-600 hover:text-white">
-          <XMarkIcon className="w-5 h-5" />
-        </button>
-      </div>
-      <div className="p-4 overflow-y-auto max-h-[60vh]">
+    <Dialog open={true} onClose={onClose} size="lg" title={`Permissions - ${user.displayName}`}>
+      <div className="overflow-y-auto max-h-[60vh]">
         {isLoading ? (
           <div className="text-center text-surface-600 py-8">Loading permissions...</div>
         ) : (
@@ -453,7 +425,7 @@ function PermissionsModal({ user, onClose }: { user: User; onClose: () => void }
                   permissionsData?.groups?.map((group: any) => (
                     <span
                       key={group.id}
-                      className="px-3 py-1 bg-surface-200 rounded-full text-sm text-white"
+                      className="px-3 py-1 bg-surface-200 rounded-md text-sm text-surface-900"
                     >
                       {group.name}
                     </span>
@@ -472,14 +444,14 @@ function PermissionsModal({ user, onClose }: { user: User; onClose: () => void }
                   permissionsData?.effectivePermissions?.map((perm: any, idx: number) => (
                     <div key={idx} className="bg-surface-200 rounded-lg p-3">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-white font-medium capitalize">
+                        <span className="text-surface-900 font-medium capitalize">
                           {perm.resource.replace('_', ' ')}
                         </span>
                         <span
-                          className={`text-xs px-2 py-0.5 rounded ${
+                          className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap ${
                             perm.source === 'group'
-                              ? 'bg-blue-500/20 text-blue-600'
-                              : 'bg-yellow-500/20 text-yellow-600'
+                              ? 'bg-sky-50 text-sky-800 border border-sky-200'
+                              : 'bg-amber-50 text-amber-800 border border-amber-200'
                           }`}
                         >
                           {perm.source === 'group' ? `From: ${perm.groupName}` : 'Override'}
@@ -489,7 +461,7 @@ function PermissionsModal({ user, onClose }: { user: User; onClose: () => void }
                         {perm.actions.map((action: string) => (
                           <span
                             key={action}
-                            className="px-2 py-0.5 bg-surface-600 rounded text-xs text-surface-800"
+                            className="inline-flex items-center rounded-md border border-surface-300 bg-surface-100 px-2 py-0.5 text-xs font-medium capitalize text-surface-700 whitespace-nowrap"
                           >
                             {action}
                           </span>
@@ -510,21 +482,21 @@ function PermissionsModal({ user, onClose }: { user: User; onClose: () => void }
             </div>
 
             {/* Overrides */}
-            {(permissionsData?.overrides?.length ?? 0) > 0 && (
+            {permissionsData?.overrides?.length > 0 && (
               <div>
                 <h3 className="text-sm font-medium text-surface-700 mb-2">Permission Overrides</h3>
                 <div className="space-y-1">
-                  {permissionsData?.overrides?.map((override: any, idx: number) => (
+                  {permissionsData.overrides.map((override: any, idx: number) => (
                     <div
                       key={idx}
                       className="flex items-center justify-between bg-surface-200 rounded px-3 py-2"
                     >
-                      <span className="text-white">{override.permission}</span>
+                      <span className="text-surface-900">{override.permission}</span>
                       <span
-                        className={`text-xs px-2 py-0.5 rounded ${
+                        className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap ${
                           override.granted
-                            ? 'bg-emerald-500/20 text-emerald-600'
-                            : 'bg-red-500/20 text-red-600'
+                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                            : 'bg-red-50 text-red-800 border border-red-200'
                         }`}
                       >
                         {override.granted ? 'Granted' : 'Denied'}

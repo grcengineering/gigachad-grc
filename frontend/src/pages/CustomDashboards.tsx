@@ -1,301 +1,281 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { customDashboardsApi } from '@/lib/api';
-import { Dashboard } from '@/lib/dashboardWidgets';
-import DashboardEditor from '@/components/dashboards/DashboardEditor';
-import TemplateGallery from '@/components/dashboards/TemplateGallery';
+import { Link } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Copy, LayoutDashboard, Plus, Trash2, User as UserIcon } from 'lucide-react';
+import api from '@/lib/api';
 import {
-  PlusIcon,
-  Squares2X2Icon,
-  StarIcon,
-  TrashIcon,
-  DocumentDuplicateIcon,
-} from '@heroicons/react/24/outline';
-import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
-import toast from 'react-hot-toast';
-import clsx from 'clsx';
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  Dialog,
+  EmptyState,
+  FieldHint,
+  Input,
+  Label,
+  PageHeader,
+  Skeleton,
+  Textarea,
+} from '@/components/ui';
 
-import { Textarea } from '@/components/ui/Textarea';
+interface CustomDashboard {
+  id: string;
+  name: string;
+  description?: string;
+  widgetCount: number;
+  lastEditedAt?: string;
+  ownerId?: string;
+  ownerName?: string;
+  ownerAvatarUrl?: string;
+}
 
-import { Input } from '@/components/ui/Input';
+function formatDate(value?: string) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
 
-import { Button } from '@/components/ui/Button';
-
-import { Badge } from '@/components/ui/Badge';
-import { Dialog } from '@/components/ui/Dialog';
+function initialsOf(name?: string) {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
 export default function CustomDashboards() {
   const queryClient = useQueryClient();
-  const [selectedDashboardId, setSelectedDashboardId] = useState<string | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showTemplateGallery, setShowTemplateGallery] = useState(false);
-  const [newDashboardName, setNewDashboardName] = useState('');
-  const [newDashboardDescription, setNewDashboardDescription] = useState('');
+  const [createOpen, setCreateOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [nameError, setNameError] = useState<string | undefined>();
 
-  // Fetch all dashboards
-  const { data: dashboards, isLoading } = useQuery({
+  const { data: dashboards, isLoading } = useQuery<CustomDashboard[]>({
     queryKey: ['dashboards'],
-    queryFn: () => customDashboardsApi.list().then((res) => res.data),
+    queryFn: async () => {
+      const res = await api.get('/api/dashboards');
+      return Array.isArray(res.data) ? res.data : (res.data?.dashboards ?? []);
+    },
   });
 
-  // Create dashboard mutation
   const createMutation = useMutation({
-    mutationFn: (data: { name: string; description?: string }) => customDashboardsApi.create(data),
-    onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: ['dashboards'] });
-      toast.success('Dashboard created');
-      setShowCreateModal(false);
-      setNewDashboardName('');
-      setNewDashboardDescription('');
-      setSelectedDashboardId(res.data.id);
+    mutationFn: async (payload: { name: string; description?: string }) => {
+      const res = await api.post('/api/dashboards', payload);
+      return res.data;
     },
-    onError: () => toast.error('Failed to create dashboard'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dashboards'] });
+      closeCreate();
+    },
   });
 
-  // Delete dashboard mutation
+  const duplicateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.post(`/api/dashboards/${id}/duplicate`);
+      return res.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['dashboards'] }),
+  });
+
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => customDashboardsApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dashboards'] });
-      toast.success('Dashboard deleted');
+    mutationFn: async (id: string) => {
+      await api.delete(`/api/dashboards/${id}`);
     },
-    onError: () => toast.error('Failed to delete dashboard'),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['dashboards'] }),
   });
 
-  // Set default mutation
-  const setDefaultMutation = useMutation({
-    mutationFn: (id: string) => customDashboardsApi.setDefault(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dashboards'] });
-      toast.success('Default dashboard updated');
-    },
-    onError: () => toast.error('Failed to set default'),
-  });
+  const closeCreate = () => {
+    setCreateOpen(false);
+    setName('');
+    setDescription('');
+    setNameError(undefined);
+  };
 
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newDashboardName.trim()) return;
+  const handleCreate = () => {
+    if (!name.trim()) {
+      setNameError('Dashboard name is required.');
+      return;
+    }
     createMutation.mutate({
-      name: newDashboardName.trim(),
-      description: newDashboardDescription.trim() || undefined,
+      name: name.trim(),
+      description: description.trim() || undefined,
     });
   };
 
-  // If a dashboard is selected, show the editor
-  if (selectedDashboardId) {
-    return (
-      <DashboardEditor
-        dashboardId={selectedDashboardId}
-        onBack={() => setSelectedDashboardId(null)}
-      />
-    );
-  }
+  const handleDelete = (d: CustomDashboard) => {
+    if (window.confirm(`Delete "${d.name}"? This cannot be undone.`)) {
+      deleteMutation.mutate(d.id);
+    }
+  };
 
-  // Separate user dashboards and templates
-  const userDashboards = dashboards?.filter((d: Dashboard) => !d.isTemplate) || [];
-  const templates = dashboards?.filter((d: Dashboard) => d.isTemplate) || [];
+  const list = dashboards ?? [];
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-surface-900">Custom Dashboards</h1>
-          <p className="text-surface-600 mt-1">Create and customize your own dashboard views</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={() => setShowTemplateGallery(true)} variant="ghost">
-            <Squares2X2Icon className="w-4 h-4 mr-1" /> Browse Templates
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Custom Dashboards"
+        description="Build and share saved dashboards for the metrics that matter to your team."
+        actions={
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={<Plus className="h-4 w-4" />}
+            onClick={() => setCreateOpen(true)}
+          >
+            Create dashboard
           </Button>
-          <Button onClick={() => setShowCreateModal(true)} variant="primary">
-            <PlusIcon className="w-4 h-4 mr-1" /> New Dashboard
-          </Button>
-        </div>
-      </div>
-      {/* Loading state */}
+        }
+      />
+
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin w-8 h-8 border-4 border-surface-200 rounded-full border-t-brand-500" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-44" />
+          ))}
         </div>
-      ) : userDashboards.length === 0 ? (
-        /* Empty state */
-        <div className="card p-12 text-center">
-          <Squares2X2Icon className="w-12 h-12 mx-auto text-surface-500 mb-4" />
-          <h3 className="text-lg font-medium text-surface-800 mb-2">No dashboards yet</h3>
-          <p className="text-surface-600 mb-6">
-            Create a custom dashboard or start from a template
-          </p>
-          <div className="flex items-center justify-center gap-4">
-            <Button onClick={() => setShowCreateModal(true)} variant="primary">
-              <PlusIcon className="w-4 h-4 mr-1" /> Create Dashboard
-            </Button>
-            <Button onClick={() => setShowTemplateGallery(true)} variant="ghost">
-              <Squares2X2Icon className="w-4 h-4 mr-1" /> Browse Templates
-            </Button>
-          </div>
-        </div>
+      ) : list.length === 0 ? (
+        <Card>
+          <CardBody density="comfy">
+            <EmptyState
+              icon={<LayoutDashboard className="h-6 w-6" />}
+              title="No dashboards yet"
+              description="Create your first custom dashboard to pin key metrics for your team."
+              action={
+                <Button
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<Plus className="h-4 w-4" />}
+                  onClick={() => setCreateOpen(true)}
+                >
+                  Create dashboard
+                </Button>
+              }
+            />
+          </CardBody>
+        </Card>
       ) : (
-        /* Dashboard list */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {userDashboards.map((dashboard: Dashboard) => (
-            <div
-              key={dashboard.id}
-              className={clsx(
-                'card p-4 cursor-pointer transition-all hover:border-brand-500/50',
-                dashboard.isDefault && 'ring-2 ring-brand-500/30'
-              )}
-              onClick={() => setSelectedDashboardId(dashboard.id)}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-surface-800">{dashboard.name}</h3>
-                  {dashboard.isDefault && (
-                    <StarIconSolid className="w-4 h-4 text-yellow-600" title="Default" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {list.map((d) => (
+            <Card key={d.id} className="flex flex-col">
+              <CardBody density="comfy" className="flex-1 flex flex-col gap-3">
+                <Link to={`/dashboards/${d.id}`} className="block group">
+                  <h3 className="text-h3 text-surface-900 group-hover:text-brand-700 transition-colors truncate">
+                    {d.name}
+                  </h3>
+                  {d.description && (
+                    <p className="mt-1 text-small text-surface-600 line-clamp-2">{d.description}</p>
                   )}
-                </div>
-                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                  {!dashboard.isDefault && (
-                    <button
-                      onClick={() => setDefaultMutation.mutate(dashboard.id)}
-                      className="p-1 hover:bg-surface-200 rounded text-surface-600 hover:text-yellow-600"
-                      title="Set as default"
-                    >
-                      <StarIcon className="w-4 h-4" />
-                    </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      if (confirm('Delete this dashboard?')) {
-                        deleteMutation.mutate(dashboard.id);
-                      }
-                    }}
-                    className="p-1 hover:bg-red-500/20 rounded text-surface-600 hover:text-red-600"
-                    title="Delete"
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
+                </Link>
 
-              {dashboard.description && (
-                <p className="text-sm text-surface-600 mb-3 line-clamp-2">
-                  {dashboard.description}
-                </p>
-              )}
-
-              <div className="flex items-center justify-between text-sm text-surface-500">
-                <span>{dashboard.widgets?.length || 0} widgets</span>
-                <span>Updated {new Date(dashboard.updatedAt).toLocaleDateString()}</span>
-              </div>
-
-              {/* Mini preview */}
-              <div className="mt-3 bg-white rounded p-2">
-                <div className="grid grid-cols-6 gap-1 h-12">
-                  {dashboard.widgets?.slice(0, 6).map((widget, i) => (
-                    <div
-                      key={widget.id || i}
-                      className="bg-surface-200 rounded"
-                      style={{
-                        gridColumn: `span ${Math.min(widget.position.w, 2)}`,
-                      }}
-                    />
-                  ))}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="brand" size="sm" capitalize={false}>
+                    {d.widgetCount} {d.widgetCount === 1 ? 'widget' : 'widgets'}
+                  </Badge>
+                  <Badge variant="neutral" size="sm" capitalize={false}>
+                    Edited {formatDate(d.lastEditedAt)}
+                  </Badge>
                 </div>
+
+                <div className="flex items-center gap-2 mt-auto pt-3 border-t border-surface-200">
+                  <span className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-surface-200 text-xs font-medium text-surface-700 overflow-hidden">
+                    {d.ownerAvatarUrl ? (
+                      <img
+                        src={d.ownerAvatarUrl}
+                        alt={d.ownerName ?? 'owner'}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : d.ownerName ? (
+                      initialsOf(d.ownerName)
+                    ) : (
+                      <UserIcon className="h-3.5 w-3.5" />
+                    )}
+                  </span>
+                  <span className="text-small text-surface-700 truncate">
+                    {d.ownerName ?? 'Unknown owner'}
+                  </span>
+                </div>
+              </CardBody>
+              <div className="flex items-center gap-1 px-4 py-2 border-t border-surface-200 bg-surface-50/40">
+                <Link to={`/dashboards/${d.id}`} className="flex-1">
+                  <Button variant="ghost" size="sm" fullWidth>
+                    View
+                  </Button>
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Copy className="h-3.5 w-3.5" />}
+                  onClick={() => duplicateMutation.mutate(d.id)}
+                  disabled={duplicateMutation.isPending}
+                >
+                  Duplicate
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Trash2 className="h-3.5 w-3.5" />}
+                  onClick={() => handleDelete(d)}
+                  disabled={deleteMutation.isPending}
+                >
+                  Delete
+                </Button>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
-      {/* Templates section */}
-      {templates.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold text-surface-800 mb-4">Organization Templates</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {templates.slice(0, 3).map((template: Dashboard) => (
-              <div
-                key={template.id}
-                className="card p-4 cursor-pointer transition-all hover:border-brand-500/50 opacity-75"
-                onClick={() => setSelectedDashboardId(template.id)}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge variant="info">Template</Badge>
-                  <h3 className="font-medium text-surface-800">{template.name}</h3>
-                </div>
-                <p className="text-sm text-surface-600 mb-2">
-                  {template.widgets?.length || 0} widgets
-                </p>
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    customDashboardsApi.duplicate(template.id).then(() => {
-                      queryClient.invalidateQueries({ queryKey: ['dashboards'] });
-                      toast.success('Template copied to your dashboards');
-                    });
-                  }}
-                  className="w-full"
-                  variant="ghost"
-                >
-                  <DocumentDuplicateIcon className="w-4 h-4 mr-1" /> Use Template
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      {/* Create Dashboard Modal */}
-      <Dialog open={showCreateModal} onClose={() => setShowCreateModal(false)}>
-        <h2 className="text-lg font-semibold text-surface-900 mb-4">Create New Dashboard</h2>
-        <form onSubmit={handleCreate}>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">
-                Dashboard Name
-              </label>
-              <Input
-                type="text"
-                value={newDashboardName}
-                onChange={(e) => setNewDashboardName(e.target.value)}
-                className="input w-full"
-                placeholder="My Custom Dashboard"
-                autoFocus
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">
-                Description (optional)
-              </label>
-              <Textarea
-                value={newDashboardDescription}
-                onChange={(e) => setNewDashboardDescription(e.target.value)}
-                className="input w-full h-20"
-                placeholder="Dashboard for tracking..."
-              />
-            </div>
-          </div>
-          <div className="flex items-center justify-end gap-3 mt-6">
-            <Button type="button" onClick={() => setShowCreateModal(false)} variant="ghost">
+
+      <Dialog
+        open={createOpen}
+        onClose={closeCreate}
+        title="Create dashboard"
+        description="Give your dashboard a name and an optional description."
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" onClick={closeCreate} disabled={createMutation.isPending}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={!newDashboardName.trim() || createMutation.isPending}
-              variant="primary"
-            >
-              {createMutation.isPending ? 'Creating...' : 'Create'}
+            <Button variant="primary" onClick={handleCreate} loading={createMutation.isPending}>
+              Create dashboard
             </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="dashboard-name" required>
+              Name
+            </Label>
+            <Input
+              id="dashboard-name"
+              type="text"
+              placeholder="e.g., Executive Risk Overview"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (nameError) setNameError(undefined);
+              }}
+              invalid={!!nameError}
+            />
+            {nameError && <FieldHint error>{nameError}</FieldHint>}
           </div>
-        </form>
+          <div>
+            <Label htmlFor="dashboard-description">Description</Label>
+            <Textarea
+              id="dashboard-description"
+              rows={3}
+              placeholder="What does this dashboard show?"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+        </div>
       </Dialog>
-      {/* Template Gallery Modal */}
-      {showTemplateGallery && (
-        <TemplateGallery
-          onClose={() => setShowTemplateGallery(false)}
-          onSelectTemplate={(id) => {
-            setShowTemplateGallery(false);
-            setSelectedDashboardId(id);
-          }}
-        />
-      )}
     </div>
   );
 }

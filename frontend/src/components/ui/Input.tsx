@@ -20,19 +20,17 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       return (
         <div className="relative w-full">
           {leftIcon && (
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-500 dark:text-surface-400 pointer-events-none">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-500 pointer-events-none">
               {leftIcon}
             </span>
           )}
           <input
             ref={ref}
             className={cn(
-              'w-full rounded-md border bg-white px-3 text-surface-900 placeholder:text-surface-600 transition-colors dark:bg-surface-900 dark:text-surface-100 dark:placeholder:text-surface-500',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1 focus-visible:ring-offset-surface-50 dark:focus-visible:ring-offset-surface-950',
+              'w-full rounded-md border bg-white px-3 text-surface-900 placeholder:text-surface-600 transition-colors',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1 focus-visible:ring-offset-surface-50',
               'disabled:opacity-50 disabled:cursor-not-allowed',
-              invalid
-                ? 'border-red-500/60 dark:border-red-500/70'
-                : 'border-surface-300 hover:border-surface-400 dark:border-surface-700 dark:hover:border-surface-600',
+              invalid ? 'border-red-500/60' : 'border-surface-300 hover:border-surface-400',
               sizes[inputSize],
               leftIcon && 'pl-9',
               rightSlot && 'pr-9',
@@ -41,7 +39,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {rightSlot && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-500 dark:text-surface-400">
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-500">
               {rightSlot}
             </span>
           )}

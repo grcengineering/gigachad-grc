@@ -1,23 +1,31 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { vendorsApi } from '@/lib/api';
-import toast from 'react-hot-toast';
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import { Button } from '@/components/ui/Button';
-
-import { Textarea } from '@/components/ui/Textarea';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
+import { ArrowLeft, Save } from 'lucide-react';
+import api from '@/lib/api';
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  FieldHint,
+  Input,
+  Label,
+  PageHeader,
+  Select,
+  Textarea,
+} from '@/components/ui';
 
 const CATEGORY_OPTIONS = [
-  { value: 'software_vendor', label: 'Software Vendor' },
-  { value: 'cloud_provider', label: 'Cloud Provider' },
+  { value: 'saas', label: 'SaaS' },
+  { value: 'infrastructure', label: 'Infrastructure' },
   { value: 'professional_services', label: 'Professional Services' },
+  { value: 'software_vendor', label: 'Software Vendor' },
   { value: 'hardware_vendor', label: 'Hardware Vendor' },
+  { value: 'cloud_provider', label: 'Cloud Provider' },
   { value: 'consultant', label: 'Consultant' },
+  { value: 'other', label: 'Other' },
 ];
 
 const TIER_OPTIONS = [
@@ -27,256 +35,325 @@ const TIER_OPTIONS = [
   { value: 'tier_4', label: 'Tier 4 (Low)' },
 ];
 
-const STATUS_OPTIONS = [
-  { value: 'active', label: 'Active' },
-  { value: 'pending_onboarding', label: 'Pending Onboarding' },
-  { value: 'inactive', label: 'Inactive' },
-  { value: 'offboarding', label: 'Offboarding' },
-  { value: 'terminated', label: 'Terminated' },
+const RISK_OPTIONS = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'critical', label: 'Critical' },
 ];
 
-interface VendorFormData {
+const DATA_ACCESS_OPTIONS = [
+  { value: 'none', label: 'None' },
+  { value: 'internal', label: 'Internal' },
+  { value: 'customer', label: 'Customer' },
+  { value: 'sensitive', label: 'Sensitive' },
+];
+
+interface VendorFormState {
   name: string;
-  category: string;
-  tier: string;
-  status: string;
   website: string;
-  primaryContact: string;
-  primaryContactEmail: string;
   description: string;
+  category: string;
+  criticalityTier: string;
+  inherentRisk: string;
+  dataAccess: string;
+  primaryContactName: string;
+  primaryContactEmail: string;
+  contractStart: string;
+  contractEnd: string;
 }
+
+const INITIAL: VendorFormState = {
+  name: '',
+  website: '',
+  description: '',
+  category: 'saas',
+  criticalityTier: 'tier_3',
+  inherentRisk: 'medium',
+  dataAccess: 'none',
+  primaryContactName: '',
+  primaryContactEmail: '',
+  contractStart: '',
+  contractEnd: '',
+};
+
+interface FieldErrors {
+  name?: string;
+  category?: string;
+  website?: string;
+  primaryContactEmail?: string;
+  contractEnd?: string;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const URL_RE = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}([/?#].*)?$/i;
 
 export default function VendorNew() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [formData, setFormData] = useState<VendorFormData>({
-    name: '',
-    category: 'software_vendor',
-    tier: 'tier_3',
-    status: 'pending_onboarding',
-    website: '',
-    primaryContact: '',
-    primaryContactEmail: '',
-    description: '',
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [form, setForm] = useState<VendorFormState>(INITIAL);
+  const [errors, setErrors] = useState<FieldErrors>({});
+
+  const dateError = useMemo(() => {
+    if (!form.contractStart || !form.contractEnd) return undefined;
+    if (form.contractEnd < form.contractStart) {
+      return 'Contract end must be on or after contract start.';
+    }
+    return undefined;
+  }, [form.contractStart, form.contractEnd]);
+
+  const setField = <K extends keyof VendorFormState>(key: K, value: VendorFormState[K]) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    if (errors[key as keyof FieldErrors]) {
+      setErrors((prev) => ({ ...prev, [key]: undefined }));
+    }
+  };
 
   const createMutation = useMutation({
-    mutationFn: (data: VendorFormData) => vendorsApi.create(data as any),
-    onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ['vendors'] });
-      toast.success('Vendor created successfully');
-      navigate(`/vendors/${response.data.id}`);
+    mutationFn: async (payload: Record<string, unknown>) => {
+      const res = await api.post('/api/vendors', payload);
+      return res.data as { id: string };
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to create vendor';
-      toast.error(message);
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['vendors'] });
+      navigate(`/vendors/${data.id}`);
     },
   });
 
+  const submitting = createMutation.isPending;
+
   const validate = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Vendor name is required';
+    const next: FieldErrors = {};
+    if (!form.name.trim()) next.name = 'Vendor name is required.';
+    if (!form.category) next.category = 'Category is required.';
+    if (form.website.trim() && !URL_RE.test(form.website.trim())) {
+      next.website = 'Enter a valid URL (e.g., https://example.com).';
     }
-    if (!formData.category) {
-      newErrors.category = 'Category is required';
+    if (form.primaryContactEmail.trim() && !EMAIL_RE.test(form.primaryContactEmail.trim())) {
+      next.primaryContactEmail = 'Enter a valid email address.';
     }
-    if (
-      formData.primaryContactEmail &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.primaryContactEmail)
-    ) {
-      newErrors.primaryContactEmail = 'Please enter a valid email address';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (dateError) next.contractEnd = dateError;
+    setErrors(next);
+    return Object.keys(next).length === 0;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
+    if (!validate()) return;
 
-    if (!validate()) {
-      return;
-    }
+    const payload: Record<string, unknown> = {
+      name: form.name.trim(),
+      website: form.website.trim() || undefined,
+      description: form.description.trim() || undefined,
+      category: form.category,
+      criticalityTier: form.criticalityTier,
+      inherentRisk: form.inherentRisk,
+      dataAccess: form.dataAccess,
+      primaryContactName: form.primaryContactName.trim() || undefined,
+      primaryContactEmail: form.primaryContactEmail.trim() || undefined,
+      contractStart: form.contractStart || undefined,
+      contractEnd: form.contractEnd || undefined,
+    };
 
-    createMutation.mutate(formData);
+    createMutation.mutate(payload);
   };
 
-  const handleChange = (field: keyof VendorFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: '' }));
-    }
-  };
+  const submitError = createMutation.error as {
+    response?: { data?: { message?: string } };
+    message?: string;
+  } | null;
+  const submitErrorMessage = submitError?.response?.data?.message ?? submitError?.message ?? null;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
-      {/* Header */}
-      <div>
-        <Link
-          to="/vendors"
-          className="inline-flex items-center text-sm text-surface-600 hover:text-surface-900 mb-4"
-        >
-          <ArrowLeftIcon className="w-4 h-4 mr-1" />
-          Back to Vendors
-        </Link>
-        <h1 className="text-2xl font-bold text-surface-900">Add New Vendor</h1>
-        <p className="text-surface-600 mt-1">Register a new third-party vendor</p>
-      </div>
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="card p-6 space-y-6">
-        {/* Vendor Name */}
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-surface-700 mb-1">
-            Vendor Name <span className="text-red-600">*</span>
-          </label>
-          <Input
-            id="name"
-            type="text"
-            value={formData.name}
-            onChange={(e) => handleChange('name', e.target.value)}
-            placeholder="e.g., Acme Corp"
-            className={`input ${errors.name ? 'border-red-500' : ''}`}
-          />
-          {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
-        </div>
+    <div className="space-y-5 animate-fade-in max-w-4xl">
+      <Link
+        to="/vendors"
+        className="inline-flex items-center gap-1.5 text-small text-surface-600 hover:text-surface-900"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Vendors
+      </Link>
 
-        {/* Category and Tier */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="category" className="block text-sm font-medium text-surface-700 mb-1">
-              Category <span className="text-red-600">*</span>
-            </label>
-            <SelectNative
-              id="category"
-              value={formData.category}
-              onChange={(e) => handleChange('category', e.target.value)}
-              className="input"
-            >
-              {CATEGORY_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </SelectNative>
-          </div>
-          <div>
-            <label htmlFor="tier" className="block text-sm font-medium text-surface-700 mb-1">
-              Vendor Tier
-            </label>
-            <SelectNative
-              id="tier"
-              value={formData.tier}
-              onChange={(e) => handleChange('tier', e.target.value)}
-              className="input"
-            >
-              {TIER_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </SelectNative>
-          </div>
-        </div>
+      <PageHeader
+        title="New Vendor"
+        description="Onboard a new third-party vendor with risk tiering and contract details."
+      />
 
-        {/* Status */}
-        <div>
-          <label htmlFor="status" className="block text-sm font-medium text-surface-700 mb-1">
-            Status
-          </label>
-          <SelectNative
-            id="status"
-            value={formData.status}
-            onChange={(e) => handleChange('status', e.target.value)}
-            className="input"
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <Card>
+          <CardHeader>
+            <CardTitle>Identification</CardTitle>
+          </CardHeader>
+          <CardBody density="comfy" className="space-y-4">
+            <div>
+              <Label htmlFor="name" required>
+                Vendor Name
+              </Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="e.g., Acme Corp"
+                value={form.name}
+                onChange={(e) => setField('name', e.target.value)}
+                invalid={!!errors.name}
+              />
+              {errors.name && <FieldHint error>{errors.name}</FieldHint>}
+            </div>
+            <div>
+              <Label htmlFor="website">Website</Label>
+              <Input
+                id="website"
+                type="url"
+                placeholder="https://example.com"
+                value={form.website}
+                onChange={(e) => setField('website', e.target.value)}
+                invalid={!!errors.website}
+              />
+              {errors.website && <FieldHint error>{errors.website}</FieldHint>}
+            </div>
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                rows={3}
+                placeholder="What does this vendor do for your organization?"
+                value={form.description}
+                onChange={(e) => setField('description', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="category" required>
+                Category
+              </Label>
+              <Select
+                value={form.category}
+                onChange={(v) => setField('category', v)}
+                options={CATEGORY_OPTIONS}
+                invalid={!!errors.category}
+              />
+              {errors.category && <FieldHint error>{errors.category}</FieldHint>}
+            </div>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Risk &amp; Tier</CardTitle>
+          </CardHeader>
+          <CardBody density="comfy" className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="criticalityTier">Criticality Tier</Label>
+                <Select
+                  value={form.criticalityTier}
+                  onChange={(v) => setField('criticalityTier', v)}
+                  options={TIER_OPTIONS}
+                />
+              </div>
+              <div>
+                <Label htmlFor="inherentRisk">Inherent Risk</Label>
+                <Select
+                  value={form.inherentRisk}
+                  onChange={(v) => setField('inherentRisk', v)}
+                  options={RISK_OPTIONS}
+                />
+              </div>
+              <div>
+                <Label htmlFor="dataAccess">Data Access</Label>
+                <Select
+                  value={form.dataAccess}
+                  onChange={(v) => setField('dataAccess', v)}
+                  options={DATA_ACCESS_OPTIONS}
+                />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Contract &amp; Contact</CardTitle>
+          </CardHeader>
+          <CardBody density="comfy" className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="primaryContactName">Primary Contact Name</Label>
+                <Input
+                  id="primaryContactName"
+                  type="text"
+                  placeholder="Jane Doe"
+                  value={form.primaryContactName}
+                  onChange={(e) => setField('primaryContactName', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="primaryContactEmail">Primary Contact Email</Label>
+                <Input
+                  id="primaryContactEmail"
+                  type="email"
+                  placeholder="jane@example.com"
+                  value={form.primaryContactEmail}
+                  onChange={(e) => setField('primaryContactEmail', e.target.value)}
+                  invalid={!!errors.primaryContactEmail}
+                />
+                {errors.primaryContactEmail && (
+                  <FieldHint error>{errors.primaryContactEmail}</FieldHint>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="contractStart">Contract Start</Label>
+                <Input
+                  id="contractStart"
+                  type="date"
+                  value={form.contractStart}
+                  onChange={(e) => setField('contractStart', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="contractEnd">Contract End</Label>
+                <Input
+                  id="contractEnd"
+                  type="date"
+                  value={form.contractEnd}
+                  onChange={(e) => setField('contractEnd', e.target.value)}
+                  invalid={!!(errors.contractEnd || dateError)}
+                />
+                {(errors.contractEnd || dateError) && (
+                  <FieldHint error>{errors.contractEnd ?? dateError}</FieldHint>
+                )}
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+
+        {submitErrorMessage && (
+          <Card className="border-red-200">
+            <CardBody density="cozy">
+              <p className="text-small text-red-700">{submitErrorMessage}</p>
+            </CardBody>
+          </Card>
+        )}
+
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => navigate('/vendors')}
+            disabled={submitting}
           >
-            {STATUS_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </SelectNative>
-        </div>
-
-        {/* Website */}
-        <div>
-          <label htmlFor="website" className="block text-sm font-medium text-surface-700 mb-1">
-            Website
-          </label>
-          <Input
-            id="website"
-            type="url"
-            value={formData.website}
-            onChange={(e) => handleChange('website', e.target.value)}
-            placeholder="https://example.com"
-            className="input"
-          />
-        </div>
-
-        {/* Contact Information */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label
-              htmlFor="primaryContact"
-              className="block text-sm font-medium text-surface-700 mb-1"
-            >
-              Primary Contact
-            </label>
-            <Input
-              id="primaryContact"
-              type="text"
-              value={formData.primaryContact}
-              onChange={(e) => handleChange('primaryContact', e.target.value)}
-              placeholder="Contact name"
-              className="input"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="primaryContactEmail"
-              className="block text-sm font-medium text-surface-700 mb-1"
-            >
-              Primary Email
-            </label>
-            <Input
-              id="primaryContactEmail"
-              type="email"
-              value={formData.primaryContactEmail}
-              onChange={(e) => handleChange('primaryContactEmail', e.target.value)}
-              placeholder="contact@example.com"
-              className={`input ${errors.primaryContactEmail ? 'border-red-500' : ''}`}
-            />
-            {errors.primaryContactEmail && (
-              <p className="mt-1 text-sm text-red-600">{errors.primaryContactEmail}</p>
-            )}
-          </div>
-        </div>
-
-        {/* Description */}
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-surface-700 mb-1">
-            Description
-          </label>
-          <Textarea
-            id="description"
-            value={formData.description}
-            onChange={(e) => handleChange('description', e.target.value)}
-            placeholder="Describe the vendor and services they provide"
-            rows={4}
-            className="input"
-          />
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-surface-200">
-          <Button type="button" variant="secondary" onClick={() => navigate('/vendors')}>
             Cancel
           </Button>
-          <Button type="submit" disabled={createMutation.isPending}>
-            {createMutation.isPending ? 'Creating...' : 'Add Vendor'}
+          <Button
+            type="submit"
+            variant="primary"
+            loading={submitting}
+            leftIcon={<Save className="h-4 w-4" />}
+          >
+            Create Vendor
           </Button>
         </div>
       </form>

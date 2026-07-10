@@ -1,659 +1,289 @@
-import { useState, useEffect } from 'react';
-import { trustCenterApi } from '../lib/api';
-import { useAuth } from '../contexts/AuthContext';
-import { TrustCenterConfig } from '../lib/apiTypes';
-import toast from 'react-hot-toast';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '@/lib/api';
 import {
-  GlobeAltIcon,
-  PaintBrushIcon,
-  CodeBracketIcon,
-  LinkIcon,
-  ClipboardDocumentIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-} from '@heroicons/react/24/outline';
+  Button,
+  Card,
+  CardBody,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  PageHeader,
+  Select,
+  Textarea,
+} from '@/components/ui';
 
-import { Textarea } from '@/components/ui/Textarea';
+type Visibility = 'private' | 'nda_required' | 'public';
 
-import { Input } from '@/components/ui/Input';
+interface TrustSection {
+  id: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+}
 
-type TabType = 'general' | 'branding' | 'domain' | 'embed';
+interface TrustCenterSettings {
+  companyName: string;
+  logoUrl: string;
+  brandColor: string;
+  visibility: Visibility;
+  customDomain: string;
+  ndaRequired: boolean;
+  ndaTemplate: string;
+  sections: TrustSection[];
+}
+
+const DEFAULT_SECTIONS: TrustSection[] = [
+  {
+    id: 'compliance',
+    name: 'Compliance',
+    description: 'Framework attestations and certifications.',
+    enabled: true,
+  },
+  {
+    id: 'policies',
+    name: 'Policies',
+    description: 'Published security and privacy policies.',
+    enabled: true,
+  },
+  {
+    id: 'documents',
+    name: 'Documents',
+    description: 'Audit reports, SOC 2, ISO 27001 letters.',
+    enabled: true,
+  },
+  {
+    id: 'subprocessors',
+    name: 'Subprocessors',
+    description: 'List of subprocessors and data flows.',
+    enabled: false,
+  },
+  {
+    id: 'security',
+    name: 'Security',
+    description: 'Overview of security program and controls.',
+    enabled: true,
+  },
+];
+
+const DEFAULT_SETTINGS: TrustCenterSettings = {
+  companyName: '',
+  logoUrl: '',
+  brandColor: '#10b981',
+  visibility: 'nda_required',
+  customDomain: '',
+  ndaRequired: true,
+  ndaTemplate: '',
+  sections: DEFAULT_SECTIONS,
+};
+
+const VISIBILITY_OPTIONS = [
+  { value: 'private', label: 'Private', description: 'Invite-only access' },
+  { value: 'nda_required', label: 'NDA required', description: 'Visitors must accept the NDA' },
+  { value: 'public', label: 'Public', description: 'Open to anyone' },
+];
 
 export default function TrustCenterSettings() {
-  const { user } = useAuth();
-  const [config, setConfig] = useState<TrustCenterConfig | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<TabType>('general');
-  const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
+  const [draft, setDraft] = useState<TrustCenterSettings>(DEFAULT_SETTINGS);
 
-  const organizationId = user?.organizationId || '';
+  const { data, isLoading } = useQuery<TrustCenterSettings>({
+    queryKey: ['trust-center-settings'],
+    queryFn: async () => {
+      const res = await api.get('/api/trust-center/settings');
+      const payload = res.data?.data ?? res.data;
+      return {
+        companyName: payload?.companyName ?? '',
+        logoUrl: payload?.logoUrl ?? '',
+        brandColor: payload?.brandColor ?? DEFAULT_SETTINGS.brandColor,
+        visibility: (payload?.visibility as Visibility) ?? DEFAULT_SETTINGS.visibility,
+        customDomain: payload?.customDomain ?? '',
+        ndaRequired: payload?.ndaRequired ?? true,
+        ndaTemplate: payload?.ndaTemplate ?? '',
+        sections:
+          Array.isArray(payload?.sections) && payload.sections.length > 0
+            ? (payload.sections as TrustSection[])
+            : DEFAULT_SECTIONS,
+      };
+    },
+  });
 
   useEffect(() => {
-    if (organizationId) {
-      fetchConfig();
-    }
-  }, [organizationId]);
+    if (data) setDraft(data);
+  }, [data]);
 
-  const fetchConfig = async () => {
-    try {
-      const response = await trustCenterApi.getConfig({ organizationId });
-      setConfig(response.data);
-    } catch (error) {
-      console.error('Error fetching trust center config:', error);
-      toast.error('Failed to load trust center config');
-    } finally {
-      setLoading(false);
-    }
+  const saveMutation = useMutation({
+    mutationFn: (payload: TrustCenterSettings) => api.put('/api/trust-center/settings', payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['trust-center-settings'] }),
+  });
+
+  const isDirty = useMemo(() => JSON.stringify(draft) !== JSON.stringify(data), [draft, data]);
+
+  const toggleSection = (id: string) => {
+    setDraft((d) => ({
+      ...d,
+      sections: d.sections.map((s) => (s.id === id ? { ...s, enabled: !s.enabled } : s)),
+    }));
   };
-
-  const updateConfig = async (updates: Partial<TrustCenterConfig>) => {
-    setSaving(true);
-    try {
-      const response = await trustCenterApi.updateConfig(updates, { organizationId });
-      setConfig(response.data);
-      toast.success('Settings saved');
-    } catch (error) {
-      console.error('Error updating trust center config:', error);
-      toast.error('Failed to save settings');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const tabs = [
-    { id: 'general' as TabType, name: 'General', icon: GlobeAltIcon },
-    { id: 'branding' as TabType, name: 'Branding', icon: PaintBrushIcon },
-    { id: 'domain' as TabType, name: 'Custom Domain', icon: LinkIcon },
-    { id: 'embed' as TabType, name: 'Embed Code', icon: CodeBracketIcon },
-  ];
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-surface-600">Loading settings...</div>
-      </div>
-    );
-  }
-
-  if (!config) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-surface-600">Unable to load configuration</div>
-      </div>
-    );
-  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-surface-900">Trust Center Settings</h1>
-        <p className="mt-1 text-surface-600">Configure your public-facing security trust center</p>
-      </div>
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Trust Center Settings"
+        description="Branding, visibility, NDA, and section configuration for your trust center."
+        actions={
+          <Button
+            loading={saveMutation.isPending}
+            disabled={!isDirty || isLoading}
+            onClick={() => saveMutation.mutate(draft)}
+          >
+            Save changes
+          </Button>
+        }
+      />
 
-      {/* Status Banner */}
-      <div
-        className={`p-4 rounded-lg border ${config.isEnabled ? 'bg-green-500/10 border-green-500/30' : 'bg-yellow-500/10 border-yellow-500/30'}`}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {config.isEnabled ? (
-              <CheckCircleIcon className="w-6 h-6 text-green-500 dark:text-green-600" />
-            ) : (
-              <ExclamationTriangleIcon className="w-6 h-6 text-amber-600 dark:text-yellow-600" />
-            )}
-            <div>
-              <h3
-                className={`font-medium ${config.isEnabled ? 'text-green-600 dark:text-green-600' : 'text-amber-700 dark:text-yellow-600'}`}
-              >
-                {config.isEnabled ? 'Trust Center is Live' : 'Trust Center is Disabled'}
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-surface-600">
-                {config.isEnabled
-                  ? 'Your trust center is publicly accessible'
-                  : 'Enable to make your trust center publicly visible'}
+      <Card density="comfy">
+        <CardHeader className="px-0 pt-0">
+          <div>
+            <CardTitle>Branding</CardTitle>
+            <CardDescription>How your trust center looks to visitors.</CardDescription>
+          </div>
+        </CardHeader>
+        <CardBody density="cozy" className="px-0 pb-0 space-y-4">
+          <div>
+            <Label htmlFor="tcs-company">Company name</Label>
+            <Input
+              id="tcs-company"
+              value={draft.companyName}
+              onChange={(e) => setDraft({ ...draft, companyName: e.target.value })}
+              placeholder="Acme Inc."
+            />
+          </div>
+          <div>
+            <Label htmlFor="tcs-logo">Logo URL</Label>
+            <Input
+              id="tcs-logo"
+              value={draft.logoUrl}
+              onChange={(e) => setDraft({ ...draft, logoUrl: e.target.value })}
+              placeholder="https://cdn.example.com/logo.svg"
+            />
+          </div>
+          <div>
+            <Label htmlFor="tcs-color">Brand color</Label>
+            <div className="flex items-center gap-3">
+              <Input
+                id="tcs-color"
+                value={draft.brandColor}
+                onChange={(e) => setDraft({ ...draft, brandColor: e.target.value })}
+                placeholder="#10b981"
+                className="max-w-xs font-mono"
+              />
+              <div
+                className="h-9 w-9 rounded-md border border-surface-300 shrink-0"
+                style={{ backgroundColor: draft.brandColor }}
+                aria-label="Brand color preview"
+              />
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card density="comfy">
+        <CardHeader className="px-0 pt-0">
+          <div>
+            <CardTitle>Visibility</CardTitle>
+            <CardDescription>Who can view your trust center and at what domain.</CardDescription>
+          </div>
+        </CardHeader>
+        <CardBody density="cozy" className="px-0 pb-0 space-y-4">
+          <div>
+            <Label htmlFor="tcs-visibility">Visibility</Label>
+            <Select
+              value={draft.visibility}
+              onChange={(v) => setDraft({ ...draft, visibility: v as Visibility })}
+              options={VISIBILITY_OPTIONS}
+            />
+          </div>
+          <div>
+            <Label htmlFor="tcs-domain">Custom domain</Label>
+            <Input
+              id="tcs-domain"
+              value={draft.customDomain}
+              onChange={(e) => setDraft({ ...draft, customDomain: e.target.value })}
+              placeholder="trust.example.com"
+            />
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card density="comfy">
+        <CardHeader className="px-0 pt-0">
+          <div>
+            <CardTitle>NDA Config</CardTitle>
+            <CardDescription>
+              Require an NDA acceptance before showing private content.
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardBody density="cozy" className="px-0 pb-0 space-y-4">
+          <div className="rounded-lg border border-surface-200 bg-white p-4 flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-surface-900 font-medium">Require NDA</p>
+              <p className="text-small text-surface-600 mt-1">
+                Visitors must accept the NDA before viewing protected sections.
               </p>
             </div>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={config.isEnabled}
-              onChange={(e) => updateConfig({ isEnabled: e.target.checked })}
-              className="sr-only peer"
-            />
-            <div className="w-14 h-7 bg-surface-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-600"></div>
-          </label>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="bg-white border border-surface-200 rounded-lg overflow-hidden">
-        <div className="border-b border-surface-200">
-          <nav className="flex">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === tab.id
-                      ? 'border-brand-500 text-brand-400 bg-white/50'
-                      : 'border-transparent text-surface-600 hover:text-surface-700 hover:bg-white/30'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  {tab.name}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-        <div className="p-6">
-          {activeTab === 'general' && <GeneralSettings config={config} onUpdate={updateConfig} />}
-          {activeTab === 'branding' && <BrandingSettings config={config} onUpdate={updateConfig} />}
-          {activeTab === 'domain' && <DomainSettings config={config} onUpdate={updateConfig} />}
-          {activeTab === 'embed' && <EmbedSettings config={config} />}
-        </div>
-      </div>
-
-      {/* Save indicator */}
-      {saving && (
-        <div className="fixed bottom-4 right-4 bg-white text-surface-800 px-4 py-2 rounded-lg shadow-lg">
-          Saving...
-        </div>
-      )}
-    </div>
-  );
-}
-
-// General Settings Tab
-function GeneralSettings({
-  config,
-  onUpdate,
-}: {
-  config: TrustCenterConfig;
-  onUpdate: (updates: Partial<TrustCenterConfig>) => void;
-}) {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium text-surface-900 mb-4">Contact Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-surface-600 mb-1">
-              Security Email
-            </label>
-            <Input
-              type="email"
-              value={config.securityEmail || ''}
-              onChange={(e) => onUpdate({ securityEmail: e.target.value })}
-              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-              placeholder="security@company.com"
-            />
-            <p className="text-xs text-surface-500 mt-1">Public email for security inquiries</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-surface-600 mb-1">Support URL</label>
-            <Input
-              type="url"
-              value={config.supportUrl || ''}
-              onChange={(e) => onUpdate({ supportUrl: e.target.value })}
-              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-              placeholder="https://support.company.com"
-            />
-            <p className="text-xs text-surface-500 mt-1">Link to your support portal</p>
-          </div>
-        </div>
-      </div>
-      <div className="pt-6 border-t border-surface-200">
-        <h3 className="text-lg font-medium text-surface-900 mb-4">Section Visibility</h3>
-        <p className="text-sm text-surface-600 mb-4">
-          Choose which sections to display on your public trust center
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[
-            {
-              key: 'showCertifications',
-              label: 'Certifications & Compliance',
-              description: 'Display your compliance frameworks',
-            },
-            {
-              key: 'showSecurityFeatures',
-              label: 'Security Features',
-              description: 'Show technical security controls',
-            },
-            { key: 'showPolicies', label: 'Policies', description: 'Link to security policies' },
-            { key: 'showPrivacy', label: 'Privacy', description: 'Privacy practices section' },
-            {
-              key: 'showIncidentResponse',
-              label: 'Incident Response',
-              description: 'Incident handling procedures',
-            },
-          ].map((section) => (
-            <label
-              key={section.key}
-              className="flex items-start gap-3 p-3 bg-white/50 rounded-lg cursor-pointer hover:bg-white transition-colors"
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setDraft({ ...draft, ndaRequired: !draft.ndaRequired })}
             >
-              <input
-                type="checkbox"
-                checked={config[section.key as keyof TrustCenterConfig] as boolean}
-                onChange={(e) => onUpdate({ [section.key]: e.target.checked })}
-                className="mt-1 w-4 h-4 bg-white border-surface-200 rounded text-brand-600 focus:ring-brand-500"
-              />
-              <div>
-                <span className="text-sm font-medium text-surface-800">{section.label}</span>
-                <p className="text-xs text-surface-500">{section.description}</p>
-              </div>
-            </label>
-          ))}
-        </div>
-      </div>
-      <div className="pt-6 border-t border-surface-200">
-        <h3 className="text-lg font-medium text-surface-900 mb-4">Quick Links</h3>
-        <div className="flex flex-wrap gap-3">
-          <a
-            href="/trust-center/public"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
-          >
-            <GlobeAltIcon className="w-5 h-5" />
-            View Live Trust Center
-          </a>
-          <a
-            href="/trust-center"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-surface-200 text-surface-800 rounded-lg hover:bg-surface-600 transition-colors"
-          >
-            Manage Content
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Branding Settings Tab
-function BrandingSettings({
-  config,
-  onUpdate,
-}: {
-  config: TrustCenterConfig;
-  onUpdate: (updates: Partial<TrustCenterConfig>) => void;
-}) {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium text-surface-900 mb-4">Company Information</h3>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-surface-600 mb-1">Company Name</label>
-            <Input
-              type="text"
-              value={config.companyName}
-              onChange={(e) => onUpdate({ companyName: e.target.value })}
-              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-              placeholder="Your Company Name"
-            />
+              {draft.ndaRequired ? 'Enabled' : 'Disabled'}
+            </Button>
           </div>
           <div>
-            <label className="block text-sm font-medium text-surface-600 mb-1">
-              Company Description
-            </label>
+            <Label htmlFor="tcs-nda-template">NDA template</Label>
             <Textarea
-              value={config.description || ''}
-              onChange={(e) => onUpdate({ description: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-              placeholder="Describe your security posture and commitment to security..."
+              id="tcs-nda-template"
+              value={draft.ndaTemplate}
+              onChange={(e) => setDraft({ ...draft, ndaTemplate: e.target.value })}
+              placeholder="Paste your NDA text here…"
+              rows={8}
             />
-            <p className="text-xs text-surface-500 mt-1">
-              This appears in the hero section of your trust center
-            </p>
           </div>
-        </div>
-      </div>
-      <div className="pt-6 border-t border-surface-200">
-        <h3 className="text-lg font-medium text-surface-900 mb-4">Visual Branding</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        </CardBody>
+      </Card>
+
+      <Card density="comfy">
+        <CardHeader className="px-0 pt-0">
           <div>
-            <label className="block text-sm font-medium text-surface-600 mb-1">Logo URL</label>
-            <Input
-              type="url"
-              value={config.logoUrl || ''}
-              onChange={(e) => onUpdate({ logoUrl: e.target.value })}
-              className="w-full px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-              placeholder="https://example.com/logo.png"
-            />
-            <p className="text-xs text-surface-500 mt-1">Recommended: 200x50px, PNG or SVG</p>
+            <CardTitle>Sections</CardTitle>
+            <CardDescription>
+              Toggle which sections appear on your published trust center.
+            </CardDescription>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-surface-600 mb-1">Primary Color</label>
-            <div className="flex gap-2">
-              <input
-                type="color"
-                value={config.primaryColor || '#6366f1'}
-                onChange={(e) => onUpdate({ primaryColor: e.target.value })}
-                className="w-12 h-10 bg-white border border-surface-200 rounded-lg cursor-pointer"
-              />
-              <Input
-                type="text"
-                value={config.primaryColor || '#6366f1'}
-                onChange={(e) => onUpdate({ primaryColor: e.target.value })}
-                className="flex-1 px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-                placeholder="#6366f1"
-              />
-            </div>
-            <p className="text-xs text-surface-500 mt-1">Used for headings, buttons, and accents</p>
-          </div>
-        </div>
-      </div>
-      {/* Preview */}
-      <div className="pt-6 border-t border-surface-200">
-        <h3 className="text-lg font-medium text-surface-900 mb-4">Preview</h3>
-        <div className="bg-white rounded-lg p-8 text-center">
-          {config.logoUrl && (
-            <img src={config.logoUrl} alt={config.companyName} className="h-12 mx-auto mb-4" />
-          )}
-          <h2
-            className="text-2xl font-bold mb-2"
-            style={{ color: config.primaryColor || '#6366f1' }}
-          >
-            {config.companyName} Trust Center
-          </h2>
-          {config.description && (
-            <p className="text-gray-600 max-w-xl mx-auto">{config.description}</p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Domain Settings Tab
-function DomainSettings({
-  config,
-  onUpdate,
-}: {
-  config: TrustCenterConfig;
-  onUpdate: (updates: Partial<TrustCenterConfig>) => void;
-}) {
-  const [domainInput, setDomainInput] = useState(config.customDomain || '');
-
-  const saveDomain = () => {
-    onUpdate({ customDomain: domainInput || undefined });
-  };
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium text-surface-900 mb-2">Custom Domain</h3>
-        <p className="text-sm text-surface-600 mb-4">
-          Host your Trust Center on your own domain for a seamless brand experience
-        </p>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-surface-600 mb-1">
-              Your Custom Domain
-            </label>
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                value={domainInput}
-                onChange={(e) => setDomainInput(e.target.value)}
-                className="flex-1 px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-900 focus:outline-none focus:border-brand-500"
-                placeholder="trust.yourcompany.com"
-              />
-              <button
-                onClick={saveDomain}
-                className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
+        </CardHeader>
+        <CardBody density="cozy" className="px-0 pb-0">
+          <div className="space-y-3">
+            {draft.sections.map((section) => (
+              <div
+                key={section.id}
+                className="rounded-lg border border-surface-200 bg-white p-4 flex items-start justify-between gap-4"
               >
-                Save
-              </button>
-            </div>
-            <p className="text-xs text-surface-500 mt-1">
-              Examples: trust.yourcompany.com, security.yourcompany.com
-            </p>
-          </div>
-        </div>
-      </div>
-      {config.customDomain && (
-        <div className="bg-white/50 rounded-lg p-6 border border-surface-200">
-          <h4 className="text-md font-medium text-surface-800 mb-4 flex items-center gap-2">
-            <LinkIcon className="w-5 h-5 text-brand-400" />
-            DNS Configuration Required
-          </h4>
-
-          <ol className="space-y-4 text-sm">
-            <li className="flex gap-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-brand-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                1
-              </span>
-              <div>
-                <p className="text-surface-800">Log in to your domain registrar or DNS provider</p>
-                <p className="text-surface-500 text-xs mt-1">
-                  Common providers: Cloudflare, GoDaddy, Namecheap, Route53
-                </p>
-              </div>
-            </li>
-            <li className="flex gap-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-brand-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                2
-              </span>
-              <div>
-                <p className="text-surface-800">Add a CNAME record with these values:</p>
-                <div className="mt-2 bg-white rounded-lg p-4 space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-surface-600">Type:</span>
-                    <code className="text-brand-400">CNAME</code>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-surface-600">Host/Name:</span>
-                    <code className="text-brand-400">{config.customDomain.split('.')[0]}</code>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-surface-600">Value/Points to:</span>
-                    <code className="text-brand-400">trust.gigachad-grc.com</code>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-surface-600">TTL:</span>
-                    <code className="text-brand-400">300</code>{' '}
-                    <span className="text-surface-500">(or Auto)</span>
-                  </div>
+                <div className="min-w-0">
+                  <p className="text-surface-900 font-medium">{section.name}</p>
+                  <p className="text-small text-surface-600 mt-1">{section.description}</p>
                 </div>
+                <Button variant="secondary" size="sm" onClick={() => toggleSection(section.id)}>
+                  {section.enabled ? 'Enabled' : 'Disabled'}
+                </Button>
               </div>
-            </li>
-            <li className="flex gap-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-brand-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                3
-              </span>
-              <div>
-                <p className="text-surface-800">Wait for DNS propagation</p>
-                <p className="text-surface-500 text-xs mt-1">
-                  This can take up to 24-48 hours, but usually completes within minutes
-                </p>
-              </div>
-            </li>
-            <li className="flex gap-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-brand-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                4
-              </span>
-              <div>
-                <p className="text-surface-800">
-                  SSL certificate will be automatically provisioned
-                </p>
-                <p className="text-surface-500 text-xs mt-1">
-                  We use Let's Encrypt to secure your custom domain
-                </p>
-              </div>
-            </li>
-          </ol>
-
-          <div className="mt-6 pt-4 border-t border-surface-200">
-            <a
-              href={`https://${config.customDomain}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-brand-400 hover:text-brand-300 text-sm"
-            >
-              <GlobeAltIcon className="w-4 h-4" />
-              Test https://{config.customDomain}
-            </a>
+            ))}
           </div>
-        </div>
-      )}
-      {!config.customDomain && (
-        <div className="bg-white/30 rounded-lg p-6 border border-dashed border-surface-200 text-center">
-          <LinkIcon className="w-12 h-12 text-surface-600 mx-auto mb-3" />
-          <p className="text-surface-600">Enter a custom domain above to see setup instructions</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Embed Settings Tab
-function EmbedSettings({ config }: { config: TrustCenterConfig }) {
-  const baseUrl = window.location.origin;
-  // The backend resolves the org from the authenticated user's context, not
-  // from a query param. Previously this URL embedded `?organizationId=<uuid>`,
-  // which leaked the tenant id into shared/iframed URLs without affecting
-  // the backend (it ignored the query string). Drop the param.
-  const trustCenterUrl = `${baseUrl}/trust-center/public`;
-
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success(`${label} copied to clipboard`);
-  };
-
-  const iframeCode = `<iframe
-  src="${trustCenterUrl}"
-  width="100%"
-  height="800"
-  frameborder="0"
-  title="${config.companyName} Trust Center"
-  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-></iframe>`;
-
-  const buttonCode = `<a 
-  href="${trustCenterUrl}" 
-  target="_blank" 
-  rel="noopener noreferrer"
-  style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:${config.primaryColor || '#6366f1'};color:white;border-radius:8px;text-decoration:none;font-weight:500;font-family:system-ui,sans-serif;"
->
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-    <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-  </svg>
-  View ${config.companyName} Security
-</a>`;
-
-  return (
-    <div className="space-y-8">
-      {/* iframe Embed */}
-      <div>
-        <div className="flex items-center gap-2 mb-2">
-          <CodeBracketIcon className="w-5 h-5 text-brand-400" />
-          <h3 className="text-lg font-medium text-surface-900">Full Page Embed (iframe)</h3>
-        </div>
-        <p className="text-sm text-surface-600 mb-4">
-          Embed your complete Trust Center on any webpage
-        </p>
-        <div className="relative">
-          <pre className="p-4 bg-white rounded-lg text-sm text-surface-700 overflow-x-auto">
-            {iframeCode}
-          </pre>
-          <button
-            onClick={() => copyToClipboard(iframeCode, 'iframe code')}
-            className="absolute top-2 right-2 flex items-center gap-1 px-3 py-1.5 text-xs bg-surface-200 text-surface-700 rounded hover:bg-surface-600 transition-colors"
-          >
-            <ClipboardDocumentIcon className="w-4 h-4" />
-            Copy
-          </button>
-        </div>
-      </div>
-      {/* Button Link */}
-      <div className="pt-6 border-t border-surface-200">
-        <div className="flex items-center gap-2 mb-2">
-          <LinkIcon className="w-5 h-5 text-brand-400" />
-          <h3 className="text-lg font-medium text-surface-900">Security Button</h3>
-        </div>
-        <p className="text-sm text-surface-600 mb-4">
-          Add a branded button that links to your Trust Center
-        </p>
-        <div className="relative">
-          <pre className="p-4 bg-white rounded-lg text-sm text-surface-700 overflow-x-auto">
-            {buttonCode}
-          </pre>
-          <button
-            onClick={() => copyToClipboard(buttonCode.replace(/\n/g, ''), 'button code')}
-            className="absolute top-2 right-2 flex items-center gap-1 px-3 py-1.5 text-xs bg-surface-200 text-surface-700 rounded hover:bg-surface-600 transition-colors"
-          >
-            <ClipboardDocumentIcon className="w-4 h-4" />
-            Copy
-          </button>
-        </div>
-
-        {/* Button Preview */}
-        <div className="mt-4 p-4 bg-white/50 rounded-lg">
-          <p className="text-xs text-surface-500 mb-3">Preview:</p>
-          <a
-            href={trustCenterUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 24px',
-              background: config.primaryColor || '#6366f1',
-              color: 'white',
-              borderRadius: '8px',
-              textDecoration: 'none',
-              fontWeight: 500,
-            }}
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-            View {config.companyName} Security
-          </a>
-        </div>
-      </div>
-      {/* Direct Link */}
-      <div className="pt-6 border-t border-surface-200">
-        <div className="flex items-center gap-2 mb-2">
-          <GlobeAltIcon className="w-5 h-5 text-brand-400" />
-          <h3 className="text-lg font-medium text-surface-900">Direct Link</h3>
-        </div>
-        <p className="text-sm text-surface-600 mb-4">
-          Share this URL directly with customers or partners
-        </p>
-        <div className="flex gap-2">
-          <Input
-            type="text"
-            readOnly
-            value={trustCenterUrl}
-            className="flex-1 px-3 py-2 bg-white border border-surface-200 rounded-lg text-surface-700 text-sm"
-          />
-          <button
-            onClick={() => copyToClipboard(trustCenterUrl, 'URL')}
-            className="flex items-center gap-1 px-4 py-2 bg-surface-200 text-surface-800 rounded-lg hover:bg-surface-600 transition-colors"
-          >
-            <ClipboardDocumentIcon className="w-4 h-4" />
-            Copy
-          </button>
-        </div>
-      </div>
+        </CardBody>
+      </Card>
     </div>
   );
 }

@@ -1,393 +1,293 @@
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { ColumnDef } from '@tanstack/react-table';
+import { Eye, Users, FileSignature, Download, ArrowDownUp } from 'lucide-react';
+import api from '@/lib/api';
 import {
-  ChartBarIcon,
-  ClockIcon,
-  DocumentTextIcon,
-  CheckCircleIcon,
-  BookOpenIcon,
-  ArrowTrendingUpIcon,
-} from '@heroicons/react/24/outline';
-import { questionnairesApi, knowledgeBaseApi } from '../lib/api';
-import { useAuth } from '../contexts/AuthContext';
-import { EmptyState } from '@/components/EmptyState';
-import { LazyRechartsWrapper } from '@/components/charts/LazyCharts';
-import clsx from 'clsx';
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  DataTable,
+  PageHeader,
+  Select,
+  Skeleton,
+  StatCard,
+} from '@/components/ui';
+
+interface TopDocument {
+  id: string;
+  title: string;
+  views: number;
+}
+
+interface RecentVisitor {
+  id: string;
+  org: string;
+  contact: string;
+  accessedAt: string;
+  signedNda: boolean;
+}
+
+interface DailyPageview {
+  date: string;
+  count: number;
+}
+
+interface TrustAnalytics {
+  pageviews: number;
+  uniqueVisitors: number;
+  ndaSigns: number;
+  documentDownloads: number;
+  topDocuments: TopDocument[];
+  recentVisitors: RecentVisitor[];
+  pageviewsByDay: DailyPageview[];
+}
+
+const EMPTY: TrustAnalytics = {
+  pageviews: 0,
+  uniqueVisitors: 0,
+  ndaSigns: 0,
+  documentDownloads: 0,
+  topDocuments: [],
+  recentVisitors: [],
+  pageviewsByDay: [],
+};
+
+const RANGE_OPTIONS = [
+  { value: '7d', label: 'Last 7 days' },
+  { value: '30d', label: 'Last 30 days' },
+  { value: '90d', label: 'Last 90 days' },
+  { value: 'ytd', label: 'Year to date' },
+];
+
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function formatDateTime(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
 
 export default function TrustAnalytics() {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
+  const [range, setRange] = useState('30d');
+  const [docSort, setDocSort] = useState<'desc' | 'asc'>('desc');
 
-  const { data: analytics, isLoading } = useQuery({
-    queryKey: ['questionnaire-analytics', organizationId],
+  const { data, isLoading } = useQuery<TrustAnalytics>({
+    queryKey: ['trust-center-analytics', range],
     queryFn: async () => {
-      const response = await questionnairesApi.getAnalytics(organizationId!);
-      return response.data;
+      const res = await api.get('/api/trust-center/analytics', { params: { range } });
+      const payload = res.data?.data ?? res.data;
+      return {
+        pageviews: payload?.pageviews ?? 0,
+        uniqueVisitors: payload?.uniqueVisitors ?? 0,
+        ndaSigns: payload?.ndaSigns ?? 0,
+        documentDownloads: payload?.documentDownloads ?? 0,
+        topDocuments: Array.isArray(payload?.topDocuments) ? payload.topDocuments : [],
+        recentVisitors: Array.isArray(payload?.recentVisitors) ? payload.recentVisitors : [],
+        pageviewsByDay: Array.isArray(payload?.pageviewsByDay) ? payload.pageviewsByDay : [],
+      };
     },
-    enabled: !!organizationId,
   });
 
-  const { data: kbStats } = useQuery({
-    queryKey: ['kb-stats', organizationId],
-    queryFn: async () => {
-      const response = await knowledgeBaseApi.getStats(organizationId!);
-      return response.data;
-    },
-    enabled: !!organizationId,
-  });
+  const analytics = data ?? EMPTY;
 
-  if (!organizationId) {
-    return (
-      <EmptyState
-        variant="warning"
-        title="Sign in required"
-        description="You need to be signed in to view trust analytics."
-      />
-    );
-  }
+  const sortedDocs = useMemo(() => {
+    const arr = [...analytics.topDocuments];
+    arr.sort((a, b) => (docSort === 'desc' ? b.views - a.views : a.views - b.views));
+    return arr;
+  }, [analytics.topDocuments, docSort]);
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="h-8 bg-surface-200 rounded w-48 animate-pulse" />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-32 bg-white rounded-xl animate-pulse" />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="h-80 bg-white rounded-xl animate-pulse" />
-          <div className="h-80 bg-white rounded-xl animate-pulse" />
-        </div>
-      </div>
-    );
-  }
-
-  const summary = analytics?.summary || {
-    totalQuestionnaires: 0,
-    completedQuestionnaires: 0,
-    completionRate: 0,
-    avgQuestionsPerQuestionnaire: 0,
-    totalQuestions: 0,
-  };
-
-  const STATUS_COLORS: Record<string, string> = {
-    pending: '#F59E0B',
-    answered: '#10B981',
-    approved: '#3B82F6',
-    in_progress: '#6366F1',
-    rejected: '#EF4444',
-  };
-
-  const PRIORITY_COLORS: Record<string, string> = {
-    urgent: '#EF4444',
-    high: '#F97316',
-    medium: '#F59E0B',
-    low: '#6B7280',
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-surface-900">Trust Analytics</h1>
-          <p className="mt-1 text-surface-600">
-            Insights into questionnaire performance and knowledge base usage
-          </p>
-        </div>
-      </div>
-
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Questionnaires"
-          value={summary.totalQuestionnaires}
-          icon={DocumentTextIcon}
-          color="blue"
-        />
-        <StatCard
-          title="Completion Rate"
-          value={`${summary.completionRate}%`}
-          icon={CheckCircleIcon}
-          color="green"
-          subtitle={`${summary.completedQuestionnaires} completed`}
-        />
-        <StatCard
-          title="Total Questions"
-          value={summary.totalQuestions}
-          icon={ChartBarIcon}
-          color="purple"
-          subtitle={`~${summary.avgQuestionsPerQuestionnaire} per questionnaire`}
-        />
-        <StatCard
-          title="KB Entries"
-          value={kbStats?.total || 0}
-          icon={BookOpenIcon}
-          color="amber"
-          subtitle={`${kbStats?.approved || 0} approved`}
-        />
-      </div>
-
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Questions by Status */}
-        <div className="bg-white border border-surface-200 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-surface-900 mb-4">Questions by Status</h3>
-          <LazyRechartsWrapper height={250}>
-            {(Recharts) =>
-              analytics?.questionsByStatus ? (
-                <Recharts.ResponsiveContainer width="100%" height={250}>
-                  <Recharts.PieChart>
-                    <Recharts.Pie
-                      data={analytics.questionsByStatus.map((s: any) => ({
-                        name:
-                          s.status.charAt(0).toUpperCase() + s.status.slice(1).replace('_', ' '),
-                        value: s.count,
-                      }))}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={2}
-                      dataKey="value"
-                      label={({ name, value }) => `${name}: ${value}`}
-                    >
-                      {analytics.questionsByStatus.map((entry: any, index: number) => (
-                        <Recharts.Cell
-                          key={`cell-${index}`}
-                          fill={STATUS_COLORS[entry.status] || '#6B7280'}
-                        />
-                      ))}
-                    </Recharts.Pie>
-                    <Recharts.Tooltip
-                      contentStyle={{
-                        backgroundColor: '#1F2937',
-                        border: '1px solid #374151',
-                        borderRadius: '8px',
-                      }}
-                    />
-                  </Recharts.PieChart>
-                </Recharts.ResponsiveContainer>
-              ) : null
-            }
-          </LazyRechartsWrapper>
-          <div className="flex flex-wrap justify-center gap-4 mt-4">
-            {analytics?.questionsByStatus?.map((s: any) => (
-              <div key={s.status} className="flex items-center gap-2 text-sm">
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: STATUS_COLORS[s.status] || '#6B7280' }}
-                />
-                <span className="text-surface-700 capitalize">{s.status.replace('_', ' ')}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Questionnaires by Priority */}
-        <div className="bg-white border border-surface-200 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-surface-900 mb-4">
-            Questionnaires by Priority
-          </h3>
-          <LazyRechartsWrapper height={250}>
-            {(Recharts) =>
-              analytics?.questionnairesByPriority ? (
-                <Recharts.ResponsiveContainer width="100%" height={250}>
-                  <Recharts.BarChart
-                    data={analytics.questionnairesByPriority.map((p: any) => ({
-                      name: p.priority.charAt(0).toUpperCase() + p.priority.slice(1),
-                      count: p.count,
-                      fill: PRIORITY_COLORS[p.priority] || '#6B7280',
-                    }))}
-                    layout="vertical"
-                    margin={{ left: 60, right: 20 }}
-                  >
-                    <Recharts.CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <Recharts.XAxis type="number" stroke="#9CA3AF" />
-                    <Recharts.YAxis type="category" dataKey="name" stroke="#9CA3AF" />
-                    <Recharts.Tooltip
-                      contentStyle={{
-                        backgroundColor: '#1F2937',
-                        border: '1px solid #374151',
-                        borderRadius: '8px',
-                      }}
-                    />
-                    <Recharts.Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                      {analytics.questionnairesByPriority.map((entry: any, index: number) => (
-                        <Recharts.Cell
-                          key={`cell-${index}`}
-                          fill={PRIORITY_COLORS[entry.priority] || '#6B7280'}
-                        />
-                      ))}
-                    </Recharts.Bar>
-                  </Recharts.BarChart>
-                </Recharts.ResponsiveContainer>
-              ) : null
-            }
-          </LazyRechartsWrapper>
-        </div>
-      </div>
-
-      {/* Response Time & Completion Trend */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Average Response Time by Priority */}
-        <div className="bg-white border border-surface-200 rounded-xl p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <ClockIcon className="w-5 h-5 text-surface-600" />
-            <h3 className="text-lg font-semibold text-surface-900">Average Response Time</h3>
-          </div>
-          <div className="space-y-4">
-            {analytics?.responseTimeByPriority?.map((item: any) => (
-              <div key={item.priority} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: PRIORITY_COLORS[item.priority] || '#6B7280' }}
-                  />
-                  <span className="text-surface-800 capitalize">{item.priority}</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-surface-900 font-semibold">
-                    {formatHours(item.avgHours)}
-                  </span>
-                  <span className="text-xs text-surface-500 ml-2">({item.count} completed)</span>
-                </div>
-              </div>
-            )) || <p className="text-surface-600 text-sm">No completion data available</p>}
-          </div>
-        </div>
-
-        {/* Completion Trend */}
-        <div className="bg-white border border-surface-200 rounded-xl p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <ArrowTrendingUpIcon className="w-5 h-5 text-surface-600" />
-            <h3 className="text-lg font-semibold text-surface-900">Completion Trend</h3>
-          </div>
-          <LazyRechartsWrapper height={200}>
-            {(Recharts) =>
-              analytics?.completionTrend && analytics.completionTrend.length > 0 ? (
-                <Recharts.ResponsiveContainer width="100%" height={200}>
-                  <Recharts.AreaChart
-                    data={analytics.completionTrend.map((t: any) => ({
-                      week: new Date(t.week).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                      }),
-                      completions: t.count,
-                    }))}
-                    margin={{ left: 0, right: 0 }}
-                  >
-                    <defs>
-                      <linearGradient id="colorCompletions" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <Recharts.CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <Recharts.XAxis dataKey="week" stroke="#9CA3AF" fontSize={12} />
-                    <Recharts.YAxis stroke="#9CA3AF" fontSize={12} />
-                    <Recharts.Tooltip
-                      contentStyle={{
-                        backgroundColor: '#1F2937',
-                        border: '1px solid #374151',
-                        borderRadius: '8px',
-                      }}
-                    />
-                    <Recharts.Area
-                      type="monotone"
-                      dataKey="completions"
-                      stroke="#10B981"
-                      fillOpacity={1}
-                      fill="url(#colorCompletions)"
-                    />
-                  </Recharts.AreaChart>
-                </Recharts.ResponsiveContainer>
-              ) : (
-                <div className="h-[200px] flex items-center justify-center text-surface-600 text-sm">
-                  No completion data for this period
-                </div>
-              )
-            }
-          </LazyRechartsWrapper>
-        </div>
-      </div>
-
-      {/* Top Knowledge Base Entries */}
-      <div className="bg-white border border-surface-200 rounded-xl p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <BookOpenIcon className="w-5 h-5 text-surface-600" />
-          <h3 className="text-lg font-semibold text-surface-900">
-            Most Used Knowledge Base Entries
-          </h3>
-        </div>
-        {analytics?.topKbEntries && analytics.topKbEntries.length > 0 ? (
-          <div className="divide-y divide-surface-200">
-            {analytics.topKbEntries.map((entry: any, index: number) => (
-              <div key={entry.id} className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 flex items-center justify-center bg-surface-200 text-surface-600 text-sm font-bold rounded">
-                    {index + 1}
-                  </span>
-                  <div>
-                    <p className="text-surface-900 font-medium">{entry.title}</p>
-                    {entry.category && (
-                      <span className="text-xs text-surface-500 capitalize">{entry.category}</span>
-                    )}
-                  </div>
-                </div>
-                <span className="text-surface-600 text-sm">{entry.usageCount} uses</span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-surface-600 text-sm">No usage data available yet</p>
-        )}
-      </div>
-    </div>
+  const maxPageviews = useMemo(
+    () => Math.max(1, ...analytics.pageviewsByDay.map((d) => d.count)),
+    [analytics.pageviewsByDay]
   );
-}
 
-// Helper function to format hours
-function formatHours(hours: number): string {
-  if (hours < 24) return `${hours}h`;
-  const days = Math.floor(hours / 24);
-  const remainingHours = hours % 24;
-  if (remainingHours === 0) return `${days}d`;
-  return `${days}d ${remainingHours}h`;
-}
-
-// Stat Card Component
-function StatCard({
-  title,
-  value,
-  icon: Icon,
-  color,
-  subtitle,
-}: {
-  title: string;
-  value: number | string;
-  icon: React.ComponentType<{ className?: string }>;
-  color: 'blue' | 'green' | 'purple' | 'amber' | 'red';
-  subtitle?: string;
-}) {
-  const colorClasses = {
-    blue: 'bg-blue-500/20 text-blue-600',
-    green: 'bg-green-500/20 text-green-600',
-    purple: 'bg-purple-500/20 text-purple-600',
-    amber: 'bg-amber-500/20 text-amber-600',
-    red: 'bg-red-500/20 text-red-600',
-  };
+  const visitorColumns: ColumnDef<RecentVisitor>[] = useMemo(
+    () => [
+      {
+        id: 'org',
+        accessorKey: 'org',
+        header: 'Organization',
+        cell: ({ row }) => <span className="font-medium text-surface-900">{row.original.org}</span>,
+      },
+      {
+        id: 'contact',
+        accessorKey: 'contact',
+        header: 'Contact',
+        cell: ({ row }) => <span className="text-surface-700">{row.original.contact}</span>,
+      },
+      {
+        id: 'accessedAt',
+        accessorKey: 'accessedAt',
+        header: 'Accessed',
+        cell: ({ row }) => (
+          <span className="text-surface-700 text-small">
+            {formatDateTime(row.original.accessedAt)}
+          </span>
+        ),
+      },
+      {
+        id: 'signedNda',
+        accessorKey: 'signedNda',
+        header: 'NDA',
+        cell: ({ row }) =>
+          row.original.signedNda ? (
+            <Badge variant="success" dot>
+              Signed
+            </Badge>
+          ) : (
+            <Badge variant="neutral">Not signed</Badge>
+          ),
+      },
+    ],
+    []
+  );
 
   return (
-    <div className="bg-white border border-surface-200 rounded-xl p-5">
-      <div className="flex items-center gap-3 mb-3">
-        <div className={clsx('p-2 rounded-lg', colorClasses[color])}>
-          <Icon className="w-5 h-5" />
-        </div>
-        <span className="text-sm text-surface-600">{title}</span>
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Trust Center Analytics"
+        description="Pageviews, visitor activity, and document engagement."
+        actions={
+          <div className="w-48">
+            <Select value={range} onChange={setRange} options={RANGE_OPTIONS} />
+          </div>
+        }
+      />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Pageviews"
+          value={analytics.pageviews.toLocaleString()}
+          tone="brand"
+          icon={<Eye className="h-5 w-5" />}
+        />
+        <StatCard
+          label="Unique visitors"
+          value={analytics.uniqueVisitors.toLocaleString()}
+          tone="blue"
+          icon={<Users className="h-5 w-5" />}
+        />
+        <StatCard
+          label="NDA signs"
+          value={analytics.ndaSigns.toLocaleString()}
+          tone="emerald"
+          icon={<FileSignature className="h-5 w-5" />}
+        />
+        <StatCard
+          label="Document downloads"
+          value={analytics.documentDownloads.toLocaleString()}
+          tone="purple"
+          icon={<Download className="h-5 w-5" />}
+        />
       </div>
-      <p className="text-3xl font-bold text-surface-900">{value}</p>
-      {subtitle && <p className="text-xs text-surface-500 mt-1">{subtitle}</p>}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Card>
+          <CardHeader>
+            <CardTitle>Top documents</CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              leftIcon={<ArrowDownUp className="h-4 w-4" />}
+              onClick={() => setDocSort((s) => (s === 'desc' ? 'asc' : 'desc'))}
+            >
+              {docSort === 'desc' ? 'Most views' : 'Fewest views'}
+            </Button>
+          </CardHeader>
+          <CardBody density="compact">
+            {isLoading ? (
+              <div className="space-y-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-8" />
+                ))}
+              </div>
+            ) : sortedDocs.length === 0 ? (
+              <p className="text-small text-surface-600 px-2 py-4 text-center">
+                No document activity yet.
+              </p>
+            ) : (
+              <ul className="divide-y divide-surface-200/60">
+                {sortedDocs.map((doc) => (
+                  <li key={doc.id} className="flex items-center justify-between gap-3 px-2 py-2.5">
+                    <span className="text-body text-surface-900 truncate">{doc.title}</span>
+                    <span className="text-small font-medium text-surface-700 tabular-nums shrink-0">
+                      {doc.views.toLocaleString()} views
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent visitors</CardTitle>
+          </CardHeader>
+          <CardBody density="compact" className="p-0">
+            <DataTable
+              data={analytics.recentVisitors}
+              columns={visitorColumns}
+              loading={isLoading}
+              density="compact"
+              getRowId={(row) => row.id}
+              className="border-0 rounded-none"
+            />
+          </CardBody>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Pageviews over time</CardTitle>
+        </CardHeader>
+        <CardBody density="comfy">
+          {isLoading ? (
+            <Skeleton className="h-48" />
+          ) : analytics.pageviewsByDay.length === 0 ? (
+            <p className="text-small text-surface-600 text-center py-8">
+              No pageview history in this range.
+            </p>
+          ) : (
+            <div className="flex items-end gap-1.5 h-48">
+              {analytics.pageviewsByDay.map((d) => {
+                const heightPct = (d.count / maxPageviews) * 100;
+                return (
+                  <div
+                    key={d.date}
+                    className="flex-1 min-w-0 flex flex-col items-center justify-end gap-1.5 group"
+                  >
+                    <span className="text-[10px] font-medium text-surface-700 tabular-nums opacity-0 group-hover:opacity-100 transition-opacity">
+                      {d.count.toLocaleString()}
+                    </span>
+                    <div
+                      className="w-full rounded-t-sm bg-brand-500/70 group-hover:bg-brand-600 transition-colors"
+                      style={{ height: `${Math.max(2, heightPct)}%` }}
+                      title={`${formatDate(d.date)}: ${d.count.toLocaleString()}`}
+                    />
+                    <span className="text-[10px] text-surface-500 truncate w-full text-center">
+                      {formatDate(d.date)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardBody>
+      </Card>
     </div>
   );
 }

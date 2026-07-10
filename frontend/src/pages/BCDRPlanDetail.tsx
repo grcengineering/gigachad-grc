@@ -1,86 +1,130 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import {
-  ArrowLeftIcon,
-  PencilIcon,
-  TrashIcon,
-  XMarkIcon,
-  DocumentTextIcon,
-  ShieldExclamationIcon,
-  CalendarIcon,
-  ExclamationCircleIcon,
-  CheckCircleIcon,
-} from '@heroicons/react/24/outline';
-import clsx from 'clsx';
-import { Button } from '@/components/ui/Button';
-import { SkeletonDetailHeader, SkeletonDetailSection } from '@/components/Skeleton';
+  ArrowLeft,
+  Pencil,
+  ShieldAlert,
+  FileText,
+  FlaskConical,
+  CheckCircle2,
+  XCircle,
+  Calendar,
+  MessageSquare,
+  Link2,
+} from 'lucide-react';
+import api from '@/lib/api';
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  Dialog,
+  EmptyState,
+  Input,
+  Label,
+  Select,
+  Skeleton,
+  SkeletonText,
+  Tabs,
+  Textarea,
+  PageHeader,
+  type BadgeVariant,
+} from '@/components/ui';
 
-import { Textarea } from '@/components/ui/Textarea';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-import { Dialog } from '@/components/ui/Dialog';
-
-interface BCDRPlan {
+interface BCDRPlanProcess {
   id: string;
-  plan_id: string;
-  title: string;
-  description: string;
-  plan_type: string;
-  status: string;
-  version: string;
-  owner_id: string;
-  owner_name: string;
-  owner_email: string;
-  effective_date: string;
-  next_review_due: string;
-  last_reviewed_at: string;
-  objectives: string;
-  scope: string;
-  assumptions: string;
-  activation_criteria: string;
-  deactivation_criteria: string;
-  created_at: string;
-  updated_at: string;
-  in_scope_processes: Array<{
-    id: string;
-    process_id: string;
-    name: string;
-    criticality_tier: string;
-  }>;
-  linked_controls: Array<{
-    id: string;
-    control_id: string;
-    title: string;
-  }>;
-  communication_plans: Array<{
-    id: string;
-    name: string;
-    plan_type: string;
-  }>;
-  dr_tests: Array<{
-    id: string;
-    test_id: string;
-    name: string;
-    status: string;
-    result: string;
-    scheduled_date: string;
-  }>;
+  process_id?: string;
+  processId?: string;
+  name: string;
+  criticality_tier?: string;
+  criticalityTier?: string;
 }
 
-const STATUS_OPTIONS = [
-  { value: 'draft', label: 'Draft', color: 'bg-surface-600 text-surface-700' },
-  { value: 'in_review', label: 'In Review', color: 'bg-yellow-500/20 text-yellow-600' },
-  { value: 'approved', label: 'Approved', color: 'bg-blue-500/20 text-blue-600' },
-  { value: 'published', label: 'Published', color: 'bg-green-500/20 text-green-600' },
-  { value: 'archived', label: 'Archived', color: 'bg-surface-200 text-surface-600' },
-];
+interface BCDRPlanControl {
+  id: string;
+  control_id?: string;
+  controlId?: string;
+  title: string;
+}
 
-const PLAN_TYPES = [
+interface BCDRPlanTest {
+  id: string;
+  test_id?: string;
+  testId?: string;
+  name: string;
+  status?: string;
+  result?: string;
+  scheduled_date?: string;
+  scheduledDate?: string;
+}
+
+interface BCDRPlanCommunication {
+  id: string;
+  name: string;
+  plan_type?: string;
+  planType?: string;
+}
+
+interface BCDRPlanProcedure {
+  id: string;
+  title: string;
+  description?: string;
+  order?: number;
+}
+
+interface BCDRPlanDetailData {
+  id: string;
+  plan_id?: string;
+  planId?: string;
+  title: string;
+  description?: string;
+  plan_type?: string;
+  planType?: string;
+  status: string;
+  version?: string | number;
+  owner_id?: string;
+  ownerId?: string;
+  owner_name?: string;
+  ownerName?: string;
+  owner_email?: string;
+  ownerEmail?: string;
+  effective_date?: string;
+  effectiveDate?: string;
+  review_frequency?: string;
+  reviewFrequency?: string;
+  next_review_due?: string;
+  nextReviewDue?: string;
+  last_reviewed_at?: string;
+  lastReviewedAt?: string;
+  objectives?: string;
+  scope?: string;
+  scope_description?: string;
+  scopeDescription?: string;
+  assumptions?: string;
+  activation_criteria?: string;
+  activationCriteria?: string;
+  deactivation_criteria?: string;
+  deactivationCriteria?: string;
+  created_at?: string;
+  createdAt?: string;
+  updated_at?: string;
+  updatedAt?: string;
+  in_scope_processes?: BCDRPlanProcess[];
+  inScopeProcesses?: BCDRPlanProcess[];
+  linked_controls?: BCDRPlanControl[];
+  linkedControls?: BCDRPlanControl[];
+  communication_plans?: BCDRPlanCommunication[];
+  communicationPlans?: BCDRPlanCommunication[];
+  dr_tests?: BCDRPlanTest[];
+  drTests?: BCDRPlanTest[];
+  procedures?: BCDRPlanProcedure[];
+}
+
+const PLAN_TYPE_OPTS = [
   { value: 'business_continuity', label: 'Business Continuity' },
   { value: 'disaster_recovery', label: 'Disaster Recovery' },
   { value: 'incident_response', label: 'Incident Response' },
@@ -91,689 +135,738 @@ const PLAN_TYPES = [
   { value: 'other', label: 'Other' },
 ];
 
+const STATUS_OPTS = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'in_review', label: 'In Review' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'published', label: 'Published' },
+  { value: 'archived', label: 'Archived' },
+  { value: 'expired', label: 'Expired' },
+];
+
+const STATUS_VARIANT: Record<string, BadgeVariant> = {
+  draft: 'neutral',
+  in_review: 'warning',
+  approved: 'info',
+  published: 'success',
+  archived: 'neutral',
+  expired: 'danger',
+};
+
+function planTypeLabel(value?: string) {
+  if (!value) return '—';
+  return PLAN_TYPE_OPTS.find((o) => o.value === value)?.label ?? value.replace(/_/g, ' ');
+}
+
+function statusLabel(value?: string) {
+  if (!value) return '—';
+  return STATUS_OPTS.find((o) => o.value === value)?.label ?? value.replace(/_/g, ' ');
+}
+
+function formatDate(value?: string) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString();
+}
+
+function pickFirst<T>(...values: (T | undefined | null)[]): T | undefined {
+  for (const v of values) {
+    if (v !== undefined && v !== null) return v;
+  }
+  return undefined;
+}
+
+function getProcesses(plan: BCDRPlanDetailData): BCDRPlanProcess[] {
+  return plan.inScopeProcesses ?? plan.in_scope_processes ?? [];
+}
+
+function getControls(plan: BCDRPlanDetailData): BCDRPlanControl[] {
+  return plan.linkedControls ?? plan.linked_controls ?? [];
+}
+
+function getTests(plan: BCDRPlanDetailData): BCDRPlanTest[] {
+  return plan.drTests ?? plan.dr_tests ?? [];
+}
+
+function getCommunications(plan: BCDRPlanDetailData): BCDRPlanCommunication[] {
+  return plan.communicationPlans ?? plan.communication_plans ?? [];
+}
+
+function getProcedures(plan: BCDRPlanDetailData): BCDRPlanProcedure[] {
+  return plan.procedures ?? [];
+}
+
+function getControlCode(c: BCDRPlanControl): string {
+  return c.controlId || c.control_id || '';
+}
+
+function getProcessCode(p: BCDRPlanProcess): string {
+  return p.processId || p.process_id || '';
+}
+
+function getCriticality(p: BCDRPlanProcess): string {
+  return p.criticalityTier || p.criticality_tier || '';
+}
+
+function getScheduledDate(t: BCDRPlanTest): string | undefined {
+  return t.scheduledDate || t.scheduled_date;
+}
+
+function getCommType(c: BCDRPlanCommunication): string {
+  return c.planType || c.plan_type || '';
+}
+
+interface EditForm {
+  title: string;
+  description: string;
+  planType: string;
+  status: string;
+  objectives: string;
+  scope: string;
+  assumptions: string;
+  activationCriteria: string;
+  deactivationCriteria: string;
+}
+
+const EMPTY_FORM: EditForm = {
+  title: '',
+  description: '',
+  planType: 'business_continuity',
+  status: 'draft',
+  objectives: '',
+  scope: '',
+  assumptions: '',
+  activationCriteria: '',
+  deactivationCriteria: '',
+};
+
 export default function BCDRPlanDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const isNewPlan = id === 'new';
-  const [showEditModal, setShowEditModal] = useState(isNewPlan);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'processes' | 'tests' | 'controls'>(
-    'overview'
-  );
-  const [editForm, setEditForm] = useState({
-    title: '',
-    description: '',
-    plan_type: 'business_continuity',
-    status: 'draft',
-    objectives: '',
-    scope: '',
-    assumptions: '',
-    activation_criteria: '',
-    deactivation_criteria: '',
-  });
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState<EditForm>(EMPTY_FORM);
 
   const {
     data: plan,
     isLoading,
-    error,
-  } = useQuery<BCDRPlan>({
-    queryKey: ['bcdr-plan', id],
+    isError,
+  } = useQuery<BCDRPlanDetailData>({
+    queryKey: ['bcdr', 'plan', id],
     queryFn: async () => {
       const res = await api.get(`/api/bcdr/plans/${id}`);
       return res.data;
     },
-    enabled: !!id && !isNewPlan,
+    enabled: !!id,
   });
 
   useEffect(() => {
-    if (plan) {
-      setEditForm({
-        title: plan.title || '',
-        description: plan.description || '',
-        plan_type: plan.plan_type || 'business_continuity',
-        status: plan.status || 'draft',
-        objectives: plan.objectives || '',
-        scope: plan.scope || '',
-        assumptions: plan.assumptions || '',
-        activation_criteria: plan.activation_criteria || '',
-        deactivation_criteria: plan.deactivation_criteria || '',
-      });
-    }
+    if (!plan) return;
+    setEditForm({
+      title: plan.title || '',
+      description: plan.description || '',
+      planType: plan.planType || plan.plan_type || 'business_continuity',
+      status: plan.status || 'draft',
+      objectives: plan.objectives || '',
+      scope: plan.scopeDescription || plan.scope_description || plan.scope || '',
+      assumptions: plan.assumptions || '',
+      activationCriteria: plan.activationCriteria || plan.activation_criteria || '',
+      deactivationCriteria: plan.deactivationCriteria || plan.deactivation_criteria || '',
+    });
   }, [plan]);
 
-  const createMutation = useMutation({
-    mutationFn: async (data: typeof editForm) => {
-      const res = await api.post('/api/bcdr/plans', {
-        ...data,
-        planId: `BCDR-${Date.now()}`,
-        planType: data.plan_type,
+  const updateMutation = useMutation({
+    mutationFn: async (data: EditForm) => {
+      const res = await api.put(`/api/bcdr/plans/${id}`, {
+        title: data.title,
+        description: data.description,
+        planType: data.planType,
+        status: data.status,
+        objectives: data.objectives,
+        scopeDescription: data.scope,
+        assumptions: data.assumptions,
+        activationCriteria: data.activationCriteria,
+        deactivationCriteria: data.deactivationCriteria,
       });
       return res.data;
     },
-    onSuccess: (newPlan) => {
-      queryClient.invalidateQueries({ queryKey: ['bcdr-plans'] });
-      setShowEditModal(false);
-      toast.success('BC/DR plan created successfully');
-      navigate(`/bcdr/plans/${newPlan.id}`);
-    },
-    onError: () => {
-      toast.error('Failed to create BC/DR plan');
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async (data: typeof editForm) => {
-      // Transform snake_case to camelCase for backend DTO
-      const payload = {
-        title: data.title,
-        description: data.description,
-        status: data.status,
-        planType: data.plan_type,
-        scopeDescription: data.scope,
-        activationCriteria: data.activation_criteria,
-        deactivationCriteria: data.deactivation_criteria,
-        objectives: data.objectives,
-        assumptions: data.assumptions,
-      };
-      const res = await api.patch(`/api/bcdr/plans/${id}`, payload);
-      return res.data;
-    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bcdr-plan', id] });
-      queryClient.invalidateQueries({ queryKey: ['bcdr-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['bcdr', 'plan', id] });
+      queryClient.invalidateQueries({ queryKey: ['bcdr', 'plans'] });
       setShowEditModal(false);
-      toast.success('BC/DR plan updated successfully');
+      toast.success('Plan updated');
     },
     onError: () => {
-      toast.error('Failed to update BC/DR plan');
+      toast.error('Failed to update plan');
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      await api.delete(`/api/bcdr/plans/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bcdr-plans'] });
-      toast.success('BC/DR plan deleted');
-      navigate('/bcdr/plans');
-    },
-    onError: () => {
-      toast.error('Failed to delete BC/DR plan');
-    },
-  });
-
-  const getStatusConfig = (status: string) => {
-    return STATUS_OPTIONS.find((s) => s.value === status) || STATUS_OPTIONS[0];
-  };
-
-  const getPlanTypeLabel = (type: string) => {
-    return PLAN_TYPES.find((t) => t.value === type)?.label || type;
-  };
-
-  if (isLoading && !isNewPlan) {
+  if (isLoading) {
     return (
-      <div className="p-6 space-y-6">
-        <SkeletonDetailHeader />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <SkeletonDetailSection />
-          </div>
-          <div>
-            <SkeletonDetailSection />
-          </div>
+      <div className="space-y-5 animate-fade-in">
+        <div className="flex items-center gap-2">
+          <Link
+            to="/bcdr/plans"
+            className="inline-flex items-center gap-1 text-small text-surface-600 hover:text-surface-900"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to plans
+          </Link>
         </div>
+        <Skeleton className="h-16" />
+        <Card>
+          <CardBody density="comfy">
+            <SkeletonText lines={4} />
+          </CardBody>
+        </Card>
       </div>
     );
   }
 
-  if (!isNewPlan && (error || !plan)) {
+  if (isError || !plan) {
     return (
-      <div className="p-6">
-        <div className="card p-8 text-center">
-          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
-          <h2 className="text-lg font-semibold text-surface-900 mb-2">BC/DR Plan Not Found</h2>
-          <p className="text-surface-600 mb-4">The requested plan could not be loaded.</p>
-          <Button onClick={() => navigate('/bcdr/plans')}>Back to Plans</Button>
-        </div>
+      <div className="space-y-5 animate-fade-in">
+        <Link
+          to="/bcdr/plans"
+          className="inline-flex items-center gap-1 text-small text-surface-600 hover:text-surface-900"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to plans
+        </Link>
+        <Card>
+          <CardBody density="comfy">
+            <EmptyState
+              icon={<XCircle className="h-8 w-8" />}
+              title="Plan not found"
+              description="The requested BC/DR plan could not be loaded."
+              action={
+                <Button variant="outline" onClick={() => navigate('/bcdr/plans')}>
+                  Back to plans
+                </Button>
+              }
+            />
+          </CardBody>
+        </Card>
       </div>
     );
   }
 
-  // For new plans, show the create form modal immediately
-  if (isNewPlan || !plan) {
-    return (
-      <div className="p-6 space-y-6">
-        <div className="flex items-start gap-4">
-          <button
-            onClick={() => navigate('/bcdr/plans')}
-            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600 mt-1"
-          >
-            <ArrowLeftIcon className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-surface-900">Create New BC/DR Plan</h1>
-            <p className="text-surface-600">Fill out the form below to create a new plan</p>
-          </div>
-        </div>
-        <div className="card p-6">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              createMutation.mutate(editForm);
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <label className="label">Title *</label>
-              <Input
-                type="text"
-                value={editForm.title}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
-                className="input mt-1"
-                required
-              />
-            </div>
+  const planCode = pickFirst(plan.planId, plan.plan_id);
+  const planType = pickFirst(plan.planType, plan.plan_type);
+  const ownerName = pickFirst(plan.ownerName, plan.owner_name);
+  const ownerEmail = pickFirst(plan.ownerEmail, plan.owner_email);
+  const effectiveDate = pickFirst(plan.effectiveDate, plan.effective_date);
+  const reviewFrequency = pickFirst(plan.reviewFrequency, plan.review_frequency);
+  const nextReviewDue = pickFirst(plan.nextReviewDue, plan.next_review_due);
+  const lastReviewed = pickFirst(plan.lastReviewedAt, plan.last_reviewed_at);
+  const scope = pickFirst(plan.scopeDescription, plan.scope_description, plan.scope);
+  const activationCriteria = pickFirst(plan.activationCriteria, plan.activation_criteria);
+  const deactivationCriteria = pickFirst(plan.deactivationCriteria, plan.deactivation_criteria);
 
-            <div>
-              <label className="label">Plan Type</label>
-              <SelectNative
-                value={editForm.plan_type}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, plan_type: e.target.value }))}
-                className="input mt-1"
-              >
-                {PLAN_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </SelectNative>
-            </div>
+  const processes = getProcesses(plan);
+  const controls = getControls(plan);
+  const tests = getTests(plan);
+  const communications = getCommunications(plan);
+  const procedures = getProcedures(plan);
 
-            <div>
-              <label className="label">Description</label>
-              <Textarea
-                value={editForm.description}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
-                rows={3}
-                className="input mt-1"
-              />
-            </div>
+  const overviewContent = (
+    <div className="space-y-5">
+      <Card>
+        <CardHeader>
+          <CardTitle>Description</CardTitle>
+        </CardHeader>
+        <CardBody density="comfy">
+          {plan.description ? (
+            <p className="text-surface-800 whitespace-pre-wrap">{plan.description}</p>
+          ) : (
+            <p className="text-surface-500 italic">No description provided.</p>
+          )}
+        </CardBody>
+      </Card>
 
-            <div>
-              <label className="label">Objectives</label>
-              <Textarea
-                value={editForm.objectives}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, objectives: e.target.value }))}
-                rows={3}
-                className="input mt-1"
-              />
-            </div>
-
-            <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="secondary" onClick={() => navigate('/bcdr/plans')}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? 'Creating...' : 'Create Plan'}
-              </Button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
-  const statusConfig = getStatusConfig(plan.status);
-
-  return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-4">
-          <button
-            onClick={() => navigate('/bcdr/plans')}
-            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600 mt-1"
-          >
-            <ArrowLeftIcon className="w-5 h-5" />
-          </button>
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <DocumentTextIcon className="w-8 h-8 text-brand-400" />
-              <div>
-                <h1 className="text-2xl font-bold text-surface-900">{plan.title}</h1>
-                <p className="text-surface-600 text-sm">
-                  {plan.plan_id} • v{plan.version}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <span
-                className={clsx('px-3 py-1 rounded-full text-sm font-medium', statusConfig.color)}
-              >
-                {statusConfig.label}
-              </span>
-              <span className="px-3 py-1 rounded-full text-sm font-medium bg-surface-200 text-surface-700">
-                {getPlanTypeLabel(plan.plan_type)}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => setShowEditModal(true)}>
-            <PencilIcon className="w-4 h-4 mr-2" />
-            Edit
-          </Button>
-          <Button variant="danger" onClick={() => setShowDeleteConfirm(true)}>
-            <TrashIcon className="w-4 h-4 mr-2" />
-            Delete
-          </Button>
-        </div>
-      </div>
-      {/* Tabs */}
-      <div className="border-b border-surface-200">
-        <nav className="flex gap-6">
-          {(['overview', 'processes', 'tests', 'controls'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={clsx(
-                'pb-3 px-1 text-sm font-medium border-b-2 transition-colors capitalize',
-                activeTab === tab
-                  ? 'border-brand-500 text-brand-400'
-                  : 'border-transparent text-surface-600 hover:text-surface-800'
-              )}
-            >
-              {tab}
-            </button>
-          ))}
-        </nav>
-      </div>
-      {/* Content */}
-      {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="card p-6">
-              <h3 className="text-lg font-semibold text-surface-900 mb-4">Description</h3>
-              <p className="text-surface-700">{plan.description || 'No description provided.'}</p>
-            </div>
-
-            {plan.objectives && (
-              <div className="card p-6">
-                <h3 className="text-lg font-semibold text-surface-900 mb-4">Objectives</h3>
-                <p className="text-surface-700 whitespace-pre-wrap">{plan.objectives}</p>
-              </div>
-            )}
-
-            {plan.scope && (
-              <div className="card p-6">
-                <h3 className="text-lg font-semibold text-surface-900 mb-4">Scope</h3>
-                <p className="text-surface-700 whitespace-pre-wrap">{plan.scope}</p>
-              </div>
-            )}
-
-            {(plan.activation_criteria || plan.deactivation_criteria) && (
-              <div className="card p-6">
-                <h3 className="text-lg font-semibold text-surface-900 mb-4">Activation Criteria</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {plan.activation_criteria && (
-                    <div>
-                      <p className="text-surface-600 text-sm mb-2">Activation Criteria</p>
-                      <p className="text-surface-700 whitespace-pre-wrap">
-                        {plan.activation_criteria}
-                      </p>
-                    </div>
-                  )}
-                  {plan.deactivation_criteria && (
-                    <div>
-                      <p className="text-surface-600 text-sm mb-2">Deactivation Criteria</p>
-                      <p className="text-surface-700 whitespace-pre-wrap">
-                        {plan.deactivation_criteria}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {plan.assumptions && (
-              <div className="card p-6">
-                <h3 className="text-lg font-semibold text-surface-900 mb-4">Assumptions</h3>
-                <p className="text-surface-700 whitespace-pre-wrap">{plan.assumptions}</p>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-6">
-            <div className="card p-6">
-              <h3 className="text-lg font-semibold text-surface-900 mb-4">Details</h3>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-surface-600 text-sm">Owner</p>
-                  <p className="text-surface-900">{plan.owner_name || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-surface-600 text-sm">Effective Date</p>
-                  <p className="text-surface-900">
-                    {plan.effective_date ? new Date(plan.effective_date).toLocaleDateString() : '-'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-surface-600 text-sm">Next Review</p>
-                  <p className="text-surface-900">
-                    {plan.next_review_due
-                      ? new Date(plan.next_review_due).toLocaleDateString()
-                      : '-'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-surface-600 text-sm">Last Reviewed</p>
-                  <p className="text-surface-900">
-                    {plan.last_reviewed_at
-                      ? new Date(plan.last_reviewed_at).toLocaleDateString()
-                      : 'Never'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="card p-6">
-              <h3 className="text-lg font-semibold text-surface-900 mb-4">Statistics</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-surface-600">In-Scope Processes</span>
-                  <span className="text-surface-900">{plan.in_scope_processes?.length || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-surface-600">DR Tests</span>
-                  <span className="text-surface-900">{plan.dr_tests?.length || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-surface-600">Linked Controls</span>
-                  <span className="text-surface-900">{plan.linked_controls?.length || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-surface-600">Communication Plans</span>
-                  <span className="text-surface-900">{plan.communication_plans?.length || 0}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {plan.objectives && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Objectives</CardTitle>
+          </CardHeader>
+          <CardBody density="comfy">
+            <p className="text-surface-800 whitespace-pre-wrap">{plan.objectives}</p>
+          </CardBody>
+        </Card>
       )}
-      {activeTab === 'processes' && (
-        <div className="card p-6">
-          <h3 className="text-lg font-semibold text-surface-900 mb-4">
-            In-Scope Business Processes
-          </h3>
-          {plan.in_scope_processes && plan.in_scope_processes.length > 0 ? (
+
+      {scope && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Scope</CardTitle>
+          </CardHeader>
+          <CardBody density="comfy">
+            <p className="text-surface-800 whitespace-pre-wrap">{scope}</p>
+          </CardBody>
+        </Card>
+      )}
+
+      {(activationCriteria || deactivationCriteria) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Activation & Deactivation</CardTitle>
+          </CardHeader>
+          <CardBody density="comfy">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {activationCriteria && (
+                <div>
+                  <p className="text-xs text-surface-500 uppercase tracking-wider font-medium">
+                    Activation Criteria
+                  </p>
+                  <p className="text-surface-800 whitespace-pre-wrap mt-1">{activationCriteria}</p>
+                </div>
+              )}
+              {deactivationCriteria && (
+                <div>
+                  <p className="text-xs text-surface-500 uppercase tracking-wider font-medium">
+                    Deactivation Criteria
+                  </p>
+                  <p className="text-surface-800 whitespace-pre-wrap mt-1">
+                    {deactivationCriteria}
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
+      {plan.assumptions && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Assumptions</CardTitle>
+          </CardHeader>
+          <CardBody density="comfy">
+            <p className="text-surface-800 whitespace-pre-wrap">{plan.assumptions}</p>
+          </CardBody>
+        </Card>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>In-Scope Processes</CardTitle>
+        </CardHeader>
+        <CardBody density="comfy">
+          {processes.length === 0 ? (
+            <EmptyState
+              icon={<ShieldAlert className="h-6 w-6" />}
+              title="No processes in scope"
+              description="Link business processes to define the scope of this plan."
+              size="sm"
+            />
+          ) : (
             <div className="space-y-2">
-              {plan.in_scope_processes.map((process) => (
+              {processes.map((process) => (
                 <Link
                   key={process.id}
                   to={`/bcdr/processes/${process.id}`}
-                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors"
+                  className="flex items-center justify-between gap-3 p-2.5 rounded-md bg-surface-50 hover:bg-surface-100 border border-surface-200 transition-colors"
                 >
-                  <div className="flex items-center gap-3">
-                    <ShieldExclamationIcon className="w-5 h-5 text-surface-600" />
-                    <div>
-                      <p className="text-surface-900 font-medium">{process.name}</p>
-                      <p className="text-surface-600 text-sm">{process.process_id}</p>
-                    </div>
-                  </div>
-                  <span className="px-2 py-1 rounded text-xs font-medium bg-surface-200 text-surface-700 capitalize">
-                    {process.criticality_tier?.replace('_', ' ')}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <p className="text-surface-600 text-center py-8">No processes in scope</p>
-          )}
-        </div>
-      )}
-      {activeTab === 'tests' && (
-        <div className="card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-surface-900">DR Tests</h3>
-            <Link
-              to="/bcdr/tests/new"
-              className="inline-flex items-center rounded-md border border-surface-300 bg-white px-3 h-8 text-small font-medium !text-surface-900 hover:bg-surface-100 transition-colors"
-            >
-              Schedule Test
-            </Link>
-          </div>
-          {plan.dr_tests && plan.dr_tests.length > 0 ? (
-            <div className="space-y-2">
-              {plan.dr_tests.map((test) => (
-                <Link
-                  key={test.id}
-                  to={`/bcdr/tests/${test.id}`}
-                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    {test.result === 'passed' ? (
-                      <CheckCircleIcon className="w-5 h-5 text-green-600" />
-                    ) : test.result === 'failed' ? (
-                      <ExclamationCircleIcon className="w-5 h-5 text-red-600" />
-                    ) : (
-                      <CalendarIcon className="w-5 h-5 text-surface-600" />
-                    )}
-                    <div>
-                      <p className="text-surface-900 font-medium">{test.name}</p>
-                      <p className="text-surface-600 text-sm">
-                        {test.scheduled_date
-                          ? new Date(test.scheduled_date).toLocaleDateString()
-                          : 'Not scheduled'}
+                  <div className="flex items-center gap-3 min-w-0">
+                    <ShieldAlert className="h-4 w-4 text-surface-500 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-surface-900 font-medium truncate">{process.name}</p>
+                      <p className="text-xs text-surface-500 font-mono">
+                        {getProcessCode(process)}
                       </p>
                     </div>
                   </div>
-                  <span
-                    className={clsx(
-                      'px-2 py-1 rounded text-xs font-medium capitalize',
-                      test.status === 'completed'
-                        ? 'bg-green-500/20 text-green-600'
-                        : test.status === 'in_progress'
-                          ? 'bg-yellow-500/20 text-yellow-600'
-                          : 'bg-surface-200 text-surface-700'
-                    )}
-                  >
-                    {test.status?.replace('_', ' ')}
-                  </span>
+                  {getCriticality(process) && (
+                    <Badge variant="neutral" size="sm">
+                      {getCriticality(process).replace(/_/g, ' ')}
+                    </Badge>
+                  )}
                 </Link>
               ))}
             </div>
-          ) : (
-            <p className="text-surface-600 text-center py-8">No DR tests scheduled</p>
           )}
-        </div>
-      )}
-      {activeTab === 'controls' && (
-        <div className="card p-6">
-          <h3 className="text-lg font-semibold text-surface-900 mb-4">Linked Controls</h3>
-          {plan.linked_controls && plan.linked_controls.length > 0 ? (
-            <div className="space-y-2">
-              {plan.linked_controls.map((control) => (
+        </CardBody>
+      </Card>
+    </div>
+  );
+
+  const proceduresContent = (
+    <Card>
+      <CardHeader>
+        <CardTitle>Procedures</CardTitle>
+      </CardHeader>
+      <CardBody density="comfy">
+        {procedures.length === 0 ? (
+          <EmptyState
+            icon={<FileText className="h-6 w-6" />}
+            title="No procedures defined"
+            description="Add step-by-step procedures to execute this plan."
+            size="sm"
+          />
+        ) : (
+          <ol className="space-y-3">
+            {procedures.map((procedure, idx) => (
+              <li
+                key={procedure.id}
+                className="flex gap-3 p-3 rounded-md bg-surface-50 border border-surface-200"
+              >
+                <div className="shrink-0 h-7 w-7 rounded-full bg-brand-50 text-brand-700 text-small font-medium flex items-center justify-center">
+                  {procedure.order ?? idx + 1}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-surface-900 font-medium">{procedure.title}</p>
+                  {procedure.description && (
+                    <p className="text-small text-surface-700 whitespace-pre-wrap mt-1">
+                      {procedure.description}
+                    </p>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
+      </CardBody>
+    </Card>
+  );
+
+  const controlsContent = (
+    <Card>
+      <CardHeader>
+        <CardTitle>Linked Controls</CardTitle>
+      </CardHeader>
+      <CardBody density="comfy">
+        {controls.length === 0 ? (
+          <EmptyState
+            icon={<Link2 className="h-6 w-6" />}
+            title="No controls linked"
+            description="Link controls that implement or support this plan."
+            size="sm"
+          />
+        ) : (
+          <div className="space-y-2">
+            {controls.map((control) => (
+              <Link
+                key={control.id}
+                to={`/controls/${control.id}`}
+                className="flex items-center gap-3 p-2.5 rounded-md bg-surface-50 hover:bg-surface-100 border border-surface-200 transition-colors"
+              >
+                <Link2 className="h-4 w-4 text-surface-500 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-surface-900 font-medium truncate">{control.title}</p>
+                  <p className="text-xs text-surface-500 font-mono">{getControlCode(control)}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </CardBody>
+    </Card>
+  );
+
+  const testsContent = (
+    <Card>
+      <CardHeader>
+        <CardTitle>Test Results</CardTitle>
+        <Link to="/bcdr/tests/new" className="text-small text-brand-700 hover:text-brand-800">
+          Schedule test →
+        </Link>
+      </CardHeader>
+      <CardBody density="comfy">
+        {tests.length === 0 ? (
+          <EmptyState
+            icon={<FlaskConical className="h-6 w-6" />}
+            title="No DR tests"
+            description="Schedule and run tests to validate this plan."
+            size="sm"
+          />
+        ) : (
+          <div className="space-y-2">
+            {tests.map((test) => {
+              let icon = <Calendar className="h-4 w-4 text-surface-500 shrink-0" />;
+              let variant: BadgeVariant = 'neutral';
+              if (test.result === 'passed') {
+                icon = <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />;
+                variant = 'success';
+              } else if (test.result === 'failed') {
+                icon = <XCircle className="h-4 w-4 text-red-600 shrink-0" />;
+                variant = 'danger';
+              } else if (test.status === 'in_progress') {
+                variant = 'warning';
+              } else if (test.status === 'completed') {
+                variant = 'success';
+              }
+              return (
                 <Link
-                  key={control.id}
-                  to={`/controls/${control.id}`}
-                  className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-surface-200/50 transition-colors"
+                  key={test.id}
+                  to={`/bcdr/tests/${test.id}`}
+                  className="flex items-center justify-between gap-3 p-2.5 rounded-md bg-surface-50 hover:bg-surface-100 border border-surface-200 transition-colors"
                 >
-                  <div>
-                    <p className="text-surface-900 font-medium">{control.title}</p>
-                    <p className="text-surface-600 text-sm">{control.control_id}</p>
+                  <div className="flex items-center gap-3 min-w-0">
+                    {icon}
+                    <div className="min-w-0">
+                      <p className="text-surface-900 font-medium truncate">{test.name}</p>
+                      <p className="text-xs text-surface-500 tabular-nums">
+                        {formatDate(getScheduledDate(test))}
+                      </p>
+                    </div>
                   </div>
+                  {test.status && (
+                    <Badge variant={variant} size="sm">
+                      {test.status.replace(/_/g, ' ')}
+                    </Badge>
+                  )}
                 </Link>
-              ))}
-            </div>
-          ) : (
-            <p className="text-surface-600 text-center py-8">No controls linked</p>
-          )}
-        </div>
-      )}
-      {/* Edit Modal */}
-      <Dialog open={showEditModal} onClose={() => setShowEditModal(false)}>
-        <div className="p-6 border-b border-surface-200 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-white">Edit BC/DR Plan</h2>
-          <button
-            onClick={() => setShowEditModal(false)}
-            className="p-2 hover:bg-surface-200 rounded-lg text-surface-600"
+              );
+            })}
+          </div>
+        )}
+      </CardBody>
+    </Card>
+  );
+
+  const communicationsContent = (
+    <Card>
+      <CardHeader>
+        <CardTitle>Communications</CardTitle>
+      </CardHeader>
+      <CardBody density="comfy">
+        {communications.length === 0 ? (
+          <EmptyState
+            icon={<MessageSquare className="h-6 w-6" />}
+            title="No communication plans"
+            description="Define how to notify stakeholders during plan execution."
+            size="sm"
+          />
+        ) : (
+          <div className="space-y-2">
+            {communications.map((comm) => (
+              <div
+                key={comm.id}
+                className="flex items-center justify-between gap-3 p-2.5 rounded-md bg-surface-50 border border-surface-200"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <MessageSquare className="h-4 w-4 text-surface-500 shrink-0" />
+                  <p className="text-surface-900 font-medium truncate">{comm.name}</p>
+                </div>
+                {getCommType(comm) && (
+                  <Badge variant="info" size="sm">
+                    {getCommType(comm).replace(/_/g, ' ')}
+                  </Badge>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardBody>
+    </Card>
+  );
+
+  return (
+    <div className="space-y-5 animate-fade-in">
+      <Link
+        to="/bcdr/plans"
+        className="inline-flex items-center gap-1 text-small text-surface-600 hover:text-surface-900"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to plans
+      </Link>
+
+      <PageHeader
+        title={plan.title}
+        description={
+          <span className="font-mono text-surface-600">
+            {planCode || '—'}
+            {plan.version != null && ` · v${plan.version}`}
+          </span>
+        }
+        meta={
+          <>
+            <Badge variant={STATUS_VARIANT[plan.status] ?? 'neutral'} dot>
+              {statusLabel(plan.status)}
+            </Badge>
+            {planType && (
+              <Badge variant="info" size="sm">
+                {planTypeLabel(planType)}
+              </Badge>
+            )}
+          </>
+        }
+        actions={
+          <Button
+            size="sm"
+            variant="outline"
+            leftIcon={<Pencil className="h-4 w-4" />}
+            onClick={() => setShowEditModal(true)}
           >
-            <XMarkIcon className="w-5 h-5" />
-          </button>
-        </div>
+            Edit
+          </Button>
+        }
+      />
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (isNewPlan) {
-              createMutation.mutate(editForm);
-            } else {
-              updateMutation.mutate(editForm);
-            }
-          }}
-          className="p-6 space-y-4"
-        >
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-2">Title *</label>
-            <Input
-              type="text"
-              value={editForm.title}
-              onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
-              required
-              className="input w-full"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+      <Card>
+        <CardBody density="comfy">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">Plan Type</label>
-              <SelectNative
-                value={editForm.plan_type}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, plan_type: e.target.value }))}
-                className="input w-full"
-              >
-                {PLAN_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </SelectNative>
+              <p className="text-xs text-surface-500 uppercase tracking-wider font-medium">Owner</p>
+              <p className="text-surface-900 mt-1">{ownerName || '—'}</p>
+              {ownerEmail && <p className="text-xs text-surface-500 truncate">{ownerEmail}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">Status</label>
-              <SelectNative
-                value={editForm.status}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
-                className="input w-full"
-              >
-                {STATUS_OPTIONS.map((status) => (
-                  <option key={status.value} value={status.value}>
-                    {status.label}
-                  </option>
-                ))}
-              </SelectNative>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-2">Description</label>
-            <Textarea
-              value={editForm.description}
-              onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
-              rows={3}
-              className="input w-full"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-2">Objectives</label>
-            <Textarea
-              value={editForm.objectives}
-              onChange={(e) => setEditForm((prev) => ({ ...prev, objectives: e.target.value }))}
-              rows={3}
-              className="input w-full"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-2">Scope</label>
-            <Textarea
-              value={editForm.scope}
-              onChange={(e) => setEditForm((prev) => ({ ...prev, scope: e.target.value }))}
-              rows={3}
-              className="input w-full"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">
-                Activation Criteria
-              </label>
-              <Textarea
-                value={editForm.activation_criteria}
-                onChange={(e) =>
-                  setEditForm((prev) => ({ ...prev, activation_criteria: e.target.value }))
-                }
-                rows={2}
-                className="input w-full"
-              />
+              <p className="text-xs text-surface-500 uppercase tracking-wider font-medium">
+                Effective Date
+              </p>
+              <p className="text-surface-900 mt-1 tabular-nums">{formatDate(effectiveDate)}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-2">
-                Deactivation Criteria
-              </label>
-              <Textarea
-                value={editForm.deactivation_criteria}
-                onChange={(e) =>
-                  setEditForm((prev) => ({ ...prev, deactivation_criteria: e.target.value }))
-                }
-                rows={2}
-                className="input w-full"
-              />
+              <p className="text-xs text-surface-500 uppercase tracking-wider font-medium">
+                Review Frequency
+              </p>
+              <p className="text-surface-900 mt-1 capitalize">
+                {reviewFrequency ? reviewFrequency.replace(/_/g, ' ') : '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-surface-500 uppercase tracking-wider font-medium">
+                Next Review
+              </p>
+              <p className="text-surface-900 mt-1 tabular-nums">{formatDate(nextReviewDue)}</p>
+              {lastReviewed && (
+                <p className="text-xs text-surface-500">Last: {formatDate(lastReviewed)}</p>
+              )}
             </div>
           </div>
+        </CardBody>
+      </Card>
 
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-2">Assumptions</label>
-            <Textarea
-              value={editForm.assumptions}
-              onChange={(e) => setEditForm((prev) => ({ ...prev, assumptions: e.target.value }))}
-              rows={2}
-              className="input w-full"
-            />
-          </div>
+      <Tabs
+        tabs={[
+          { label: 'Overview', content: overviewContent },
+          { label: 'Procedures', content: proceduresContent },
+          { label: 'Linked Controls', content: controlsContent },
+          { label: 'Test Results', content: testsContent },
+          { label: 'Communications', content: communicationsContent },
+        ]}
+      />
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-surface-200">
-            <Button variant="secondary" type="button" onClick={() => setShowEditModal(false)}>
+      <Dialog
+        open={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        title="Edit BC/DR plan"
+        description="Update the plan's metadata and content."
+        size="lg"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowEditModal(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+            <Button
+              loading={updateMutation.isPending}
+              onClick={() => updateMutation.mutate(editForm)}
+              disabled={!editForm.title}
+            >
+              Save changes
             </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="plan-title" required>
+              Title
+            </Label>
+            <Input
+              id="plan-title"
+              value={editForm.title}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
+            />
           </div>
-        </form>
-      </Dialog>
-      {/* Delete Confirmation */}
-      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
-        <h3 className="text-lg font-semibold text-white mb-2">Delete BC/DR Plan</h3>
-        <p className="text-surface-600 mb-6">
-          Are you sure you want to delete "{plan.title}"? This action cannot be undone.
-        </p>
-        <div className="flex justify-end gap-3">
-          <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => deleteMutation.mutate()}
-            disabled={deleteMutation.isPending}
-          >
-            {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-          </Button>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Plan Type</Label>
+              <Select
+                value={editForm.planType}
+                onChange={(v) => setEditForm((prev) => ({ ...prev, planType: v }))}
+                options={PLAN_TYPE_OPTS}
+                searchable
+              />
+            </div>
+            <div>
+              <Label>Status</Label>
+              <Select
+                value={editForm.status}
+                onChange={(v) => setEditForm((prev) => ({ ...prev, status: v }))}
+                options={STATUS_OPTS}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="plan-description">Description</Label>
+            <Textarea
+              id="plan-description"
+              rows={3}
+              value={editForm.description}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="plan-objectives">Objectives</Label>
+            <Textarea
+              id="plan-objectives"
+              rows={3}
+              value={editForm.objectives}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, objectives: e.target.value }))}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="plan-scope">Scope</Label>
+            <Textarea
+              id="plan-scope"
+              rows={3}
+              value={editForm.scope}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, scope: e.target.value }))}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="plan-activation">Activation Criteria</Label>
+              <Textarea
+                id="plan-activation"
+                rows={2}
+                value={editForm.activationCriteria}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, activationCriteria: e.target.value }))
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="plan-deactivation">Deactivation Criteria</Label>
+              <Textarea
+                id="plan-deactivation"
+                rows={2}
+                value={editForm.deactivationCriteria}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, deactivationCriteria: e.target.value }))
+                }
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="plan-assumptions">Assumptions</Label>
+            <Textarea
+              id="plan-assumptions"
+              rows={2}
+              value={editForm.assumptions}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, assumptions: e.target.value }))}
+            />
+          </div>
         </div>
       </Dialog>
     </div>

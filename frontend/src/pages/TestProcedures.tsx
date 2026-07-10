@@ -1,424 +1,364 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { Beaker, CheckCircle, Clock, ListChecks, XCircle } from 'lucide-react';
+import api from '@/lib/api';
 import {
-  PlusIcon,
-  BeakerIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  XMarkIcon,
-  ClockIcon,
-  PlayIcon,
-} from '@heroicons/react/24/outline';
-import { Button } from '@/components/ui/Button';
-import { useToast } from '@/hooks/useToast';
-import clsx from 'clsx';
+  Badge,
+  Button,
+  DataTable,
+  EmptyState,
+  FilterBar,
+  PageHeader,
+  Select,
+  StatCard,
+  type ActiveFilter,
+  type BadgeVariant,
+  type DataTableColumn,
+} from '@/components/ui';
 
-import { Textarea } from '@/components/ui/Textarea';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-import { Dialog } from '@/components/ui/Dialog';
+interface ProcedureAudit {
+  id: string;
+  auditId?: string;
+  name?: string;
+}
 
 interface TestProcedure {
   id: string;
-  procedureNumber: string;
+  procedureId?: string;
+  procedureNumber?: string;
   title: string;
-  testType: string;
-  testMethod: string;
-  sampleSize: number;
-  status: string;
-  conclusion: string | null;
-  testedBy: string | null;
-  testedAt: string | null;
-  testedByUser?: { displayName: string };
+  status?: string;
+  result?: string | null;
+  conclusion?: string | null;
+  steps?: unknown[];
+  stepsCount?: number;
+  expectedResult?: string | null;
+  actualResult?: string | null;
+  audit?: ProcedureAudit | null;
+  auditId?: string;
 }
 
-interface Stats {
-  total: number;
-  effectivenessRate: number;
-  byConclusion: { conclusion: string; count: number }[];
-  byStatus: { status: string; count: number }[];
-  byType: { type: string; count: number }[];
+interface ProceduresResponse {
+  procedures?: TestProcedure[];
+  data?: TestProcedure[];
 }
 
-const conclusionConfig: Record<
-  string,
-  { icon: typeof CheckCircleIcon; color: string; label: string }
-> = {
-  effective: { icon: CheckCircleIcon, color: 'text-green-600', label: 'Effective' },
-  partially_effective: { icon: ClockIcon, color: 'text-yellow-600', label: 'Partially Effective' },
-  ineffective: { icon: XCircleIcon, color: 'text-red-600', label: 'Ineffective' },
-  not_applicable: { icon: ClockIcon, color: 'text-surface-600', label: 'N/A' },
+const STATUS_OPTS = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'blocked', label: 'Blocked' },
+];
+
+const STATUS_LABEL: Record<string, string> = Object.fromEntries(
+  STATUS_OPTS.map((o) => [o.value, o.label])
+);
+
+const RESULT_OPTS = [
+  { value: 'passing', label: 'Passing' },
+  { value: 'failing', label: 'Failing' },
+  { value: 'partially_effective', label: 'Partially Effective' },
+  { value: 'not_applicable', label: 'Not Applicable' },
+];
+
+const RESULT_LABEL: Record<string, string> = Object.fromEntries(
+  RESULT_OPTS.map((o) => [o.value, o.label])
+);
+
+const RESULT_VARIANT: Record<string, BadgeVariant> = {
+  passing: 'success',
+  effective: 'success',
+  failing: 'danger',
+  ineffective: 'danger',
+  partially_effective: 'warning',
+  not_applicable: 'neutral',
 };
 
-const testTypeLabels: Record<string, string> = {
-  inquiry: 'Inquiry',
-  observation: 'Observation',
-  inspection: 'Inspection',
-  reperformance: 'Reperformance',
-};
+function isPassing(p: TestProcedure) {
+  const r = p.result ?? p.conclusion ?? '';
+  return r === 'passing' || r === 'effective';
+}
+function isFailing(p: TestProcedure) {
+  const r = p.result ?? p.conclusion ?? '';
+  return r === 'failing' || r === 'ineffective';
+}
+function isPending(p: TestProcedure) {
+  if (p.status === 'pending' || p.status === 'in_progress') return true;
+  return !p.result && !p.conclusion;
+}
+
+function truncate(s: string | null | undefined, n = 80) {
+  if (!s) return null;
+  return s.length > n ? `${s.slice(0, n - 1)}…` : s;
+}
 
 export default function TestProcedures() {
-  const [searchParams] = useSearchParams();
-  const auditId = searchParams.get('auditId') || '';
-  const queryClient = useQueryClient();
-  const toast = useToast();
-  const [recordingId, setRecordingId] = useState<string | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createForm, setCreateForm] = useState({
-    title: '',
-    testType: 'inspection',
-    testMethod: '',
-    sampleSize: 25,
-    controlId: '',
-  });
-  const [resultForm, setResultForm] = useState({
-    actualResult: '',
-    deviationsNoted: '',
-    conclusion: 'effective',
-    conclusionRationale: '',
-  });
+  const navigate = useNavigate();
+  const [status, setStatus] = useState('');
+  const [result, setResult] = useState('');
+  const [auditFilter, setAuditFilter] = useState('');
 
-  const { data: procedures = [], isLoading } = useQuery<TestProcedure[]>({
-    queryKey: ['test-procedures', auditId],
+  const { data, isLoading } = useQuery<ProceduresResponse | TestProcedure[]>({
+    queryKey: ['test-procedures', { status, result, auditFilter }],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (auditId) params.set('auditId', auditId);
-      const res = await fetch(`/api/audit/test-procedures?${params}`);
-      if (!res.ok) throw new Error('Failed to fetch procedures');
-      return res.json();
+      const params: Record<string, string> = {};
+      if (status) params.status = status;
+      if (result) params.result = result;
+      if (auditFilter) params.audit = auditFilter;
+      const res = await api.get('/api/audits/test-procedures', { params });
+      return res.data;
     },
   });
 
-  const { data: stats } = useQuery<Stats>({
-    queryKey: ['test-procedures-stats', auditId],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (auditId) params.set('auditId', auditId);
-      const res = await fetch(`/api/audit/test-procedures/stats?${params}`);
-      if (!res.ok) throw new Error('Failed to fetch stats');
-      return res.json();
-    },
-  });
+  const procedures: TestProcedure[] = useMemo(() => {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    return data.procedures ?? data.data ?? [];
+  }, [data]);
 
-  const recordResultMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: typeof resultForm }) => {
-      const res = await fetch(`/api/audit/test-procedures/${id}/record-result`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error('Failed to record result');
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['test-procedures'] });
-      queryClient.invalidateQueries({ queryKey: ['test-procedures-stats'] });
-      toast.success('Test result recorded');
-      setRecordingId(null);
-      setResultForm({
-        actualResult: '',
-        deviationsNoted: '',
-        conclusion: 'effective',
-        conclusionRationale: '',
-      });
-    },
-  });
+  const auditOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    procedures.forEach((p) => {
+      const id = p.audit?.id ?? p.auditId;
+      if (!id) return;
+      const label = p.audit?.name
+        ? p.audit.auditId
+          ? `${p.audit.name} (${p.audit.auditId})`
+          : p.audit.name
+        : id;
+      if (!map.has(id)) map.set(id, label);
+    });
+    return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
+  }, [procedures]);
 
-  const createMutation = useMutation({
-    mutationFn: async (data: typeof createForm) => {
-      const res = await fetch('/api/audit/test-procedures', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, auditId: auditId || undefined }),
-      });
-      if (!res.ok) throw new Error('Failed to create test procedure');
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['test-procedures'] });
-      queryClient.invalidateQueries({ queryKey: ['test-procedures-stats'] });
-      toast.success('Test procedure created');
-      setShowCreateModal(false);
-      setCreateForm({
-        title: '',
-        testType: 'inspection',
-        testMethod: '',
-        sampleSize: 25,
-        controlId: '',
-      });
-    },
-    onError: () => {
-      toast.error('Failed to create test procedure');
-    },
-  });
+  const stats = useMemo(() => {
+    const total = procedures.length;
+    let passing = 0;
+    let failing = 0;
+    let pending = 0;
+    procedures.forEach((p) => {
+      if (isPassing(p)) passing += 1;
+      else if (isFailing(p)) failing += 1;
+      if (isPending(p)) pending += 1;
+    });
+    return { total, passing, failing, pending };
+  }, [procedures]);
 
-  const handleCreateSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!createForm.title.trim()) return;
-    createMutation.mutate(createForm);
+  const activeFilters: ActiveFilter[] = [];
+  if (status) {
+    activeFilters.push({
+      key: 'status',
+      label: `Status: ${STATUS_LABEL[status] ?? status}`,
+      onClear: () => setStatus(''),
+    });
+  }
+  if (result) {
+    activeFilters.push({
+      key: 'result',
+      label: `Result: ${RESULT_LABEL[result] ?? result}`,
+      onClear: () => setResult(''),
+    });
+  }
+  if (auditFilter) {
+    const opt = auditOptions.find((o) => o.value === auditFilter);
+    activeFilters.push({
+      key: 'audit',
+      label: `Audit: ${opt?.label ?? auditFilter}`,
+      onClear: () => setAuditFilter(''),
+    });
+  }
+  const clearAll = () => {
+    setStatus('');
+    setResult('');
+    setAuditFilter('');
   };
 
-  const handleRecordResult = (id: string) => {
-    recordResultMutation.mutate({ id, data: resultForm });
-  };
+  const columns: DataTableColumn<TestProcedure>[] = [
+    {
+      id: 'procedureId',
+      header: 'ID',
+      mobileLabel: 'ID',
+      cell: ({ row }) => (
+        <span className="font-mono text-small text-brand-700">
+          {row.original.procedureId ?? row.original.procedureNumber ?? row.original.id.slice(0, 8)}
+        </span>
+      ),
+    },
+    {
+      id: 'audit',
+      header: 'Audit',
+      mobileLabel: 'Audit',
+      cell: ({ row }) => {
+        const a = row.original.audit;
+        if (!a) return <span className="text-surface-500">—</span>;
+        return (
+          <div className="min-w-0">
+            <div className="text-surface-900 truncate">{a.name ?? '—'}</div>
+            {a.auditId && (
+              <div className="text-xs text-surface-500 font-mono truncate">{a.auditId}</div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      id: 'title',
+      accessorKey: 'title',
+      header: 'Title',
+      mobileLabel: 'Title',
+      cell: ({ row }) => <span className="text-surface-900">{row.original.title}</span>,
+    },
+    {
+      id: 'steps',
+      header: 'Steps',
+      mobileLabel: 'Steps',
+      cell: ({ row }) => {
+        const n =
+          row.original.stepsCount ??
+          (Array.isArray(row.original.steps) ? row.original.steps.length : 0);
+        return <span className="text-surface-700 tabular-nums">{n}</span>;
+      },
+    },
+    {
+      id: 'expectedResult',
+      header: 'Expected',
+      mobileLabel: 'Expected',
+      cell: ({ row }) => {
+        const v = truncate(row.original.expectedResult, 70);
+        return v ? (
+          <span className="text-small text-surface-700">{v}</span>
+        ) : (
+          <span className="text-surface-500">—</span>
+        );
+      },
+    },
+    {
+      id: 'actualResult',
+      header: 'Actual',
+      mobileLabel: 'Actual',
+      cell: ({ row }) => {
+        const v = truncate(row.original.actualResult, 70);
+        return v ? (
+          <span className="text-small text-surface-700">{v}</span>
+        ) : (
+          <span className="text-surface-500">—</span>
+        );
+      },
+    },
+    {
+      id: 'result',
+      header: 'Result',
+      mobileLabel: 'Result',
+      cell: ({ row }) => {
+        const r = row.original.result ?? row.original.conclusion;
+        if (!r) return <span className="text-surface-500">—</span>;
+        const variant = RESULT_VARIANT[r] ?? 'neutral';
+        return (
+          <Badge variant={variant} dot>
+            {RESULT_LABEL[r] ?? r.replace(/_/g, ' ')}
+          </Badge>
+        );
+      },
+    },
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Test Procedures</h1>
-          <p className="text-surface-600 mt-1">
-            Control testing with sampling and effectiveness assessment
-          </p>
-        </div>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <PlusIcon className="h-4 w-4 mr-2" />
-          New Procedure
-        </Button>
+    <div className="space-y-5 animate-fade-in">
+      <PageHeader
+        title="Test Procedures"
+        description="Control testing procedures with sampling, expected vs. actual results, and conclusions."
+      />
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard
+          label="Total"
+          value={stats.total}
+          icon={<ListChecks className="h-5 w-5" />}
+          tone="brand"
+        />
+        <StatCard
+          label="Passing"
+          value={stats.passing}
+          icon={<CheckCircle className="h-5 w-5" />}
+          tone="emerald"
+        />
+        <StatCard
+          label="Failing"
+          value={stats.failing}
+          icon={<XCircle className="h-5 w-5" />}
+          tone="red"
+        />
+        <StatCard
+          label="Pending"
+          value={stats.pending}
+          icon={<Clock className="h-5 w-5" />}
+          tone="amber"
+        />
       </div>
-      {/* Stats */}
-      {stats && (
-        <div className="grid grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg p-4 border border-surface-200">
-            <p className="text-surface-600 text-sm">Total Procedures</p>
-            <p className="text-3xl font-bold text-white">{stats.total}</p>
-          </div>
-          <div className="bg-white rounded-lg p-4 border border-surface-200">
-            <p className="text-surface-600 text-sm">Effectiveness Rate</p>
-            <p className="text-3xl font-bold text-green-600">{stats.effectivenessRate}%</p>
-          </div>
-          <div className="bg-white rounded-lg p-4 border border-surface-200">
-            <p className="text-surface-600 text-sm">Completed</p>
-            <p className="text-3xl font-bold text-white">
-              {stats.byStatus.find((s) => s.status === 'completed')?.count || 0}
-            </p>
-          </div>
-          <div className="bg-white rounded-lg p-4 border border-surface-200">
-            <p className="text-surface-600 text-sm">Pending</p>
-            <p className="text-3xl font-bold text-yellow-600">
-              {stats.byStatus.find((s) => s.status === 'pending')?.count || 0}
-            </p>
-          </div>
-        </div>
-      )}
-      {/* Procedures List */}
-      {isLoading ? (
-        <div className="animate-pulse space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-lg h-24" />
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {procedures.map((proc) => {
-            const conclusionCfg = proc.conclusion ? conclusionConfig[proc.conclusion] : null;
-            const isRecording = recordingId === proc.id;
 
-            return (
-              <div key={proc.id} className="bg-white rounded-lg border border-surface-200 p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4">
-                    <div className="p-2 bg-brand-500/10 rounded-lg">
-                      <BeakerIcon className="h-6 w-6 text-brand-400" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-sm text-brand-400">
-                          {proc.procedureNumber}
-                        </span>
-                        <h3 className="font-semibold text-white">{proc.title}</h3>
-                      </div>
-                      <div className="flex items-center gap-4 mt-2 text-sm text-surface-600">
-                        <span>{testTypeLabels[proc.testType] || proc.testType}</span>
-                        {proc.sampleSize && <span>Sample: {proc.sampleSize}</span>}
-                        {proc.testedByUser && (
-                          <span>Tested by: {proc.testedByUser.displayName}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+      <FilterBar active={activeFilters} onClearAll={activeFilters.length ? clearAll : undefined}>
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-44"
+          placeholder="All Statuses"
+          value={status}
+          onChange={setStatus}
+          options={STATUS_OPTS}
+          clearable
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-48"
+          placeholder="All Results"
+          value={result}
+          onChange={setResult}
+          options={RESULT_OPTS}
+          clearable
+        />
+        <Select
+          size="sm"
+          fullWidth={false}
+          className="w-48"
+          placeholder="All Audits"
+          value={auditFilter}
+          onChange={setAuditFilter}
+          options={auditOptions}
+          clearable
+          searchable
+        />
+      </FilterBar>
 
-                  <div className="flex items-center gap-3">
-                    {proc.conclusion && conclusionCfg && (
-                      <span className={clsx('flex items-center gap-1', conclusionCfg.color)}>
-                        <conclusionCfg.icon className="h-4 w-4" />
-                        {conclusionCfg.label}
-                      </span>
-                    )}
-                    {proc.status === 'pending' && !isRecording && (
-                      <Button variant="secondary" size="sm" onClick={() => setRecordingId(proc.id)}>
-                        <PlayIcon className="h-4 w-4 mr-1" />
-                        Record Result
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                {/* Record Result Form */}
-                {isRecording && (
-                  <div className="mt-4 pt-4 border-t border-surface-200">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-surface-600 mb-1">
-                          Actual Result
-                        </label>
-                        <Textarea
-                          value={resultForm.actualResult}
-                          onChange={(e) =>
-                            setResultForm({ ...resultForm, actualResult: e.target.value })
-                          }
-                          className="w-full bg-white border border-surface-300 rounded-lg px-3 py-2 text-white"
-                          rows={3}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-surface-600 mb-1">
-                          Deviations Noted
-                        </label>
-                        <Textarea
-                          value={resultForm.deviationsNoted}
-                          onChange={(e) =>
-                            setResultForm({ ...resultForm, deviationsNoted: e.target.value })
-                          }
-                          className="w-full bg-white border border-surface-300 rounded-lg px-3 py-2 text-white"
-                          rows={3}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 mt-4">
-                      <div>
-                        <label className="block text-sm font-medium text-surface-600 mb-1">
-                          Conclusion
-                        </label>
-                        <SelectNative
-                          value={resultForm.conclusion}
-                          onChange={(e) =>
-                            setResultForm({ ...resultForm, conclusion: e.target.value })
-                          }
-                          className="w-full bg-white border border-surface-300 rounded-lg px-3 py-2 text-white"
-                        >
-                          <option value="effective">Effective</option>
-                          <option value="partially_effective">Partially Effective</option>
-                          <option value="ineffective">Ineffective</option>
-                          <option value="not_applicable">Not Applicable</option>
-                        </SelectNative>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-surface-600 mb-1">
-                          Conclusion Rationale
-                        </label>
-                        <Input
-                          type="text"
-                          value={resultForm.conclusionRationale}
-                          onChange={(e) =>
-                            setResultForm({ ...resultForm, conclusionRationale: e.target.value })
-                          }
-                          className="w-full bg-white border border-surface-300 rounded-lg px-3 py-2 text-white"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex justify-end gap-2 mt-4">
-                      <Button variant="ghost" onClick={() => setRecordingId(null)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={() => handleRecordResult(proc.id)}>Save Result</Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {procedures.length === 0 && (
-            <div className="text-center py-12 bg-white rounded-lg border border-surface-200">
-              <BeakerIcon className="h-12 w-12 text-surface-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-white">No test procedures yet</h3>
-              <p className="text-surface-600 mt-2">
-                Create test procedures to document control testing.
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-      {/* Create Test Procedure Modal */}
-      <Dialog open={showCreateModal} onClose={() => setShowCreateModal(false)}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-white">Create Test Procedure</h2>
-          <button
-            onClick={() => setShowCreateModal(false)}
-            className="p-1 hover:bg-surface-200 rounded"
-          >
-            <XMarkIcon className="h-5 w-5 text-surface-600" />
-          </button>
-        </div>
-
-        <form onSubmit={handleCreateSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-1">Title *</label>
-            <Input
-              type="text"
-              value={createForm.title}
-              onChange={(e) => setCreateForm((prev) => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-              placeholder="Procedure title"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">Test Type</label>
-              <SelectNative
-                value={createForm.testType}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, testType: e.target.value }))}
-                className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-              >
-                <option value="inquiry">Inquiry</option>
-                <option value="observation">Observation</option>
-                <option value="inspection">Inspection</option>
-                <option value="reperformance">Reperformance</option>
-              </SelectNative>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">Sample Size</label>
-              <Input
-                type="number"
-                value={createForm.sampleSize}
-                onChange={(e) =>
-                  setCreateForm((prev) => ({
-                    ...prev,
-                    sampleSize: parseInt(e.target.value) || 0,
-                  }))
-                }
-                className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white"
-                min="1"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-surface-700 mb-1">Test Method</label>
-            <Textarea
-              value={createForm.testMethod}
-              onChange={(e) => setCreateForm((prev) => ({ ...prev, testMethod: e.target.value }))}
-              className="w-full px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg text-white h-24"
-              placeholder="Describe the testing methodology..."
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="secondary" onClick={() => setShowCreateModal(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={createMutation.isPending || !createForm.title.trim()}>
-              {createMutation.isPending ? 'Creating...' : 'Create Procedure'}
-            </Button>
-          </div>
-        </form>
-      </Dialog>
+      <DataTable
+        data={procedures}
+        columns={columns}
+        loading={isLoading}
+        getRowId={(p) => p.id}
+        onRowClick={(p) => {
+          const auditId = p.audit?.id ?? p.auditId;
+          if (auditId) navigate(`/audits/${auditId}`);
+        }}
+        emptyState={
+          <EmptyState
+            icon={<Beaker className="h-8 w-8" />}
+            title="No test procedures found"
+            description={
+              activeFilters.length
+                ? 'Try clearing your filters to see all procedures.'
+                : 'Test procedures will appear here once audits define them.'
+            }
+            action={
+              activeFilters.length ? (
+                <Button variant="outline" size="sm" onClick={clearAll}>
+                  Clear filters
+                </Button>
+              ) : undefined
+            }
+          />
+        }
+      />
     </div>
   );
 }

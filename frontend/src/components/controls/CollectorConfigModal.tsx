@@ -1,23 +1,10 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  XMarkIcon,
-  ArrowPathIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-} from '@heroicons/react/24/outline';
+import { ArrowPathIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { collectorsApi, integrationsApi } from '@/lib/api';
-
-import { Textarea } from '@/components/ui/Textarea';
-
-import { Input } from '@/components/ui/Input';
-
-import { SelectNative } from '@/components/ui/SelectNative';
-
-import { Button } from '@/components/ui/Button';
-import { Dialog } from '@/components/ui/Dialog';
+import { Button, Input, Textarea, Select, Dialog } from '@/components/ui';
 
 interface Props {
   controlId: string;
@@ -27,10 +14,31 @@ interface Props {
 }
 
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
+const HTTP_METHOD_OPTIONS = HTTP_METHODS.map((m) => ({ value: m, label: m }));
 const SCHEDULE_FREQUENCIES = [
   { value: 'daily', label: 'Daily' },
   { value: 'weekly', label: 'Weekly' },
   { value: 'monthly', label: 'Monthly' },
+];
+
+const EVIDENCE_TYPE_OPTIONS = [
+  { value: 'automated', label: 'Automated' },
+  { value: 'config', label: 'Configuration' },
+  { value: 'log', label: 'Log' },
+  { value: 'report', label: 'Report' },
+];
+
+const AUTH_TYPE_OPTIONS = [
+  { value: '', label: 'None' },
+  { value: 'api_key', label: 'API Key' },
+  { value: 'oauth2', label: 'OAuth 2.0' },
+  { value: 'bearer', label: 'Bearer Token' },
+  { value: 'basic', label: 'Basic Auth' },
+];
+
+const API_KEY_LOCATION_OPTIONS = [
+  { value: 'header', label: 'Header' },
+  { value: 'query', label: 'Query Parameter' },
 ];
 
 export default function CollectorConfigModal({
@@ -102,7 +110,15 @@ export default function CollectorConfigModal({
     queryFn: () => integrationsApi.list().then((res) => res.data),
   });
 
-  const integrations = integrationsData || [];
+  const integrations = integrationsData?.data || [];
+
+  const integrationOptions = [
+    { value: '', label: 'Select an integration...' },
+    ...integrations.map((int: any) => ({
+      value: int.id,
+      label: `${int.name} (${int.type})`,
+    })),
+  ];
 
   // Parse helpers
   const parseHeaders = (text: string): Record<string, string> => {
@@ -228,24 +244,47 @@ export default function CollectorConfigModal({
   };
 
   return (
-    <Dialog open onClose={onClose}>
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-surface-200">
-        <div>
-          <h2 className="text-lg font-semibold text-surface-900">
-            {isEditing ? 'Edit Evidence Collector' : 'Create Evidence Collector'}
-          </h2>
-          <p className="text-sm text-surface-600">
-            Configure an API endpoint to automatically collect evidence
-          </p>
+    <Dialog
+      open
+      onClose={onClose}
+      size="xl"
+      title={isEditing ? 'Edit Evidence Collector' : 'Create Evidence Collector'}
+      description="Configure an API endpoint to automatically collect evidence"
+      footer={
+        <div className="flex items-center justify-between w-full">
+          <div>
+            {isEditing && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => testMutation.mutate()}
+                disabled={testMutation.isPending}
+                leftIcon={
+                  <ArrowPathIcon
+                    className={clsx('w-4 h-4', testMutation.isPending && 'animate-spin')}
+                  />
+                }
+              >
+                Test Connection
+              </Button>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={saveMutation.isPending || !name.trim()}>
+              {saveMutation.isPending
+                ? 'Saving...'
+                : isEditing
+                  ? 'Save Changes'
+                  : 'Create Collector'}
+            </Button>
+          </div>
         </div>
-        <button onClick={onClose} className="p-2 text-surface-600 hover:text-surface-800">
-          <XMarkIcon className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      }
+    >
+      <div className="max-h-[70vh] overflow-y-auto space-y-6">
         {/* Basic Info */}
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -255,21 +294,17 @@ export default function CollectorConfigModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="MFA Status Collector"
-              className="input mt-1"
+              className="mt-1"
             />
           </div>
           <div>
             <label className="label">Evidence Type</label>
-            <SelectNative
+            <Select
               value={evidenceType}
-              onChange={(e) => setEvidenceType(e.target.value)}
-              className="input mt-1"
-            >
-              <option value="automated">Automated</option>
-              <option value="config">Configuration</option>
-              <option value="log">Log</option>
-              <option value="report">Report</option>
-            </SelectNative>
+              onChange={setEvidenceType}
+              className="mt-1"
+              options={EVIDENCE_TYPE_OPTIONS}
+            />
           </div>
         </div>
 
@@ -280,12 +315,12 @@ export default function CollectorConfigModal({
             onChange={(e) => setDescription(e.target.value)}
             placeholder="What this collector does..."
             rows={2}
-            className="input mt-1"
+            className="mt-1"
           />
         </div>
 
         {/* Mode Selection */}
-        <div className="border border-surface-200 rounded-lg p-4">
+        <div className="border border-surface-300 rounded-lg p-4">
           <h3 className="text-sm font-medium text-surface-800 mb-3">Configuration Mode</h3>
           <div className="flex gap-4">
             <label className="flex items-center gap-2 cursor-pointer">
@@ -323,18 +358,12 @@ export default function CollectorConfigModal({
           {mode === 'integration' && (
             <div className="mt-4">
               <label className="label">Integration</label>
-              <SelectNative
+              <Select
                 value={integrationId}
-                onChange={(e) => setIntegrationId(e.target.value)}
-                className="input mt-1"
-              >
-                <option value="">Select an integration...</option>
-                {integrations.map((int: any) => (
-                  <option key={int.id} value={int.id}>
-                    {int.name} ({int.type})
-                  </option>
-                ))}
-              </SelectNative>
+                onChange={setIntegrationId}
+                className="mt-1"
+                options={integrationOptions}
+              />
             </div>
           )}
 
@@ -346,30 +375,25 @@ export default function CollectorConfigModal({
                 value={baseUrl}
                 onChange={(e) => setBaseUrl(e.target.value)}
                 placeholder="https://api.example.com"
-                className="input mt-1"
+                className="mt-1"
               />
             </div>
           )}
         </div>
 
         {/* Endpoint Configuration */}
-        <div className="border border-surface-200 rounded-lg p-4 space-y-4">
+        <div className="border border-surface-300 rounded-lg p-4 space-y-4">
           <h3 className="text-sm font-medium text-surface-800">Endpoint Configuration</h3>
 
           <div className="flex gap-4">
             <div className="w-32">
               <label className="label">Method</label>
-              <SelectNative
+              <Select
                 value={method}
-                onChange={(e) => setMethod(e.target.value)}
-                className="input mt-1"
-              >
-                {HTTP_METHODS.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </SelectNative>
+                onChange={setMethod}
+                className="mt-1"
+                options={HTTP_METHOD_OPTIONS}
+              />
             </div>
             <div className="flex-1">
               <label className="label">Endpoint Path</label>
@@ -378,7 +402,7 @@ export default function CollectorConfigModal({
                 value={endpoint}
                 onChange={(e) => setEndpoint(e.target.value)}
                 placeholder="/api/users/mfa-status"
-                className="input mt-1 font-mono text-sm"
+                className="mt-1 font-mono text-sm"
               />
             </div>
           </div>
@@ -390,7 +414,7 @@ export default function CollectorConfigModal({
               onChange={(e) => setHeaders(e.target.value)}
               placeholder="Accept: application/json"
               rows={2}
-              className="input mt-1 font-mono text-sm"
+              className="mt-1 font-mono text-sm"
             />
           </div>
 
@@ -401,7 +425,7 @@ export default function CollectorConfigModal({
               onChange={(e) => setQueryParams(e.target.value)}
               placeholder="page=1&#10;limit=100"
               rows={2}
-              className="input mt-1 font-mono text-sm"
+              className="mt-1 font-mono text-sm"
             />
           </div>
 
@@ -413,7 +437,7 @@ export default function CollectorConfigModal({
                 onChange={(e) => setBody(e.target.value)}
                 placeholder='{"key": "value"}'
                 rows={4}
-                className="input mt-1 font-mono text-sm"
+                className="mt-1 font-mono text-sm"
               />
             </div>
           )}
@@ -421,22 +445,17 @@ export default function CollectorConfigModal({
 
         {/* Authentication (Standalone mode only) */}
         {mode === 'standalone' && (
-          <div className="border border-surface-200 rounded-lg p-4 space-y-4">
+          <div className="border border-surface-300 rounded-lg p-4 space-y-4">
             <h3 className="text-sm font-medium text-surface-800">Authentication</h3>
 
             <div>
               <label className="label">Auth Type</label>
-              <SelectNative
+              <Select
                 value={authType}
-                onChange={(e) => setAuthType(e.target.value)}
-                className="input mt-1"
-              >
-                <option value="">None</option>
-                <option value="api_key">API Key</option>
-                <option value="oauth2">OAuth 2.0</option>
-                <option value="bearer">Bearer Token</option>
-                <option value="basic">Basic Auth</option>
-              </SelectNative>
+                onChange={setAuthType}
+                className="mt-1"
+                options={AUTH_TYPE_OPTIONS}
+              />
             </div>
 
             {authType === 'api_key' && (
@@ -448,7 +467,7 @@ export default function CollectorConfigModal({
                     value={authConfig.keyName}
                     onChange={(e) => setAuthConfig({ ...authConfig, keyName: e.target.value })}
                     placeholder="X-API-Key"
-                    className="input mt-1"
+                    className="mt-1"
                   />
                 </div>
                 <div>
@@ -458,19 +477,17 @@ export default function CollectorConfigModal({
                     value={authConfig.keyValue}
                     onChange={(e) => setAuthConfig({ ...authConfig, keyValue: e.target.value })}
                     placeholder="Your API key"
-                    className="input mt-1"
+                    className="mt-1"
                   />
                 </div>
                 <div>
                   <label className="label">Send In</label>
-                  <SelectNative
+                  <Select
                     value={authConfig.location}
-                    onChange={(e) => setAuthConfig({ ...authConfig, location: e.target.value })}
-                    className="input mt-1"
-                  >
-                    <option value="header">Header</option>
-                    <option value="query">Query Parameter</option>
-                  </SelectNative>
+                    onChange={(value) => setAuthConfig({ ...authConfig, location: value })}
+                    className="mt-1"
+                    options={API_KEY_LOCATION_OPTIONS}
+                  />
                 </div>
               </div>
             )}
@@ -484,7 +501,7 @@ export default function CollectorConfigModal({
                     value={authConfig.tokenUrl}
                     onChange={(e) => setAuthConfig({ ...authConfig, tokenUrl: e.target.value })}
                     placeholder="https://auth.example.com/oauth/token"
-                    className="input mt-1"
+                    className="mt-1"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -494,7 +511,7 @@ export default function CollectorConfigModal({
                       type="text"
                       value={authConfig.clientId}
                       onChange={(e) => setAuthConfig({ ...authConfig, clientId: e.target.value })}
-                      className="input mt-1"
+                      className="mt-1"
                     />
                   </div>
                   <div>
@@ -505,7 +522,7 @@ export default function CollectorConfigModal({
                       onChange={(e) =>
                         setAuthConfig({ ...authConfig, clientSecret: e.target.value })
                       }
-                      className="input mt-1"
+                      className="mt-1"
                     />
                   </div>
                 </div>
@@ -516,7 +533,7 @@ export default function CollectorConfigModal({
                     value={authConfig.scope}
                     onChange={(e) => setAuthConfig({ ...authConfig, scope: e.target.value })}
                     placeholder="read write"
-                    className="input mt-1"
+                    className="mt-1"
                   />
                 </div>
               </div>
@@ -530,7 +547,7 @@ export default function CollectorConfigModal({
                   value={authConfig.token}
                   onChange={(e) => setAuthConfig({ ...authConfig, token: e.target.value })}
                   placeholder="Your bearer token"
-                  className="input mt-1"
+                  className="mt-1"
                 />
               </div>
             )}
@@ -543,7 +560,7 @@ export default function CollectorConfigModal({
                     type="text"
                     value={authConfig.username}
                     onChange={(e) => setAuthConfig({ ...authConfig, username: e.target.value })}
-                    className="input mt-1"
+                    className="mt-1"
                   />
                 </div>
                 <div>
@@ -552,7 +569,7 @@ export default function CollectorConfigModal({
                     type="password"
                     value={authConfig.password}
                     onChange={(e) => setAuthConfig({ ...authConfig, password: e.target.value })}
-                    className="input mt-1"
+                    className="mt-1"
                   />
                 </div>
               </div>
@@ -561,7 +578,7 @@ export default function CollectorConfigModal({
         )}
 
         {/* Evidence Configuration */}
-        <div className="border border-surface-200 rounded-lg p-4 space-y-4">
+        <div className="border border-surface-300 rounded-lg p-4 space-y-4">
           <h3 className="text-sm font-medium text-surface-800">Evidence Configuration</h3>
 
           <div>
@@ -571,7 +588,7 @@ export default function CollectorConfigModal({
               value={evidenceTitle}
               onChange={(e) => setEvidenceTitle(e.target.value)}
               placeholder="MFA Status - {{date}}"
-              className="input mt-1"
+              className="mt-1"
             />
             <p className="text-xs text-surface-500 mt-1">
               Use {'{{field}}'} to interpolate values from the response
@@ -588,7 +605,7 @@ export default function CollectorConfigModal({
                   setResponseMapping({ ...responseMapping, titleField: e.target.value })
                 }
                 placeholder="$.data.name"
-                className="input mt-1 font-mono text-sm"
+                className="mt-1 font-mono text-sm"
               />
             </div>
             <div>
@@ -600,7 +617,7 @@ export default function CollectorConfigModal({
                   setResponseMapping({ ...responseMapping, descriptionField: e.target.value })
                 }
                 placeholder="$.data.summary"
-                className="input mt-1 font-mono text-sm"
+                className="mt-1 font-mono text-sm"
               />
             </div>
             <div>
@@ -612,14 +629,14 @@ export default function CollectorConfigModal({
                   setResponseMapping({ ...responseMapping, dataField: e.target.value })
                 }
                 placeholder="$.data"
-                className="input mt-1 font-mono text-sm"
+                className="mt-1 font-mono text-sm"
               />
             </div>
           </div>
         </div>
 
         {/* Schedule */}
-        <div className="border border-surface-200 rounded-lg p-4 space-y-4">
+        <div className="border border-surface-300 rounded-lg p-4 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-surface-800">Schedule</h3>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -627,7 +644,7 @@ export default function CollectorConfigModal({
                 type="checkbox"
                 checked={scheduleEnabled}
                 onChange={(e) => setScheduleEnabled(e.target.checked)}
-                className="rounded border-surface-300 text-brand-500 focus:ring-brand-500"
+                className="rounded border-surface-400 text-brand-500 focus:ring-brand-500"
               />
               <span className="text-sm text-surface-700">Enable scheduled collection</span>
             </label>
@@ -636,17 +653,12 @@ export default function CollectorConfigModal({
           {scheduleEnabled && (
             <div>
               <label className="label">Frequency</label>
-              <SelectNative
+              <Select
                 value={scheduleFrequency}
-                onChange={(e) => setScheduleFrequency(e.target.value)}
-                className="input mt-1"
-              >
-                {SCHEDULE_FREQUENCIES.map((freq) => (
-                  <option key={freq.value} value={freq.value}>
-                    {freq.label}
-                  </option>
-                ))}
-              </SelectNative>
+                onChange={setScheduleFrequency}
+                className="mt-1"
+                options={SCHEDULE_FREQUENCIES}
+              />
             </div>
           )}
         </div>
@@ -663,7 +675,7 @@ export default function CollectorConfigModal({
           >
             <div className="flex items-start gap-2">
               {testResult.success ? (
-                <CheckCircleIcon className="w-5 h-5 text-green-600 flex-shrink-0" />
+                <CheckCircleIcon className="w-5 h-5 text-emerald-700 flex-shrink-0" />
               ) : (
                 <XCircleIcon className="w-5 h-5 text-red-600 flex-shrink-0" />
               )}
@@ -671,7 +683,7 @@ export default function CollectorConfigModal({
                 <p
                   className={clsx(
                     'text-sm',
-                    testResult.success ? 'text-green-600' : 'text-red-600'
+                    testResult.success ? 'text-emerald-700' : 'text-red-600'
                   )}
                 >
                   {testResult.message}
@@ -685,39 +697,6 @@ export default function CollectorConfigModal({
             </div>
           </div>
         )}
-      </div>
-
-      {/* Footer */}
-      <div className="flex items-center justify-between px-6 py-4 border-t border-surface-200 bg-white/50">
-        <div>
-          {isEditing && (
-            <Button
-              onClick={() => testMutation.mutate()}
-              disabled={testMutation.isPending}
-              className="text-sm"
-              variant="secondary"
-            >
-              {testMutation.isPending ? (
-                <ArrowPathIcon className="w-4 h-4 mr-1 animate-spin" />
-              ) : (
-                <ArrowPathIcon className="w-4 h-4 mr-1" />
-              )}
-              Test Connection
-            </Button>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          <Button onClick={onClose} variant="secondary">
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={saveMutation.isPending || !name.trim()}
-            variant="primary"
-          >
-            {saveMutation.isPending ? 'Saving...' : isEditing ? 'Save Changes' : 'Create Collector'}
-          </Button>
-        </div>
       </div>
     </Dialog>
   );
