@@ -102,7 +102,7 @@ export default function EvidenceDetail() {
       const response = await evidenceApi.getDownloadUrl(id!);
       const url = response.data.url;
       window.open(url, '_blank');
-    } catch (error) {
+    } catch {
       toast.error('Failed to get download URL');
     }
   };
@@ -565,13 +565,35 @@ function ExcelPreview({ evidenceId }: { evidenceId: string }) {
         if (!response.ok) throw new Error('Failed to load file');
 
         const arrayBuffer = await response.arrayBuffer();
-        const XLSX = await import('xlsx');
-        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const { Workbook } = await import('exceljs');
+        const workbook = new Workbook();
+        await workbook.xlsx.load(arrayBuffer);
 
-        const parsedSheets = workbook.SheetNames.map((name) => ({
-          name,
-          data: XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1 }) as any[][],
-        }));
+        const parsedSheets = workbook.worksheets.map((worksheet) => {
+          const data: string[][] = [];
+          worksheet.eachRow({ includeEmpty: true }, (row) => {
+            const rowValues = Array.isArray(row.values) ? row.values.slice(1) : [];
+            data.push(
+              rowValues.map((cell) => {
+                if (cell == null) return '';
+                if (cell instanceof Date) return cell.toISOString();
+                if (typeof cell === 'object') {
+                  if ('text' in cell && typeof cell.text === 'string') return cell.text;
+                  if ('result' in cell && cell.result != null) return String(cell.result);
+                  if ('richText' in cell && Array.isArray(cell.richText)) {
+                    return cell.richText.map((part) => part.text ?? '').join('');
+                  }
+                  return String(cell);
+                }
+                return String(cell);
+              })
+            );
+          });
+          return {
+            name: worksheet.name,
+            data,
+          };
+        });
 
         setSheets(parsedSheets);
       } catch (err: any) {

@@ -115,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             localStorage.setItem('organizationId', devUser.organizationId);
             setIsLoading(false);
             return;
-          } catch (e) {
+          } catch {
             localStorage.removeItem('grc-dev-auth');
           }
         }
