@@ -73,7 +73,7 @@ export class FrameworkCatalogService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return frameworks.map(f => ({
+    return frameworks.map((f) => ({
       id: f.id,
       catalogId: f.type,
       name: f.name,
@@ -91,7 +91,7 @@ export class FrameworkCatalogService {
   async activateFramework(
     organizationId: string,
     catalogId: string,
-    userId: string,
+    userId: string
   ): Promise<{ frameworkId: string; requirementsCreated: number }> {
     // Get the catalog framework
     const catalogFramework = getCatalogFramework(catalogId);
@@ -99,19 +99,68 @@ export class FrameworkCatalogService {
       throw new NotFoundException(`Framework '${catalogId}' not found in catalog`);
     }
 
-    // Check if already activated
+    // Check if a framework of this catalog type already exists for the org.
+    // If it exists but is soft-deleted, reactivate instead of creating a duplicate.
     const existing = await this.prisma.framework.findFirst({
       where: {
         organizationId,
         type: catalogId,
-        deletedAt: null,
+      },
+      include: {
+        _count: {
+          select: { requirements: true },
+        },
       },
     });
 
-    if (existing) {
+    if (existing?.deletedAt === null) {
       throw new ConflictException(
         `Framework '${catalogFramework.name}' is already activated for this organization`
       );
+    }
+
+    if (existing?.deletedAt) {
+      const reactivated = await this.prisma.framework.update({
+        where: { id: existing.id },
+        data: {
+          name: catalogFramework.name,
+          version: catalogFramework.version,
+          description: catalogFramework.description,
+          isActive: true,
+          deletedAt: null,
+          deletedBy: null,
+        },
+      });
+
+      this.logger.log(
+        `Reactivated framework '${catalogFramework.name}' for organization ${organizationId}`
+      );
+
+      try {
+        await this.prisma.auditLog.create({
+          data: {
+            organizationId,
+            userId,
+            action: 'framework_reactivated',
+            entityType: 'framework',
+            entityId: reactivated.id,
+            entityName: catalogFramework.name,
+            description: `Reactivated framework '${catalogFramework.name}'`,
+            metadata: {
+              catalogId,
+              requirementsReused: existing._count.requirements,
+            },
+          },
+        });
+      } catch (error) {
+        // Don't fail if audit log creation fails
+        this.logger.warn(`Failed to create audit log for framework reactivation: ${error}`);
+      }
+
+      return {
+        frameworkId: reactivated.id,
+        requirementsCreated: existing._count.requirements,
+      };
     }
 
     this.logger.log(
@@ -198,7 +247,7 @@ export class FrameworkCatalogService {
   async deactivateFramework(
     organizationId: string,
     frameworkId: string,
-    userId: string,
+    userId: string
   ): Promise<{ success: boolean; message: string }> {
     // Find the framework
     const framework = await this.prisma.framework.findFirst({
@@ -265,7 +314,9 @@ export class FrameworkCatalogService {
   /**
    * Get catalog status for an organization (which frameworks are activated)
    */
-  async getCatalogStatus(organizationId: string): Promise<
+  async getCatalogStatus(
+    organizationId: string
+  ): Promise<
     Array<CatalogFrameworkMeta & { isActivated: boolean; activatedFrameworkId?: string }>
   > {
     const catalogFrameworks = listCatalogFrameworks();
@@ -273,7 +324,7 @@ export class FrameworkCatalogService {
       where: {
         organizationId,
         deletedAt: null,
-        type: { in: catalogFrameworks.map(f => f.id) },
+        type: { in: catalogFrameworks.map((f) => f.id) },
       },
       select: {
         id: true,
@@ -281,9 +332,9 @@ export class FrameworkCatalogService {
       },
     });
 
-    const activatedMap = new Map(activatedFrameworks.map(f => [f.type, f.id]));
+    const activatedMap = new Map(activatedFrameworks.map((f) => [f.type, f.id]));
 
-    return catalogFrameworks.map(cf => ({
+    return catalogFrameworks.map((cf) => ({
       ...cf,
       isActivated: activatedMap.has(cf.id),
       activatedFrameworkId: activatedMap.get(cf.id),
