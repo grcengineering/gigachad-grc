@@ -17,35 +17,38 @@
     "axios": "^1.16.0",
     "clsx": "^2.1.0",
     "cmdk": "^1.0.4",
+    "exceljs": "^4.4.0",
     "keycloak-js": "^23.0.3",
     "lucide-react": "^0.555.0",
     "mammoth": "^1.11.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.4.1",
-    "react-router-dom": "^6.21.1",
+    "react-router-dom": "^6.30.4",
     "tailwind-merge": "^2.2.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.46",
     "@types/react-dom": "^18.2.18",
-    "@typescript-eslint/eslint-plugin": "^6.18.0",
-    "@typescript-eslint/parser": "^6.18.0",
+    "@typescript-eslint/eslint-plugin": "^8.63.0",
+    "@typescript-eslint/parser": "^8.63.0",
     "@vitejs/plugin-react": "6.0.3",
     "autoprefixer": "^10.4.16",
-    "eslint": "^8.56.0",
+    "eslint": "^8.57.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "postcss": "^8.5.16",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3",
-    "vite": "8.1.4",
-    "xlsx": "^0.18.5"
+    "vite": "8.1.4"
   },
   "overrides": {
     "@remix-run/router": "^1.23.2",
     "@xmldom/xmldom": "^0.8.13",
     "axios": "^1.16.0",
     "form-data": "^4.0.6",
-    "underscore": "^1.13.8"
+    "underscore": "^1.13.8",
+    "dompurify": ">=3.4.11",
+    "picomatch": ">=2.3.2",
+    "minimatch": "^10.2.3"
   }
 }
