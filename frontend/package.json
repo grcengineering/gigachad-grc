@@ -12,7 +12,7 @@
   "dependencies": {
     "@headlessui/react": "^1.7.18",
     "@monaco-editor/react": "^4.7.0",
-    "@tanstack/react-query": "^5.17.0",
+    "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-table": "^8.20.5",
     "axios": "^1.16.0",
     "clsx": "^2.1.0",
