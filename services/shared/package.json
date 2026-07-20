@@ -25,8 +25,8 @@
     "winston": "^3.11.0"
   },
   "devDependencies": {
-    "@nestjs/common": "^11.1.19",
-    "@nestjs/core": "^11.1.19",
+    "@nestjs/common": "^11.1.28",
+    "@nestjs/core": "^11.1.28",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^20.19.39",
@@ -37,8 +37,8 @@
     "typescript": "^5.3.2"
   },
   "peerDependencies": {
-    "@nestjs/common": "^11.1.19",
-    "@nestjs/core": "^11.1.19"
+    "@nestjs/common": "^11.1.28",
+    "@nestjs/core": "^11.1.28"
   },
   "files": [
     "dist"
