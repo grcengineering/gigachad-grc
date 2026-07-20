@@ -33,13 +33,13 @@
     "@typescript-eslint/eslint-plugin": "^8.63.0",
     "@typescript-eslint/parser": "^8.63.0",
     "@vitejs/plugin-react": "6.0.3",
-    "autoprefixer": "^10.4.16",
+    "autoprefixer": "^10.5.4",
     "eslint": "^8.57.1",
     "eslint-plugin-react-hooks": "^4.6.0",
-    "postcss": "^8.5.16",
+    "postcss": "^8.5.20",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3",
-    "vite": "8.1.4"
+    "vite": "8.1.5"
   },
   "overrides": {
     "@remix-run/router": "^1.23.2",
