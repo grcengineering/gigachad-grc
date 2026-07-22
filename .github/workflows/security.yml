@@ -7,7 +7,7 @@ on:
     branches: [main, develop]
   schedule:
     # Run daily at 2 AM UTC for continuous monitoring
-    - cron: '0 2 * * *'
+    #- cron: '0 2 * * *'
 
 env:
   NODE_VERSION: '20'
