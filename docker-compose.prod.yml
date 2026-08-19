@@ -83,7 +83,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - postgres_backups:/backups
-      - ./database/init:/docker-entrypoint-initdb.d:ro
+      # Bootstrap only supporting databases/extensions. The controls
+      # entrypoint applies the canonical Prisma application schema.
+      - ./database/init/00-create-keycloak-db.sh:/docker-entrypoint-initdb.d/00-create-keycloak-db.sh:ro
+      - ./database/init/00b-create-infisical-db.sh:/docker-entrypoint-initdb.d/00b-create-infisical-db.sh:ro
+      - ./database/init/01-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     networks:
       - grc-network
     restart: always

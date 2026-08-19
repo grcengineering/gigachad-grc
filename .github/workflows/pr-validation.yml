@@ -318,10 +318,12 @@ jobs:
             -H 'x-org-id: 8924f0c1-7bb1-4be8-84ee-ad8725c712bf'
 
       - name: Install Playwright test runner
-        run: npm install --no-save @playwright/test
+        run: npm install --no-save @playwright/test@1.62.1
 
-      - name: Install Playwright + Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright Chromium
+        # GitHub's Ubuntu image already includes Chromium's system libraries.
+        # Avoid apt font downloads, which can exhaust the E2E job timeout.
+        run: npx playwright install chromium
 
       - name: Run Playwright tenant + RBAC gate suite
         # Keep the required gate deterministic while UI reconciliation is in
@@ -461,8 +463,14 @@ jobs:
             -H 'x-org-id: 8924f0c1-7bb1-4be8-84ee-ad8725c712bf' \
             --max-time 120 || echo "Seed call returned non-zero (continuing)"
 
+      - name: Install Playwright test runner
+        run: npm install --no-save @playwright/test@1.62.1
+        working-directory: frontend
+
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        # GitHub's Ubuntu image already includes Chromium's system libraries.
+        # Avoid apt font downloads, which can exhaust the E2E job timeout.
+        run: npx playwright install chromium
         working-directory: frontend
 
       - name: Run accessibility (axe-core) scans (report-only)
