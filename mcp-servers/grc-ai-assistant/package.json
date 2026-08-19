@@ -23,7 +23,7 @@
   "overrides": {
     "fast-uri": "^3.1.5",
     "form-data": "^4.0.6",
-    "hono": "^4.12.25",
+    "hono": "^4.13.3",
     "ip-address": "^10.3.1"
   }
 }
