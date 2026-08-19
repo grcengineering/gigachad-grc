@@ -66,7 +66,11 @@ services:
       - '127.0.0.1:5433:5432' # Using 5433 externally to avoid conflicts
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database/init:/docker-entrypoint-initdb.d
+      # Only bootstrap prerequisites here. Application tables are created by
+      # Prisma in the controls entrypoint after PostgreSQL becomes healthy.
+      - ./database/init/00-create-keycloak-db.sh:/docker-entrypoint-initdb.d/00-create-keycloak-db.sh:ro
+      - ./database/init/00b-create-infisical-db.sh:/docker-entrypoint-initdb.d/00b-create-infisical-db.sh:ro
+      - ./database/init/01-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     networks:
       - grc-network
     restart: unless-stopped
@@ -81,12 +85,7 @@ services:
           memory: 256M
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-grc} -d ${POSTGRES_DB:-gigachad_grc}']
-      # First boot runs every script under database/init/ (creates keycloak + infisical DBs,
-      # 26+ SQL files for soft-delete, BCDR, enums, indexes, etc.). On a slow / contended CI
-      # runner this can easily push past 30s. We've seen `docker compose up -d` exit non-zero
-      # with "dependency failed to start: grc-postgres is unhealthy" on PRs #320 and #321
-      # despite the previous 30s budget. Bumped headroom + retry total so the dependency wait
-      # has 60s of init grace + 80s of polling = ~140s total before compose gives up.
+      # Allow first-boot database creation to finish before dependent services start.
       start_period: 60s
       interval: 10s
       timeout: 5s
