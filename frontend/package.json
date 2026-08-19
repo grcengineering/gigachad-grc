@@ -47,6 +47,7 @@
     "axios": "^1.16.0",
     "form-data": "^4.0.6",
     "underscore": "^1.13.8",
+    "brace-expansion": "^5.0.9",
     "dompurify": ">=3.4.11",
     "picomatch": ">=2.3.2",
     "minimatch": "^10.2.3"

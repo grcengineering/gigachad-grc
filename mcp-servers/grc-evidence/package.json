@@ -22,7 +22,7 @@
     "@azure/arm-network": "^33.0.0",
     "@azure/arm-storage": "^18.0.0",
     "@octokit/rest": "^20.0.0",
-    "axios": "^1.15.0",
+    "axios": "^1.18.0",
     "googleapis": "^171.4.0",
     "puppeteer": "^24.0.0",
     "zod": "^3.22.0"
@@ -35,7 +35,10 @@
   "overrides": {
     "fast-xml-parser": ">=5.7.0",
     "basic-ftp": ">=5.3.0",
+    "fast-uri": "^3.1.5",
     "form-data": "^4.0.6",
+    "ip-address": "^10.3.1",
+    "js-yaml": "^4.3.1",
     "ws": "^8.21.0",
     "hono": "^4.12.25"
   }

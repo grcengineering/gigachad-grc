@@ -65,6 +65,7 @@
     },
     "minipass": "^7.1.2",
     "@isaacs/brace-expansion": "^5.0.0",
+    "brace-expansion": "^5.0.9",
     "lodash": ">=4.18.0",
     "fast-xml-parser": ">=5.7.0",
     "fast-xml-builder": ">=1.2.0",
@@ -82,11 +83,16 @@
     "picomatch": ">=2.3.2",
     "@xmldom/xmldom": ">=0.8.12",
     "nodemailer": "^8.0.11",
+    "nanoid": "^3.3.18",
+    "postcss": "^8.5.26",
     "yaml": ">=2.8.3",
     "sanitize-html": ">=2.17.4",
     "follow-redirects": ">=1.16.0",
     "uuid": ">=11.1.1",
-    "js-yaml": "^4.2.0",
+    "js-yaml": "^4.3.1",
+    "@nestjs/swagger": {
+      "js-yaml": "4.3.1"
+    },
     "@nestjs/cli": {
       "@angular-devkit/core": {
         "ajv": "8.18.0"
