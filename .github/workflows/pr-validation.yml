@@ -261,6 +261,12 @@ jobs:
         # confirm actual HTTP readiness.
         run: docker compose up -d
 
+      - name: Diagnose compose startup failure
+        if: failure()
+        run: |
+          docker compose ps --all || true
+          docker compose logs --no-color --tail=300 postgres || true
+
       - name: Poll backend + frontend readiness (5 min max)
         run: |
           set -e
@@ -408,6 +414,12 @@ jobs:
         # retry budget on a cold runner; --wait would exit non-zero
         # before our poll has a chance to confirm HTTP readiness.
         run: docker compose up -d
+
+      - name: Diagnose compose startup failure
+        if: failure()
+        run: |
+          docker compose ps --all || true
+          docker compose logs --no-color --tail=300 postgres || true
 
       - name: Wait for stack health
         run: |
