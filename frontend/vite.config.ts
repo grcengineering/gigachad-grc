@@ -156,6 +156,10 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
+      '/api/organization': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
       // Frameworks service (frameworks, assessments, mappings)
       '/api/frameworks': {
         target: 'http://localhost:3002',
