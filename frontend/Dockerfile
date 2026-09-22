@@ -34,6 +34,10 @@ RUN npm run build
 # Production stage
 FROM nginx:alpine AS production
 
+# Apply current Alpine security fixes instead of shipping the packages baked
+# into the base image digest.
+RUN apk upgrade --no-cache
+
 # Copy built assets
 COPY --from=builder /app/frontend/dist /usr/share/nginx/html
 
