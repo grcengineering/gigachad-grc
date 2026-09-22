@@ -1,5 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme, type Theme } from '@/contexts/ThemeContext';
+import { organizationApi, type OrganizationProfile } from '@/lib/api';
 import {
   UserIcon,
   BuildingOfficeIcon,
@@ -19,6 +23,13 @@ const TABS = [
   { id: 'api', label: 'API Keys', icon: KeyIcon },
   { id: 'appearance', label: 'Appearance', icon: PaintBrushIcon },
 ];
+
+function useOrganizationProfile() {
+  return useQuery({
+    queryKey: ['organization-profile'],
+    queryFn: () => organizationApi.get().then((response) => response.data),
+  });
+}
 
 export default function Settings() {
   const { user } = useAuth();
@@ -70,6 +81,7 @@ export default function Settings() {
 
 function ProfileSettings({ user }: { user: any }) {
   const [name, setName] = useState<string>(user?.name || '');
+  const { data: organization, isLoading: isOrganizationLoading } = useOrganizationProfile();
 
   return (
     <div className="card p-6 space-y-6">
@@ -108,7 +120,11 @@ function ProfileSettings({ user }: { user: any }) {
         </div>
         <div>
           <label className="label">Organization</label>
-          <Input value="Default Organization" disabled className="mt-1 opacity-50" />
+          <Input
+            value={isOrganizationLoading ? 'Loading…' : organization?.name || 'Organization'}
+            disabled
+            className="mt-1 opacity-50"
+          />
         </div>
       </div>
 
@@ -127,9 +143,49 @@ const TIMEZONE_OPTIONS = [
 ];
 
 function OrganizationSettings() {
-  const [orgName, setOrgName] = useState('Default Organization');
-  const [description, setDescription] = useState('Default organization for GigaChad GRC');
+  const queryClient = useQueryClient();
+  const { data: organization, isLoading, isError, refetch } = useOrganizationProfile();
+  const [orgName, setOrgName] = useState('');
+  const [description, setDescription] = useState('');
   const [timezone, setTimezone] = useState('UTC');
+
+  useEffect(() => {
+    if (!organization) return;
+    setOrgName(organization.name);
+    setDescription(organization.description || '');
+    setTimezone(organization.settings.timezone || 'UTC');
+  }, [organization]);
+
+  const updateMutation = useMutation({
+    mutationFn: () =>
+      organizationApi
+        .update({
+          name: orgName,
+          description,
+          settings: { timezone },
+        })
+        .then((response) => response.data),
+    onSuccess: (updated) => {
+      queryClient.setQueryData<OrganizationProfile>(['organization-profile'], updated);
+      toast.success('Organization settings saved');
+    },
+    onError: () => toast.error('Failed to save organization settings'),
+  });
+
+  if (isLoading) {
+    return <div className="card p-6 text-surface-600">Loading organization settings…</div>;
+  }
+
+  if (isError) {
+    return (
+      <div className="card p-6 space-y-3">
+        <p className="text-red-600">Unable to load organization settings.</p>
+        <Button variant="secondary" onClick={() => refetch()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="card p-6 space-y-6">
@@ -158,7 +214,13 @@ function OrganizationSettings() {
       </div>
 
       <div className="flex justify-end pt-4 border-t border-surface-200">
-        <Button>Save Changes</Button>
+        <Button
+          onClick={() => updateMutation.mutate()}
+          loading={updateMutation.isPending}
+          disabled={!orgName.trim()}
+        >
+          Save Changes
+        </Button>
       </div>
     </div>
   );
@@ -279,8 +341,26 @@ const DATE_FORMAT_OPTIONS = [
 ];
 
 function AppearanceSettings() {
-  const [theme, setTheme] = useState('dark');
+  const queryClient = useQueryClient();
+  const { data: organization } = useOrganizationProfile();
+  const { theme, setTheme } = useTheme();
   const [dateFormat, setDateFormat] = useState('YYYY-MM-DD');
+
+  useEffect(() => {
+    if (organization?.settings.dateFormat) {
+      setDateFormat(organization.settings.dateFormat);
+    }
+  }, [organization]);
+
+  const updateMutation = useMutation({
+    mutationFn: () =>
+      organizationApi.update({ settings: { dateFormat } }).then((response) => response.data),
+    onSuccess: (updated) => {
+      queryClient.setQueryData<OrganizationProfile>(['organization-profile'], updated);
+      toast.success('Appearance preferences saved');
+    },
+    onError: () => toast.error('Failed to save appearance preferences'),
+  });
 
   return (
     <div className="card p-6 space-y-6">
@@ -290,8 +370,13 @@ function AppearanceSettings() {
         <div>
           <label className="label">Theme</label>
           <div className="mt-1">
-            <Select value={theme} onChange={setTheme} options={THEME_OPTIONS} />
+            <Select
+              value={theme}
+              onChange={(value) => setTheme(value as Theme)}
+              options={THEME_OPTIONS}
+            />
           </div>
+          <p className="mt-1 text-xs text-surface-500">Theme changes apply immediately.</p>
         </div>
 
         <div>
@@ -303,7 +388,9 @@ function AppearanceSettings() {
       </div>
 
       <div className="flex justify-end pt-4 border-t border-surface-200">
-        <Button>Save Changes</Button>
+        <Button onClick={() => updateMutation.mutate()} loading={updateMutation.isPending}>
+          Save Changes
+        </Button>
       </div>
     </div>
   );

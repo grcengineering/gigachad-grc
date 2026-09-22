@@ -10,7 +10,7 @@ on:
     - cron: '0 2 * * *'
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: '22.22.3'
 
 permissions:
   contents: read
@@ -94,11 +94,30 @@ jobs:
 
   # Dependency Vulnerability Scanning
   dependencies:
-    name: Dependency Scan
+    name: Dependency Scan (${{ matrix.name }})
     runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: workspace
+            directory: .
+            lockfile: package-lock.json
+          - name: mcp-ai-assistant
+            directory: mcp-servers/grc-ai-assistant
+            lockfile: mcp-servers/grc-ai-assistant/package-lock.json
+          - name: mcp-compliance
+            directory: mcp-servers/grc-compliance
+            lockfile: mcp-servers/grc-compliance/package-lock.json
+          - name: mcp-evidence
+            directory: mcp-servers/grc-evidence
+            lockfile: mcp-servers/grc-evidence/package-lock.json
+    defaults:
+      run:
+        working-directory: ${{ matrix.directory }}
 
     steps:
       - name: Harden the runner (Audit all outbound calls)
@@ -114,7 +133,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: package-lock.json
+          cache-dependency-path: ${{ matrix.lockfile }}
 
       - name: Install dependencies
         # --ignore-scripts skips prisma generate (and other postinstall hooks).
@@ -198,13 +217,12 @@ jobs:
           # stale cached layer with already-fixed CVEs.
           no-cache: true
 
-      - name: Run Trivy vulnerability scanner
+      - name: Run Trivy blocking vulnerability gate
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # master
         with:
           image-ref: 'grc-${{ matrix.service }}:scan'
           scanners: 'vuln'
-          format: 'sarif'
-          output: 'trivy-${{ matrix.service }}.sarif'
+          format: 'table'
           severity: 'CRITICAL,HIGH'
           exit-code: '1' # BLOCKING: Fail on critical/high vulnerabilities
           ignore-unfixed: true
@@ -217,7 +235,23 @@ jobs:
           # dismissals that Trivy itself does not honor. Each entry there
           # documents the rationale for the dismissal.
           trivyignores: '.trivyignore'
-        continue-on-error: false
+
+      # SARIF generation is intentionally non-blocking. Trivy's SARIF mode can
+      # include lower severities in its exit status even when severity filtering
+      # is configured, which made medium findings fail the high/critical gate.
+      - name: Generate all-severity Trivy SARIF
+        if: always()
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # master
+        with:
+          image-ref: 'grc-${{ matrix.service }}:scan'
+          scanners: 'vuln'
+          format: 'sarif'
+          output: 'trivy-${{ matrix.service }}.sarif'
+          severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
+          exit-code: '0'
+          ignore-unfixed: true
+          cache: false
+          trivyignores: '.trivyignore'
 
       - name: Upload Trivy scan results
         if: always()

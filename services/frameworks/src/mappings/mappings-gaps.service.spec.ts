@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { STORAGE_PROVIDER } from '@gigachad-grc/shared';
 import { MappingsService } from './mappings.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { MappingHistoryService } from './mapping-history.service';
@@ -24,6 +25,16 @@ describe('MappingsService — findGaps', () => {
 
   const mockHistoryService = { record: jest.fn(), listByMapping: jest.fn() };
   const mockAuditService = { log: jest.fn() };
+  const mockStorage = {
+    upload: jest.fn(),
+    download: jest.fn(),
+    delete: jest.fn(),
+    exists: jest.fn(),
+    getSignedUrl: jest.fn(),
+    getMetadata: jest.fn(),
+    list: jest.fn(),
+    copy: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -32,6 +43,7 @@ describe('MappingsService — findGaps', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: MappingHistoryService, useValue: mockHistoryService },
         { provide: AuditService, useValue: mockAuditService },
+        { provide: STORAGE_PROVIDER, useValue: mockStorage },
       ],
     }).compile();
 

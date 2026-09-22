@@ -357,6 +357,16 @@ describe('import-parser', () => {
     expect(rows[0].mapping_type).toBe('Primary');
   });
 
+  it('rejects oversized and excessive CSV headers before parsing rows', () => {
+    const oversizedHeader = `${'a'.repeat(129)},control_code\nvalue,AC-001\n`;
+    expect(() => parseMappingCsv(Buffer.from(oversizedHeader))).toThrow(
+      /header exceeds 128 characters/
+    );
+
+    const tooManyColumns = `${Array.from({ length: 51 }, (_, i) => `column_${i}`).join(',')}\n`;
+    expect(() => parseMappingCsv(Buffer.from(tooManyColumns))).toThrow(/too many columns/);
+  });
+
   it('parseMappingXlsx reads the first sheet and skips empty rows', async () => {
     const buf = fs.readFileSync(path.join(FIXTURE_DIR, 'all-good.xlsx'));
     const rows = await parseMappingXlsx(buf);

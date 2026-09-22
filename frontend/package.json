@@ -11,20 +11,20 @@
   },
   "dependencies": {
     "@headlessui/react": "^1.7.18",
-    "@monaco-editor/react": "^4.7.0",
     "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-table": "^8.20.5",
+    "@xmldom/xmldom": "0.8.15",
     "axios": "^1.16.0",
     "clsx": "^2.1.0",
     "cmdk": "^1.0.4",
     "exceljs": "^4.4.0",
     "keycloak-js": "^23.0.3",
     "lucide-react": "^0.577.0",
-    "mammoth": "^1.12.1",
+    "mammoth": "^1.12.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.4.1",
-    "react-router-dom": "^6.30.5",
+    "react-router-dom": "^7.18.3",
     "tailwind-merge": "^2.6.1"
   },
   "devDependencies": {
@@ -34,6 +34,7 @@
     "@typescript-eslint/parser": "^8.63.0",
     "@vitejs/plugin-react": "6.0.3",
     "autoprefixer": "^10.4.16",
+    "brace-expansion": "2.1.4",
     "eslint": "^8.57.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "postcss": "^8.5.26",
@@ -41,14 +42,24 @@
     "typescript": "^5.3.3",
     "vite": "8.1.4"
   },
+  "optionalDependencies": {
+    "@rolldown/binding-linux-arm64-gnu": "1.1.5",
+    "@rolldown/binding-linux-arm64-musl": "1.1.5",
+    "@rolldown/binding-linux-x64-gnu": "1.1.5",
+    "@rolldown/binding-linux-x64-musl": "1.1.5",
+    "lightningcss-linux-arm64-gnu": "1.32.0",
+    "lightningcss-linux-arm64-musl": "1.32.0",
+    "lightningcss-linux-x64-gnu": "1.32.0",
+    "lightningcss-linux-x64-musl": "1.32.0"
+  },
   "overrides": {
     "@remix-run/router": "^1.23.2",
-    "@xmldom/xmldom": "^0.8.13",
+    "@xmldom/xmldom": "^0.9.12",
     "axios": "^1.16.0",
     "form-data": "^4.0.6",
     "underscore": "^1.13.8",
     "brace-expansion": "^5.0.9",
-    "dompurify": ">=3.4.11",
+    "dompurify": ">=3.4.13",
     "picomatch": ">=2.3.2",
     "minimatch": "^10.2.3"
   }

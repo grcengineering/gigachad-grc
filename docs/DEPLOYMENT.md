@@ -338,7 +338,7 @@ cp services/shared/prisma/schema.prisma my-controls-service/prisma/
 2. Update Dockerfile:
 
 ```dockerfile
-FROM node:20-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 

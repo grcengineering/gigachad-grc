@@ -124,43 +124,83 @@ updates:
       - dependency-name: 'prisma'
         update-types: ['version-update:semver-major']
 
+  # The frontend is managed by the root npm workspace entry above. Keeping a
+  # second /frontend entry created incompatible root and nested lockfiles.
+
   # =============================================================================
-  # Frontend workspace
+  # Standalone MCP servers (not root npm workspaces)
   # =============================================================================
   - package-ecosystem: 'npm'
-    directory: '/frontend'
+    directory: '/mcp-servers/grc-ai-assistant'
     schedule:
       interval: 'weekly'
       day: 'monday'
       time: '06:00'
       timezone: 'America/Los_Angeles'
     open-pull-requests-limit: 3
-
     groups:
-      ui-components:
-        patterns:
-          - '@radix-ui/*'
-          - 'lucide-react'
-          - 'recharts'
-          - 'class-variance-authority'
-          - 'clsx'
-          - 'tailwind*'
-        update-types:
-          - 'minor'
-          - 'patch'
-
-    # Ignore major version updates - React 18 to 19 etc require manual migration
+      security-updates:
+        applies-to: security-updates
+        patterns: ['*']
+      production-patch:
+        applies-to: version-updates
+        dependency-type: 'production'
+        patterns: ['*']
+        update-types: ['patch']
     ignore:
       - dependency-name: '*'
         update-types: ['version-update:semver-major']
-
-    labels:
-      - 'dependencies'
-      - 'frontend'
-      - 'automated'
-
+    labels: ['dependencies', 'mcp', 'automated']
     commit-message:
-      prefix: 'deps(frontend)'
+      prefix: 'deps(mcp-ai)'
+
+  - package-ecosystem: 'npm'
+    directory: '/mcp-servers/grc-compliance'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'America/Los_Angeles'
+    open-pull-requests-limit: 3
+    groups:
+      security-updates:
+        applies-to: security-updates
+        patterns: ['*']
+      production-patch:
+        applies-to: version-updates
+        dependency-type: 'production'
+        patterns: ['*']
+        update-types: ['patch']
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+    labels: ['dependencies', 'mcp', 'automated']
+    commit-message:
+      prefix: 'deps(mcp-compliance)'
+
+  - package-ecosystem: 'npm'
+    directory: '/mcp-servers/grc-evidence'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'America/Los_Angeles'
+    open-pull-requests-limit: 3
+    groups:
+      security-updates:
+        applies-to: security-updates
+        patterns: ['*']
+      production-patch:
+        applies-to: version-updates
+        dependency-type: 'production'
+        patterns: ['*']
+        update-types: ['patch']
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+    labels: ['dependencies', 'mcp', 'automated']
+    commit-message:
+      prefix: 'deps(mcp-evidence)'
 
   # =============================================================================
   # GitHub Actions

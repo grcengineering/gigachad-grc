@@ -394,7 +394,7 @@ export class OktaCollector extends BaseCollector {
               factorTypeCounts.set(t, (factorTypeCounts.get(t) || 0) + 1);
             }
           }
-        } catch (e) {
+        } catch {
           unknownEnrollment++;
           factorErrorCount++;
         }

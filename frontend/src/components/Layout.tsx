@@ -239,8 +239,8 @@ function NavSectionComponent({
         className={clsx(
           'flex items-center justify-between w-full px-3 py-2 rounded-md text-sm font-medium transition-colors',
           hasActiveItem
-            ? 'text-brand-700'
-            : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900'
+            ? 'text-brand-700 dark:text-brand-500'
+            : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900 dark:text-surface-200 dark:hover:bg-surface-800 dark:hover:text-surface-100'
         )}
       >
         <div className="flex items-center gap-3">
@@ -265,8 +265,8 @@ function NavSectionComponent({
                 className={clsx(
                   'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
                   isActive
-                    ? 'bg-brand-600/20 text-brand-700 font-medium'
-                    : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900'
+                    ? 'bg-brand-600/20 text-brand-700 dark:text-brand-500 font-medium'
+                    : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900 dark:text-surface-200 dark:hover:bg-surface-800 dark:hover:text-surface-100'
                 )}
               >
                 <item.icon className="w-4 h-4" />
@@ -304,14 +304,14 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-50">
+    <div className="min-h-screen bg-surface-50 dark:bg-surface-950">
       <CommandPalette open={palette.open} onOpenChange={palette.setOpen} />
       <KeyboardShortcutsModal open={shortcuts.open} onClose={() => shortcuts.setOpen(false)} />
 
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-white/30 lg:hidden"
+          className="fixed inset-0 z-40 bg-white/30 dark:bg-black/60 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -319,7 +319,7 @@ export default function Layout() {
       {/* Sidebar */}
       <aside
         className={clsx(
-          'fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-surface-200 transform transition-transform duration-200 ease-in-out lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-surface-900 border-r border-surface-200 dark:border-surface-800 transform transition-transform duration-200 ease-in-out lg:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
@@ -338,8 +338,8 @@ export default function Layout() {
               className={clsx(
                 'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
                 isDashboardActive
-                  ? 'bg-brand-600/20 text-brand-700'
-                  : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900'
+                  ? 'bg-brand-600/20 text-brand-700 dark:text-brand-500'
+                  : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900 dark:text-surface-200 dark:hover:bg-surface-800 dark:hover:text-surface-100'
               )}
               onClick={() => setSidebarOpen(false)}
             >
@@ -388,7 +388,7 @@ export default function Layout() {
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top bar */}
-        <header className="sticky top-0 z-[60] bg-white">
+        <header className="sticky top-0 z-[60] bg-white dark:bg-surface-900">
           <div className="flex h-16 items-center justify-between gap-4 px-4 lg:px-6 border-b border-surface-200">
             <div className="flex items-center gap-3 min-w-0">
               <button
@@ -404,7 +404,7 @@ export default function Layout() {
               {/* Command palette trigger */}
               <button
                 onClick={() => palette.setOpen(true)}
-                className="hidden md:inline-flex items-center gap-2 h-8 pl-2.5 pr-2 rounded-md border border-surface-300 bg-white text-small text-surface-500 hover:bg-surface-100 hover:text-surface-700 transition-colors"
+                className="hidden md:inline-flex items-center gap-2 h-8 pl-2.5 pr-2 rounded-md border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-900 text-small text-surface-500 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800 hover:text-surface-700 dark:hover:text-surface-200 transition-colors"
                 aria-label="Open command palette"
               >
                 <Search className="h-4 w-4" />

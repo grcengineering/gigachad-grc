@@ -47,6 +47,7 @@ import { ScimModule } from './scim/scim.module';
 import { WorkflowsModule } from './workflows/workflows.module';
 import { ApiKeysModule } from './api-keys/api-keys.module';
 import { CalendarModule } from './calendar/calendar.module';
+import { OrganizationsModule } from './organizations/organizations.module';
 import { CustomReportsModule } from './custom-reports/custom-reports.module';
 import { ScheduledReportsModule } from './scheduled-reports/scheduled-reports.module';
 import { LogoutModule } from './auth/logout.module';
@@ -54,7 +55,13 @@ import { AuthModule } from './auth/auth.module';
 import { ModulesController } from './modules/modules.controller';
 import { CustomThrottlerGuard } from './auth/throttler.guard';
 import { CorrelationIdMiddleware } from './common/correlation-id.middleware';
-import { StorageModule, EventsModule, CacheModule, HealthModule, SecretsModule } from '@gigachad-grc/shared';
+import {
+  StorageModule,
+  EventsModule,
+  CacheModule,
+  HealthModule,
+  SecretsModule,
+} from '@gigachad-grc/shared';
 
 @Module({
   imports: [
@@ -138,6 +145,7 @@ import { StorageModule, EventsModule, CacheModule, HealthModule, SecretsModule }
     WorkflowsModule,
     ApiKeysModule,
     CalendarModule,
+    OrganizationsModule,
     CustomReportsModule,
     ScheduledReportsModule,
     LogoutModule,

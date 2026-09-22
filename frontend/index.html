@@ -1,19 +1,29 @@
-<!DOCTYPE html>
-<html lang="en" class="dark">
+<!doctype html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (() => {
+        try {
+          const stored = localStorage.getItem('theme') || 'system';
+          const dark =
+            stored === 'dark' ||
+            (stored === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.classList.add(dark ? 'dark' : 'light');
+        } catch {
+          document.documentElement.classList.add('light');
+        }
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="GigaChad GRC - Governance, Risk, and Compliance Platform" />
-    <link rel="preconnect" href="https://rsms.me/">
-    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <link rel="preconnect" href="https://rsms.me/" />
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
     <title>GigaChad GRC</title>
   </head>
-  <body class="bg-surface-950 text-surface-100">
+  <body class="bg-surface-50 text-surface-900 dark:bg-surface-950 dark:text-surface-100">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-
-
-

@@ -16,6 +16,8 @@ export interface RawMappingRow {
 }
 
 const HEADER_KEYS = ['framework_code', 'requirement_ref', 'control_code', 'mapping_type', 'notes'];
+const MAX_CSV_COLUMNS = 50;
+const MAX_CSV_HEADER_LENGTH = 128;
 
 /**
  * Parse a CSV buffer into raw mapping rows. Header row is required; columns
@@ -25,7 +27,18 @@ const HEADER_KEYS = ['framework_code', 'requirement_ref', 'control_code', 'mappi
  */
 export function parseMappingCsv(buffer: Buffer): RawMappingRow[] {
   const records = parse(buffer, {
-    columns: (header: string[]) => header.map((h) => h.trim().toLowerCase()),
+    columns: (header: string[]) => {
+      if (header.length > MAX_CSV_COLUMNS) {
+        throw new Error(`CSV contains too many columns (maximum ${MAX_CSV_COLUMNS})`);
+      }
+      return header.map((h) => {
+        const normalized = h.trim().toLowerCase();
+        if (normalized.length > MAX_CSV_HEADER_LENGTH) {
+          throw new Error(`CSV header exceeds ${MAX_CSV_HEADER_LENGTH} characters`);
+        }
+        return normalized;
+      });
+    },
     skip_empty_lines: true,
     trim: true,
     relax_column_count: true,
