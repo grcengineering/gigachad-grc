@@ -8,10 +8,10 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:ci": "jest --ci --runInBand",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch",
+    "test:cov": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage",
+    "test:ci": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --ci --runInBand",
     "prisma:generate": "prisma generate --schema=../shared/prisma/schema.prisma",
     "prisma:migrate": "prisma migrate dev --schema=../shared/prisma/schema.prisma",
     "prisma:push": "prisma db push --schema=../shared/prisma/schema.prisma",
@@ -19,12 +19,12 @@
   },
   "dependencies": {
     "@gigachad-grc/shared": "file:../shared",
-    "@nestjs/common": "^11.2.1",
+    "@nestjs/common": "11.2.5",
     "@nestjs/config": "^4.0.4",
-    "@nestjs/core": "^11.2.1",
-    "@nestjs/platform-express": "^11.2.1",
+    "@nestjs/core": "11.2.5",
+    "@nestjs/platform-express": "11.2.1",
     "@nestjs/swagger": "11.4.7",
-    "@nestjs/throttler": "^6.4.0",
+    "@nestjs/throttler": "^6.7.0",
     "@prisma/client": "^5.22.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
@@ -33,7 +33,7 @@
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
-    "@nestjs/cli": "^11.0.24",
+    "@nestjs/cli": "11.0.24",
     "@types/express": "^4.17.21",
     "@types/multer": "^2.2.0",
     "prisma": "^5.22.0",
@@ -45,8 +45,8 @@
     "picomatch": ">=2.3.2",
     "brace-expansion": ">=5.0.5",
     "lodash": ">=4.18.0",
-    "multer": "^2.2.0",
+    "multer": "^2.3.0",
     "uuid": ">=11.1.1",
-    "js-yaml": "^4.3.1"
+    "js-yaml": "^4.3.2"
   }
 }

@@ -39,7 +39,7 @@ By contributing to GigaChad GRC, you agree that your contributions will be licen
 
 ### Prerequisites
 
-- **Node.js 20+** (we recommend using [nvm](https://github.com/nvm-sh/nvm))
+- **Node.js 22.22.3+** (use the version in `.nvmrc` with [nvm](https://github.com/nvm-sh/nvm))
 - **Docker and Docker Compose** (for running infrastructure services)
 - **Git** (for version control)
 - **VS Code** (recommended) or your preferred editor

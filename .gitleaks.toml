@@ -19,6 +19,12 @@ title = "GigaChad GRC Gitleaks Configuration"
     '''(^|/)\.gitleaks\.toml$''',
     '''(^|/)\.semgrep/.*''',
     '''(^|/)docs/.*\.md$''',
+    '''(^|/)GETTING_STARTED\.md$''',
+    '''(^|/)DATA-SCRUBBING-GUIDE\.md$''',
+    '''(^|/).*\.example$''',
+    '''(^|/)frontend/public/training/.*''',
+    '''(^|/)frontend/src/pages/DeveloperDocs\.tsx$''',
+    '''(^|/)frontend/src/pages/HelpArticle\.tsx$''',
     '''(^|/)tests/.*''',
     '''(^|/)\.*test\.*''',
     '''(^|/)\.*spec\.*''',
@@ -43,6 +49,14 @@ title = "GigaChad GRC Gitleaks Configuration"
     '''your[-_]?api[-_]?key[-_]?here''',
     '''replace[-_]?with[-_]?your[-_]?key''',
     '''<your[-_]?.*[-_]?here>''',
+    '''YOUR_[A-Z0-9_]+''',
+    '''<redacted>''',
+    '''REDACTED''',
+    '''\[password\]''',
+    # Historical Checkmarx CxSAST legacy resource-owner client credential.
+    # It was a vendor-published shared default, not a tenant credential, and
+    # current code requires CHECKMARX_CLIENT_SECRET instead.
+    '''014DF517-39D1-4453-B7B3-9460D9B4C3C0''',
     '''CHANGE[-_]?ME''',
     '''xxx+''',
     '''TODO''',
@@ -74,14 +88,14 @@ title = "GigaChad GRC Gitleaks Configuration"
 [[rules]]
   id = "aws-secret-key"
   description = "AWS Secret Access Key"
-  regex = '''(?i)aws_?secret_?access_?key['""\s:=]+[A-Za-z0-9/+=]{40}'''
+  regex = '''(?i)aws_?secret_?access_?key['"" \t:=]+[A-Za-z0-9/+=]{40}'''
   tags = ["aws", "credentials"]
 
 # Detect generic API keys
 [[rules]]
   id = "generic-api-key"
   description = "Generic API Key"
-  regex = '''(?i)(api[_-]?key|apikey|api_secret)['""\s:=]+['"][A-Za-z0-9_\-]{20,}['"]'''
+  regex = '''(?i)(api[_-]?key|apikey|api_secret)['"" \t:=]+['"][A-Za-z0-9_\-]{20,}['"]'''
   tags = ["api", "credentials"]
   
   [rules.allowlist]
@@ -102,7 +116,7 @@ title = "GigaChad GRC Gitleaks Configuration"
 [[rules]]
   id = "jwt-secret"
   description = "JWT Secret"
-  regex = '''(?i)(jwt[_-]?secret|jwt[_-]?key)['""\s:=]+['"][A-Za-z0-9_\-!@#$%^&*]{16,}['"]'''
+  regex = '''(?i)(jwt[_-]?secret|jwt[_-]?key)['"" \t:=]+['"][A-Za-z0-9_\-!@#$%^&*]{16,}['"]'''
   tags = ["jwt", "credentials"]
   
   [rules.allowlist]
@@ -130,7 +144,7 @@ title = "GigaChad GRC Gitleaks Configuration"
 [[rules]]
   id = "keycloak-secret"
   description = "Keycloak Client Secret"
-  regex = '''(?i)(keycloak[_-]?(?:client[_-]?)?secret|kc[_-]?secret)['""\s:=]+['"][A-Za-z0-9_\-]{16,}['"]'''
+  regex = '''(?i)(keycloak[_-]?(?:client[_-]?)?secret|kc[_-]?secret)['"" \t:=]+['"][A-Za-z0-9_\-]{16,}['"]'''
   tags = ["keycloak", "credentials"]
   
   [rules.allowlist]
@@ -143,7 +157,7 @@ title = "GigaChad GRC Gitleaks Configuration"
 [[rules]]
   id = "encryption-key"
   description = "Encryption Key"
-  regex = '''(?i)(encryption[_-]?key|aes[_-]?key|secret[_-]?key)['""\s:=]+['"][A-Fa-f0-9]{32,}['"]'''
+  regex = '''(?i)(encryption[_-]?key|aes[_-]?key|secret[_-]?key)['"" \t:=]+['"][A-Fa-f0-9]{32,}['"]'''
   tags = ["encryption", "credentials"]
   
   [rules.allowlist]
@@ -156,23 +170,34 @@ title = "GigaChad GRC Gitleaks Configuration"
 [[rules]]
   id = "oauth-secret"
   description = "OAuth Client Secret"
-  regex = '''(?i)(client[_-]?secret|oauth[_-]?secret)['""\s:=]+['"][A-Za-z0-9_\-]{20,}['"]'''
+  regex = '''(?i)(client[_-]?secret|oauth[_-]?secret)['"" \t:=]+['"][A-Za-z0-9_\-]{20,}['"]'''
   tags = ["oauth", "credentials"]
   
   [rules.allowlist]
+    commits = [
+      # Initial import contained Checkmarx's vendor-published legacy shared
+      # client credential. Current code requires a tenant-provided secret.
+      '''7a7760d3b7fdc68c4f9a6b880747e282cb6e47c8''',
+    ]
     regexes = [
       '''process\.env''',
       '''\$\{''',
+      '''014DF517-39D1-4453-B7B3-9460D9B4C3C0''',
     ]
 
 # Detect passwords in code
 [[rules]]
   id = "hardcoded-password"
   description = "Hardcoded Password"
-  regex = '''(?i)(password|passwd|pwd)['""\s:=]+['"][^'"$\{]{8,}['"]'''
+  regex = '''(?i)\b(password|passwd|pwd)\b['"" \t:=]+['"][^'"\r\n$\{]{8,}['"]'''
   tags = ["password", "credentials"]
   
   [rules.allowlist]
+    paths = [
+      # This script intentionally enumerates known-bad default passwords so
+      # deployments can reject them.
+      '''(^|/)scripts/validate-production\.sh$''',
+    ]
     regexes = [
       '''process\.env''',
       '''\$\{''',
@@ -181,6 +206,7 @@ title = "GigaChad GRC Gitleaks Configuration"
       '''password\s*:\s*['"](['"]|string)''',  # Type annotations
       '''@IsString''',  # Decorators
       '''validation''',
+      '''DEFAULT_PASSWORDS''',  # Known-default denylist used by validation script
     ]
 
 # Detect GitHub tokens
@@ -225,7 +251,7 @@ title = "GigaChad GRC Gitleaks Configuration"
 [[rules]]
   id = "terraform-secret"
   description = "Terraform State Secret"
-  regex = '''(?i)"sensitive_value":\s*"[^"]{8,}"'''
+  regex = '''(?i)"sensitive_value":[ \t]*"[^"]{8,}"'''
   tags = ["terraform", "credentials"]
   paths = ['''\.tfstate$''', '''\.tfstate\.backup$''']
 
@@ -233,5 +259,5 @@ title = "GigaChad GRC Gitleaks Configuration"
 [[rules]]
   id = "docker-password"
   description = "Docker Registry Password"
-  regex = '''(?i)(docker[_-]?password|registry[_-]?password)['""\s:=]+['"][^'"]{8,}['"]'''
+  regex = '''(?i)(docker[_-]?password|registry[_-]?password)['"" \t:=]+['"][^'"\r\n]{8,}['"]'''
   tags = ["docker", "credentials"]

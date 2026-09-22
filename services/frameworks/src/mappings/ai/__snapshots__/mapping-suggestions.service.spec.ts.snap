@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`Prompt builders control-to-requirements snapshot 1`] = `
 "Direction: control-to-requirements
