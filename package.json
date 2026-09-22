@@ -97,7 +97,7 @@
     "handlebars": ">=4.7.9",
     "path-to-regexp": ">=8.4.0",
     "picomatch": ">=2.3.2",
-    "@xmldom/xmldom": "0.9.12",
+    "@xmldom/xmldom": "0.8.15",
     "nodemailer": "^9.1.1",
     "nanoid": "^3.3.18",
     "postcss": "^8.5.26",
