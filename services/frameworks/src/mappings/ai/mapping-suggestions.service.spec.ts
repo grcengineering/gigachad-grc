@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { MappingSuggestionsService } from './mapping-suggestions.service';
@@ -213,11 +217,22 @@ describe('MappingSuggestionsService', () => {
     ).rejects.toThrow(NotFoundException);
   });
 
+  it('reports AI as unavailable when no provider or explicit demo mode is configured', async () => {
+    mockPrisma.frameworkRequirement.findFirst.mockResolvedValue(requirementRow);
+    mockPrisma.control.findMany.mockResolvedValue(controlRows);
+    mockPrisma.controlMapping.findMany.mockResolvedValue([]);
+
+    await expect(
+      service.suggest({ frameworkId: FW_ID, requirementId: REQ_ID }, USER_ID, ORG_ID)
+    ).rejects.toThrow(ServiceUnavailableException);
+  });
+
   // ------------------------------------------------------------
-  // Demo-mode happy path (no AI keys configured)
+  // Explicit demo-mode happy path
   // ------------------------------------------------------------
-  describe('demo mode (no AI keys)', () => {
+  describe('explicit demo mode', () => {
     beforeEach(() => {
+      process.env.AI_MOCK_MODE = 'true';
       mockPrisma.frameworkRequirement.findFirst.mockResolvedValue(requirementRow);
       mockPrisma.control.findMany.mockResolvedValue(controlRows);
       mockPrisma.controlMapping.findMany.mockResolvedValue([]);
@@ -231,7 +246,7 @@ describe('MappingSuggestionsService', () => {
       );
 
       expect(res.isMockMode).toBe(true);
-      expect(res.mockModeReason).toBe('AI provider not configured');
+      expect(res.mockModeReason).toBe('AI_MOCK_MODE is enabled');
       expect(res.direction).toBe('requirement-to-controls');
       expect(res.suggestions.length).toBe(controlRows.length);
       // Ordering: desc confidence, then reference asc.
@@ -353,42 +368,30 @@ describe('MappingSuggestionsService', () => {
       expect(body.systemPrompt).toContain('compliance-mapping expert');
     });
 
-    it('falls back to demo on non-200 response', async () => {
+    it('fails honestly on a non-200 response', async () => {
       global.fetch = jest
         .fn()
         .mockResolvedValue({ ok: false, status: 503, json: async () => ({}) });
-      const res = await service.suggest(
-        { frameworkId: FW_ID, requirementId: REQ_ID },
-        USER_ID,
-        ORG_ID
-      );
-      expect(res.isMockMode).toBe(true);
-      expect(res.mockModeReason).toMatch(/AI service call failed/);
+      await expect(
+        service.suggest({ frameworkId: FW_ID, requirementId: REQ_ID }, USER_ID, ORG_ID)
+      ).rejects.toThrow(ServiceUnavailableException);
     });
 
-    it('falls back to demo on malformed JSON (missing suggestions[])', async () => {
+    it('fails honestly on malformed JSON (missing suggestions[])', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: async () => ({ totally: 'wrong shape' }),
       });
-      const res = await service.suggest(
-        { frameworkId: FW_ID, requirementId: REQ_ID },
-        USER_ID,
-        ORG_ID
-      );
-      expect(res.isMockMode).toBe(true);
-      expect(res.mockModeReason).toMatch(/AI service call failed/);
+      await expect(
+        service.suggest({ frameworkId: FW_ID, requirementId: REQ_ID }, USER_ID, ORG_ID)
+      ).rejects.toThrow(ServiceUnavailableException);
     });
 
-    it('falls back to demo when fetch throws', async () => {
+    it('fails honestly when fetch throws', async () => {
       global.fetch = jest.fn().mockRejectedValue(new Error('econnrefused'));
-      const res = await service.suggest(
-        { frameworkId: FW_ID, requirementId: REQ_ID },
-        USER_ID,
-        ORG_ID
-      );
-      expect(res.isMockMode).toBe(true);
-      expect(res.mockModeReason).toMatch(/econnrefused/);
+      await expect(
+        service.suggest({ frameworkId: FW_ID, requirementId: REQ_ID }, USER_ID, ORG_ID)
+      ).rejects.toThrow(ServiceUnavailableException);
     });
 
     it('drops AI suggestions referencing candidate ids not in the catalog', async () => {

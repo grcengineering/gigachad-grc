@@ -1,4 +1,10 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
 import {
@@ -31,7 +37,7 @@ export class AuditAIService {
   async categorizeFinding(
     organizationId: string,
     dto: CategorizeFindingDto,
-    _userId: string,
+    _userId: string
   ): Promise<FindingCategorizationResult> {
     this.logger.log(`Categorizing finding for org ${organizationId}`);
 
@@ -41,6 +47,9 @@ export class AuditAIService {
       const aiResponse = await this.callAIService(prompt, organizationId);
       return this.parseCategorizationResponse(aiResponse);
     } catch (error) {
+      if (!this.isExplicitDemoMode()) {
+        throw new ServiceUnavailableException(`AI categorization failed: ${error.message}`);
+      }
       this.logger.warn(`AI categorization failed, using fallback: ${error.message}`);
       return this.generateMockCategorization(dto);
     }
@@ -88,12 +97,16 @@ Provide categorization in the following JSON format:
   private generateMockCategorization(dto: CategorizeFindingDto): FindingCategorizationResult {
     // Keyword-based mock categorization
     const lowerDesc = dto.description.toLowerCase();
-    
+
     let severity = 'medium';
     let category = 'control_deficiency';
     let controlDomain = 'general';
 
-    if (lowerDesc.includes('critical') || lowerDesc.includes('severe') || lowerDesc.includes('breach')) {
+    if (
+      lowerDesc.includes('critical') ||
+      lowerDesc.includes('severe') ||
+      lowerDesc.includes('breach')
+    ) {
       severity = 'critical';
     } else if (lowerDesc.includes('high risk') || lowerDesc.includes('significant')) {
       severity = 'high';
@@ -101,15 +114,31 @@ Provide categorization in the following JSON format:
       severity = 'low';
     }
 
-    if (lowerDesc.includes('access') || lowerDesc.includes('authentication') || lowerDesc.includes('authorization')) {
+    if (
+      lowerDesc.includes('access') ||
+      lowerDesc.includes('authentication') ||
+      lowerDesc.includes('authorization')
+    ) {
       controlDomain = 'access_control';
       category = 'control_deficiency';
-    } else if (lowerDesc.includes('document') || lowerDesc.includes('policy') || lowerDesc.includes('procedure')) {
+    } else if (
+      lowerDesc.includes('document') ||
+      lowerDesc.includes('policy') ||
+      lowerDesc.includes('procedure')
+    ) {
       controlDomain = 'documentation';
       category = 'documentation_gap';
-    } else if (lowerDesc.includes('change') || lowerDesc.includes('deployment') || lowerDesc.includes('release')) {
+    } else if (
+      lowerDesc.includes('change') ||
+      lowerDesc.includes('deployment') ||
+      lowerDesc.includes('release')
+    ) {
       controlDomain = 'change_management';
-    } else if (lowerDesc.includes('encrypt') || lowerDesc.includes('data protection') || lowerDesc.includes('pii')) {
+    } else if (
+      lowerDesc.includes('encrypt') ||
+      lowerDesc.includes('data protection') ||
+      lowerDesc.includes('pii')
+    ) {
       controlDomain = 'data_protection';
     }
 
@@ -132,7 +161,7 @@ Provide categorization in the following JSON format:
   async analyzeGaps(
     organizationId: string,
     dto: AnalyzeGapsDto,
-    _userId: string,
+    _userId: string
   ): Promise<GapAnalysisResult> {
     this.logger.log(`Analyzing evidence gaps for audit ${dto.auditId}`);
 
@@ -162,7 +191,7 @@ Provide categorization in the following JSON format:
     for (const request of audit.requests) {
       if (request.status === 'open' || request.status === 'in_progress') {
         const hasEvidence = request.evidence && request.evidence.length > 0;
-        
+
         if (!hasEvidence) {
           gaps.push({
             controlId: request.controlId || 'N/A',
@@ -171,16 +200,25 @@ Provide categorization in the following JSON format:
             description: `No evidence submitted for request: ${request.title}`,
             priority: request.priority || 'medium',
             suggestedEvidence: this.getSuggestedEvidence(request.category),
-            daysOverdue: request.dueDate ? Math.max(0, Math.floor((now.getTime() - new Date(request.dueDate).getTime()) / (1000 * 60 * 60 * 24))) : undefined,
+            daysOverdue: request.dueDate
+              ? Math.max(
+                  0,
+                  Math.floor(
+                    (now.getTime() - new Date(request.dueDate).getTime()) / (1000 * 60 * 60 * 24)
+                  )
+                )
+              : undefined,
           });
         } else {
           // Check for stale evidence (older than 90 days)
-          const latestEvidence = request.evidence.sort((a, b) => 
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          const latestEvidence = request.evidence.sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           )[0];
-          
-          const daysSinceEvidence = Math.floor((now.getTime() - new Date(latestEvidence.createdAt).getTime()) / (1000 * 60 * 60 * 24));
-          
+
+          const daysSinceEvidence = Math.floor(
+            (now.getTime() - new Date(latestEvidence.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+          );
+
           if (daysSinceEvidence > 90) {
             gaps.push({
               controlId: request.controlId || 'N/A',
@@ -188,7 +226,11 @@ Provide categorization in the following JSON format:
               gapType: 'stale',
               description: `Evidence is ${daysSinceEvidence} days old and may need refresh`,
               priority: 'low',
-              suggestedEvidence: ['Updated documentation', 'Recent screenshots', 'Current configuration exports'],
+              suggestedEvidence: [
+                'Updated documentation',
+                'Recent screenshots',
+                'Current configuration exports',
+              ],
             });
           }
         }
@@ -196,7 +238,9 @@ Provide categorization in the following JSON format:
     }
 
     const totalControls = audit.requests.length;
-    const controlsWithEvidence = audit.requests.filter(r => r.evidence && r.evidence.length > 0).length;
+    const controlsWithEvidence = audit.requests.filter(
+      (r) => r.evidence && r.evidence.length > 0
+    ).length;
     const controlsWithGaps = gaps.length;
 
     return {
@@ -204,7 +248,8 @@ Provide categorization in the following JSON format:
       totalControls,
       controlsWithEvidence,
       controlsWithGaps,
-      overallCoverage: totalControls > 0 ? Math.round((controlsWithEvidence / totalControls) * 100) : 0,
+      overallCoverage:
+        totalControls > 0 ? Math.round((controlsWithEvidence / totalControls) * 100) : 0,
       gaps,
       recommendations: this.generateGapRecommendations(gaps),
       analyzedAt: now,
@@ -225,20 +270,24 @@ Provide categorization in the following JSON format:
 
   private generateGapRecommendations(gaps: EvidenceGap[]): string[] {
     const recommendations: string[] = [];
-    
-    const criticalGaps = gaps.filter(g => g.priority === 'critical' || g.priority === 'high');
+
+    const criticalGaps = gaps.filter((g) => g.priority === 'critical' || g.priority === 'high');
     if (criticalGaps.length > 0) {
-      recommendations.push(`Prioritize ${criticalGaps.length} high/critical priority evidence requests immediately`);
+      recommendations.push(
+        `Prioritize ${criticalGaps.length} high/critical priority evidence requests immediately`
+      );
     }
 
-    const overdueGaps = gaps.filter(g => g.daysOverdue && g.daysOverdue > 0);
+    const overdueGaps = gaps.filter((g) => g.daysOverdue && g.daysOverdue > 0);
     if (overdueGaps.length > 0) {
       recommendations.push(`Address ${overdueGaps.length} overdue requests to meet audit timeline`);
     }
 
-    const staleGaps = gaps.filter(g => g.gapType === 'stale');
+    const staleGaps = gaps.filter((g) => g.gapType === 'stale');
     if (staleGaps.length > 0) {
-      recommendations.push(`Refresh ${staleGaps.length} stale evidence items to ensure current state documentation`);
+      recommendations.push(
+        `Refresh ${staleGaps.length} stale evidence items to ensure current state documentation`
+      );
     }
 
     if (gaps.length === 0) {
@@ -255,7 +304,7 @@ Provide categorization in the following JSON format:
   async suggestRemediation(
     organizationId: string,
     dto: SuggestRemediationDto,
-    _userId: string,
+    _userId: string
   ): Promise<RemediationSuggestion> {
     this.logger.log(`Generating remediation suggestions for finding ${dto.findingId}`);
 
@@ -285,6 +334,9 @@ Provide categorization in the following JSON format:
       const aiResponse = await this.callAIService(prompt, organizationId);
       return this.parseRemediationResponse(dto.findingId, aiResponse);
     } catch (error) {
+      if (!this.isExplicitDemoMode()) {
+        throw new ServiceUnavailableException(`AI remediation failed: ${error.message}`);
+      }
       this.logger.warn(`AI remediation failed, using fallback: ${error.message}`);
       return this.generateMockRemediation(dto.findingId, findingDetails);
     }
@@ -357,13 +409,14 @@ Provide a remediation plan in JSON format:
 
   private generateMockRemediation(
     findingId: string,
-    finding: { title: string; description: string; severity: string; category: string },
+    finding: { title: string; description: string; severity: string; category: string }
   ): RemediationSuggestion {
     const steps: RemediationStep[] = [
       {
         stepNumber: 1,
         title: 'Initial Assessment',
-        description: 'Conduct detailed assessment of the finding and identify affected systems/processes',
+        description:
+          'Conduct detailed assessment of the finding and identify affected systems/processes',
         estimatedDays: 3,
         resources: ['Security Team', 'Process Owner'],
         deliverables: ['Assessment Report'],
@@ -435,7 +488,7 @@ Provide a remediation plan in JSON format:
   async mapControls(
     organizationId: string,
     dto: MapControlsDto,
-    _userId: string,
+    _userId: string
   ): Promise<ControlMappingResult> {
     this.logger.log(`Mapping controls for request in org ${organizationId}`);
 
@@ -445,6 +498,9 @@ Provide a remediation plan in JSON format:
       const aiResponse = await this.callAIService(prompt, organizationId);
       return this.parseControlMappingResponse(aiResponse);
     } catch (error) {
+      if (!this.isExplicitDemoMode()) {
+        throw new ServiceUnavailableException(`AI control mapping failed: ${error.message}`);
+      }
       this.logger.warn(`AI control mapping failed, using fallback: ${error.message}`);
       return this.generateMockControlMapping(dto);
     }
@@ -496,7 +552,11 @@ Suggest relevant controls in JSON format:
     const lowerDesc = dto.requestDescription.toLowerCase();
     const mappings: ControlMapping[] = [];
 
-    if (lowerDesc.includes('access') || lowerDesc.includes('user') || lowerDesc.includes('authentication')) {
+    if (
+      lowerDesc.includes('access') ||
+      lowerDesc.includes('user') ||
+      lowerDesc.includes('authentication')
+    ) {
       mappings.push({
         controlId: 'AC-001',
         controlTitle: 'Access Control Policy',
@@ -506,7 +566,11 @@ Suggest relevant controls in JSON format:
       });
     }
 
-    if (lowerDesc.includes('change') || lowerDesc.includes('deploy') || lowerDesc.includes('release')) {
+    if (
+      lowerDesc.includes('change') ||
+      lowerDesc.includes('deploy') ||
+      lowerDesc.includes('release')
+    ) {
       mappings.push({
         controlId: 'CM-001',
         controlTitle: 'Change Management',
@@ -516,7 +580,11 @@ Suggest relevant controls in JSON format:
       });
     }
 
-    if (lowerDesc.includes('encrypt') || lowerDesc.includes('data') || lowerDesc.includes('protection')) {
+    if (
+      lowerDesc.includes('encrypt') ||
+      lowerDesc.includes('data') ||
+      lowerDesc.includes('protection')
+    ) {
       mappings.push({
         controlId: 'DP-001',
         controlTitle: 'Data Protection',
@@ -550,7 +618,7 @@ Suggest relevant controls in JSON format:
   async generateSummary(
     organizationId: string,
     dto: GenerateSummaryDto,
-    _userId: string,
+    _userId: string
   ): Promise<AuditSummary> {
     this.logger.log(`Generating summary for audit ${dto.auditId}`);
 
@@ -571,27 +639,40 @@ Suggest relevant controls in JSON format:
 
     // Calculate metrics
     const totalFindings = audit.findings.length;
-    const criticalFindings = audit.findings.filter(f => f.severity === 'critical').length;
-    const highFindings = audit.findings.filter(f => f.severity === 'high').length;
-    const openFindings = audit.findings.filter(f => f.status === 'open' || f.status === 'acknowledged').length;
+    const criticalFindings = audit.findings.filter((f) => f.severity === 'critical').length;
+    const highFindings = audit.findings.filter((f) => f.severity === 'high').length;
+    const openFindings = audit.findings.filter(
+      (f) => f.status === 'open' || f.status === 'acknowledged'
+    ).length;
 
     const _totalRequests = audit.requests.length;
-    const _completedRequests = audit.requests.filter(r => r.status === 'approved').length;
+    const _completedRequests = audit.requests.filter((r) => r.status === 'approved').length;
 
     const totalTests = audit.testResults.length;
-    const passedTests = audit.testResults.filter(t => t.result === 'pass').length;
+    const passedTests = audit.testResults.filter((t) => t.result === 'pass').length;
 
     return {
       auditId: dto.auditId,
       summaryType,
-      executiveSummary: this.generateExecutiveSummary(audit, totalFindings, criticalFindings, highFindings),
+      executiveSummary: this.generateExecutiveSummary(
+        audit,
+        totalFindings,
+        criticalFindings,
+        highFindings
+      ),
       keyFindings: audit.findings
-        .filter(f => f.severity === 'critical' || f.severity === 'high')
+        .filter((f) => f.severity === 'critical' || f.severity === 'high')
         .slice(0, 5)
-        .map(f => `[${f.severity.toUpperCase()}] ${f.title}`),
+        .map((f) => `[${f.severity.toUpperCase()}] ${f.title}`),
       riskOverview: this.generateRiskOverview(criticalFindings, highFindings, totalFindings),
       recommendations: this.generateRecommendations(audit.findings, openFindings),
-      conclusion: this.generateConclusion(audit, totalFindings, openFindings, totalTests, passedTests),
+      conclusion: this.generateConclusion(
+        audit,
+        totalFindings,
+        openFindings,
+        totalTests,
+        passedTests
+      ),
       generatedAt: new Date(),
     };
   }
@@ -600,25 +681,27 @@ Suggest relevant controls in JSON format:
     audit: { name: string; framework?: string | null; status: string },
     totalFindings: number,
     criticalFindings: number,
-    highFindings: number,
+    highFindings: number
   ): string {
     const framework = audit.framework || 'the applicable framework';
-    
-    return `This audit of ${audit.name} evaluated compliance with ${framework}. ` +
+
+    return (
+      `This audit of ${audit.name} evaluated compliance with ${framework}. ` +
       `The audit identified ${totalFindings} findings, including ${criticalFindings} critical ` +
       `and ${highFindings} high severity issues. ` +
       `The current audit status is ${audit.status}. ` +
       (criticalFindings > 0
         ? 'Immediate attention is required to address critical findings.'
         : highFindings > 0
-        ? 'Management attention is recommended for high severity findings.'
-        : 'The organization demonstrates reasonable compliance maturity.');
+          ? 'Management attention is recommended for high severity findings.'
+          : 'The organization demonstrates reasonable compliance maturity.')
+    );
   }
 
   private generateRiskOverview(
     criticalFindings: number,
     highFindings: number,
-    totalFindings: number,
+    totalFindings: number
   ): string {
     if (criticalFindings > 0) {
       return 'HIGH RISK: Critical findings indicate significant control gaps that require immediate remediation.';
@@ -632,20 +715,26 @@ Suggest relevant controls in JSON format:
 
   private generateRecommendations(
     findings: { category: string; severity: string }[],
-    openFindings: number,
+    openFindings: number
   ): string[] {
     const recommendations: string[] = [];
 
     if (openFindings > 0) {
-      recommendations.push(`Address ${openFindings} open findings through documented remediation plans`);
+      recommendations.push(
+        `Address ${openFindings} open findings through documented remediation plans`
+      );
     }
 
-    const categories = [...new Set(findings.map(f => f.category))];
+    const categories = [...new Set(findings.map((f) => f.category))];
     if (categories.length > 3) {
-      recommendations.push('Implement cross-functional improvement program addressing multiple control domains');
+      recommendations.push(
+        'Implement cross-functional improvement program addressing multiple control domains'
+      );
     }
 
-    recommendations.push('Conduct follow-up assessment in 90 days to validate remediation effectiveness');
+    recommendations.push(
+      'Conduct follow-up assessment in 90 days to validate remediation effectiveness'
+    );
     recommendations.push('Update policies and procedures to address identified gaps');
 
     return recommendations;
@@ -656,23 +745,27 @@ Suggest relevant controls in JSON format:
     totalFindings: number,
     openFindings: number,
     totalTests: number,
-    passedTests: number,
+    passedTests: number
   ): string {
     const testPassRate = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
-    
-    return `Based on our assessment of ${audit.name}, we conclude that ` +
+
+    return (
+      `Based on our assessment of ${audit.name}, we conclude that ` +
       (totalFindings === 0
         ? 'the control environment is operating effectively with no significant findings.'
         : `${totalFindings} findings were identified, with ${openFindings} requiring remediation. `) +
-      (totalTests > 0
-        ? `Control testing achieved a ${testPassRate}% pass rate. `
-        : '') +
-      'Management should review the detailed findings and implement corrective actions as outlined in the remediation plans.';
+      (totalTests > 0 ? `Control testing achieved a ${testPassRate}% pass rate. ` : '') +
+      'Management should review the detailed findings and implement corrective actions as outlined in the remediation plans.'
+    );
   }
 
   // ===========================================
   // AI Service Communication
   // ===========================================
+
+  private isExplicitDemoMode(): boolean {
+    return process.env.NODE_ENV !== 'production' && process.env.AI_MOCK_MODE === 'true';
+  }
 
   private async callAIService(prompt: string, organizationId: string): Promise<string> {
     try {
@@ -689,7 +782,7 @@ Suggest relevant controls in JSON format:
             'Content-Type': 'application/json',
           },
           timeout: 30000,
-        },
+        }
       );
 
       return response.data.result || response.data.content || '';
@@ -699,4 +792,3 @@ Suggest relevant controls in JSON format:
     }
   }
 }
-

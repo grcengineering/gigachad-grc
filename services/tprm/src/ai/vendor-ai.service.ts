@@ -1,4 +1,10 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { PrismaService } from '../common/prisma.service';
 import { AuditService } from '../common/audit.service';
 import { VendorDocument, Vendor, VendorAssessment } from '@prisma/client';
@@ -168,8 +174,8 @@ export class VendorAIService {
     } catch (error) {
       this.logger.error(`Failed to analyze SOC 2 report: ${error.message}`, error.stack);
 
-      // Return mock analysis for demo/testing
-      if (process.env.AI_MOCK_MODE === 'true' || !process.env.OPENAI_API_KEY) {
+      // Demo output is opt-in and never available in production.
+      if (this.isExplicitDemoMode()) {
         return this.generateMockAnalysis(documentId, vendorId, document.title);
       }
 
@@ -269,6 +275,9 @@ Respond in JSON format with this structure:
     vendorId: string
   ): SOC2AnalysisResult {
     if (!aiResponse) {
+      if (!this.isExplicitDemoMode()) {
+        throw new ServiceUnavailableException('AI analysis service is unavailable');
+      }
       return this.generateMockAnalysis(documentId, vendorId, 'SOC 2 Report');
     }
 
@@ -295,8 +304,15 @@ Respond in JSON format with this structure:
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       this.logger.warn(`Failed to parse AI response: ${message}`);
+      if (!this.isExplicitDemoMode()) {
+        throw new ServiceUnavailableException('AI analysis returned an invalid response');
+      }
       return this.generateMockAnalysis(documentId, vendorId, 'SOC 2 Report');
     }
+  }
+
+  private isExplicitDemoMode(): boolean {
+    return process.env.NODE_ENV !== 'production' && process.env.AI_MOCK_MODE === 'true';
   }
 
   /**
