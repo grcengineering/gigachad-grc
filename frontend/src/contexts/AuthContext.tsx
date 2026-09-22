@@ -125,6 +125,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             localStorage.removeItem('grc-dev-auth');
           }
         }
+
+        // A development build with no existing session should render the
+        // Login page immediately so the explicit Dev Login button can create
+        // one. Falling through to Keycloak here makes Docker dev builds hang
+        // on silent SSO even though the bypass was intentionally enabled.
+        setIsLoading(false);
+        return;
       }
 
       const kc = getKeycloak();
