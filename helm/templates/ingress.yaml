@@ -91,6 +91,13 @@ spec:
                 name: {{ include "gigachad-grc.fullname" . }}-controls
                 port:
                   number: {{ .Values.controls.port }}
+          - path: /api/frameworks/catalog
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-controls
+                port:
+                  number: {{ .Values.controls.port }}
           {{- end }}
           # Frameworks API routes
           {{- if .Values.frameworks.enabled }}
