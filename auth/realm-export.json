@@ -84,13 +84,17 @@
       "protocol": "openid-connect",
       "rootUrl": "http://localhost:3000",
       "baseUrl": "/",
-      "redirectUris": ["http://localhost:3000/*", "http://localhost/*"],
-      "webOrigins": ["http://localhost:3000", "http://localhost", "+"],
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "http://localhost/*",
+        "https://localhost/*"
+      ],
+      "webOrigins": ["http://localhost:3000", "http://localhost", "https://localhost", "+"],
       "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "email"],
       "optionalClientScopes": ["address", "phone", "offline_access"],
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:3000/*"
+        "post.logout.redirect.uris": "http://localhost:3000/*##https://localhost/*"
       },
       "protocolMappers": [
         {

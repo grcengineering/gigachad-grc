@@ -21,7 +21,7 @@ import { UpdateQuestionDto } from './dto/update-question.dto';
 import { CurrentUser, UserContext } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
-@Controller('questionnaires')
+@Controller('api/questionnaires')
 @UseGuards(DevAuthGuard)
 export class QuestionnairesController {
   constructor(

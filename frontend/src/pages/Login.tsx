@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { DEV_AUTH_ENABLED, useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui';
 
 export default function Login() {
@@ -30,7 +30,7 @@ export default function Login() {
     );
   }
 
-  const isDev = import.meta.env.DEV;
+  const isDev = DEV_AUTH_ENABLED;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-surface-50 px-4">

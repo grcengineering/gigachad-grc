@@ -149,6 +149,10 @@ start_services() {
     check_docker
     setup_env
 
+    # Generate the gateway's self-signed dev cert if it doesn't exist yet -
+    # Traefik needs it present before it can start (see gateway/traefik.yml).
+    "$(dirname "${BASH_SOURCE[0]}")/scripts/generate-dev-certs.sh"
+
     echo ""
     echo -e "${BLUE}Starting GigaChad GRC...${NC}"
     echo ""
@@ -166,17 +170,18 @@ start_services() {
     echo -e "${GREEN}╚═══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
     echo -e "${BOLD}Access Points:${NC}"
-    echo -e "   ${CYAN}Frontend${NC}        http://localhost:3000"
-    echo -e "   ${CYAN}API Docs${NC}        http://localhost:3001/api/docs"
-    echo -e "   ${CYAN}Keycloak${NC}        http://localhost:8080 (admin/admin)"
-    echo -e "   ${CYAN}Grafana${NC}         http://localhost:3003 (admin/admin)"
+    echo -e "   ${CYAN}App${NC}             https://localhost   ${YELLOW}(not :3000 - see note below)${NC}"
+    echo -e "   ${CYAN}Keycloak${NC}        https://auth.localhost (admin/admin)"
+    echo -e "   ${CYAN}Grafana${NC}         https://grafana.localhost (admin/admin)"
     echo ""
     echo -e "${BOLD}How to Login:${NC}"
-    echo -e "   1. Go to ${CYAN}http://localhost:3000${NC}"
+    echo -e "   1. Go to ${CYAN}https://localhost${NC} (click through the self-signed cert warning)"
     echo -e "   2. Click the ${CYAN}\"Dev Login\"${NC} button"
     echo -e "   3. You're in! No password needed."
     echo ""
     echo -e "${YELLOW}Note:${NC} First startup takes 2-3 minutes for database initialization."
+    echo -e "${YELLOW}Note:${NC} Use https://localhost, not http://localhost:3000 - port 3000 is the"
+    echo -e "      frontend container's direct port and has no route to the backend APIs."
     echo ""
     echo -e "${BOLD}Commands:${NC}"
     echo -e "   ${CYAN}./start.sh stop${NC}    Stop all services"
@@ -187,7 +192,7 @@ start_services() {
     # Open browser on macOS
     if [[ "$OSTYPE" == "darwin"* ]]; then
         echo -e "${YELLOW}Opening browser in 10 seconds...${NC}"
-        (sleep 10 && open http://localhost:3000 2>/dev/null) &
+        (sleep 10 && open https://localhost 2>/dev/null) &
     fi
 }
 

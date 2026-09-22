@@ -16,7 +16,7 @@ import { UpdateTrustCenterContentDto } from './dto/update-content.dto';
 import { CurrentUser, UserContext } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
-@Controller('trust-center')
+@Controller('api/trust-center')
 @UseGuards(DevAuthGuard)
 export class TrustCenterController {
   constructor(private readonly trustCenterService: TrustCenterService) {}

@@ -29,6 +29,12 @@ const keycloakConfig = {
   clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'grc-frontend',
 };
 
+// Dev login bypass: on by default under `vite dev`, and opt-in for a built
+// (production-mode) bundle via the VITE_ENABLE_DEV_AUTH build arg — see
+// frontend/Dockerfile and the "Dev Login" section of README.md.
+export const DEV_AUTH_ENABLED =
+  import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEV_AUTH === 'true';
+
 console.log('Keycloak config:', keycloakConfig);
 
 let keycloak: Keycloak | null = null;
@@ -101,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLocalHost && localStorage.getItem('grc-dev-auth-enabled') === '1';
 
       // Check for dev auth first
-      if (import.meta.env.DEV || hasLocalDevAuthOptIn) {
+      if (DEV_AUTH_ENABLED || hasLocalDevAuthOptIn) {
         const storedAuth = localStorage.getItem('grc-dev-auth');
         if (storedAuth) {
           try {
@@ -228,7 +234,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Dev login bypass - only available in development
   const devLogin = useCallback(() => {
-    if (import.meta.env.DEV) {
+    if (DEV_AUTH_ENABLED) {
       console.log('Dev login activated');
       const devUser: User = {
         id: '8f88a42b-e799-455c-b68a-308d7d2e9aa4', // John Doe - seeded user
@@ -290,7 +296,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         token,
         login,
         logout,
-        devLogin: import.meta.env.DEV ? devLogin : undefined,
+        devLogin: DEV_AUTH_ENABLED ? devLogin : undefined,
         hasRole,
         hasPermission,
       }}

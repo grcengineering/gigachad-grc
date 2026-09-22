@@ -21,11 +21,14 @@ services:
   # API Gateway - Traefik (Official Docker Image)
   # ===========================================
   traefik:
-    image: traefik:v3.0
+    image: traefik:v3
     container_name: grc-traefik
     # SECURITY: Prevent privilege escalation attacks
     security_opt:
       - no-new-privileges:true
+      # SELinux (enforcing hosts): container_runtime_t grants access to the
+      # docker.sock bind mount below without disabling confinement entirely.
+      - label:type:container_runtime_t
     command:
       # SECURITY: api.insecure is only for development - NEVER use in production
       - '--api.insecure=${TRAEFIK_API_INSECURE:-false}'
@@ -42,7 +45,8 @@ services:
       - '${TRAEFIK_DASHBOARD_PORT:-127.0.0.1:8090}:8080'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./gateway/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./gateway/traefik.yml:/etc/traefik/traefik.yml:ro,Z
+      - ./gateway/certs:/etc/traefik/certs:ro,Z
     networks:
       - grc-network
     restart: unless-stopped
@@ -68,9 +72,9 @@ services:
       - postgres_data:/var/lib/postgresql/data
       # Only bootstrap prerequisites here. Application tables are created by
       # Prisma in the controls entrypoint after PostgreSQL becomes healthy.
-      - ./database/init/00-create-keycloak-db.sh:/docker-entrypoint-initdb.d/00-create-keycloak-db.sh:ro
-      - ./database/init/00b-create-infisical-db.sh:/docker-entrypoint-initdb.d/00b-create-infisical-db.sh:ro
-      - ./database/init/01-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./database/init/00-create-keycloak-db.sh:/docker-entrypoint-initdb.d/00-create-keycloak-db.sh:ro,Z
+      - ./database/init/00b-create-infisical-db.sh:/docker-entrypoint-initdb.d/00b-create-infisical-db.sh:ro,Z
+      - ./database/init/01-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro,Z
     networks:
       - grc-network
     restart: unless-stopped
@@ -141,10 +145,16 @@ services:
       KC_DB_URL: jdbc:postgresql://postgres:5432/${KEYCLOAK_DB:-keycloak}
       KC_DB_USERNAME: ${POSTGRES_USER:-grc}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-localhost}
-      KC_HOSTNAME_PORT: ${KEYCLOAK_PORT:-8080}
+      # Reached via Traefik's HTTPS entrypoint at auth.localhost (see
+      # gateway/traefik.yml). KC_PROXY_HEADERS trusts the X-Forwarded-*
+      # headers Traefik sets so Keycloak reports itself as https instead
+      # of trying (and failing, with no TLS listener of its own) to
+      # redirect there itself. Direct :8080 access stays plain HTTP and is
+      # loopback-only, so trusting forwarded headers there is not a
+      # meaningful spoofing vector for local dev.
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-auth.localhost}
       KC_HOSTNAME_STRICT: 'false'
-      KC_HOSTNAME_STRICT_HTTPS: 'false'
+      KC_PROXY_HEADERS: xforwarded
       KC_HTTP_ENABLED: 'true'
       # SECURITY: KEYCLOAK_ADMIN_PASSWORD must be set - no default value
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
@@ -154,7 +164,7 @@ services:
       # Direct port access only for local development/debugging
       - '127.0.0.1:8080:8080'
     volumes:
-      - ./auth/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - ./auth/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro,Z
     depends_on:
       postgres:
         condition: service_healthy
@@ -287,7 +297,7 @@ services:
       # Direct port access only for local development/debugging
       - '127.0.0.1:3001:3001'
     volumes:
-      - ./deploy:/app/deploy:ro
+      - ./deploy:/app/deploy:ro,Z
     depends_on:
       postgres:
         condition: service_healthy
@@ -319,6 +329,23 @@ services:
       # BC/DR module is also in controls service
       - 'traefik.http.routers.controls-bcdr.rule=PathPrefix(`/api/bcdr`)'
       - 'traefik.http.routers.controls-bcdr.middlewares=api-security@file'
+      # The built-in catalog is implemented by controls, while tenant
+      # frameworks live in the frameworks service. Explicit priority prevents
+      # the generic /api/frameworks router from capturing catalog requests.
+      - 'traefik.http.routers.controls-frameworks-catalog.rule=PathPrefix(`/api/frameworks/catalog`)'
+      - 'traefik.http.routers.controls-frameworks-catalog.priority=100'
+      - 'traefik.http.routers.controls-frameworks-catalog.middlewares=api-security@file'
+      # Catch-all: controls has ~65 controllers (integrations, permissions,
+      # api-keys, notifications, assets, ai, search, ...) and only a handful
+      # had their own router above - the rest fell through to the frontend's
+      # Host(`localhost`) router (priority=1) and got index.html instead of
+      # JSON. This is the default target for any /api/* path not claimed by
+      # a more specific router (frameworks/tprm/trust/policies/audit's rules
+      # are all longer PathPrefixes and win by Traefik's default
+      # specificity-based priority), so new controllers here don't need a
+      # matching label added every time.
+      - 'traefik.http.routers.controls-catchall.rule=PathPrefix(`/api`)'
+      - 'traefik.http.routers.controls-catchall.middlewares=api-security@file'
       - 'traefik.http.services.controls.loadbalancer.server.port=3001'
     restart: unless-stopped
     # Resource limits - example configuration for development
@@ -380,6 +407,10 @@ services:
       - 'traefik.http.routers.frameworks.rule=PathPrefix(`/api/frameworks`)'
       # SECURITY: Apply rate limiting and security headers middleware
       - 'traefik.http.routers.frameworks.middlewares=api-security@file'
+      - 'traefik.http.routers.frameworks-assessments.rule=PathPrefix(`/api/assessments`)'
+      - 'traefik.http.routers.frameworks-assessments.middlewares=api-security@file'
+      - 'traefik.http.routers.frameworks-mappings.rule=PathPrefix(`/api/mappings`)'
+      - 'traefik.http.routers.frameworks-mappings.middlewares=api-security@file'
       - 'traefik.http.services.frameworks.loadbalancer.server.port=3002'
     restart: unless-stopped
 
@@ -483,8 +514,9 @@ services:
       - 'traefik.http.routers.tprm-vendors.rule=PathPrefix(`/api/vendors`)'
       # SECURITY: Apply rate limiting and security headers middleware
       - 'traefik.http.routers.tprm-vendors.middlewares=api-security@file'
-      - 'traefik.http.routers.tprm-assessments.rule=PathPrefix(`/api/assessments`)'
-      - 'traefik.http.routers.tprm-assessments.middlewares=api-security@file'
+      # NOTE: TPRM's own /assessments controller (vendor risk assessments) has
+      # no frontend caller and deliberately has no router here - /api/assessments
+      # is the frameworks service's compliance-assessment resource (see below).
       - 'traefik.http.routers.tprm-contracts.rule=PathPrefix(`/api/contracts`)'
       - 'traefik.http.routers.tprm-contracts.middlewares=api-security@file'
       - 'traefik.http.routers.tprm-config.rule=PathPrefix(`/api/tprm-config`)'
@@ -629,11 +661,13 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        VITE_ENABLE_DEV_AUTH: 'true'
         # Explicit opt-in for dev-auth bypass. This is intentional in the
         # dev compose file; production builds (docker-compose.prod.yml)
         # must NOT set this.
-        ALLOW_DEV_AUTH: 'true'
+        VITE_ENABLE_DEV_AUTH: 'true'
+        # Keycloak is reachable over HTTPS via Traefik at auth.localhost
+        # (see gateway/traefik.yml); the direct :8080 mapping stays HTTP.
+        VITE_KEYCLOAK_URL: 'https://auth.localhost'
     container_name: grc-frontend
     # SECURITY: Prevent privilege escalation attacks
     security_opt:
@@ -673,7 +707,7 @@ services:
       - '--web.enable-lifecycle'
     volumes:
       - prometheus_data:/prometheus
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro,Z
     ports:
       - '127.0.0.1:9090:9090'
     networks:
@@ -685,7 +719,7 @@ services:
     labels:
       - 'traefik.enable=true'
       - 'traefik.http.routers.prometheus.rule=Host(`prometheus.localhost`)'
-      - 'traefik.http.routers.prometheus.entrypoints=web'
+      - 'traefik.http.routers.prometheus.entrypoints=web,websecure'
       - 'traefik.http.services.prometheus.loadbalancer.server.port=9090'
 
   grafana:
@@ -706,8 +740,8 @@ services:
       GF_AUTH_ANONYMOUS_ORG_ROLE: 'Viewer'
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
-      - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro,Z
+      - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro,Z
     ports:
       # SECURITY: Bound to localhost - access via Traefik gateway
       # Direct port access only for local development/debugging
@@ -720,7 +754,7 @@ services:
     labels:
       - 'traefik.enable=true'
       - 'traefik.http.routers.grafana.rule=Host(`grafana.localhost`)'
-      - 'traefik.http.routers.grafana.entrypoints=web'
+      - 'traefik.http.routers.grafana.entrypoints=web,websecure'
       - 'traefik.http.services.grafana.loadbalancer.server.port=3000'
 
 networks:

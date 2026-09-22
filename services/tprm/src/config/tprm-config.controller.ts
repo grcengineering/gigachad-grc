@@ -3,7 +3,7 @@ import { DevAuthGuard, CurrentUser, UserContext } from '@gigachad-grc/shared';
 import { TprmConfigService } from './tprm-config.service';
 import { UpdateTprmConfigurationDto, VendorCategoryDto } from './dto/tprm-config.dto';
 
-@Controller('tprm-config')
+@Controller('api/tprm-config')
 @UseGuards(DevAuthGuard)
 export class TprmConfigController {
   constructor(private readonly tprmConfigService: TprmConfigService) {}

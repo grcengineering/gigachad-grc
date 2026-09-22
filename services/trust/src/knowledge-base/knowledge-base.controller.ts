@@ -16,7 +16,7 @@ import { BulkCreateKnowledgeBaseDto } from './dto/bulk-create-knowledge-base.dto
 import { CurrentUser, UserContext } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
-@Controller('knowledge-base')
+@Controller('api/knowledge-base')
 @UseGuards(DevAuthGuard)
 export class KnowledgeBaseController {
   constructor(private readonly knowledgeBaseService: KnowledgeBaseService) {}

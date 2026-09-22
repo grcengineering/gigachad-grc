@@ -16,7 +16,7 @@ import { UpdateVendorDto } from './dto/update-vendor.dto';
 import { CurrentUser, UserContext } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
-@Controller('vendors')
+@Controller('api/vendors')
 @UseGuards(DevAuthGuard)
 export class VendorsController {
   constructor(

@@ -60,7 +60,7 @@ function sanitizeFilename(filename: string): string {
   ); // Replace problematic chars
 }
 
-@Controller('contracts')
+@Controller('api/contracts')
 @UseGuards(DevAuthGuard)
 export class ContractsController {
   constructor(private readonly contractsService: ContractsService) {}

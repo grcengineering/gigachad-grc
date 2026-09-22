@@ -39,13 +39,15 @@ cd gigachad-grc
 1. Checks that Docker is installed and running
 2. Generates a `.env` file with secure random secrets (if one doesn't exist)
 3. Builds and starts all containers with `docker compose up -d --build`
-4. Opens your browser to `http://localhost:3000`
+4. Opens your browser to `https://localhost`
 
 **First run takes 3-5 minutes** while Docker builds the images. Subsequent starts take ~30 seconds.
 
+> **Use `https://localhost`, not `http://localhost:3000`.** Port 3000 is the frontend container's *direct* port - it serves the app's static files but has no route to the backend APIs, so pages will load with no data (and some will crash outright). All traffic - UI and API alike - goes through the Traefik gateway at `https://localhost`, which is also the only origin Keycloak SSO is configured to redirect back to. Since the cert is self-signed, your browser will warn on first visit; click through it (see [Local HTTPS](#local-https) below).
+
 ### Log In
 
-When the browser opens to `http://localhost:3000`, click the **"Dev Login"** button. No username or password needed. This bypasses Keycloak SSO and uses a local development account.
+When the browser opens to `https://localhost`, click the **"Dev Login"** button. No username or password needed. This bypasses Keycloak SSO and uses a local development account.
 
 > **Important:** The Dev Login button only appears when `VITE_ENABLE_DEV_AUTH=true` is set in your `.env` file. The `./start.sh` script sets this automatically. If you created your `.env` manually, you must add this variable yourself.
 
@@ -114,10 +116,11 @@ Docker Compose will **refuse to start** if any of these variables are missing or
 ### Step 3: Start
 
 ```bash
+./scripts/generate-dev-certs.sh   # one-time: generates the gateway's self-signed cert
 docker compose up -d --build
 ```
 
-Wait 2-3 minutes on first run, then open `http://localhost:3000`.
+Wait 2-3 minutes on first run, then open `https://localhost`.
 
 ---
 
@@ -136,13 +139,20 @@ Or use `./start.sh` which generates these automatically.
 
 ### Page redirects to `localhost:8080/realms/gigachad-grc/...` and fails
 
-Keycloak requires HTTPS, which is not available in local Docker development. The fix is to use Dev Login mode instead:
+This happens when you access the app or Keycloak directly by port (`http://localhost:3000`, `http://localhost:8080`) instead of through the Traefik gateway. Use `https://localhost` instead - see [Local HTTPS](#local-https) below. Dev Login (below) is also available as a Keycloak-free shortcut either way.
 
-1. Set `VITE_ENABLE_DEV_AUTH=true` in your `.env`
-2. Rebuild the frontend: `docker compose up -d --build frontend`
-3. Open `http://localhost:3000` and use the "Dev Login" button
+### Local HTTPS
 
-The `./start.sh` script enables this automatically.
+The gateway (Traefik) terminates TLS with a self-signed certificate so both the app and Keycloak SSO work correctly at `https://localhost` / `https://auth.localhost`. Direct container ports (`:3000`, `:8080`, etc.) remain plain HTTP and bypass API routing - they're for debugging individual containers, not for using the app.
+
+The certificate is generated automatically the first time you need it, or you can generate/regenerate it yourself:
+
+```bash
+./scripts/generate-dev-certs.sh          # skips if a cert already exists
+./scripts/generate-dev-certs.sh --force  # regenerate
+```
+
+Your browser will warn about the self-signed certificate on first visit to `https://localhost` (and `https://auth.localhost`, `https://grafana.localhost`, `https://prometheus.localhost`) - click through it (e.g. "Advanced > Proceed"), or import `gateway/certs/dev-localhost.crt` into your OS/browser trust store to silence the warning permanently.
 
 ### `Cannot access 'N' before initialization` (recharts error)
 
@@ -202,22 +212,25 @@ docker compose down -v
 
 ## Access Points
 
-| Service               | URL                            | Credentials       |
-| --------------------- | ------------------------------ | ----------------- |
-| **Frontend**          | http://localhost:3000          | Click "Dev Login" |
-| **Controls API**      | http://localhost:3001/api/docs | Swagger UI        |
-| **Frameworks API**    | http://localhost:3002/api/docs | Swagger UI        |
-| **Grafana**           | http://localhost:3003          | Set in `.env`     |
-| **Policies API**      | http://localhost:3004/api/docs | Swagger UI        |
-| **TPRM API**          | http://localhost:3005/api/docs | Swagger UI        |
-| **Trust API**         | http://localhost:3006/api/docs | Swagger UI        |
-| **Audit API**         | http://localhost:3007/api/docs | Swagger UI        |
-| **Keycloak Admin**    | http://localhost:8080          | Set in `.env`     |
-| **Traefik Dashboard** | http://localhost:8090          | None              |
-| **RustFS Console**    | http://localhost:9001          | Set in `.env`     |
-| **Prometheus**        | http://localhost:9090          | None              |
-| **PostgreSQL**        | localhost:5433                 | Set in `.env`     |
-| **Redis**             | localhost:6380                 | Set in `.env`     |
+**Use the app itself at `https://localhost`** (via the Traefik gateway, see [Local HTTPS](#local-https)) - not the direct frontend port below, which has no route to the backend APIs. The per-service ports are for hitting an individual service's Swagger docs directly, or for debugging that one container.
+
+| Service               | URL                             | Credentials       |
+| --------------------- | -------------------------------- | ----------------- |
+| **App (via gateway)** | https://localhost                | Click "Dev Login" |
+| **Frontend (direct)** | http://localhost:3000            | UI shell only - no API access |
+| **Controls API**      | http://localhost:3001/api/docs   | Swagger UI        |
+| **Frameworks API**    | http://localhost:3002/api/docs   | Swagger UI        |
+| **Grafana**           | https://grafana.localhost        | Set in `.env`     |
+| **Policies API**      | http://localhost:3004/api/docs   | Swagger UI        |
+| **TPRM API**          | http://localhost:3005/api/docs   | Swagger UI        |
+| **Trust API**         | http://localhost:3006/api/docs   | Swagger UI        |
+| **Audit API**         | http://localhost:3007/api/docs   | Swagger UI        |
+| **Keycloak Admin**    | https://auth.localhost           | Set in `.env`     |
+| **Traefik Dashboard** | http://localhost:8090            | None              |
+| **RustFS Console**    | http://localhost:9001            | Set in `.env`     |
+| **Prometheus**        | https://prometheus.localhost     | None              |
+| **PostgreSQL**        | localhost:5433                   | Set in `.env`     |
+| **Redis**             | localhost:6380                   | Set in `.env`     |
 
 ---
 

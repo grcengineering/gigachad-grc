@@ -157,26 +157,29 @@ start.bat
 
 1. **First Run (3-5 minutes):** Docker downloads and builds all the components
 2. **You'll see:** Progress messages as each service starts
-3. **When ready:** Your browser opens to http://localhost:3000
+3. **When ready:** Your browser opens to https://localhost
 
 > **Tip:** Subsequent starts only take 30-60 seconds!
+
+> **Windows note:** `start.bat` doesn't generate the HTTPS certificate automatically. Before your first run, generate it once via Git Bash or WSL: `./scripts/generate-dev-certs.sh`.
 
 ---
 
 ## Accessing the Application
 
-Once started, open your browser to:
+**Use `https://localhost`, not `http://localhost:3000`.** Port 3000 is the frontend container's direct port - it serves the app's static files only, with no route to the backend APIs, so pages will load with no data (some will error outright). Everything - UI and API - goes through the Traefik gateway at `https://localhost`, which is also the only address Keycloak SSO redirects back to. The certificate is self-signed, so your browser will warn on first visit; click through it (e.g. "Advanced > Proceed").
 
-| Service              | URL                            | Credentials              |
-| -------------------- | ------------------------------ | ------------------------ |
-| **GigaChad GRC**     | http://localhost:3000          | Click "Dev Login" button |
-| API Documentation    | http://localhost:3001/api/docs | None needed              |
-| Keycloak (Auth)      | http://localhost:8080          | admin / admin            |
-| Grafana (Monitoring) | http://localhost:3003          | admin / admin            |
+| Service              | URL                             | Credentials               |
+| --------------------- | -------------------------------- | ------------------------- |
+| **GigaChad GRC**      | https://localhost                | Click "Dev Login" button  |
+| Frontend (direct)     | http://localhost:3000            | UI shell only - no API access |
+| API Documentation     | http://localhost:3001/api/docs   | None needed                |
+| Keycloak (Auth)       | https://auth.localhost           | admin / admin              |
+| Grafana (Monitoring)  | https://grafana.localhost        | admin / admin               |
 
 ### How to Log In
 
-1. Go to http://localhost:3000
+1. Go to https://localhost (click through the self-signed certificate warning)
 2. Click the green **"Dev Login"** button
 3. You're in! No username or password needed for demo mode.
 
@@ -208,12 +211,13 @@ start.bat reset     # Delete all data and start fresh (fixes auth issues)
 
 ## Loading Demo Data
 
-When you first log in, you'll see a welcome screen with two options:
+There's currently no in-app button for this (the onboarding screen that used to offer it was removed from the UI in a past refactor). The backend endpoint still works, though - call it directly once you're logged in:
 
-1. **"Try with Demo Data"** - Loads sample controls, frameworks, policies, and vendors
-2. **"Start from Scratch"** - Empty workspace to build your own
+```bash
+curl -X POST http://localhost:3001/api/seed/load-demo
+```
 
-We recommend starting with demo data to explore the features!
+This loads sample frameworks, controls, evidence, policies, vendors, risks, employees, and audits into your organization. It requires an admin user (Dev Login already qualifies) and only needs to be run once - it returns a 409 if demo data is already loaded. To clear it and start over, `POST /api/seed/reset` with body `{"confirmationPhrase": "DELETE ALL DATA"}`.
 
 ---
 
