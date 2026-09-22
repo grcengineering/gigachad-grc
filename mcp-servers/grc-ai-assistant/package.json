@@ -12,7 +12,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0",
     "openai": "^4.20.0",
-    "@anthropic-ai/sdk": "^0.71.2",
+    "@anthropic-ai/sdk": "^0.127.0",
     "zod": "^3.22.0"
   },
   "devDependencies": {
