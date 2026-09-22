@@ -3,18 +3,65 @@
 // as a chip — gives the page visual variety without overloading status colors.
 // All combinations are tested for AA contrast on the off-white page background.
 
+// Each entry pairs a light-mode set (bg-X-50/text-X-800/border-X-200) with
+// a dark-mode counterpart (bg-X-900/40, text-X-200, border-X-800). Both
+// directions are tested for AA contrast.
 const PALETTE = [
-  { bg: 'bg-indigo-50', text: 'text-indigo-800', border: 'border-indigo-200' },
-  { bg: 'bg-sky-50', text: 'text-sky-800', border: 'border-sky-200' },
-  { bg: 'bg-teal-50', text: 'text-teal-800', border: 'border-teal-200' },
-  { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-200' },
-  { bg: 'bg-lime-50', text: 'text-lime-800', border: 'border-lime-300' },
-  { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200' },
-  { bg: 'bg-orange-50', text: 'text-orange-800', border: 'border-orange-200' },
-  { bg: 'bg-rose-50', text: 'text-rose-800', border: 'border-rose-200' },
-  { bg: 'bg-fuchsia-50', text: 'text-fuchsia-800', border: 'border-fuchsia-200' },
-  { bg: 'bg-violet-50', text: 'text-violet-800', border: 'border-violet-200' },
-  { bg: 'bg-cyan-50', text: 'text-cyan-800', border: 'border-cyan-200' },
+  {
+    bg: 'bg-indigo-50 dark:bg-indigo-900/40',
+    text: 'text-indigo-800 dark:text-indigo-200',
+    border: 'border-indigo-200 dark:border-indigo-800',
+  },
+  {
+    bg: 'bg-sky-50 dark:bg-sky-900/40',
+    text: 'text-sky-800 dark:text-sky-200',
+    border: 'border-sky-200 dark:border-sky-800',
+  },
+  {
+    bg: 'bg-teal-50 dark:bg-teal-900/40',
+    text: 'text-teal-800 dark:text-teal-200',
+    border: 'border-teal-200 dark:border-teal-800',
+  },
+  {
+    bg: 'bg-emerald-50 dark:bg-emerald-900/40',
+    text: 'text-emerald-800 dark:text-emerald-200',
+    border: 'border-emerald-200 dark:border-emerald-800',
+  },
+  {
+    bg: 'bg-lime-50 dark:bg-lime-900/40',
+    text: 'text-lime-800 dark:text-lime-200',
+    border: 'border-lime-300 dark:border-lime-800',
+  },
+  {
+    bg: 'bg-amber-50 dark:bg-amber-900/40',
+    text: 'text-amber-800 dark:text-amber-200',
+    border: 'border-amber-200 dark:border-amber-800',
+  },
+  {
+    bg: 'bg-orange-50 dark:bg-orange-900/40',
+    text: 'text-orange-800 dark:text-orange-200',
+    border: 'border-orange-200 dark:border-orange-800',
+  },
+  {
+    bg: 'bg-rose-50 dark:bg-rose-900/40',
+    text: 'text-rose-800 dark:text-rose-200',
+    border: 'border-rose-200 dark:border-rose-800',
+  },
+  {
+    bg: 'bg-fuchsia-50 dark:bg-fuchsia-900/40',
+    text: 'text-fuchsia-800 dark:text-fuchsia-200',
+    border: 'border-fuchsia-200 dark:border-fuchsia-800',
+  },
+  {
+    bg: 'bg-violet-50 dark:bg-violet-900/40',
+    text: 'text-violet-800 dark:text-violet-200',
+    border: 'border-violet-200 dark:border-violet-800',
+  },
+  {
+    bg: 'bg-cyan-50 dark:bg-cyan-900/40',
+    text: 'text-cyan-800 dark:text-cyan-200',
+    border: 'border-cyan-200 dark:border-cyan-800',
+  },
 ];
 
 // Explicit assignments for known categories / framework types so the most
