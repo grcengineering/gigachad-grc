@@ -50,7 +50,7 @@ export const DEFAULT_JOB_OPTIONS: JobsOptions = {
   },
 };
 
-export type QueueName = typeof QUEUE_NAMES[keyof typeof QUEUE_NAMES];
+export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
 
 /**
  * Service for managing background job queues.
@@ -70,9 +70,7 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
   private jobDurationHistogram?: Histogram<string>;
   private dlqCounter?: Counter<string>;
 
-  constructor(
-    @Inject('QUEUE_OPTIONS') private options: any,
-  ) {
+  constructor(@Inject('QUEUE_OPTIONS') private options: any) {
     // Metrics are optional - will be undefined if Prometheus not configured
     try {
       this.jobsProcessedCounter = new Counter({
@@ -110,15 +108,15 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
   private async initializeQueues(): Promise<void> {
     try {
       const connection = this.parseRedisUrl(this.options.redisUrl);
-      
+
       // Test Redis connection
       const testQueue = new Queue('test', { connection });
       await testQueue.client;
       await testQueue.close();
-      
+
       this.isRedisAvailable = true;
       this.logger.log(`Queue system initialized with Redis at ${this.options.redisUrl}`);
-      
+
       // Initialize Dead Letter Queue first
       this.dlqQueue = new Queue(QUEUE_NAMES.DEAD_LETTER, {
         connection,
@@ -132,18 +130,27 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
       });
       this.queues.set(QUEUE_NAMES.DEAD_LETTER, this.dlqQueue);
       this.logger.log('Dead Letter Queue initialized');
-      
+
       // Initialize standard queues (excluding DLQ which is already initialized)
       for (const queueName of Object.values(QUEUE_NAMES)) {
         if (queueName !== QUEUE_NAMES.DEAD_LETTER) {
           this.getOrCreateQueue(queueName);
         }
       }
-    } catch {
+    } catch (error) {
       this.isRedisAvailable = false;
+
+      if (process.env.NODE_ENV === 'production') {
+        const message = error instanceof Error ? error.message : String(error);
+        this.logger.error(
+          `Redis queue initialization failed in production at ${this.options.redisUrl}: ${message}`
+        );
+        throw error;
+      }
+
       this.logger.warn(
         `Redis not available at ${this.options.redisUrl}. ` +
-        `Falling back to in-memory job processing (not recommended for production).`,
+          `Falling back to in-memory job inspection for development only. Jobs will not be processed.`
       );
     }
   }
@@ -194,7 +201,7 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
       events.on('failed', async ({ jobId, failedReason }) => {
         this.logger.error(`Job ${jobId} failed in queue ${name}: ${failedReason}`);
         this.jobsProcessedCounter?.inc({ queue: name, status: 'failed' });
-        
+
         // Move to DLQ if this was the final attempt (all retries exhausted)
         await this.moveToDeadLetterQueue(name, jobId, failedReason);
       });
@@ -209,7 +216,7 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
   private async moveToDeadLetterQueue(
     sourceQueue: string,
     jobId: string,
-    failedReason: string,
+    failedReason: string
   ): Promise<void> {
     if (!this.dlqQueue || !this.isRedisAvailable) {
       return;
@@ -225,8 +232,8 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
 
       // Only move to DLQ if this was the final attempt
       const attemptsMade = job.attemptsMade ?? 0;
-      const maxAttempts = (job.opts?.attempts ?? DEFAULT_JOB_OPTIONS.attempts ?? 3);
-      
+      const maxAttempts = job.opts?.attempts ?? DEFAULT_JOB_OPTIONS.attempts ?? 3;
+
       if (attemptsMade < maxAttempts) {
         // Job will be retried, don't move to DLQ yet
         return;
@@ -285,7 +292,7 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
     queueName: QueueName | string,
     jobName: string,
     data: T,
-    options?: JobsOptions,
+    options?: JobsOptions
   ): Promise<Job<T>> {
     const queue = this.getOrCreateQueue(queueName);
     const job = await queue.add(jobName, data, {
@@ -305,7 +312,7 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
     jobName: string,
     data: T,
     delayMs: number,
-    options?: JobsOptions,
+    options?: JobsOptions
   ): Promise<Job<T>> {
     return this.addJob(queueName, jobName, data, {
       ...options,
@@ -321,7 +328,7 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
     jobName: string,
     data: T,
     cronPattern: string,
-    options?: JobsOptions,
+    options?: JobsOptions
   ): Promise<Job<T>> {
     return this.addJob(queueName, jobName, data, {
       ...options,
@@ -337,7 +344,7 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
   registerWorker(
     queueName: QueueName | string,
     processor: (job: Job) => Promise<any>,
-    concurrency = 5,
+    concurrency = 5
   ): void {
     if (!this.isRedisAvailable) {
       this.logger.warn(`Cannot register worker for ${queueName} - Redis not available`);
@@ -358,13 +365,13 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
           const result = await processor(job);
           this.jobDurationHistogram?.observe(
             { queue: queueName, status: 'success' },
-            (Date.now() - start) / 1000,
+            (Date.now() - start) / 1000
           );
           return result;
         } catch (error) {
           this.jobDurationHistogram?.observe(
             { queue: queueName, status: 'failure' },
-            (Date.now() - start) / 1000,
+            (Date.now() - start) / 1000
           );
           throw error;
         }
@@ -372,7 +379,7 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
       {
         connection,
         concurrency,
-      },
+      }
     );
 
     worker.on('error', (error) => {
@@ -437,7 +444,7 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
       completed: counts.completed || 0,
       failed: counts.failed || 0,
       delayed: counts.delayed || 0,
-      jobs: jobs.map(job => ({
+      jobs: jobs.map((job) => ({
         id: job.id,
         name: job.name,
         data: job.data,
@@ -466,7 +473,7 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
       }
 
       const { originalQueue, originalJobName, originalJobData } = dlqJob.data;
-      
+
       if (!originalQueue || !originalJobName) {
         return { success: false, message: 'Invalid DLQ job - missing original queue/job info' };
       }
@@ -525,10 +532,10 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
       // Get count before clearing
       const counts = await this.dlqQueue.getJobCounts();
       const totalJobs = (counts.waiting || 0) + (counts.failed || 0) + (counts.delayed || 0);
-      
+
       await this.dlqQueue.drain();
       await this.dlqQueue.obliterate({ force: true });
-      
+
       this.logger.warn(`Dead Letter Queue cleared (${totalJobs} jobs removed)`);
       return { success: true, message: `Cleared ${totalJobs} jobs from Dead Letter Queue` };
     } catch (error: any) {
@@ -564,4 +571,3 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('Queue system shutdown complete');
   }
 }
-
