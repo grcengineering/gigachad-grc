@@ -42,7 +42,7 @@
   "dependencies": {
     "@nestjs/common": "11.2.5",
     "@nestjs/core": "11.2.5",
-    "@nestjs/platform-express": "11.2.1",
+    "@nestjs/platform-express": "11.2.5",
     "@nestjs/swagger": "11.4.7",
     "@nestjs/testing": "11.2.5",
     "exceljs": "4.4.0",
