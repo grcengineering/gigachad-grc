@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme, type Theme } from '@/contexts/ThemeContext';
 import { organizationApi, type OrganizationProfile } from '@/lib/api';
 import {
   UserIcon,
@@ -342,7 +343,7 @@ const DATE_FORMAT_OPTIONS = [
 function AppearanceSettings() {
   const queryClient = useQueryClient();
   const { data: organization } = useOrganizationProfile();
-  const [theme, setTheme] = useState('dark');
+  const { theme, setTheme } = useTheme();
   const [dateFormat, setDateFormat] = useState('YYYY-MM-DD');
 
   useEffect(() => {
@@ -369,8 +370,13 @@ function AppearanceSettings() {
         <div>
           <label className="label">Theme</label>
           <div className="mt-1">
-            <Select value={theme} onChange={setTheme} options={THEME_OPTIONS} />
+            <Select
+              value={theme}
+              onChange={(value) => setTheme(value as Theme)}
+              options={THEME_OPTIONS}
+            />
           </div>
+          <p className="mt-1 text-xs text-surface-500">Theme changes apply immediately.</p>
         </div>
 
         <div>

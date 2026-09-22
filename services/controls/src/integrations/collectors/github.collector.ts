@@ -231,7 +231,7 @@ export class GitHubCollector extends BaseCollector {
     const evidence: CollectedEvidence[] = [];
     const errors: string[] = [];
     const { accessToken, organization } = config.credentials;
-    let repos: GitHubRepo[] = [];
+    const repos: GitHubRepo[] = [];
 
     try {
       // Fetch repositories with Link-header pagination (cap 1000).
