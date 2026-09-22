@@ -6,7 +6,8 @@ This document captures locked-in design decisions for the GigaChad GRC UI redesi
 
 **Reference shape:** Linear (shell, density, keyboard-first) + Vanta (domain-specific GRC patterns) + Stripe Dashboard (data tables, filter chips).
 
-**Theme:** Dark-first. Light mode is deferred; do not add light-mode classes for now.
+**Theme:** Light, dark, and system modes share semantic surface tokens. New primitives must include
+equivalent `dark:` states and should be verified in both resolved themes.
 
 **Color usage:**
 
@@ -49,7 +50,6 @@ This document captures locked-in design decisions for the GigaChad GRC UI redesi
 
 ## What we are NOT doing (yet)
 
-- **Light mode** — not until Phase 7. Don't add light variants.
 - **Multi-tenant theming** — out of scope.
 - **Trust Center marketing surface** — different audience, defer to a separate redesign.
 - **Onboarding wizard** — deferred to Phase 6.
@@ -70,6 +70,5 @@ If a primitive is missing a needed variant, add the variant to the primitive in 
 ## Open follow-ups
 
 - Persona task-journey worksheet (needs user research; defer until we have signal from users).
-- Light mode (Phase 7).
 - Saved views server persistence (needs backend work; first ship URL-driven filters).
 - White-label theming (only if/when a customer asks).
