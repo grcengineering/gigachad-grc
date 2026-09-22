@@ -131,6 +131,48 @@ describe('PermissionGuard', () => {
       expect(result).toBe(true);
     });
 
+    it('should honor the development admin wildcard without querying stored permissions', async () => {
+      mockRequest.user = { userId: validUserId, permissions: ['*:*'] };
+      (reflector.getAllAndOverride as jest.Mock).mockImplementation((key) => {
+        if (key === PERMISSION_KEY) {
+          return { resource: Resource.FRAMEWORKS, action: Action.CREATE };
+        }
+        return undefined;
+      });
+
+      const result = await guard.canActivate(mockExecutionContext);
+
+      expect(result).toBe(true);
+      expect(permissionsService.hasPermission).not.toHaveBeenCalled();
+    });
+
+    it('should ignore the development wildcard in production', async () => {
+      const originalNodeEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      mockRequest.user = { userId: validUserId, permissions: ['*:*'] };
+      (reflector.getAllAndOverride as jest.Mock).mockImplementation((key) => {
+        if (key === PERMISSION_KEY) {
+          return { resource: Resource.FRAMEWORKS, action: Action.CREATE };
+        }
+        return undefined;
+      });
+      (permissionsService.hasPermission as jest.Mock).mockResolvedValue({
+        allowed: false,
+        reason: 'Insufficient permissions',
+      });
+
+      try {
+        await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(ForbiddenException);
+        expect(permissionsService.hasPermission).toHaveBeenCalledWith(
+          validUserId,
+          Resource.FRAMEWORKS,
+          Action.CREATE
+        );
+      } finally {
+        process.env.NODE_ENV = originalNodeEnv;
+      }
+    });
+
     it('should throw ForbiddenException when permission is denied', async () => {
       (reflector.getAllAndOverride as jest.Mock).mockImplementation((key) => {
         if (key === PERMISSION_KEY) {

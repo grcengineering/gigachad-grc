@@ -101,7 +101,10 @@ export class PermissionGuard implements CanActivate {
     const nodeEnv = process.env.NODE_ENV || 'development';
     if (nodeEnv !== 'production' && request.user?.permissions) {
       const requiredPerm = `${resource}:${action}`;
-      if (request.user.permissions.includes(requiredPerm)) {
+      if (
+        request.user.permissions.includes(requiredPerm) ||
+        request.user.permissions.includes('*:*')
+      ) {
         this.logger.debug(`Permission granted via DevAuthGuard: ${requiredPerm}`);
         return true;
       }

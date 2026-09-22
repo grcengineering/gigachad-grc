@@ -108,6 +108,10 @@ export const User = createParamDecorator((data: unknown, ctx: ExecutionContext):
  * Default permissions for development user.
  */
 const DEV_PERMISSIONS = [
+  // Development's built-in admin must remain usable as new protected
+  // endpoints are added. PermissionGuard only honors this wildcard outside
+  // production, while non-admin RBAC fixtures receive no dev permissions.
+  '*:*',
   'controls:read',
   'controls:write',
   'controls:delete',
