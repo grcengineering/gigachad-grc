@@ -3,7 +3,7 @@
 # GigaChad GRC
 
 [![License: Elastic-2.0](https://img.shields.io/badge/License-Elastic--2.0-blue.svg)](LICENSE)
-[![Node.js 20+](https://img.shields.io/badge/Node.js-20%2B-green.svg)](https://nodejs.org/)
+[![Node.js 22.22.3+](https://img.shields.io/badge/Node.js-22.22.3%2B-green.svg)](https://nodejs.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -300,7 +300,7 @@ For detailed module documentation including API endpoints, see the [API Referenc
 
 ### Tech Stack
 
-- **Backend**: Node.js 20 + TypeScript with NestJS
+- **Backend**: Node.js 22 LTS + TypeScript with NestJS
 - **Frontend**: React + TypeScript with Vite, TailwindCSS
 - **Database**: PostgreSQL 16 with Prisma ORM
 - **Authentication**: Keycloak (SSO, RBAC) with dev-mode bypass

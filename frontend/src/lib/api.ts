@@ -43,6 +43,34 @@ api.interceptors.response.use(
 );
 
 // API functions
+export interface OrganizationProfile {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  status: string;
+  settings: {
+    timezone: string;
+    dateFormat: string;
+    [key: string]: unknown;
+  };
+}
+
+export interface UpdateOrganizationData {
+  name?: string;
+  description?: string;
+  settings?: {
+    timezone?: string;
+    dateFormat?: string;
+  };
+}
+
+export const organizationApi = {
+  get: () => api.get<OrganizationProfile>('/api/organization'),
+  update: (data: UpdateOrganizationData) =>
+    api.patch<OrganizationProfile>('/api/organization', data),
+};
+
 export const controlsApi = {
   list: (params?: any) => api.get('/api/controls', { params }),
   get: (id: string) => api.get(`/api/controls/${id}`),

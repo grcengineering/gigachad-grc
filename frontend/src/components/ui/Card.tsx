@@ -21,10 +21,12 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
     <div
       ref={ref}
       className={cn(
-        'rounded-lg bg-white border border-surface-200',
-        elevated && 'shadow-[0_1px_2px_0_rgba(30,25,20,0.06),0_1px_3px_-1px_rgba(30,25,20,0.08)]',
+        'rounded-lg bg-white border border-surface-200 dark:bg-surface-900 dark:border-surface-800',
+        elevated &&
+          'shadow-[0_1px_2px_0_rgba(30,25,20,0.06),0_1px_3px_-1px_rgba(30,25,20,0.08)] dark:shadow-[0_1px_2px_0_rgba(0,0,0,0.4),0_1px_3px_-1px_rgba(0,0,0,0.5)]',
         density && densityPad[density],
-        interactive && 'lift-hover cursor-pointer hover:border-surface-300',
+        interactive &&
+          'lift-hover cursor-pointer hover:border-surface-300 dark:hover:border-surface-700',
         className
       )}
       {...props}
@@ -38,7 +40,7 @@ export const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivEleme
     <div
       ref={ref}
       className={cn(
-        'flex items-center justify-between gap-4 px-4 py-3 border-b border-surface-200',
+        'flex items-center justify-between gap-4 px-4 py-3 border-b border-surface-200 dark:border-surface-800',
         className
       )}
       {...props}
@@ -49,7 +51,11 @@ CardHeader.displayName = 'CardHeader';
 
 export const CardTitle = forwardRef<HTMLHeadingElement, HTMLAttributes<HTMLHeadingElement>>(
   ({ className, ...props }, ref) => (
-    <h3 ref={ref} className={cn('text-h3 text-surface-900', className)} {...props} />
+    <h3
+      ref={ref}
+      className={cn('text-h3 text-surface-900 dark:text-surface-100', className)}
+      {...props}
+    />
   )
 );
 CardTitle.displayName = 'CardTitle';
@@ -58,7 +64,11 @@ export const CardDescription = forwardRef<
   HTMLParagraphElement,
   HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
-  <p ref={ref} className={cn('text-small text-surface-600', className)} {...props} />
+  <p
+    ref={ref}
+    className={cn('text-small text-surface-600 dark:text-surface-400', className)}
+    {...props}
+  />
 ));
 CardDescription.displayName = 'CardDescription';
 
@@ -75,7 +85,7 @@ export const CardFooter = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivEleme
     <div
       ref={ref}
       className={cn(
-        'flex items-center justify-end gap-2 px-4 py-3 border-t border-surface-200 bg-surface-50/60',
+        'flex items-center justify-end gap-2 px-4 py-3 border-t border-surface-200 bg-surface-50/60 dark:border-surface-800 dark:bg-surface-950/60',
         className
       )}
       {...props}

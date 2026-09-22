@@ -1,5 +1,5 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:22-alpine@sha256:e58326d0d441090181ac150dc2078d3e2cf6a0d42e809aebba3ef5880935ffdd AS builder
 
 WORKDIR /app
 
@@ -33,6 +33,10 @@ RUN npm run build
 
 # Production stage
 FROM nginx:alpine AS production
+
+# Apply current Alpine security fixes instead of shipping the packages baked
+# into the base image digest.
+RUN apk upgrade --no-cache
 
 # Copy built assets
 COPY --from=builder /app/frontend/dist /usr/share/nginx/html

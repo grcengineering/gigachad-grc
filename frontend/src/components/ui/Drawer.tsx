@@ -48,7 +48,7 @@ export function Drawer({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-white/30" />
+          <div className="fixed inset-0 bg-white/30 dark:bg-black/50" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-hidden">
@@ -63,7 +63,7 @@ export function Drawer({
           >
             <HUIDialog.Panel
               className={cn(
-                'fixed inset-y-0 flex w-full flex-col bg-white border-surface-200 shadow-2xl',
+                'fixed inset-y-0 flex w-full flex-col bg-white border-surface-200 shadow-2xl dark:bg-surface-900 dark:border-surface-800',
                 sideClass,
                 side === 'right' ? 'border-l' : 'border-r',
                 sizes[size],
@@ -71,11 +71,13 @@ export function Drawer({
               )}
             >
               {title && (
-                <div className="flex items-start justify-between gap-4 px-5 py-4 border-b border-surface-200 shrink-0">
+                <div className="flex items-start justify-between gap-4 px-5 py-4 border-b border-surface-200 dark:border-surface-800 shrink-0">
                   <div className="min-w-0">
-                    <HUIDialog.Title className="text-h2 text-surface-900">{title}</HUIDialog.Title>
+                    <HUIDialog.Title className="text-h2 text-surface-900 dark:text-surface-100">
+                      {title}
+                    </HUIDialog.Title>
                     {description && (
-                      <HUIDialog.Description className="mt-1 text-small text-surface-600">
+                      <HUIDialog.Description className="mt-1 text-small text-surface-600 dark:text-surface-400">
                         {description}
                       </HUIDialog.Description>
                     )}
@@ -85,7 +87,7 @@ export function Drawer({
                       e.stopPropagation();
                       onClose();
                     }}
-                    className="text-surface-500 hover:text-surface-900 transition-colors -mr-1"
+                    className="text-surface-500 hover:text-surface-900 dark:text-surface-400 dark:hover:text-surface-100 transition-colors -mr-1"
                     aria-label="Close"
                   >
                     <X className="h-5 w-5" />
@@ -94,7 +96,7 @@ export function Drawer({
               )}
               <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
               {footer && (
-                <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-surface-200 bg-surface-50/30 shrink-0">
+                <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-surface-200 bg-surface-50/30 dark:border-surface-800 dark:bg-surface-950/30 shrink-0">
                   {footer}
                 </div>
               )}

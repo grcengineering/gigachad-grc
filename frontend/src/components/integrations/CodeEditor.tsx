@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import Editor, { OnMount } from '@monaco-editor/react';
 import {
   PlayIcon,
   DocumentDuplicateIcon,
@@ -9,7 +8,7 @@ import {
   XCircleIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
-import { Button } from '@/components/ui';
+import { Button, Textarea } from '@/components/ui';
 
 interface ValidationResult {
   valid: boolean;
@@ -92,63 +91,6 @@ export default function CodeEditor({
 }: Props) {
   const [validation, setValidation] = useState<ValidationResult | null>(null);
   const [isValidating, setIsValidating] = useState(false);
-
-  const handleEditorMount: OnMount = (editor, monaco) => {
-    // Configure JavaScript/TypeScript language features
-    monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
-      noSemanticValidation: false,
-      noSyntaxValidation: false,
-    });
-
-    monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-      target: monaco.languages.typescript.ScriptTarget.ES2020,
-      allowNonTsExtensions: true,
-      moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
-      module: monaco.languages.typescript.ModuleKind.CommonJS,
-      noEmit: true,
-      lib: ['es2020'],
-    });
-
-    // Add custom type definitions
-    const customTypes = `
-      interface Context {
-        baseUrl: string;
-        auth: {
-          headers: Record<string, string>;
-          token?: string;
-        };
-        organizationId: string;
-        integrationId: string;
-      }
-
-      interface EvidenceItem {
-        title: string;
-        description: string;
-        data: any;
-        type?: 'screenshot' | 'document' | 'log' | 'config' | 'report' | 'automated';
-      }
-
-      interface SyncResult {
-        evidence: EvidenceItem[];
-      }
-
-      declare function fetch(url: string, options?: RequestInit): Promise<Response>;
-      declare const console: Console;
-      declare const context: Context;
-    `;
-
-    monaco.languages.typescript.javascriptDefaults.addExtraLib(customTypes, 'custom.d.ts');
-
-    // Set editor options
-    editor.updateOptions({
-      fontSize: 14,
-      lineHeight: 22,
-      minimap: { enabled: false },
-      scrollBeyondLastLine: false,
-      wordWrap: 'on',
-      tabSize: 2,
-    });
-  };
 
   const handleValidate = useCallback(async () => {
     setIsValidating(true);
@@ -277,23 +219,13 @@ export default function CodeEditor({
       )}
 
       {/* Editor */}
-      <div className="flex-1 min-h-0">
-        <Editor
-          height="100%"
-          language="javascript"
-          theme="vs-dark"
+      <div className="flex-1 min-h-0 p-3 bg-surface-950">
+        <Textarea
+          aria-label="Custom integration JavaScript"
           value={code}
-          onChange={(value) => onChange(value || '')}
-          onMount={handleEditorMount}
-          options={{
-            fontSize: 14,
-            lineHeight: 22,
-            minimap: { enabled: false },
-            scrollBeyondLastLine: false,
-            wordWrap: 'on',
-            tabSize: 2,
-            automaticLayout: true,
-          }}
+          onChange={(event) => onChange(event.target.value)}
+          spellCheck={false}
+          className="h-full min-h-[28rem] resize-none font-mono text-sm leading-[22px] bg-surface-950 text-surface-100 border-surface-700"
         />
       </div>
 
