@@ -21,7 +21,6 @@ import {
   reportsHandlers,
   calendarHandlers,
   helpHandlers,
-  frameworkLibraryHandlers,
 } from './dev-stubs/one-offs';
 
 export default defineConfig({
@@ -87,9 +86,6 @@ export default defineConfig({
         server.middlewares.use(createStubMiddleware('/api/reports', reportsHandlers));
         server.middlewares.use(createStubMiddleware('/api/calendar', calendarHandlers));
         server.middlewares.use(createStubMiddleware('/api/help', helpHandlers));
-        server.middlewares.use(
-          createStubMiddleware('/api/framework-library', frameworkLibraryHandlers)
-        );
       },
     },
   ],
@@ -157,6 +153,10 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/api/organization': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/api/frameworks/catalog': {
         target: 'http://localhost:3001',
         changeOrigin: true,
       },

@@ -319,7 +319,7 @@ export class AlibabaCloudConnector extends BaseConnector {
   private alibabaSign(method: string, host: string, params: Record<string, string>, body: string = ''): { url: string; headers: Record<string, string> } {
     if (!this.alibabaConfig) throw new Error('Alibaba Cloud config not initialized');
     const { accessKeyId, accessKeySecret } = this.alibabaConfig;
-    const dateIso = new Date().toISOString().replace(/[:\-]|\.\d{3}/g, '');
+    const dateIso = new Date().toISOString().replace(/[:-]|\.\d{3}/g, '');
     const nonce = crypto.randomUUID();
     const payloadHash = crypto.createHash('sha256').update(body).digest('hex');
 

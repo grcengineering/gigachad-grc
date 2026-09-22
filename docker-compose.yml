@@ -348,6 +348,9 @@ services:
       - 'traefik.http.routers.controls-catchall.middlewares=api-security@file'
       - 'traefik.http.routers.controls-organization.rule=PathPrefix(`/api/organization`)'
       - 'traefik.http.routers.controls-organization.middlewares=api-security@file'
+      - 'traefik.http.routers.controls-frameworks-catalog.rule=PathPrefix(`/api/frameworks/catalog`)'
+      - 'traefik.http.routers.controls-frameworks-catalog.priority=100'
+      - 'traefik.http.routers.controls-frameworks-catalog.middlewares=api-security@file'
       - 'traefik.http.services.controls.loadbalancer.server.port=3001'
     restart: unless-stopped
     # Resource limits - example configuration for development
