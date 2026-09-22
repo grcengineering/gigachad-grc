@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { DEV_USER, ensureDevUserExists } from '@gigachad-grc/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 
@@ -15,6 +16,8 @@ export class OrganizationsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getCurrent(organizationId: string) {
+    await this.ensureDevelopmentOrganization(organizationId);
+
     const organization = await this.prisma.organization.findUnique({
       where: { id: organizationId },
       select: {
@@ -35,6 +38,8 @@ export class OrganizationsService {
   }
 
   async updateCurrent(organizationId: string, userId: string, dto: UpdateOrganizationDto) {
+    await this.ensureDevelopmentOrganization(organizationId);
+
     const existing = await this.prisma.organization.findUnique({
       where: { id: organizationId },
       select: {
@@ -133,5 +138,16 @@ export class OrganizationsService {
         ...settings,
       } as OrganizationSettings & { timezone: string; dateFormat: string },
     };
+  }
+
+  private async ensureDevelopmentOrganization(organizationId: string) {
+    const devAuthEnabled =
+      process.env.NODE_ENV === 'development' ||
+      process.env.NODE_ENV === 'test' ||
+      process.env.USE_DEV_AUTH === 'true';
+
+    if (devAuthEnabled && organizationId === DEV_USER.organizationId) {
+      await ensureDevUserExists(this.prisma, this.logger);
+    }
   }
 }
