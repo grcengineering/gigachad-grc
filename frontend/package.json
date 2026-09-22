@@ -20,10 +20,10 @@
     "exceljs": "^4.4.0",
     "keycloak-js": "^23.0.3",
     "lucide-react": "^0.577.0",
-    "mammoth": "^1.12.1",
+    "mammoth": "^1.12.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-hot-toast": "^2.4.1",
+    "react-hot-toast": "^2.6.1",
     "react-router-dom": "^6.30.5",
     "tailwind-merge": "^2.6.1"
   },
