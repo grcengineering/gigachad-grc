@@ -43,9 +43,13 @@
     "vite": "8.1.4"
   },
   "optionalDependencies": {
+    "@rolldown/binding-linux-arm64-gnu": "1.1.5",
     "@rolldown/binding-linux-arm64-musl": "1.1.5",
+    "@rolldown/binding-linux-x64-gnu": "1.1.5",
     "@rolldown/binding-linux-x64-musl": "1.1.5",
+    "lightningcss-linux-arm64-gnu": "1.32.0",
     "lightningcss-linux-arm64-musl": "1.32.0",
+    "lightningcss-linux-x64-gnu": "1.32.0",
     "lightningcss-linux-x64-musl": "1.32.0"
   },
   "overrides": {
