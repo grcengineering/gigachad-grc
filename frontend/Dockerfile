@@ -1,14 +1,24 @@
 # Build stage
 FROM node:20-alpine AS builder
 
+WORKDIR /app
+
+# The frontend is an npm workspace. Install it from the repository lockfile so
+# local, CI, Dependabot, and container builds all resolve the same dependency
+# graph. Workspace manifests must exist before npm ci evaluates the root graph.
+COPY package.json package-lock.json ./
+COPY frontend/package.json ./frontend/package.json
+COPY services/shared/package.json ./services/shared/package.json
+COPY services/controls/package.json ./services/controls/package.json
+COPY services/frameworks/package.json ./services/frameworks/package.json
+COPY services/policies/package.json ./services/policies/package.json
+COPY services/tprm/package.json ./services/tprm/package.json
+COPY services/trust/package.json ./services/trust/package.json
+COPY services/audit/package.json ./services/audit/package.json
+RUN npm ci --ignore-scripts --workspace @gigachad-grc/frontend --include-workspace-root
+
+COPY frontend/ ./frontend/
 WORKDIR /app/frontend
-
-# Compose and CI build with repository root as context.
-# Copy frontend-specific files explicitly so this Dockerfile resolves paths correctly.
-COPY frontend/package*.json ./
-RUN npm install
-
-COPY frontend/ ./
 
 # Vite inlines VITE_-prefixed vars into the bundle at build time, so this
 # must be a build ARG (not a runtime `environment:` entry) to have any

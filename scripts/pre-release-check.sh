@@ -137,33 +137,29 @@ fi
 section "5. Dependencies"
 # -----------------------------------------------------------------------------
 
-# Check for package-lock.json files (monorepo uses root-level lock file)
+# Check for the authoritative workspace lockfile
 if [ -f "package-lock.json" ]; then
     pass "Root package-lock.json exists (monorepo)"
-elif [ -f "frontend/package-lock.json" ]; then
-    pass "Frontend package-lock.json exists"
 else
     warn "package-lock.json missing (run npm install)"
 fi
 
 # Check npm audit (if npm available)
 if command -v npm &> /dev/null; then
-    info "Running npm audit on frontend..."
-    cd frontend
+    info "Running npm audit on the workspace dependency graph..."
     AUDIT_OUTPUT=$(npm audit --json 2>/dev/null || true)
     HIGH_VULNS=$(echo "$AUDIT_OUTPUT" | grep -o '"high":[0-9]*' | grep -o '[0-9]*' | head -1)
     CRITICAL_VULNS=$(echo "$AUDIT_OUTPUT" | grep -o '"critical":[0-9]*' | grep -o '[0-9]*' | head -1)
     # Default to 0 if empty
     HIGH_VULNS=${HIGH_VULNS:-0}
     CRITICAL_VULNS=${CRITICAL_VULNS:-0}
-    cd ..
-    
+
     if [ "$CRITICAL_VULNS" -gt 0 ]; then
-        fail "Frontend has $CRITICAL_VULNS critical vulnerabilities"
+        fail "Workspace has $CRITICAL_VULNS critical vulnerabilities"
     elif [ "$HIGH_VULNS" -gt 0 ]; then
-        warn "Frontend has $HIGH_VULNS high severity vulnerabilities"
+        warn "Workspace has $HIGH_VULNS high severity vulnerabilities"
     else
-        pass "No critical/high vulnerabilities in frontend"
+        pass "No critical/high vulnerabilities in workspace dependencies"
     fi
 else
     warn "npm not available - skipping audit"
