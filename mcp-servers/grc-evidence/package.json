@@ -22,7 +22,7 @@
     "@azure/arm-network": "^33.0.0",
     "@azure/arm-storage": "^18.0.0",
     "@octokit/rest": "^20.0.0",
-    "axios": "^1.18.0",
+    "axios": "^1.20.0",
     "googleapis": "^171.4.0",
     "puppeteer": "^25.11.0",
     "zod": "^3.22.0"
