@@ -129,13 +129,12 @@ run_migrations() {
     
     log_info "Running database migrations..."
     
-    if [ -f "node_modules/.bin/prisma" ]; then
-        npx prisma migrate deploy 2>&1 || {
-            log_warn "Migration failed (may already be up to date)"
-        }
+    if [ -x "/app/deploy/prisma-migrate-safe.sh" ]; then
+        /app/deploy/prisma-migrate-safe.sh
         log_success "Migrations complete"
     else
-        log_warn "Prisma not found, skipping migrations"
+        log_error "Safe migration wrapper not found"
+        return 1
     fi
 }
 

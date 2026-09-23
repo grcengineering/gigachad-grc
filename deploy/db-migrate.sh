@@ -111,23 +111,12 @@ run_migrations() {
     log_info "Running database migrations..."
     
     wait_for_db
-    
-    # Run Prisma migrations for each service
-    SERVICES=(controls frameworks policies tprm trust audit)
-    
-    for service in "${SERVICES[@]}"; do
-        if [ -f "services/$service/package.json" ]; then
-            log_info "Running migrations for $service service..."
-            
-            # Check if prisma schema exists
-            if [ -f "services/shared/prisma/schema.prisma" ]; then
-                cd services/$service
-                npx prisma migrate deploy --schema=../shared/prisma/schema.prisma 2>/dev/null || true
-                cd ../..
-            fi
-        fi
-    done
-    
+
+    # All services share one canonical schema. Apply it once and fail closed;
+    # swallowing migration errors can start the platform on a partial schema.
+    DATABASE_URL=${MIGRATION_DATABASE_URL:-"postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}"} \
+        ./deploy/prisma-migrate-safe.sh
+
     log_success "Migrations completed"
 }
 

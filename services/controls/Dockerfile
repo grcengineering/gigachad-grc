@@ -119,9 +119,12 @@ COPY --from=builder /app/shared/prisma ./shared/prisma
 # Copy the idempotent post-Prisma BC/DR migration
 COPY database/init/12-bcdr-module.sql ./database/migrations/12-bcdr-module.sql
 
+# Copy the safe baseline/deploy wrapper used by the controls entrypoint.
+COPY deploy/prisma-migrate-safe.sh ./deploy/prisma-migrate-safe.sh
+
 # Copy entrypoint script
 COPY services/controls/docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh /app/deploy/prisma-migrate-safe.sh
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
