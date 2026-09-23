@@ -170,13 +170,17 @@ test('standardizes backend controller prefixes on same-origin API paths', () => 
 
 test('uses implemented frontend paths and methods instead of shadow contracts', () => {
   const assessments = read('frontend/src/pages/AssessmentDetail.tsx');
+  const apiClient = read('frontend/src/lib/api.ts');
   const answerTemplates = read('frontend/src/pages/AnswerTemplates.tsx');
   const scheduledReports = read('frontend/src/pages/ScheduledReportsPage.tsx');
   const tprmConfig = read('frontend/src/pages/TPRMConfiguration.tsx');
   const auditorLogin = read('frontend/src/pages/AuditorLogin.tsx');
-  assert.match(assessments, /\/api\/vendor-assessments/);
+  assert.match(assessments, /vendorAssessmentsApi/);
+  assert.match(apiClient, /api\.get\('\/api\/vendor-assessments'/);
+  assert.match(apiClient, /api\.patch\(`\/api\/vendor-assessments/);
   assert.match(answerTemplates, /api\.patch\(`\/api\/answer-templates/);
-  assert.match(scheduledReports, /api\.get\('\/api\/scheduled-reports'\)/);
+  assert.match(scheduledReports, /scheduledReportsApi/);
+  assert.match(apiClient, /api\.get\('\/api\/scheduled-reports'\)/);
   assert.match(tprmConfig, /api\.get\('\/api\/tprm-config'\)/);
   assert.match(auditorLogin, /api\.post<AuditorLoginResponse>\('\/api\/audit-portal\/auth'/);
   for (const source of [assessments, scheduledReports, tprmConfig, auditorLogin]) {

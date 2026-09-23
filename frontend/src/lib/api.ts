@@ -4,9 +4,11 @@ const API_URL = import.meta.env.VITE_API_URL || '';
 const TOKEN_STORAGE_KEY = 'token';
 
 export function setApiBearerToken(token: string | null): void {
-  token
-    ? localStorage.setItem(TOKEN_STORAGE_KEY, token)
-    : localStorage.removeItem(TOKEN_STORAGE_KEY);
+  if (token) {
+    localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  } else {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+  }
 }
 
 function getApiBearerToken(): string | null {
@@ -26,16 +28,13 @@ api.interceptors.request.use((config) => {
   const token = getApiBearerToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-  }
-  // Add user ID for notifications and other user-specific endpoints
-  const userId = localStorage.getItem('userId');
-  if (userId) {
-    config.headers['x-user-id'] = userId;
-  }
-  // Add organization ID
-  const orgId = localStorage.getItem('organizationId');
-  if (orgId) {
-    config.headers['x-organization-id'] = orgId;
+  } else {
+    // Development auth fixtures use explicit context headers only when no
+    // production bearer token is present.
+    const userId = localStorage.getItem('userId');
+    if (userId) config.headers['x-user-id'] = userId;
+    const orgId = localStorage.getItem('organizationId');
+    if (orgId) config.headers['x-organization-id'] = orgId;
   }
   return config;
 });
@@ -62,9 +61,12 @@ export function authenticatedFetch(
   const token = getApiBearerToken();
   const userId = localStorage.getItem('userId');
   const organizationId = localStorage.getItem('organizationId');
-  if (token) headers.set('Authorization', `Bearer ${token}`);
-  if (userId) headers.set('x-user-id', userId);
-  if (organizationId) headers.set('x-organization-id', organizationId);
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  } else {
+    if (userId) headers.set('x-user-id', userId);
+    if (organizationId) headers.set('x-organization-id', organizationId);
+  }
 
   const resolvedInput =
     typeof input === 'string' && API_URL && input.startsWith('/')

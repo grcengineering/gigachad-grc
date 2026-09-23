@@ -100,7 +100,6 @@ jobs:
       - name: ESLint validation
         run: npm run lint --if-present
         working-directory: services/${{ matrix.service }}
-        continue-on-error: true # Some services have ESLint config issues
 
       - name: Run unit tests
         run: npm test --if-present -- --runInBand
