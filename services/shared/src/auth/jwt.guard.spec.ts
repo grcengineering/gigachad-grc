@@ -304,14 +304,15 @@ describe('JwtAuthGuard', () => {
 
 describe('ApiKeyAuthGuard', () => {
   let guard: ApiKeyAuthGuard;
+  const testApiKey = 'grc_test-api-key-1234567890';
   let prisma: {
-    apiKey: { findFirst: jest.Mock; update: jest.Mock };
+    apiKey: { findMany: jest.Mock; update: jest.Mock };
   };
 
   beforeEach(() => {
     prisma = {
       apiKey: {
-        findFirst: jest.fn().mockResolvedValue(null),
+        findMany: jest.fn().mockResolvedValue([]),
         update: jest.fn().mockResolvedValue(undefined),
       },
     };
@@ -330,7 +331,7 @@ describe('ApiKeyAuthGuard', () => {
   });
 
   it('should reject an API key that is present but not persisted', async () => {
-    const request = { headers: { 'x-api-key': 'test-api-key-123' } };
+    const request = { headers: { 'x-api-key': testApiKey } };
     const context = {
       switchToHttp: () => ({
         getRequest: () => request,
@@ -341,25 +342,28 @@ describe('ApiKeyAuthGuard', () => {
   });
 
   it('should validate a persisted API key and attach organization context', async () => {
-    prisma.apiKey.findFirst.mockResolvedValue({
-      id: 'key-123',
-      name: 'Automation',
-      keyPrefix: 'test-api',
-      scopes: ['read:controls'],
-      organizationId: '123e4567-e89b-42d3-a456-426614174000',
-      createdBy: '123e4567-e89b-42d3-a456-426614174001',
-      apiKeyScopes: [{ scope: 'write:evidence' }],
-    });
-    const request: any = { headers: { 'x-api-key': 'test-api-key-123' } };
+    prisma.apiKey.findMany.mockResolvedValue([
+      {
+        id: 'key-123',
+        name: 'Automation',
+        keyPrefix: 'test-api',
+        keyHash: createHash('sha256').update(testApiKey).digest('hex'),
+        scopes: ['read:controls'],
+        organizationId: '123e4567-e89b-42d3-a456-426614174000',
+        createdBy: '123e4567-e89b-42d3-a456-426614174001',
+        apiKeyScopes: [{ scope: 'write:evidence' }],
+      },
+    ]);
+    const request: any = { headers: { 'x-api-key': testApiKey } };
     const context = {
       switchToHttp: () => ({ getRequest: () => request }),
     } as ExecutionContext;
 
     await expect(guard.canActivate(context)).resolves.toBe(true);
-    expect(prisma.apiKey.findFirst).toHaveBeenCalledWith(
+    expect(prisma.apiKey.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          keyHash: createHash('sha256').update('test-api-key-123').digest('hex'),
+          keyPrefix: 'test-api',
           isActive: true,
         }),
       })

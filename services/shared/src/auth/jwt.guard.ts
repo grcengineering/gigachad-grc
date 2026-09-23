@@ -10,13 +10,13 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
-import { createHash } from 'crypto';
 import * as jwt from 'jsonwebtoken';
 import jwksRsa from 'jwks-rsa';
 import { UserContext, UserRole, RolePermissions } from '../types';
 import { ROLES_KEY } from './roles.decorator';
 import { TokenBlacklistService } from './token-blacklist.service';
 import { PRISMA_SERVICE } from './dev-auth.guard';
+import { verifyApiKey } from '../utils/crypto';
 
 export interface JwtPayload {
   sub: string;
@@ -179,7 +179,7 @@ export class JwtAuthGuard implements CanActivate {
 
 interface ApiKeyStore {
   apiKey?: {
-    findFirst(args: unknown): Promise<any>;
+    findMany(args: unknown): Promise<any[]>;
     update(args: unknown): Promise<unknown>;
   };
 }
@@ -207,21 +207,28 @@ export class ApiKeyAuthGuard implements CanActivate {
       throw new UnauthorizedException('API key authentication unavailable');
     }
 
-    // API keys contain 256 bits of CSPRNG entropy and are looked up by a
-    // deterministic digest; this is not password hashing.
-    // codeql[js/insufficient-password-hash] suppressed: SHA-256 is appropriate
-    // for high-entropy API key lookup, not low-entropy user passwords.
-    const keyHash = createHash('sha256').update(apiKey).digest('hex');
-    const record = await this.prisma.apiKey.findFirst({
+    if (!apiKey.startsWith('grc_') || apiKey.length < 20) {
+      throw new UnauthorizedException('Invalid or expired API key');
+    }
+
+    const keyPrefix = apiKey.substring(4, 12);
+    const candidates = await this.prisma.apiKey.findMany({
       where: {
-        keyHash,
+        keyPrefix,
         isActive: true,
         OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       },
       include: {
         apiKeyScopes: { select: { scope: true } },
       },
+      take: 5,
     });
+    const record = candidates.find(
+      (candidate) =>
+        typeof candidate.keyHash === 'string' &&
+        candidate.keyHash.length === 64 &&
+        verifyApiKey(apiKey, candidate.keyHash)
+    );
     if (!record) {
       throw new UnauthorizedException('Invalid or expired API key');
     }
