@@ -13,11 +13,11 @@ import { TrustCenterService } from './trust-center.service';
 import { UpdateTrustCenterConfigDto } from './dto/update-config.dto';
 import { CreateTrustCenterContentDto } from './dto/create-content.dto';
 import { UpdateTrustCenterContentDto } from './dto/update-content.dto';
-import { CurrentUser, UserContext } from '@gigachad-grc/shared';
+import { CurrentUser, UserContext, Roles, RolesGuard } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 @Controller('api/trust-center')
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 export class TrustCenterController {
   constructor(private readonly trustCenterService: TrustCenterService) {}
 
@@ -29,6 +29,7 @@ export class TrustCenterController {
   }
 
   @Patch('config')
+  @Roles('admin', 'compliance_manager', 'auditor')
   updateConfig(
     @Body() updateConfigDto: UpdateTrustCenterConfigDto,
     @CurrentUser() user: UserContext
@@ -39,11 +40,16 @@ export class TrustCenterController {
 
   // Content endpoints
   @Post('content')
+  @Roles('admin', 'compliance_manager', 'auditor')
   createContent(
     @Body() createContentDto: CreateTrustCenterContentDto,
     @CurrentUser() user: UserContext
   ) {
-    return this.trustCenterService.createContent(createContentDto, user.userId);
+    return this.trustCenterService.createContent(
+      user.organizationId,
+      createContentDto,
+      user.userId
+    );
   }
 
   @Get('content')
@@ -67,6 +73,7 @@ export class TrustCenterController {
   }
 
   @Patch('content/:id')
+  @Roles('admin', 'compliance_manager', 'auditor')
   updateContent(
     @Param('id') id: string,
     @Body() updateContentDto: UpdateTrustCenterContentDto,
@@ -82,6 +89,7 @@ export class TrustCenterController {
   }
 
   @Delete('content/:id')
+  @Roles('admin', 'compliance_manager', 'auditor')
   deleteContent(@Param('id') id: string, @CurrentUser() user: UserContext) {
     // SECURITY: Organization ID extracted from authenticated context, not query param
     return this.trustCenterService.deleteContent(id, user.userId, user.organizationId);

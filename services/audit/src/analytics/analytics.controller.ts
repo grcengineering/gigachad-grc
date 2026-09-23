@@ -15,7 +15,6 @@ interface AuthenticatedRequest extends Request {
 @ApiTags('Audit Analytics')
 @ApiBearerAuth()
 @UseGuards(DevAuthGuard, RolesGuard)
-@Roles('admin', 'auditor', 'compliance_manager')
 @Controller('analytics')
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
@@ -28,7 +27,10 @@ export class AnalyticsController {
 
   @Get('trends')
   @ApiOperation({ summary: 'Get audit trends over time' })
-  getTrends(@Query('period') period: 'monthly' | 'quarterly' | 'yearly', @Req() req: AuthenticatedRequest) {
+  getTrends(
+    @Query('period') period: 'monthly' | 'quarterly' | 'yearly',
+    @Req() req: AuthenticatedRequest
+  ) {
     return this.analyticsService.getTrends(req.user.organizationId, period);
   }
 
@@ -45,9 +47,9 @@ export class AnalyticsController {
   }
 
   @Post('snapshot')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Create analytics snapshot' })
   createSnapshot(@Query('type') type: string, @Req() req: AuthenticatedRequest) {
     return this.analyticsService.createSnapshot(req.user.organizationId, type || 'daily');
   }
 }
-

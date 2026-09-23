@@ -22,6 +22,7 @@ import {
 } from '@nestjs/swagger';
 import { FieldGuideService } from './fieldguide.service';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
+import { Roles, RolesGuard } from '@gigachad-grc/shared';
 import {
   FieldGuideConnectDto,
   FieldGuideConnectionStatusDto,
@@ -52,10 +53,15 @@ export class FieldGuideController {
   // ============================================
 
   @Post('connect')
-  @UseGuards(DevAuthGuard)
+  @UseGuards(DevAuthGuard, RolesGuard)
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Connect to FieldGuide' })
-  @ApiResponse({ status: 201, description: 'Successfully connected', type: FieldGuideConnectionStatusDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Successfully connected',
+    type: FieldGuideConnectionStatusDto,
+  })
   @ApiBody({ type: FieldGuideConnectDto })
   async connect(
     @Request() req: AuthenticatedRequest,
@@ -65,7 +71,8 @@ export class FieldGuideController {
   }
 
   @Post('disconnect')
-  @UseGuards(DevAuthGuard)
+  @UseGuards(DevAuthGuard, RolesGuard)
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Disconnect from FieldGuide' })
@@ -78,7 +85,11 @@ export class FieldGuideController {
   @UseGuards(DevAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get FieldGuide connection status' })
-  @ApiResponse({ status: 200, description: 'Connection status', type: FieldGuideConnectionStatusDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Connection status',
+    type: FieldGuideConnectionStatusDto,
+  })
   async getStatus(@Request() req: AuthenticatedRequest): Promise<FieldGuideConnectionStatusDto> {
     return this.fieldGuideService.getConnectionStatus(req.user.organizationId);
   }
@@ -88,7 +99,8 @@ export class FieldGuideController {
   // ============================================
 
   @Post('sync')
-  @UseGuards(DevAuthGuard)
+  @UseGuards(DevAuthGuard, RolesGuard)
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Trigger synchronization with FieldGuide' })
   @ApiResponse({ status: 200, description: 'Sync result', type: SyncResultDto })
@@ -105,7 +117,12 @@ export class FieldGuideController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get sync history' })
   @ApiResponse({ status: 200, description: 'Sync history', type: [SyncHistoryItemDto] })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of records to return' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of records to return',
+  })
   async getSyncHistory(
     @Request() req: AuthenticatedRequest,
     @Query('limit') limit?: number
@@ -122,12 +139,15 @@ export class FieldGuideController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get audit mappings between GRC and FieldGuide' })
   @ApiResponse({ status: 200, description: 'Audit mappings', type: [FieldGuideAuditMappingDto] })
-  async getAuditMappings(@Request() req: AuthenticatedRequest): Promise<FieldGuideAuditMappingDto[]> {
+  async getAuditMappings(
+    @Request() req: AuthenticatedRequest
+  ): Promise<FieldGuideAuditMappingDto[]> {
     return this.fieldGuideService.getAuditMappings(req.user.organizationId);
   }
 
   @Post('mappings')
-  @UseGuards(DevAuthGuard)
+  @UseGuards(DevAuthGuard, RolesGuard)
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Link a GRC audit to a FieldGuide audit' })
   @ApiResponse({ status: 201, description: 'Audit linked', type: FieldGuideAuditMappingDto })
@@ -140,7 +160,8 @@ export class FieldGuideController {
   }
 
   @Delete('mappings/:auditId')
-  @UseGuards(DevAuthGuard)
+  @UseGuards(DevAuthGuard, RolesGuard)
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Unlink an audit from FieldGuide' })
@@ -171,4 +192,3 @@ export class FieldGuideController {
     return { received: true };
   }
 }
-

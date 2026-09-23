@@ -2,11 +2,11 @@ import { Controller, Post, Get, Body, Param, UseGuards, BadRequestException } fr
 import { SecurityScannerService } from './security-scanner.service';
 import { PageCrawler } from './collectors/page-crawler';
 import { InitiateSecurityScanDto } from './dto/security-scan.dto';
-import { CurrentUser, UserContext, validateUrl } from '@gigachad-grc/shared';
+import { CurrentUser, UserContext, Roles, RolesGuard, validateUrl } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 @Controller('vendors/:vendorId/security-scan')
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 export class SecurityScannerController {
   constructor(
     private readonly securityScannerService: SecurityScannerService,
@@ -17,6 +17,7 @@ export class SecurityScannerController {
    * Initiate a new security scan for a vendor
    */
   @Post()
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   async initiateScan(
     @Param('vendorId') vendorId: string,
     @Body() dto: InitiateSecurityScanDto,
@@ -53,6 +54,7 @@ export class SecurityScannerController {
    * Crawl a subdomain to discover pages and links
    */
   @Post('crawl-subdomain')
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   async crawlSubdomain(@Param('vendorId') vendorId: string, @Body() dto: { subdomain: string }) {
     // SSRF Protection: Validate the URL before crawling
     // This prevents requests to internal networks, localhost, and private IP ranges

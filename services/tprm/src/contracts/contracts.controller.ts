@@ -18,7 +18,7 @@ import { Response } from 'express';
 import { ContractsService } from './contracts.service';
 import { CreateContractDto } from './dto/create-contract.dto';
 import { UpdateContractDto } from './dto/update-contract.dto';
-import { CurrentUser, UserContext } from '@gigachad-grc/shared';
+import { CurrentUser, UserContext, Roles, RolesGuard } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 // Allowlist for contract document uploads. Anything outside this set is
@@ -38,7 +38,7 @@ export const CONTRACT_MAX_BYTES = 25 * 1024 * 1024;
 export function contractFileFilter(
   _req: unknown,
   file: { mimetype: string },
-  cb: (err: Error | null, acceptFile: boolean) => void,
+  cb: (err: Error | null, acceptFile: boolean) => void
 ): void {
   if (CONTRACT_MIME_ALLOWLIST.includes(file.mimetype)) {
     cb(null, true);
@@ -61,11 +61,12 @@ function sanitizeFilename(filename: string): string {
 }
 
 @Controller('api/contracts')
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 export class ContractsController {
   constructor(private readonly contractsService: ContractsService) {}
 
   @Post()
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   create(@Body() createContractDto: CreateContractDto, @CurrentUser() user: UserContext) {
     return this.contractsService.create(
       {
@@ -93,6 +94,7 @@ export class ContractsController {
   }
 
   @Patch(':id')
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   update(
     @Param('id') id: string,
     @Body() updateContractDto: UpdateContractDto,
@@ -103,12 +105,14 @@ export class ContractsController {
   }
 
   @Delete(':id')
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   remove(@Param('id') id: string, @CurrentUser() user: UserContext) {
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.contractsService.remove(id, user.userId, user.organizationId);
   }
 
   @Post(':id/document')
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   @UseInterceptors(
     FileInterceptor('file', {
       limits: { fileSize: CONTRACT_MAX_BYTES },
@@ -145,6 +149,7 @@ export class ContractsController {
   }
 
   @Delete(':id/document')
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   deleteDocument(@Param('id') id: string, @CurrentUser() user: UserContext) {
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.contractsService.deleteDocument(id, user.userId, user.organizationId);

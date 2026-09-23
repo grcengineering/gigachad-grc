@@ -18,11 +18,11 @@ import { CreateQuestionnaireDto } from './dto/create-questionnaire.dto';
 import { UpdateQuestionnaireDto } from './dto/update-questionnaire.dto';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
-import { CurrentUser, UserContext } from '@gigachad-grc/shared';
+import { CurrentUser, UserContext, Roles, RolesGuard } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 @Controller('api/questionnaires')
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 export class QuestionnairesController {
   constructor(
     private readonly questionnairesService: QuestionnairesService,
@@ -31,6 +31,7 @@ export class QuestionnairesController {
   ) {}
 
   @Post()
+  @Roles('admin', 'compliance_manager', 'auditor')
   create(@Body() createQuestionnaireDto: CreateQuestionnaireDto, @CurrentUser() user: UserContext) {
     // SECURITY: Tenant isolation. Override any organizationId in the body
     // with the caller's authenticated org. Without this, an attacker could
@@ -87,6 +88,35 @@ export class QuestionnairesController {
     return this.questionnairesService.getMyQueue(user.userId, user.organizationId);
   }
 
+  // Static routes must be registered before the :id route.
+  @Get('similar-questions')
+  findSimilarQuestions(
+    @CurrentUser() user: UserContext,
+    @Query('questionText') questionText: string,
+    @Query('excludeId') excludeId?: string,
+    @Query('limit') limit?: string
+  ) {
+    return this.similarQuestionsService.findSimilarQuestions(
+      user.organizationId,
+      questionText,
+      excludeId,
+      limit ? parseInt(limit) : undefined
+    );
+  }
+
+  @Get('answer-suggestions')
+  getAnswerSuggestions(
+    @CurrentUser() user: UserContext,
+    @Query('questionText') questionText: string,
+    @Query('limit') limit?: string
+  ) {
+    return this.similarQuestionsService.getAnswerSuggestions(
+      user.organizationId,
+      questionText,
+      limit ? parseInt(limit) : undefined
+    );
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: UserContext) {
     // SECURITY: Pass organizationId to ensure tenant isolation
@@ -94,6 +124,7 @@ export class QuestionnairesController {
   }
 
   @Patch(':id')
+  @Roles('admin', 'compliance_manager', 'auditor')
   update(
     @Param('id') id: string,
     @Body() updateQuestionnaireDto: UpdateQuestionnaireDto,
@@ -109,6 +140,7 @@ export class QuestionnairesController {
   }
 
   @Delete(':id')
+  @Roles('admin', 'compliance_manager', 'auditor')
   remove(@Param('id') id: string, @CurrentUser() user: UserContext) {
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.questionnairesService.remove(id, user.userId, user.organizationId);
@@ -116,6 +148,7 @@ export class QuestionnairesController {
 
   // Question endpoints
   @Post('questions')
+  @Roles('admin', 'compliance_manager', 'auditor')
   createQuestion(@Body() createQuestionDto: CreateQuestionDto, @CurrentUser() user: UserContext) {
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.questionnairesService.createQuestion(
@@ -126,6 +159,7 @@ export class QuestionnairesController {
   }
 
   @Patch('questions/:id')
+  @Roles('admin', 'compliance_manager', 'auditor')
   updateQuestion(
     @Param('id') id: string,
     @Body() updateQuestionDto: UpdateQuestionDto,
@@ -141,46 +175,17 @@ export class QuestionnairesController {
   }
 
   @Delete('questions/:id')
+  @Roles('admin', 'compliance_manager', 'auditor')
   removeQuestion(@Param('id') id: string, @CurrentUser() user: UserContext) {
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.questionnairesService.removeQuestion(id, user.userId, user.organizationId);
   }
 
   // Similar Questions Endpoints
-  @Get('similar-questions')
-  findSimilarQuestions(
-    @CurrentUser() user: UserContext,
-    @Query('questionText') questionText: string,
-    @Query('excludeId') excludeId?: string,
-    @Query('limit') limit?: string
-  ) {
-    // SECURITY: Organization ID extracted from authenticated context, not query param
-    return this.similarQuestionsService.findSimilarQuestions(
-      user.organizationId,
-      questionText,
-      excludeId,
-      limit ? parseInt(limit) : undefined
-    );
-  }
-
   @Get(':id/duplicates')
   findDuplicatesInQuestionnaire(@Param('id') id: string, @CurrentUser() user: UserContext) {
     // SECURITY: Organization ID extracted from authenticated context, not query param
     return this.similarQuestionsService.findDuplicatesInQuestionnaire(id, user.organizationId);
-  }
-
-  @Get('answer-suggestions')
-  getAnswerSuggestions(
-    @CurrentUser() user: UserContext,
-    @Query('questionText') questionText: string,
-    @Query('limit') limit?: string
-  ) {
-    // SECURITY: Organization ID extracted from authenticated context, not query param
-    return this.similarQuestionsService.getAnswerSuggestions(
-      user.organizationId,
-      questionText,
-      limit ? parseInt(limit) : undefined
-    );
   }
 
   // Export Endpoints
@@ -230,6 +235,7 @@ export class QuestionnairesController {
   }
 
   @Post('export-batch')
+  @Roles('admin', 'compliance_manager', 'auditor')
   async exportMultiple(
     @Body() body: { ids: string[]; format: 'excel' | 'json' },
     @CurrentUser() user: UserContext,

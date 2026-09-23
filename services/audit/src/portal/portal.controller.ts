@@ -21,6 +21,7 @@ import { PortalService } from './portal.service';
 import { PortalLoginDto, CreatePortalUserDto, UpdatePortalUserDto } from './dto/portal.dto';
 import { DevAuthGuard, User, UserContext } from '../auth/dev-auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
+import { Roles, RolesGuard } from '@gigachad-grc/shared';
 
 @Controller('api')
 export class PortalController {
@@ -91,7 +92,8 @@ export class PortalController {
    * SECURITY: Uses authenticated user's organizationId to prevent unauthorized access
    */
   @Post('audits/:auditId/portal/users')
-  @UseGuards(DevAuthGuard)
+  @UseGuards(DevAuthGuard, RolesGuard)
+  @Roles('admin', 'compliance_manager', 'auditor')
   async createPortalUser(
     @Param('auditId') auditId: string,
     @Body() dto: CreatePortalUserDto,
@@ -105,7 +107,8 @@ export class PortalController {
    * SECURITY: Uses authenticated user's organizationId to prevent unauthorized access
    */
   @Put('audits/:auditId/portal/users/:userId')
-  @UseGuards(DevAuthGuard)
+  @UseGuards(DevAuthGuard, RolesGuard)
+  @Roles('admin', 'compliance_manager', 'auditor')
   async updatePortalUser(
     @Param('auditId') auditId: string,
     @Param('userId') userId: string,
@@ -120,7 +123,8 @@ export class PortalController {
    * SECURITY: Uses authenticated user's organizationId to prevent unauthorized access
    */
   @Delete('audits/:auditId/portal/users/:userId')
-  @UseGuards(DevAuthGuard)
+  @UseGuards(DevAuthGuard, RolesGuard)
+  @Roles('admin', 'compliance_manager', 'auditor')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deletePortalUser(
     @Param('auditId') auditId: string,
@@ -149,7 +153,8 @@ export class PortalController {
    * SECURITY: Uses authenticated user's organizationId to prevent unauthorized access
    */
   @Post('audits/:auditId/portal/users/bulk')
-  @UseGuards(DevAuthGuard)
+  @UseGuards(DevAuthGuard, RolesGuard)
+  @Roles('admin', 'compliance_manager', 'auditor')
   async bulkCreatePortalUsers(
     @Param('auditId') auditId: string,
     @Body() users: CreatePortalUserDto[],

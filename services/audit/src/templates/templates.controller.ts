@@ -1,8 +1,20 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Request } from 'express';
 import { TemplatesService } from './templates.service';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
+import { Roles, RolesGuard } from '@gigachad-grc/shared';
 import {
   CreateAuditTemplateDto,
   UpdateAuditTemplateDto,
@@ -19,22 +31,16 @@ interface AuthenticatedRequest extends Request {
 
 @ApiTags('Audit Templates')
 @ApiBearerAuth()
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 @Controller('templates')
 export class TemplatesController {
   constructor(private readonly templatesService: TemplatesService) {}
 
   @Post()
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Create an audit template' })
-  async create(
-    @Body() dto: CreateAuditTemplateDto,
-    @Req() req: AuthenticatedRequest,
-  ) {
-    return this.templatesService.create(
-      req.user.organizationId,
-      dto,
-      req.user.userId,
-    );
+  async create(@Body() dto: CreateAuditTemplateDto, @Req() req: AuthenticatedRequest) {
+    return this.templatesService.create(req.user.organizationId, dto, req.user.userId);
   }
 
   @Get()
@@ -46,7 +52,7 @@ export class TemplatesController {
     @Query('auditType') auditType: string | undefined,
     @Query('framework') framework: string | undefined,
     @Query('includeSystem') includeSystem: string | undefined,
-    @Req() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest
   ) {
     return this.templatesService.findAll(req.user.organizationId, {
       auditType,
@@ -57,82 +63,77 @@ export class TemplatesController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get an audit template' })
-  async findOne(
-    @Param('id') id: string,
-    @Req() req: AuthenticatedRequest,
-  ) {
+  async findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.templatesService.findOne(id, req.user.organizationId);
   }
 
   @Put(':id')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Update an audit template' })
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateAuditTemplateDto,
-    @Req() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest
   ) {
     return this.templatesService.update(id, req.user.organizationId, dto);
   }
 
   @Delete(':id')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Delete (archive) an audit template' })
-  async delete(
-    @Param('id') id: string,
-    @Req() req: AuthenticatedRequest,
-  ) {
+  async delete(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.templatesService.delete(id, req.user.organizationId);
   }
 
   @Post(':id/clone')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Clone an audit template' })
   async clone(
     @Param('id') id: string,
     @Body() body: { name?: string },
-    @Req() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest
   ) {
     return this.templatesService.cloneTemplate(
       id,
       req.user.organizationId,
       body.name || '',
-      req.user.userId,
+      req.user.userId
     );
   }
 
   @Post('create-audit')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Create an audit from a template' })
   async createAuditFromTemplate(
     @Body() dto: CreateAuditFromTemplateDto,
-    @Req() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest
   ) {
     return this.templatesService.createAuditFromTemplate(
       req.user.organizationId,
       dto,
-      req.user.userId,
+      req.user.userId
     );
   }
 
   @Get(':auditId/checklist')
   @ApiOperation({ summary: 'Get checklist status for an audit' })
-  async getChecklistStatus(
-    @Param('auditId') auditId: string,
-    @Req() req: AuthenticatedRequest,
-  ) {
+  async getChecklistStatus(@Param('auditId') auditId: string, @Req() req: AuthenticatedRequest) {
     return this.templatesService.getChecklistStatus(auditId, req.user.organizationId);
   }
 
   @Put(':auditId/checklist')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Update checklist item progress' })
   async updateChecklistProgress(
     @Param('auditId') auditId: string,
     @Body() dto: UpdateChecklistProgressDto,
-    @Req() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest
   ) {
     return this.templatesService.updateChecklistProgress(
       auditId,
       req.user.organizationId,
       dto,
-      req.user.userId,
+      req.user.userId
     );
   }
 }
-

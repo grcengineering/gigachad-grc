@@ -10,20 +10,18 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { TemplatesService, CreateTemplateDto, UpdateTemplateDto } from './templates.service';
-import { CurrentUser, UserContext } from '@gigachad-grc/shared';
+import { CurrentUser, UserContext, Roles, RolesGuard } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 @Controller('answer-templates')
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 export class TemplatesController {
   constructor(private readonly templatesService: TemplatesService) {}
 
   @Post()
-  create(
-    @Body() dto: CreateTemplateDto,
-    @CurrentUser() user: UserContext,
-  ) {
-    return this.templatesService.create(dto, user.userId);
+  @Roles('admin', 'compliance_manager', 'auditor')
+  create(@Body() dto: CreateTemplateDto, @CurrentUser() user: UserContext) {
+    return this.templatesService.create(user.organizationId, dto, user.userId);
   }
 
   @Get()
@@ -31,7 +29,7 @@ export class TemplatesController {
     @CurrentUser() user: UserContext,
     @Query('category') category?: string,
     @Query('status') status?: string,
-    @Query('search') search?: string,
+    @Query('search') search?: string
   ) {
     // SECURITY: Organization ID extracted from authenticated context, not query param
     return this.templatesService.findAll(user.organizationId, {
@@ -60,56 +58,52 @@ export class TemplatesController {
   }
 
   @Patch(':id')
+  @Roles('admin', 'compliance_manager', 'auditor')
   update(
     @Param('id') id: string,
     @Body() dto: UpdateTemplateDto,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.templatesService.update(id, dto, user.userId, user.organizationId);
   }
 
   @Delete(':id')
-  remove(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  @Roles('admin', 'compliance_manager', 'auditor')
+  remove(@Param('id') id: string, @CurrentUser() user: UserContext) {
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.templatesService.remove(id, user.userId, user.organizationId);
   }
 
   @Post(':id/archive')
-  archive(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  @Roles('admin', 'compliance_manager', 'auditor')
+  archive(@Param('id') id: string, @CurrentUser() user: UserContext) {
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.templatesService.archive(id, user.userId, user.organizationId);
   }
 
   @Post(':id/unarchive')
-  unarchive(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  @Roles('admin', 'compliance_manager', 'auditor')
+  unarchive(@Param('id') id: string, @CurrentUser() user: UserContext) {
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.templatesService.unarchive(id, user.userId, user.organizationId);
   }
 
   @Post(':id/apply')
+  @Roles('admin', 'compliance_manager', 'auditor')
   applyTemplate(
     @Param('id') id: string,
     @Body() body: { variables: Record<string, string> },
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.templatesService.applyTemplate(id, body.variables || {}, user.organizationId);
   }
 
   @Post(':id/use')
+  @Roles('admin', 'compliance_manager', 'auditor')
   incrementUsage(@Param('id') id: string, @CurrentUser() user: UserContext) {
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.templatesService.incrementUsage(id, user.organizationId);
   }
 }
-

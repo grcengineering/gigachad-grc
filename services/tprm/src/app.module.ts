@@ -11,7 +11,13 @@ import { RiskAssessmentModule } from './risk-assessment/risk-assessment.module';
 import { SecurityScannerModule } from './security-scanner/security-scanner.module';
 import { PrismaService } from './common/prisma.service';
 import { AuditService } from './common/audit.service';
-import { StorageModule, CacheModule, DevAuthGuard, PRISMA_SERVICE } from '@gigachad-grc/shared';
+import {
+  StorageModule,
+  CacheModule,
+  DevAuthGuard,
+  RolesGuard,
+  PRISMA_SERVICE,
+} from '@gigachad-grc/shared';
 
 @Global()
 @Module({
@@ -51,11 +57,12 @@ import { StorageModule, CacheModule, DevAuthGuard, PRISMA_SERVICE } from '@gigac
       useFactory: (prisma) => new DevAuthGuard(prisma),
       inject: [PRISMA_SERVICE],
     },
+    RolesGuard,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
   ],
-  exports: [PrismaService, AuditService, DevAuthGuard, PRISMA_SERVICE],
+  exports: [PrismaService, AuditService, DevAuthGuard, RolesGuard, PRISMA_SERVICE],
 })
 export class AppModule {}

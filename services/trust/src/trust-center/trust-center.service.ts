@@ -69,7 +69,11 @@ export class TrustCenterService {
   }
 
   // Content Management
-  async createContent(createContentDto: CreateTrustCenterContentDto, userId: string) {
+  async createContent(
+    organizationId: string,
+    createContentDto: CreateTrustCenterContentDto,
+    userId: string
+  ) {
     // XSS Protection: Sanitize content before storing
     // Use 'rich' level to allow safe HTML formatting while removing malicious scripts
     const sanitizedDto = {
@@ -83,6 +87,7 @@ export class TrustCenterService {
     const content = await this.prisma.trustCenterContent.create({
       data: {
         ...sanitizedDto,
+        organizationId,
         order: sanitizedDto.order || 0,
         isPublished: sanitizedDto.isPublished || false,
         createdBy: userId,
@@ -90,7 +95,7 @@ export class TrustCenterService {
     });
 
     await this.audit.log({
-      organizationId: content.organizationId,
+      organizationId,
       userId,
       action: 'CREATE_TRUST_CENTER_CONTENT',
       entityType: 'trust_center_content',

@@ -13,11 +13,11 @@ import { VendorsService } from './vendors.service';
 import { VendorAIService, SOC2AnalysisResult } from '../ai/vendor-ai.service';
 import { CreateVendorDto } from './dto/create-vendor.dto';
 import { UpdateVendorDto } from './dto/update-vendor.dto';
-import { CurrentUser, UserContext } from '@gigachad-grc/shared';
+import { CurrentUser, UserContext, Roles, RolesGuard } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 @Controller('api/vendors')
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 export class VendorsController {
   constructor(
     private readonly vendorsService: VendorsService,
@@ -25,6 +25,7 @@ export class VendorsController {
   ) {}
 
   @Post()
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   create(@Body() createVendorDto: CreateVendorDto, @CurrentUser() user: UserContext) {
     // Inject organizationId from user context
     const dtoWithOrg = {
@@ -64,6 +65,7 @@ export class VendorsController {
   }
 
   @Patch(':id/complete-review')
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   completeReview(@Param('id') id: string, @CurrentUser() user: UserContext) {
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.vendorsService.updateReviewDates(id, user.userId, user.organizationId);
@@ -76,6 +78,7 @@ export class VendorsController {
   }
 
   @Patch(':id')
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   update(
     @Param('id') id: string,
     @Body() updateVendorDto: UpdateVendorDto,
@@ -86,6 +89,7 @@ export class VendorsController {
   }
 
   @Patch(':id/risk-score')
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   updateRiskScore(
     @Param('id') id: string,
     @Body('inherentRiskScore') inherentRiskScore: string,
@@ -101,6 +105,7 @@ export class VendorsController {
   }
 
   @Delete(':id')
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   remove(@Param('id') id: string, @CurrentUser() user: UserContext) {
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.vendorsService.remove(id, user.userId, user.organizationId);
@@ -111,6 +116,7 @@ export class VendorsController {
   // ============================================
 
   @Post(':vendorId/documents/:documentId/analyze')
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   analyzeDocument(
     @Param('vendorId') vendorId: string,
     @Param('documentId') documentId: string,
@@ -131,6 +137,7 @@ export class VendorsController {
   }
 
   @Post(':vendorId/documents/:documentId/create-assessment')
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   createAssessmentFromAnalysis(
     @Param('vendorId') vendorId: string,
     @Param('documentId') _documentId: string,
