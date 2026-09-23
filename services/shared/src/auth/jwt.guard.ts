@@ -49,11 +49,13 @@ function requireOrganizationId(value: unknown): string {
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   private jwksClient: jwksRsa.JwksClient;
+  private readonly reflector: Reflector;
 
   constructor(
-    private reflector: Reflector,
+    @Optional() @Inject(Reflector) reflector?: Reflector,
     @Optional() @Inject(TokenBlacklistService) private tokenBlacklistService?: TokenBlacklistService
   ) {
+    this.reflector = reflector ?? new Reflector();
     const keycloakUrl = process.env.KEYCLOAK_URL || 'http://localhost:8080';
     const realm = process.env.KEYCLOAK_REALM || 'gigachad-grc';
 
