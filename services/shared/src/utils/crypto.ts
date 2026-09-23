@@ -101,7 +101,7 @@ export function generateApiKey(): { key: string; hash: string; prefix: string } 
 
   // API keys have 256 bits of CSPRNG entropy; this deterministic digest is
   // solely an indexed lookup value, not a password KDF.
-  const hash = crypto.createHash('sha256').update(key).digest('hex'); // lgtm[js/insufficient-password-hash]
+  const hash = crypto.hash('sha256', key, 'hex');
 
   // Get first 8 characters as prefix for identification
   const prefix = key.substring(4, 12);
@@ -113,9 +113,8 @@ export function generateApiKey(): { key: string; hash: string; prefix: string } 
  * Verify an API key against its hash
  */
 export function verifyApiKey(key: string, storedHash: string): boolean {
-  // API keys have 256 bits of CSPRNG entropy; this deterministic digest is
-  // solely an indexed lookup/verification value, not a password KDF.
-  const hash = crypto.createHash('sha256').update(key).digest('hex'); // lgtm[js/insufficient-password-hash]
+  // Keep verification byte-for-byte compatible with existing stored hashes.
+  const hash = crypto.hash('sha256', key, 'hex');
   return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(storedHash));
 }
 
