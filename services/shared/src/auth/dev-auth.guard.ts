@@ -7,7 +7,8 @@ import {
   Inject,
   Optional,
 } from '@nestjs/common';
-import { DEV_USER, ensureDevUserExists } from './index';
+import { DEV_USER } from './dev-user.constants';
+import { ensureDevUserExists } from './dev-user-sync';
 import {
   SEED_ORG_A_ID,
   SEED_ORG_B_ID,

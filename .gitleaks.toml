@@ -103,6 +103,7 @@ title = "GigaChad GRC Gitleaks Configuration"
       '''process\.env''',
       '''\$\{''',
       '''config\.get''',
+      '''grc_test-api-key-1234567890''', # Historical test fixture from 9a8a669a
     ]
 
 # Detect private keys

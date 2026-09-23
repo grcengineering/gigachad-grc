@@ -252,8 +252,8 @@ jobs:
       - name: Generate ephemeral TLS certificate
         run: |
           openssl req -x509 -newkey rsa:2048 -nodes \
-            -keyout certs/localhost.key \
-            -out certs/localhost.crt \
+            -keyout gateway/certs/localhost.key \
+            -out gateway/certs/localhost.crt \
             -days 1 \
             -subj '/CN=localhost' \
             -addext 'subjectAltName=DNS:localhost,IP:127.0.0.1'
