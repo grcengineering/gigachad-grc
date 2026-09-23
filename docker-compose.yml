@@ -412,8 +412,6 @@ services:
       - 'traefik.http.routers.frameworks.rule=PathPrefix(`/api/frameworks`)'
       # SECURITY: Apply rate limiting and security headers middleware
       - 'traefik.http.routers.frameworks.middlewares=api-security@file'
-      - 'traefik.http.routers.frameworks-assessments.rule=PathPrefix(`/api/assessments`)'
-      - 'traefik.http.routers.frameworks-assessments.middlewares=api-security@file'
       - 'traefik.http.routers.frameworks-mappings.rule=PathPrefix(`/api/mappings`)'
       - 'traefik.http.routers.frameworks-mappings.middlewares=api-security@file'
       - 'traefik.http.services.frameworks.loadbalancer.server.port=3002'
@@ -519,9 +517,8 @@ services:
       - 'traefik.http.routers.tprm-vendors.rule=PathPrefix(`/api/vendors`)'
       # SECURITY: Apply rate limiting and security headers middleware
       - 'traefik.http.routers.tprm-vendors.middlewares=api-security@file'
-      # NOTE: TPRM's own /assessments controller (vendor risk assessments) has
-      # no frontend caller and deliberately has no router here - /api/assessments
-      # is the frameworks service's compliance-assessment resource (see below).
+      - 'traefik.http.routers.tprm-assessments.rule=PathPrefix(`/api/assessments`)'
+      - 'traefik.http.routers.tprm-assessments.middlewares=api-security@file'
       - 'traefik.http.routers.tprm-contracts.rule=PathPrefix(`/api/contracts`)'
       - 'traefik.http.routers.tprm-contracts.middlewares=api-security@file'
       - 'traefik.http.routers.tprm-config.rule=PathPrefix(`/api/tprm-config`)'

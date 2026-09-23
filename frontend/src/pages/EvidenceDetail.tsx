@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { evidenceApi } from '@/lib/api';
+import { saveBlob } from '@/lib/download';
 import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
@@ -99,11 +100,10 @@ export default function EvidenceDetail() {
 
   const handleDownload = async () => {
     try {
-      const response = await evidenceApi.getDownloadUrl(id!);
-      const url = response.data.url;
-      window.open(url, '_blank');
+      const { blob, filename } = await evidenceApi.download(id!);
+      saveBlob(blob, filename || evidence.filename);
     } catch {
-      toast.error('Failed to get download URL');
+      toast.error('Failed to download evidence');
     }
   };
 

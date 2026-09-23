@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Users, CheckCircle2, ClockAlert, ShieldCheck, Search, Mail, UserPlus } from 'lucide-react';
-import api from '@/lib/api';
+import { Users, CheckCircle2, ClockAlert, ShieldCheck, Search, Mail } from 'lucide-react';
+import { employeeComplianceApi } from '@/lib/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import {
   Badge,
@@ -29,8 +29,8 @@ interface Employee {
   jobTitle?: string;
   department?: string;
   status?: string;
-  trainingCompletionPct?: number;
-  lastTrainingAt?: string;
+  complianceScore?: number;
+  lastCorrelatedAt?: string;
   overdueTrainings?: number;
 }
 
@@ -124,23 +124,33 @@ export default function Employees() {
     setSearchParams(new URLSearchParams());
   };
 
-  const { data, isLoading } = useQuery<EmployeesResponse>({
+  const { data, isLoading, isError, refetch } = useQuery<EmployeesResponse>({
     queryKey: ['people', { search: debouncedSearch, department, status }],
     queryFn: async () => {
       const params: Record<string, string> = {};
       if (debouncedSearch) params.search = debouncedSearch;
       if (department) params.department = department;
       if (status) params.status = status;
-      const res = await api.get('/api/people', { params });
-      const body = res.data ?? {};
-      const rows: Employee[] = Array.isArray(body)
-        ? body
-        : (body.data ?? body.people ?? body.employees ?? []);
+      const [list, departments, dashboard] = await Promise.all([
+        employeeComplianceApi.list({ ...params, limit: 100 }),
+        employeeComplianceApi.getDepartments(),
+        employeeComplianceApi.getDashboard(),
+      ]);
+      const body = list.data ?? {};
+      const rows: Employee[] = (body.data ?? []).map((employee: any) => ({
+        ...employee,
+        status: employee.employmentStatus,
+      }));
       return {
         data: rows,
-        total: body.total ?? rows.length,
-        stats: body.stats,
-        departments: body.departments,
+        total: body.pagination?.total ?? rows.length,
+        stats: {
+          total: body.pagination?.total,
+          active: dashboard.data?.totalEmployees,
+          compliantPct: dashboard.data?.complianceRate,
+          overdue: dashboard.data?.issueBreakdown?.overdueTrainings,
+        },
+        departments: departments.data,
       };
     },
     staleTime: 30_000,
@@ -250,19 +260,19 @@ export default function Employees() {
     },
     {
       id: 'training',
-      accessorKey: 'trainingCompletionPct',
-      header: 'Training',
-      mobileLabel: 'Training',
-      cell: ({ row }) => <CompletionBar pct={row.original.trainingCompletionPct ?? 0} />,
+      accessorKey: 'complianceScore',
+      header: 'Compliance',
+      mobileLabel: 'Compliance',
+      cell: ({ row }) => <CompletionBar pct={row.original.complianceScore ?? 0} />,
     },
     {
-      id: 'lastTrainingAt',
-      accessorKey: 'lastTrainingAt',
-      header: 'Last Training',
-      mobileLabel: 'Last Training',
+      id: 'lastCorrelatedAt',
+      accessorKey: 'lastCorrelatedAt',
+      header: 'Last synced',
+      mobileLabel: 'Last synced',
       cell: ({ row }) => (
         <span className="text-surface-700 tabular-nums">
-          {formatDate(row.original.lastTrainingAt)}
+          {formatDate(row.original.lastCorrelatedAt)}
         </span>
       ),
     },
@@ -274,12 +284,7 @@ export default function Employees() {
     <div className="space-y-5 animate-fade-in">
       <PageHeader
         title="People"
-        description="Employees, training, and access compliance."
-        actions={
-          <Button size="sm" leftIcon={<UserPlus className="h-4 w-4" />}>
-            Invite employee
-          </Button>
-        }
+        description="Employee compliance records correlated from connected systems."
       />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -300,7 +305,7 @@ export default function Employees() {
           value={`${compliantPct}%`}
           icon={<ShieldCheck className="h-5 w-5" />}
           tone="blue"
-          caption="Training up to date"
+          caption="Employees scoring 80 or higher"
         />
         <StatCard
           label="Overdue"
@@ -342,35 +347,42 @@ export default function Employees() {
         />
       </FilterBar>
 
-      <DataTable
-        data={employees}
-        columns={columns}
-        loading={isLoading}
-        getRowId={(r) => r.id}
-        onRowClick={(r) => navigate(`/people/${r.id}`)}
-        emptyState={
+      {isError ? (
+        <div className="rounded-lg border bg-white">
           <EmptyState
             icon={<Users className="h-8 w-8" />}
-            title="No employees found"
-            description={
-              activeFilters.length
-                ? 'Try clearing your filters to see all employees.'
-                : 'Invite an employee or connect an HRIS integration to begin.'
-            }
-            action={
-              activeFilters.length ? (
-                <Button variant="outline" size="sm" onClick={clearAll}>
-                  Clear filters
-                </Button>
-              ) : (
-                <Button size="sm" leftIcon={<UserPlus className="h-4 w-4" />}>
-                  Invite employee
-                </Button>
-              )
-            }
+            title="Couldn't load employees"
+            description="The employee compliance service didn't respond."
+            action={<Button onClick={() => refetch()}>Try again</Button>}
           />
-        }
-      />
+        </div>
+      ) : (
+        <DataTable
+          data={employees}
+          columns={columns}
+          loading={isLoading}
+          getRowId={(r) => r.id}
+          onRowClick={(r) => navigate(`/people/${r.id}`)}
+          emptyState={
+            <EmptyState
+              icon={<Users className="h-8 w-8" />}
+              title="No employees found"
+              description={
+                activeFilters.length
+                  ? 'Try clearing your filters to see all employees.'
+                  : 'No employee compliance records have been correlated yet.'
+              }
+              action={
+                activeFilters.length ? (
+                  <Button variant="outline" size="sm" onClick={clearAll}>
+                    Clear filters
+                  </Button>
+                ) : undefined
+              }
+            />
+          }
+        />
+      )}
     </div>
   );
 }

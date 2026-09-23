@@ -15,7 +15,7 @@ import { UpdateAssessmentDto } from './dto/update-assessment.dto';
 import { CurrentUser, UserContext } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
-@Controller('assessments')
+@Controller('api/assessments')
 @UseGuards(DevAuthGuard)
 // Note: RolesGuard temporarily removed - DevAuthGuard provides admin access in development
 export class AssessmentsController {

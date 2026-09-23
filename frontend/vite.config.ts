@@ -13,7 +13,7 @@ import {
   configAsCodeHandlers,
   trustCenterHandlers,
 } from './dev-stubs/settings';
-import { peopleHandlers, trainingHandlers, employeeComplianceHandlers } from './dev-stubs/people';
+import { peopleHandlers, trainingHandlers } from './dev-stubs/people';
 import { auditDeepHandlers, auditorPortalHandlers } from './dev-stubs/audit-deep';
 import {
   aiHandlers,
@@ -42,9 +42,6 @@ export default defineConfig({
         server.middlewares.use(createStubMiddleware('/api/trust-center', trustCenterHandlers));
         server.middlewares.use(createStubMiddleware('/api/people', peopleHandlers));
         server.middlewares.use(createStubMiddleware('/api/training', trainingHandlers));
-        server.middlewares.use(
-          createStubMiddleware('/api/employee-compliance', employeeComplianceHandlers)
-        );
         // Audit deep: only stubs the paths the real audit service does NOT serve
         // (analytics/calendar/templates/workpapers/test-procedures). The middleware
         // returns 404 for unmatched paths under its prefix, but the real audit
@@ -152,6 +149,18 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
+      '/api/risk-scenarios': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/api/employee-compliance': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/api/scheduled-reports': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
       '/api/organization': {
         target: 'http://localhost:3001',
         changeOrigin: true,
@@ -166,7 +175,7 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/api/assessments': {
-        target: 'http://localhost:3002',
+        target: 'http://localhost:3005',
         changeOrigin: true,
       },
       '/api/mappings': {
@@ -214,6 +223,10 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/api/audit-requests': {
+        target: 'http://localhost:3007',
+        changeOrigin: true,
+      },
+      '/api/findings': {
         target: 'http://localhost:3007',
         changeOrigin: true,
       },

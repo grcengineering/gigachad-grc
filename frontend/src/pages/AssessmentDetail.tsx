@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
+import { vendorAssessmentsApi } from '@/lib/api';
 import { Button, Input, Textarea, Select } from '@/components/ui';
 
 interface Assessment {
@@ -29,10 +31,44 @@ interface AssessmentFormProps {
   onCancel: () => void;
 }
 
+function mapAssessment(data: any): Assessment {
+  const findings =
+    data.findings && typeof data.findings === 'object' ? data.findings : { summary: data.findings };
+  return {
+    ...data,
+    findings: findings.summary || '',
+    securityScore: findings.securityScore,
+    privacyScore: findings.privacyScore,
+    complianceScore: findings.complianceScore,
+  };
+}
+
+function toAssessmentPayload(data: Partial<Assessment>) {
+  const {
+    securityScore,
+    privacyScore,
+    complianceScore,
+    findings,
+    assessor: _assessor,
+    ...rest
+  } = data;
+  const hasFindings =
+    Boolean(findings) ||
+    securityScore !== undefined ||
+    privacyScore !== undefined ||
+    complianceScore !== undefined;
+  return {
+    ...rest,
+    findings: hasFindings
+      ? { summary: findings, securityScore, privacyScore, complianceScore }
+      : undefined,
+  };
+}
+
 function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
   const [formData, setFormData] = useState<Partial<Assessment>>({
     vendorId: assessment?.vendorId || '',
-    assessmentType: assessment?.assessmentType || 'security_review',
+    assessmentType: assessment?.assessmentType || 'initial_onboarding',
     status: assessment?.status || 'pending',
     dueDate: assessment?.dueDate ? new Date(assessment.dueDate).toISOString().split('T')[0] : '',
     completedAt: assessment?.completedAt
@@ -76,12 +112,11 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                 value={formData.assessmentType || ''}
                 onChange={(value) => setFormData({ ...formData, assessmentType: value })}
                 options={[
-                  { value: 'security_review', label: 'Security Review' },
-                  { value: 'privacy_assessment', label: 'Privacy Assessment' },
-                  { value: 'compliance_audit', label: 'Compliance Audit' },
-                  { value: 'vendor_questionnaire', label: 'Vendor Questionnaire' },
-                  { value: 'on_site_audit', label: 'On-site Audit' },
-                  { value: 'penetration_test', label: 'Penetration Test' },
+                  { value: 'initial_onboarding', label: 'Initial onboarding' },
+                  { value: 'annual_review', label: 'Annual review' },
+                  { value: 'continuous_monitoring', label: 'Continuous monitoring' },
+                  { value: 'incident_triggered', label: 'Incident triggered' },
+                  { value: 'contract_renewal', label: 'Contract renewal' },
                 ]}
               />
             </div>
@@ -94,16 +129,7 @@ function AssessmentForm({ assessment, onSave, onCancel }: AssessmentFormProps) {
                   { value: 'pending', label: 'Pending' },
                   { value: 'in_progress', label: 'In Progress' },
                   { value: 'completed', label: 'Completed' },
-                  { value: 'cancelled', label: 'Cancelled' },
                 ]}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-surface-600 mb-1">Assessor</label>
-              <Input
-                type="text"
-                value={formData.assessor || ''}
-                onChange={(e) => setFormData({ ...formData, assessor: e.target.value })}
               />
             </div>
           </div>
@@ -467,9 +493,8 @@ export default function AssessmentDetail() {
 
   const fetchAssessment = useCallback(async () => {
     try {
-      const response = await fetch(`/api/assessments/${id}`);
-      const data = await response.json();
-      setAssessment(data);
+      const response = await vendorAssessmentsApi.get(id!);
+      setAssessment(mapAssessment(response.data));
     } catch (error) {
       console.error('Error fetching assessment:', error);
     } finally {
@@ -488,27 +513,17 @@ export default function AssessmentDetail() {
 
   const handleSave = async (formData: Partial<Assessment>) => {
     try {
-      const url = id === 'new' ? '/api/assessments' : `/api/assessments/${id}`;
-      const method = id === 'new' ? 'POST' : 'PATCH';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': 'system', // TODO: Get from auth context
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (id === 'new') {
-          navigate(`/assessments/${data.id}`);
-        } else {
-          setAssessment(data);
-          setEditing(false);
-        }
+      const response =
+        id === 'new'
+          ? await vendorAssessmentsApi.create(toAssessmentPayload(formData))
+          : await vendorAssessmentsApi.update(id!, toAssessmentPayload(formData));
+      if (id === 'new') {
+        navigate(`/assessments/${response.data.id}`);
+      } else {
+        setAssessment(mapAssessment(response.data));
+        setEditing(false);
       }
+      toast.success('Assessment saved');
     } catch (error) {
       console.error('Error saving assessment:', error);
     }
@@ -520,16 +535,8 @@ export default function AssessmentDetail() {
     }
 
     try {
-      const response = await fetch(`/api/assessments/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'x-user-id': 'system', // TODO: Get from auth context
-        },
-      });
-
-      if (response.ok) {
-        navigate('/assessments');
-      }
+      await vendorAssessmentsApi.delete(id!);
+      navigate('/assessments');
     } catch (error) {
       console.error('Error deleting assessment:', error);
     }

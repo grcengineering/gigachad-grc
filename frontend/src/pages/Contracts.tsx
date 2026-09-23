@@ -41,7 +41,12 @@ function formatCurrency(value?: number, currency: string = 'USD') {
 
 export default function Contracts() {
   const navigate = useNavigate();
-  const { data: contracts = [], isLoading } = useQuery<Contract[]>({
+  const {
+    data: contracts = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery<Contract[]>({
     queryKey: ['contracts'],
     queryFn: () => contractsApi.list().then((res) => res.data),
   });
@@ -117,6 +122,25 @@ export default function Contracts() {
       ),
     },
   ];
+
+  if (isError) {
+    return (
+      <div className="space-y-5 animate-fade-in">
+        <PageHeader
+          title="Vendor Contracts"
+          description="Manage vendor contracts and agreements."
+        />
+        <div className="rounded-lg border bg-white">
+          <EmptyState
+            icon={<Files className="h-8 w-8" />}
+            title="Couldn't load contracts"
+            description="The contracts service didn't respond."
+            action={<Button onClick={() => refetch()}>Try again</Button>}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5 animate-fade-in">

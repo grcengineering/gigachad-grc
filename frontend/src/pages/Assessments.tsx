@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Plus, FileCheck } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { vendorAssessmentsApi } from '@/lib/api';
 import {
   Button,
   Badge,
@@ -30,25 +31,16 @@ const STATUS_VARIANT: Record<string, BadgeVariant> = {
 };
 
 export default function Assessments() {
-  const [assessments, setAssessments] = useState<Assessment[]>([]);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const fetchAssessments = async () => {
-      try {
-        const response = await fetch('/api/assessments');
-        const data = await response.json();
-        setAssessments(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error('Error fetching assessments:', error);
-        setAssessments([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAssessments();
-  }, []);
+  const {
+    data: assessments = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery<Assessment[]>({
+    queryKey: ['vendor-assessments'],
+    queryFn: () => vendorAssessmentsApi.list().then((response) => response.data),
+  });
 
   const columns: DataTableColumn<Assessment>[] = [
     {
@@ -118,6 +110,25 @@ export default function Assessments() {
     },
   ];
 
+  if (isError) {
+    return (
+      <div className="space-y-5 animate-fade-in">
+        <PageHeader
+          title="Vendor Assessments"
+          description="Track and manage vendor risk assessments."
+        />
+        <div className="rounded-lg border bg-white">
+          <EmptyState
+            icon={<FileCheck className="h-8 w-8" />}
+            title="Couldn't load assessments"
+            description="The vendor assessment service didn't respond."
+            action={<Button onClick={() => refetch()}>Try again</Button>}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5 animate-fade-in">
       <PageHeader
@@ -137,7 +148,7 @@ export default function Assessments() {
       <DataTable
         data={assessments}
         columns={columns}
-        loading={loading}
+        loading={isLoading}
         getRowId={(a) => a.id}
         onRowClick={(a) => navigate(`/assessments/${a.id}`)}
         emptyState={

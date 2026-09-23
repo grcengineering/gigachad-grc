@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
 import { EvidenceDrawer } from '@/components/EvidenceDrawer';
 import { evidenceApi, controlsApi } from '@/lib/api';
+import { saveBlob } from '@/lib/download';
 import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
 import {
@@ -114,7 +115,12 @@ export default function Evidence() {
 
   const linkToControlId = searchParams.get('controlId');
 
-  const { data: evidenceData, isLoading } = useQuery({
+  const {
+    data: evidenceData,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ['evidence', search, selectedType],
     queryFn: () =>
       evidenceApi
@@ -159,6 +165,12 @@ export default function Evidence() {
       toast.success('Evidence unlinked from control');
     },
     onError: () => toast.error('Failed to unlink evidence'),
+  });
+
+  const downloadMutation = useMutation({
+    mutationFn: (item: EvidenceItem) => evidenceApi.download(item.id),
+    onSuccess: ({ blob, filename }) => saveBlob(blob, filename),
+    onError: () => toast.error('Failed to download evidence'),
   });
 
   const evidence: EvidenceItem[] = evidenceData?.data || [];
@@ -265,6 +277,15 @@ export default function Evidence() {
             <Skeleton key={i} className="h-36" />
           ))}
         </div>
+      ) : isError ? (
+        <Card>
+          <EmptyState
+            icon={<Folder className="h-8 w-8" />}
+            title="Couldn't load evidence"
+            description="The evidence service didn't respond."
+            action={<Button onClick={() => refetch()}>Try again</Button>}
+          />
+        </Card>
       ) : evidence.length === 0 ? (
         <Card>
           <EmptyState
@@ -368,7 +389,7 @@ export default function Evidence() {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        // TODO: Download
+                        downloadMutation.mutate(item);
                       }}
                       className="p-1 text-surface-500 hover:text-surface-900 rounded"
                       aria-label="Download"

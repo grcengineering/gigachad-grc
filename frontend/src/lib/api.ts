@@ -149,21 +149,22 @@ export const evidenceApi = {
         }
       }
     });
-    // Use fetch directly for FormData to avoid axios Content-Type issues
-    return fetch('/api/evidence', {
-      method: 'POST',
-      body: formData,
-    }).then(async (res) => {
-      if (!res.ok) {
-        const error = await res.json().catch(() => ({ message: res.statusText }));
-        throw new Error(error.message || 'Upload failed');
-      }
-      return { data: await res.json() };
+    return api.post('/api/evidence', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
   update: (id: string, data: any) => api.put(`/api/evidence/${id}`, data),
   delete: (id: string) => api.delete(`/api/evidence/${id}`),
   getDownloadUrl: (id: string) => api.get(`/api/evidence/${id}/download`),
+  download: async (id: string) => {
+    const { data } = await api.get<{ url: string; filename?: string }>(
+      `/api/evidence/${id}/download`
+    );
+    const response = data.url.startsWith('/')
+      ? await api.get<Blob>(data.url, { responseType: 'blob' })
+      : await axios.get<Blob>(data.url, { responseType: 'blob' });
+    return { blob: response.data, filename: data.filename || `evidence-${id}` };
+  },
   review: (id: string, data: any) => api.post(`/api/evidence/${id}/review`, data),
   link: (id: string, controlIds: string[]) => api.post(`/api/evidence/${id}/link`, { controlIds }),
   unlink: (id: string, controlId: string) => api.delete(`/api/evidence/${id}/link/${controlId}`),
@@ -390,6 +391,15 @@ export const assessmentsApi = {
   complete: (id: string) => api.post(`/api/assessments/${id}/complete`),
 };
 
+export const vendorAssessmentsApi = {
+  list: (params?: { vendorId?: string; assessmentType?: string; status?: string }) =>
+    api.get('/api/assessments', { params }),
+  get: (id: string) => api.get(`/api/assessments/${id}`),
+  create: (data: any) => api.post('/api/assessments', data),
+  update: (id: string, data: any) => api.patch(`/api/assessments/${id}`, data),
+  delete: (id: string) => api.delete(`/api/assessments/${id}`),
+};
+
 export const mappingsApi = {
   list: (params?: any) => api.get('/api/mappings', { params }),
   byControl: (controlId: string) => api.get(`/api/mappings/by-control/${controlId}`),
@@ -525,8 +535,10 @@ export const contractsApi = {
   list: () => api.get('/api/contracts'),
   get: (id: string) => api.get(`/api/contracts/${id}`),
   create: (data: any) => api.post('/api/contracts', data),
-  update: (id: string, data: any) => api.put(`/api/contracts/${id}`, data),
+  update: (id: string, data: any) => api.patch(`/api/contracts/${id}`, data),
   delete: (id: string) => api.delete(`/api/contracts/${id}`),
+  downloadDocument: (id: string) =>
+    api.get<Blob>(`/api/contracts/${id}/document`, { responseType: 'blob' }),
 };
 
 export const questionnairesApi = {
@@ -541,7 +553,9 @@ export const knowledgeBaseApi = {
   list: () => api.get('/api/knowledge-base'),
   get: (id: string) => api.get(`/api/knowledge-base/${id}`),
   create: (data: any) => api.post('/api/knowledge-base', data),
-  update: (id: string, data: any) => api.put(`/api/knowledge-base/${id}`, data),
+  bulkCreate: (entries: Array<Record<string, unknown>>) =>
+    api.post('/api/knowledge-base/bulk', { entries }),
+  update: (id: string, data: any) => api.patch(`/api/knowledge-base/${id}`, data),
   delete: (id: string) => api.delete(`/api/knowledge-base/${id}`),
 };
 
@@ -741,6 +755,52 @@ export const risksApi = {
       residualImpact?: string;
     }
   ) => api.post(`/api/risks/${id}/treatment/mitigation-update`, data),
+};
+
+export const riskScenariosApi = {
+  list: (params?: { search?: string; category?: string; page?: number; limit?: number }) =>
+    api.get('/api/risk-scenarios', { params }),
+  create: (data: {
+    title: string;
+    description: string;
+    category: string;
+    threatActor: string;
+    attackVector: string;
+    targetAssets: string[];
+    likelihood: string;
+    impact: string;
+    tags?: string[];
+    isTemplate?: boolean;
+  }) => api.post('/api/risk-scenarios', data),
+};
+
+export const findingsApi = {
+  list: () => api.get('/api/findings'),
+  create: (data: {
+    auditId: string;
+    title: string;
+    description: string;
+    category: string;
+    severity: string;
+    remediationOwner?: string;
+    targetDate?: string;
+  }) => api.post('/api/findings', data),
+};
+
+export const employeeComplianceApi = {
+  list: (params?: Record<string, string | number | undefined>) =>
+    api.get('/api/employee-compliance', { params }),
+  get: (id: string) => api.get(`/api/employee-compliance/${id}`),
+  getDashboard: () => api.get('/api/employee-compliance/dashboard'),
+  getDepartments: () => api.get<string[]>('/api/employee-compliance/departments'),
+};
+
+export const scheduledReportsApi = {
+  list: () => api.get('/api/scheduled-reports'),
+  create: (data: any) => api.post('/api/scheduled-reports', data),
+  run: (id: string) => api.post(`/api/scheduled-reports/${id}/run`),
+  delete: (id: string) => api.delete(`/api/scheduled-reports/${id}`),
+  executions: (id: string) => api.get(`/api/scheduled-reports/${id}/executions`),
 };
 
 export const assetsApi = {

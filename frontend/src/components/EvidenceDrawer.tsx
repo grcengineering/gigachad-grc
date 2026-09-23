@@ -19,6 +19,8 @@ import {
   Maximize2,
 } from 'lucide-react';
 import { evidenceApi } from '@/lib/api';
+import { saveBlob } from '@/lib/download';
+import toast from 'react-hot-toast';
 import { Button, Badge, Drawer, Skeleton, type BadgeVariant } from '@/components/ui';
 
 interface EvidenceDetail {
@@ -85,9 +87,14 @@ export function EvidenceDrawer({ evidenceId, open, onClose }: EvidenceDrawerProp
     navigate(`/evidence/${evidenceId}`);
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!evidenceId) return;
-    window.open(`/api/evidence/${evidenceId}/download`, '_blank');
+    try {
+      const { blob, filename } = await evidenceApi.download(evidenceId);
+      saveBlob(blob, filename || evidence?.filename || `evidence-${evidenceId}`);
+    } catch {
+      toast.error('Failed to download evidence');
+    }
   };
 
   const expiresSoon =
