@@ -78,7 +78,7 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
     private prisma: PrismaService,
     @InjectMetric('mcp_workflow_executions_total')
     private readonly workflowExecutionsCounter: Counter<string>,
-    @Optional() @Inject(EVENT_BUS) private readonly eventBus?: EventBus,
+    @Optional() @Inject(EVENT_BUS) private readonly eventBus?: EventBus
   ) {}
 
   private getBuiltinWorkflows(): WorkflowDefinition[] {
@@ -357,16 +357,11 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
           entityId?: string;
         }>(channel, async (event) => {
           if (!event?.type || !event.organizationId) return;
-          await this.triggerEvent(
-            event.organizationId,
-            'system-event',
-            event.type,
-            {
+          await this.triggerEvent(event.organizationId, 'system-event', event.type, {
             ...(event.data || {}),
             organizationId: event.organizationId,
             entityId: event.entityId,
-            },
-          );
+          });
         });
       }
     }
@@ -382,9 +377,9 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
       await Promise.all(
         this.eventChannels.map((channel) =>
           this.eventBus!.unsubscribe(channel).catch((error) =>
-            this.logger.warn(`Failed to unsubscribe MCP workflows from ${channel}: ${error}`),
-          ),
-        ),
+            this.logger.warn(`Failed to unsubscribe MCP workflows from ${channel}: ${error}`)
+          )
+        )
       );
     }
   }
@@ -393,37 +388,33 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
     organizationId: string,
     userId: string,
     eventName: string,
-    payload: Record<string, unknown>,
+    payload: Record<string, unknown>
   ): Promise<WorkflowExecution[]> {
     const workflows = (await this.getWorkflows(organizationId)).filter(
-      (workflow) =>
-        workflow.trigger.type === 'event' && workflow.trigger.event === eventName,
+      (workflow) => workflow.trigger.type === 'event' && workflow.trigger.event === eventName
     );
 
     return Promise.all(
       workflows.map((workflow) =>
-        this.executeWorkflow(
-          organizationId,
-          userId,
-          workflow.id,
-          undefined,
-          { event: payload },
-        ),
-      ),
+        this.executeWorkflow(organizationId, userId, workflow.id, undefined, { event: payload })
+      )
     );
   }
 
   private scheduleWorkflow(
     workflow: WorkflowDefinition,
-    workflowOrganizationId: string | null,
+    workflowOrganizationId: string | null
   ): void {
     const schedule = workflow.trigger.schedule;
     if (!schedule) return;
 
     try {
-      const nextRun = cronParser.parseExpression(schedule, {
-        currentDate: new Date(),
-      }).next().toDate();
+      const nextRun = cronParser
+        .parseExpression(schedule, {
+          currentDate: new Date(),
+        })
+        .next()
+        .toDate();
       const delay = Math.max(0, nextRun.getTime() - Date.now());
       const timer = setTimeout(async () => {
         try {
@@ -436,43 +427,32 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
               ).map((organization) => organization.id);
           await Promise.all(
             organizationIds.map((organizationId) =>
-              this.executeWorkflow(
-                organizationId,
-                'system-scheduler',
-                workflow.id,
-                undefined,
-                {
-                  trigger: {
-                    type: 'scheduled',
-                    scheduledAt: nextRun.toISOString(),
-                  },
+              this.executeWorkflow(organizationId, 'system-scheduler', workflow.id, undefined, {
+                trigger: {
+                  type: 'scheduled',
+                  scheduledAt: nextRun.toISOString(),
                 },
-              ),
-            ),
+              })
+            )
           );
         } catch (error) {
           this.logger.error(
             `Scheduled MCP workflow ${workflow.id} failed to start: ${
               error instanceof Error ? error.message : String(error)
-            }`,
+            }`
           );
         } finally {
           this.scheduleWorkflow(workflow, workflowOrganizationId);
         }
       }, delay);
       timer.unref();
-      this.scheduleTimers.set(
-        `${workflowOrganizationId || 'built-in'}:${workflow.id}`,
-        timer,
-      );
-      this.logger.log(
-        `Scheduled MCP workflow ${workflow.id} for ${nextRun.toISOString()}`,
-      );
+      this.scheduleTimers.set(`${workflowOrganizationId || 'built-in'}:${workflow.id}`, timer);
+      this.logger.log(`Scheduled MCP workflow ${workflow.id} for ${nextRun.toISOString()}`);
     } catch (error) {
       this.logger.error(
         `Invalid schedule for MCP workflow ${workflow.id}: ${
           error instanceof Error ? error.message : String(error)
-        }`,
+        }`
       );
     }
   }
@@ -481,7 +461,7 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
   async registerWorkflow(
     organizationId: string,
     userId: string,
-    workflow: WorkflowDefinition,
+    workflow: WorkflowDefinition
   ): Promise<void> {
     await this.persistWorkflow(workflow, organizationId, false);
     await auditMutation(this.prisma, {
@@ -497,10 +477,7 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
   }
 
   // Get all workflows
-  async getWorkflows(
-    organizationId?: string,
-    builtInsOnly = false,
-  ): Promise<WorkflowDefinition[]> {
+  async getWorkflows(organizationId?: string, builtInsOnly = false): Promise<WorkflowDefinition[]> {
     const rows = await this.prisma.mcpWorkflowDefinition.findMany({
       where: builtInsOnly
         ? { isBuiltIn: true }
@@ -513,10 +490,7 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
   }
 
   // Get workflow by ID
-  async getWorkflow(
-    organizationId: string,
-    id: string,
-  ): Promise<WorkflowDefinition | undefined> {
+  async getWorkflow(organizationId: string, id: string): Promise<WorkflowDefinition | undefined> {
     const row = await this.prisma.mcpWorkflowDefinition.findFirst({
       where: {
         id,
@@ -738,7 +712,7 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
   private resolveValue(
     value: unknown,
     context: Record<string, unknown>,
-    stepOutputs: Record<string, unknown>,
+    stepOutputs: Record<string, unknown>
   ): unknown {
     if (typeof value === 'string' && value.startsWith('${') && value.endsWith('}')) {
       return this.resolveVariable(value, context, stepOutputs);
@@ -747,11 +721,7 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
       return value.map((item) => this.resolveValue(item, context, stepOutputs));
     }
     if (typeof value === 'object' && value !== null) {
-      return this.resolveArguments(
-        value as Record<string, unknown>,
-        context,
-        stepOutputs,
-      );
+      return this.resolveArguments(value as Record<string, unknown>, context, stepOutputs);
     }
     return value;
   }
@@ -791,7 +761,7 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
   // Get execution status
   async getExecution(
     organizationId: string,
-    executionId: string,
+    executionId: string
   ): Promise<WorkflowExecution | undefined> {
     const execution = await this.prisma.mcpWorkflowExecution.findFirst({
       where: { id: executionId, organizationId },
@@ -813,7 +783,7 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
   async cancelExecution(
     organizationId: string,
     userId: string,
-    executionId: string,
+    executionId: string
   ): Promise<void> {
     const execution = await this.prisma.mcpWorkflowExecution.findFirst({
       where: { id: executionId, organizationId },
@@ -838,7 +808,7 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
   private async persistWorkflow(
     workflow: WorkflowDefinition,
     organizationId: string | null,
-    isBuiltIn: boolean,
+    isBuiltIn: boolean
   ): Promise<void> {
     const data = {
       organizationId,

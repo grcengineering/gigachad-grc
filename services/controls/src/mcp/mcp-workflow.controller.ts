@@ -53,10 +53,7 @@ export class MCPWorkflowController {
 
   @Get('executions/:executionId')
   @RequirePermission(Resource.AI, Action.READ)
-  async getExecution(
-    @CurrentUser() user: UserContext,
-    @Param('executionId') executionId: string,
-  ) {
+  async getExecution(@CurrentUser() user: UserContext, @Param('executionId') executionId: string) {
     const execution = await this.workflowService.getExecution(user.organizationId, executionId);
     if (!execution) {
       throw new HttpException('Execution not found', HttpStatus.NOT_FOUND);
@@ -68,13 +65,9 @@ export class MCPWorkflowController {
   @RequirePermission(Resource.AI, Action.UPDATE)
   async cancelExecution(
     @CurrentUser() user: UserContext,
-    @Param('executionId') executionId: string,
+    @Param('executionId') executionId: string
   ) {
-    await this.workflowService.cancelExecution(
-      user.organizationId,
-      user.userId,
-      executionId,
-    );
+    await this.workflowService.cancelExecution(user.organizationId, user.userId, executionId);
     return { success: true, message: 'Execution cancelled' };
   }
 
@@ -83,13 +76,13 @@ export class MCPWorkflowController {
   async dispatchEvent(
     @CurrentUser() user: UserContext,
     @Param('eventName') eventName: string,
-    @Body() payload: Record<string, unknown>,
+    @Body() payload: Record<string, unknown>
   ) {
     const executions = await this.workflowService.triggerEvent(
       user.organizationId,
       user.userId,
       eventName,
-      payload,
+      payload
     );
     return {
       success: true,
@@ -115,7 +108,7 @@ export class MCPWorkflowController {
   async executeWorkflow(
     @CurrentUser() user: UserContext,
     @Param('id') id: string,
-    @Body() body: { input?: Record<string, unknown>; variables?: Record<string, unknown> },
+    @Body() body: { input?: Record<string, unknown>; variables?: Record<string, unknown> }
   ) {
     try {
       const execution = await this.workflowService.executeWorkflow(
@@ -123,7 +116,7 @@ export class MCPWorkflowController {
         user.userId,
         id,
         body.input,
-        body.variables,
+        body.variables
       );
       return {
         success: true,
@@ -134,7 +127,7 @@ export class MCPWorkflowController {
       this.logger.error('Failed to execute workflow', error);
       throw new HttpException(
         error instanceof Error ? error.message : 'Failed to execute workflow',
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.BAD_REQUEST
       );
     }
   }

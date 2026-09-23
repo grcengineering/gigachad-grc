@@ -16,29 +16,35 @@ describe('MCPWorkflowService durable execution state', () => {
         definitions.push(row);
         return row;
       }),
-      findMany: jest.fn(async ({ where }) =>
-        definitions.filter((row) =>
+      findMany: jest.fn(async ({ where }: any = {}) => {
+        if (!where) return definitions;
+        return definitions.filter((row) =>
           where.isBuiltIn === true
             ? row.isBuiltIn
             : where.OR.some(
                 (condition: any) =>
                   (condition.organizationId !== undefined &&
                     row.organizationId === condition.organizationId) ||
-                  (condition.organizationId === null && row.organizationId === null && row.isBuiltIn),
-              ),
-        ),
-      ),
-      findFirst: jest.fn(async ({ where }) =>
-        definitions.find(
-          (row) =>
-            row.id === where.id &&
-            where.OR.some(
-              (condition: any) =>
-                (condition.organizationId !== undefined &&
-                  row.organizationId === condition.organizationId) ||
-                (condition.organizationId === null && row.organizationId === null && row.isBuiltIn),
-            ),
-        ) ?? null,
+                  (condition.organizationId === null &&
+                    row.organizationId === null &&
+                    row.isBuiltIn)
+              )
+        );
+      }),
+      findFirst: jest.fn(
+        async ({ where }) =>
+          definitions.find(
+            (row) =>
+              row.id === where.id &&
+              where.OR.some(
+                (condition: any) =>
+                  (condition.organizationId !== undefined &&
+                    row.organizationId === condition.organizationId) ||
+                  (condition.organizationId === null &&
+                    row.organizationId === null &&
+                    row.isBuiltIn)
+              )
+          ) ?? null
       ),
     },
     mcpWorkflowExecution: {
@@ -70,13 +76,14 @@ describe('MCPWorkflowService durable execution state', () => {
         Object.assign(row, data);
         return row;
       }),
-      findFirst: jest.fn(async ({ where }) =>
-        executions.find(
-          (row) => row.id === where.id && row.organizationId === where.organizationId,
-        ) ?? null,
+      findFirst: jest.fn(
+        async ({ where }) =>
+          executions.find(
+            (row) => row.id === where.id && row.organizationId === where.organizationId
+          ) ?? null
       ),
       findMany: jest.fn(async ({ where }) =>
-        executions.filter((row) => row.organizationId === where.organizationId),
+        executions.filter((row) => row.organizationId === where.organizationId)
       ),
     },
     auditLog: { create: jest.fn(async () => ({})) },
@@ -109,12 +116,11 @@ describe('MCPWorkflowService durable execution state', () => {
   it('persists step and completion state across service instances', async () => {
     const service = new MCPWorkflowService(mcpClient, prisma, counter);
     await service.onModuleInit();
-    const execution = await service.executeWorkflow(
-      'org-a',
-      'user-a',
-      'policy-review',
-      { policyId: 'policy-1', framework: 'SOC2', policyType: 'security' },
-    );
+    const execution = await service.executeWorkflow('org-a', 'user-a', 'policy-review', {
+      policyId: 'policy-1',
+      framework: 'SOC2',
+      policyType: 'security',
+    });
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     const restarted = new MCPWorkflowService(mcpClient, prisma, counter);
@@ -145,6 +151,22 @@ describe('MCPWorkflowService durable execution state', () => {
     expect(persisted).toMatchObject({
       status: 'failed',
       error: 'Execution interrupted by service restart',
+    });
+  });
+
+  it('starts and persists event-triggered workflows in the authenticated organization', async () => {
+    const service = new MCPWorkflowService(mcpClient, prisma, counter);
+    await service.onModuleInit();
+
+    const started = await service.triggerEvent('org-a', 'user-a', 'risk.created', {
+      riskDescription: 'Credential compromise',
+    });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(started).toHaveLength(1);
+    expect(started[0].workflowId).toBe('risk-assessment');
+    await expect(service.getExecution('org-a', started[0].id)).resolves.toMatchObject({
+      status: 'completed',
     });
   });
 });
