@@ -37,11 +37,6 @@ jobs:
       - name: Install all dependencies
         run: npm ci
 
-      - name: Fix rollup optional dep for Linux
-        run: npm install @rollup/rollup-linux-x64-gnu --save-optional
-        working-directory: frontend
-        continue-on-error: true
-
       - name: TypeScript compilation check
         run: npx tsc --noEmit
         working-directory: frontend
@@ -50,8 +45,11 @@ jobs:
         run: npm run lint
         working-directory: frontend
 
+      - name: Verify routing configuration
+        run: node --test tests/routing-config.test.mjs tests/framework-routing-config.test.mjs
+
       - name: Run unit tests
-        run: npm test -- --run --reporter=verbose
+        run: npm test -- --reporter=verbose
         working-directory: frontend
 
       - name: Build check
@@ -65,7 +63,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [controls, frameworks, policies, tprm, trust, audit]
+        service: [shared, controls, frameworks, policies, tprm, trust, audit]
 
     steps:
       - name: Harden the runner (Audit all outbound calls)
@@ -98,7 +96,6 @@ jobs:
       - name: TypeScript compilation check
         run: npx tsc --noEmit
         working-directory: services/${{ matrix.service }}
-        continue-on-error: true # Some services have pre-existing type issues
 
       - name: ESLint validation
         run: npm run lint --if-present
@@ -106,9 +103,8 @@ jobs:
         continue-on-error: true # Some services have ESLint config issues
 
       - name: Run unit tests
-        run: npm test --if-present
+        run: npm test --if-present -- --runInBand
         working-directory: services/${{ matrix.service }}
-        continue-on-error: true # Tests may not be fully implemented yet
 
   # Security scanning - BLOCKING: PRs cannot merge with security issues
   security:
@@ -194,15 +190,11 @@ jobs:
           cache-to: type=gha,mode=max
         env:
           DOCKER_BUILDKIT: 1
-        continue-on-error: true # Some services have TypeScript build issues
 
-  # E2E: tenant-isolation + RBAC (BLOCKING)
-  # Brings up the full dev compose stack, seeds demo data, and runs only the
-  # two new Playwright specs that exercise cross-tenant data leakage and
-  # role-based access control. The broader 253-test suite is intentionally
-  # not run here — it remains local-dev-only for now.
-  e2e-tenant-rbac:
-    name: E2E Tenant & RBAC Tests
+  # Blocking clean-stack checks for routing, persistence, tenant isolation,
+  # and role-based API enforcement.
+  clean-stack-gate:
+    name: Clean Stack API, Tenant & RBAC Gate
     runs-on: ubuntu-latest
     needs: [frontend]
     timeout-minutes: 30
@@ -210,8 +202,8 @@ jobs:
     env:
       # Throwaway secrets for the ephemeral CI stack. These are NOT real
       # credentials — they only need to satisfy docker-compose's required-var
-      # checks (${VAR:?...}). Postgres / Redis / RustFS / Keycloak / Grafana
-      # come up fresh and are torn down at the end of the job.
+      # checks (${VAR:?...}). Dependencies come up fresh and are torn down at
+      # the end of the job.
       POSTGRES_USER: grc
       POSTGRES_PASSWORD: ci-postgres-password
       POSTGRES_DB: gigachad_grc
@@ -229,8 +221,6 @@ jobs:
       # flag this even though it's an obvious fixture.
       ENCRYPTION_KEY: 'ci-fixture-encryption-key-not-a-real-secret-padding-padding'
       PHISHING_TRACKING_SECRET: ci-phishing-tracking-secret
-      # Playwright targets the nginx frontend container exposed on :3000.
-      E2E_BASE_URL: http://localhost:3000
 
     steps:
       - name: Harden the runner (Audit all outbound calls)
@@ -251,15 +241,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Bring up dev stack
+      - name: Bring up required clean stack
         # Plain `up -d` (no --wait). The polling step below handles
         # readiness gating with a 5 min budget. We don't use --wait
         # because the frontend's nginx healthcheck has a tight retry
-        # budget (5s start period + 3 retries at 30s interval) and the
-        # first build of all 7 images on a cold runner can exceed it.
-        # --wait then exits non-zero before the poll has a chance to
-        # confirm actual HTTP readiness.
-        run: docker compose up -d
+        # budget on a cold runner.
+        run: docker compose up -d --build traefik controls frontend
 
       - name: Diagnose compose startup failure
         if: failure()
@@ -273,7 +260,7 @@ jobs:
           deadline=$(( $(date +%s) + 300 ))
           ready_controls=0
           ready_frontend=0
-          ready_frameworks=0
+          ready_gateway=0
           while [ "$(date +%s)" -lt "$deadline" ]; do
             frontend_code="ready"
             if [ "$ready_controls" -eq 0 ] && \
@@ -290,20 +277,16 @@ jobs:
                 ready_frontend=1
               fi
             fi
-            if [ "$ready_frameworks" -eq 0 ] && \
-               curl -s -o /dev/null --max-time 5 http://127.0.0.1:3002/ \
-               && [ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:3002/)" != "000" ]; then
-              # `/` returns 4xx on frameworks (no public root route) but that's
-              # fine — we only want to confirm the HTTP server is responding.
-              # `%{http_code} != 000` rejects connection-refused (curl prints 000).
-              echo "frameworks service ready"
-              ready_frameworks=1
+            if [ "$ready_gateway" -eq 0 ] && \
+               curl -kfsS -o /dev/null --max-time 5 https://127.0.0.1/api/seed/status; then
+              echo "gateway route ready"
+              ready_gateway=1
             fi
-            if [ "$ready_controls" -eq 1 ] && [ "$ready_frontend" -eq 1 ] && [ "$ready_frameworks" -eq 1 ]; then
+            if [ "$ready_controls" -eq 1 ] && [ "$ready_frontend" -eq 1 ] && [ "$ready_gateway" -eq 1 ]; then
               echo "All endpoints healthy"
               exit 0
             fi
-            echo "wait: controls=$ready_controls frontend=$ready_frontend frameworks=$ready_frameworks frontend_http=$frontend_code"
+            echo "wait: controls=$ready_controls frontend=$ready_frontend gateway=$ready_gateway frontend_http=$frontend_code"
             sleep 5
           done
           echo "::error::Stack did not become ready within 5 minutes"
@@ -314,21 +297,16 @@ jobs:
       - name: Seed demo data
         run: |
           curl -fsS -X POST http://127.0.0.1:3001/api/seed/load-demo \
-            -H 'x-user-id: 8f88a42b-e799-455c-b68a-308d7d2e9aa4' \
-            -H 'x-org-id: 8924f0c1-7bb1-4be8-84ee-ad8725c712bf'
-
-      - name: Install Playwright test runner
-        run: npm install --no-save @playwright/test@1.62.1
+            -H 'x-dev-user-id: 8f88a42b-e799-455c-b68a-308d7d2e9aa4' \
+            --max-time 180
 
       - name: Install Playwright Chromium
         # GitHub's Ubuntu image already includes Chromium's system libraries.
-        # Avoid apt font downloads, which can exhaust the E2E job timeout.
+        # Avoid apt font downloads, which can exhaust the job timeout.
         run: npx playwright install chromium
 
-      - name: Run Playwright tenant + RBAC gate suite
-        # Keep the required gate deterministic while UI reconciliation is in
-        # progress. This runs auth bootstrap + core risk creation flows.
-        run: npx playwright test --config=playwright.config.ts tests/create-flows.spec.ts --grep "Risks — create flow" --reporter=line
+      - name: Run clean-stack release gate
+        run: npx playwright test --config=playwright.clean-stack.config.ts
 
       - name: Upload Playwright report
         if: failure()
@@ -353,169 +331,11 @@ jobs:
         # worth preserving.
         run: docker compose down -v --remove-orphans
 
-  # E2E quality checks (accessibility + visual regression).
-  # REPORT-ONLY: this job emits artifacts (axe-core results, Playwright
-  # report, visual snapshots) but does NOT block merge. The
-  # `continue-on-error: true` at the job level and the deliberate
-  # omission from the `status` rollup below both encode this. Flip
-  # `continue-on-error` to `false` and add `e2e-quality-checks` to the
-  # status `needs` list once baselines stabilize.
-  e2e-quality-checks:
-    name: E2E Quality Checks (a11y + visual, report-only)
-    runs-on: ubuntu-latest
-    needs: [frontend]
-    timeout-minutes: 30
-    continue-on-error: true
-
-    steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
-        with:
-          egress-policy: audit
-
-      - name: Checkout code
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
-
-      - name: Install dependencies (skip lifecycle scripts)
-        run: npm ci --ignore-scripts
-
-      - name: Write throwaway .env for compose
-        # docker-compose.yml uses `${VAR:?...}` on ~10 required vars
-        # (postgres, redis, keycloak admin, MinIO/RustFS, encryption
-        # key, phishing tracking secret). These are throwaway values
-        # for the ephemeral CI stack — the entire stack is torn down
-        # at the end of the job and contains only seeded demo data.
-        run: |
-          cat > .env <<'ENVEOF'
-          POSTGRES_USER=grc
-          POSTGRES_PASSWORD=ci-throwaway-pg-pw
-          POSTGRES_DB=gigachad_grc
-          REDIS_PASSWORD=ci-throwaway-redis-pw
-          KEYCLOAK_ADMIN=admin
-          KEYCLOAK_ADMIN_PASSWORD=ci-throwaway-kc-admin-pw
-          MINIO_ROOT_USER=rustfsadmin
-          MINIO_ROOT_PASSWORD=ci-throwaway-minio-pw
-          ENCRYPTION_KEY=ci-throwaway-encryption-key-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-          PHISHING_TRACKING_SECRET=ci-throwaway-phishing-secret-bbbbbbbbbbbb
-          GRAFANA_ADMIN_USER=admin
-          GRAFANA_ADMIN_PASSWORD=ci-throwaway-grafana-pw
-          VITE_ENABLE_DEV_AUTH=true
-          ALLOW_DEV_AUTH=true
-          ENVEOF
-
-      - name: Bring up dev stack
-        # Plain `up -d` (no --wait). The polling step below handles the
-        # readiness gate. The frontend nginx healthcheck has a tight
-        # retry budget on a cold runner; --wait would exit non-zero
-        # before our poll has a chance to confirm HTTP readiness.
-        run: docker compose up -d
-
-      - name: Diagnose compose startup failure
-        if: failure()
-        run: |
-          docker compose ps --all || true
-          docker compose logs --no-color --tail=300 postgres || true
-
-      - name: Wait for stack health
-        run: |
-          set -e
-          deadline=$(( $(date +%s) + 300 ))
-          ready_api=0
-          ready_frontend=0
-          while [ "$(date +%s)" -lt "$deadline" ]; do
-            frontend_code="ready"
-            if [ "$ready_api" -eq 0 ] && \
-               curl -sf -o /dev/null http://127.0.0.1:3001/health; then
-              echo "api ready"
-              ready_api=1
-            fi
-            if [ "$ready_frontend" -eq 0 ]; then
-              # Frontend can return non-2xx from / on boot; only 000 means not reachable.
-              frontend_code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:3000/ || true)"
-              if [ "$frontend_code" != "000" ]; then
-                echo "frontend ready (http $frontend_code)"
-                ready_frontend=1
-              fi
-            fi
-            if [ "$ready_api" -eq 1 ] && [ "$ready_frontend" -eq 1 ]; then
-              echo "Stack ready (api+frontend)"
-              exit 0
-            fi
-            echo "wait: api=$ready_api frontend=$ready_frontend frontend_http=$frontend_code"
-            sleep 5
-          done
-          echo "::error::Stack did not become healthy within 5 minutes"
-          docker compose ps
-          docker compose logs --tail=200
-          exit 1
-
-      - name: Seed demo data
-        run: |
-          curl -fsS -X POST http://127.0.0.1:3001/api/seed/load-demo \
-            -H 'x-user-id: 8f88a42b-e799-455c-b68a-308d7d2e9aa4' \
-            -H 'x-org-id: 8924f0c1-7bb1-4be8-84ee-ad8725c712bf' \
-            --max-time 120 || echo "Seed call returned non-zero (continuing)"
-
-      - name: Install Playwright test runner
-        run: npm install --no-save @playwright/test@1.62.1
-        working-directory: frontend
-
-      - name: Install Playwright browsers
-        # GitHub's Ubuntu image already includes Chromium's system libraries.
-        # Avoid apt font downloads, which can exhaust the E2E job timeout.
-        run: npx playwright install chromium
-        working-directory: frontend
-
-      - name: Run accessibility (axe-core) scans (report-only)
-        run: npx playwright test e2e/a11y.spec.ts --reporter=line
-        working-directory: frontend
-        continue-on-error: true
-
-      - name: Run visual regression suite (report-only)
-        run: npx playwright test e2e/visual.spec.ts --grep @visual --reporter=line
-        working-directory: frontend
-        continue-on-error: true
-
-      - name: Upload Playwright HTML report
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: e2e-quality-playwright-report
-          path: frontend/playwright-report
-          retention-days: 14
-
-      - name: Upload Playwright test-results (videos, traces, diffs)
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: e2e-quality-test-results
-          path: frontend/test-results
-          retention-days: 14
-
-      - name: Upload visual snapshots (baselines + actuals)
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: e2e-quality-visual-snapshots
-          path: frontend/e2e/__snapshots__
-          retention-days: 14
-
-      - name: Tear down dev stack
-        if: always()
-        run: docker compose down -v
-
   # Final status check
   status:
     name: Validation Status
     runs-on: ubuntu-latest
-    needs: [frontend, backend, security, docker, e2e-tenant-rbac]
+    needs: [frontend, backend, security, docker, clean-stack-gate]
     if: always()
     steps:
       - name: Harden the runner (Audit all outbound calls)
@@ -525,11 +345,12 @@ jobs:
 
       - name: Check all jobs status
         run: |
-          if [ "${{ needs.frontend.result }}" == "failure" ] || \
-             [ "${{ needs.backend.result }}" == "failure" ] || \
-             [ "${{ needs.security.result }}" == "failure" ] || \
-             [ "${{ needs.e2e-tenant-rbac.result }}" == "failure" ]; then
+          if [ "${{ needs.frontend.result }}" != "success" ] || \
+             [ "${{ needs.backend.result }}" != "success" ] || \
+             [ "${{ needs.security.result }}" != "success" ] || \
+             [ "${{ needs.docker.result }}" != "success" ] || \
+             [ "${{ needs.clean-stack-gate.result }}" != "success" ]; then
             echo "Required checks failed"
             exit 1
           fi
-          echo "All required checks passed (frontend, backend, security, e2e-tenant-rbac)"
+          echo "All required checks passed (frontend, backend, security, docker, clean-stack)"
