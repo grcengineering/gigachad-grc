@@ -1,6 +1,8 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as crypto from 'crypto';
+import { Prisma, WebhookSubscription } from '@prisma/client';
+import { auditMutation } from '../common/audit-mutation';
 import {
   CreateWebhookDto,
   UpdateWebhookDto,
@@ -32,84 +34,130 @@ interface WebhookRecord {
   updatedAt: Date;
 }
 
-// In-memory store for webhooks (would be in database in production)
-const webhookStore = new Map<string, WebhookRecord>();
-const deliveryStore: WebhookDeliveryDto[] = [];
-
 @Injectable()
-export class WebhooksService {
+export class WebhooksService implements OnModuleInit {
   private readonly logger = new Logger(WebhooksService.name);
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(organizationId: string, dto: CreateWebhookDto): Promise<WebhookDto> {
-    const id = crypto.randomUUID();
-    const now = new Date();
+  async onModuleInit(): Promise<void> {
+    const interrupted = await this.prisma.webhookDelivery.findMany({
+      where: { status: { in: ['pending', 'delivering', 'retrying'] } },
+      include: { subscription: true },
+    });
+    for (const delivery of interrupted) {
+      if (!delivery.subscription.isActive) continue;
+      this.sendWebhook(
+        this.toRecord(delivery.subscription),
+        delivery.event as WebhookEventType,
+        delivery.payload as Record<string, unknown>,
+        delivery.id,
+      ).catch((error) => {
+        this.logger.error(`Failed to resume webhook delivery ${delivery.id}: ${error.message}`);
+      });
+    }
+  }
 
-    const webhook: WebhookRecord = {
-      id,
+  async create(
+    organizationId: string,
+    userId: string,
+    dto: CreateWebhookDto,
+  ): Promise<WebhookDto> {
+    const webhook = await this.prisma.webhookSubscription.create({
+      data: {
+        organizationId,
+        name: dto.name,
+        url: dto.url,
+        events: dto.events,
+        secret: dto.secret || crypto.randomBytes(32).toString('hex'),
+        isActive: dto.isActive ?? true,
+        headers: dto.headers ? JSON.stringify(dto.headers) : null,
+        createdBy: userId,
+      },
+    });
+    await auditMutation(this.prisma, {
       organizationId,
-      name: dto.name,
-      url: dto.url,
-      secret: dto.secret,
-      events: dto.events,
-      isActive: dto.isActive ?? true,
-      headers: dto.headers,
-      status: WebhookStatus.ACTIVE,
-      successCount: 0,
-      failureCount: 0,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    webhookStore.set(id, webhook);
-    this.logger.log(`Created webhook ${id} for org ${organizationId}`);
-
-    return this.toDto(webhook);
+      userId,
+      action: 'CREATE',
+      entityType: 'WebhookSubscription',
+      entityId: webhook.id,
+      entityName: webhook.name,
+      description: `Created webhook subscription: ${webhook.name}`,
+    });
+    this.logger.log(`Created webhook ${webhook.id} for org ${organizationId}`);
+    return this.toDto(this.toRecord(webhook));
   }
 
   async findAll(organizationId: string): Promise<WebhookDto[]> {
-    const webhooks = Array.from(webhookStore.values()).filter(
-      (w) => w.organizationId === organizationId
-    );
-    return webhooks.map((w) => this.toDto(w));
+    const webhooks = await this.prisma.webhookSubscription.findMany({
+      where: { organizationId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return Promise.all(webhooks.map((w) => this.toDtoWithCounts(w)));
   }
 
   async findOne(organizationId: string, id: string): Promise<WebhookDto> {
-    const webhook = webhookStore.get(id);
-    if (!webhook || webhook.organizationId !== organizationId) {
+    const webhook = await this.prisma.webhookSubscription.findFirst({
+      where: { id, organizationId },
+    });
+    if (!webhook) {
       throw new NotFoundException(`Webhook ${id} not found`);
     }
-    return this.toDto(webhook);
+    return this.toDtoWithCounts(webhook);
   }
 
-  async update(organizationId: string, id: string, dto: UpdateWebhookDto): Promise<WebhookDto> {
-    const webhook = webhookStore.get(id);
-    if (!webhook || webhook.organizationId !== organizationId) {
+  async update(
+    organizationId: string,
+    userId: string,
+    id: string,
+    dto: UpdateWebhookDto,
+  ): Promise<WebhookDto> {
+    const existing = await this.prisma.webhookSubscription.findFirst({
+      where: { id, organizationId },
+    });
+    if (!existing) {
       throw new NotFoundException(`Webhook ${id} not found`);
     }
-
-    const updated: WebhookRecord = {
-      ...webhook,
-      name: dto.name ?? webhook.name,
-      url: dto.url ?? webhook.url,
-      secret: dto.secret ?? webhook.secret,
-      events: dto.events ?? webhook.events,
-      isActive: dto.isActive ?? webhook.isActive,
-      headers: dto.headers ?? webhook.headers,
-      updatedAt: new Date(),
-    };
-
-    webhookStore.set(id, updated);
-    return this.toDto(updated);
+    const updated = await this.prisma.webhookSubscription.update({
+      where: { id },
+      data: {
+        name: dto.name,
+        url: dto.url,
+        secret: dto.secret,
+        events: dto.events,
+        isActive: dto.isActive,
+        headers: dto.headers ? JSON.stringify(dto.headers) : undefined,
+      },
+    });
+    await auditMutation(this.prisma, {
+      organizationId,
+      userId,
+      action: 'UPDATE',
+      entityType: 'WebhookSubscription',
+      entityId: id,
+      entityName: updated.name,
+      description: `Updated webhook subscription: ${updated.name}`,
+    });
+    return this.toDtoWithCounts(updated);
   }
 
-  async delete(organizationId: string, id: string): Promise<void> {
-    const webhook = webhookStore.get(id);
-    if (!webhook || webhook.organizationId !== organizationId) {
+  async delete(organizationId: string, userId: string, id: string): Promise<void> {
+    const webhook = await this.prisma.webhookSubscription.findFirst({
+      where: { id, organizationId },
+    });
+    if (!webhook) {
       throw new NotFoundException(`Webhook ${id} not found`);
     }
-    webhookStore.delete(id);
+    await this.prisma.webhookSubscription.delete({ where: { id } });
+    await auditMutation(this.prisma, {
+      organizationId,
+      userId,
+      action: 'DELETE',
+      entityType: 'WebhookSubscription',
+      entityId: id,
+      entityName: webhook.name,
+      description: `Deleted webhook subscription: ${webhook.name}`,
+    });
     this.logger.log(`Deleted webhook ${id}`);
   }
 
@@ -118,8 +166,10 @@ export class WebhooksService {
     id: string,
     dto: TestWebhookDto
   ): Promise<TestWebhookResultDto> {
-    const webhook = webhookStore.get(id);
-    if (!webhook || webhook.organizationId !== organizationId) {
+    const webhook = await this.prisma.webhookSubscription.findFirst({
+      where: { id, organizationId },
+    });
+    if (!webhook) {
       throw new NotFoundException(`Webhook ${id} not found`);
     }
 
@@ -134,15 +184,18 @@ export class WebhooksService {
     };
 
     return this.sendWebhook(
-      webhook,
+      this.toRecord(webhook),
       dto.eventType || WebhookEventType.CONTROL_UPDATED,
       testPayload
     );
   }
 
   async getDeliveries(organizationId: string, webhookId: string, query: WebhookDeliveryQueryDto) {
-    const webhook = webhookStore.get(webhookId);
-    if (!webhook || webhook.organizationId !== organizationId) {
+    const webhook = await this.prisma.webhookSubscription.findFirst({
+      where: { id: webhookId, organizationId },
+      select: { id: true },
+    });
+    if (!webhook) {
       throw new NotFoundException(`Webhook ${webhookId} not found`);
     }
 
@@ -151,20 +204,33 @@ export class WebhooksService {
       limit: query.limit,
     });
 
-    let filtered = deliveryStore.filter((d) => d.webhookId === webhookId);
-
-    if (query.eventType) {
-      filtered = filtered.filter((d) => d.eventType === query.eventType);
-    }
-
-    if (query.successOnly !== undefined) {
-      filtered = filtered.filter((d) => d.success === query.successOnly);
-    }
-
-    const total = filtered.length;
-    const offset = (pagination.page - 1) * pagination.limit;
-    const results = filtered.slice(offset, offset + pagination.limit);
-
+    const where: Prisma.WebhookDeliveryWhereInput = {
+      subscriptionId: webhookId,
+      event: query.eventType,
+      status: query.successOnly === undefined
+        ? undefined
+        : query.successOnly ? 'delivered' : 'failed',
+    };
+    const [deliveries, total] = await Promise.all([
+      this.prisma.webhookDelivery.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (pagination.page - 1) * pagination.limit,
+        take: pagination.limit,
+      }),
+      this.prisma.webhookDelivery.count({ where }),
+    ]);
+    const results: WebhookDeliveryDto[] = deliveries.map((delivery) => ({
+      id: delivery.id,
+      webhookId: delivery.subscriptionId,
+      eventType: delivery.event as WebhookEventType,
+      payload: delivery.payload as Record<string, unknown>,
+      statusCode: delivery.responseStatus ?? 0,
+      success: delivery.status === 'delivered',
+      error: delivery.errorMessage ?? undefined,
+      duration: delivery.durationMs,
+      createdAt: delivery.createdAt,
+    }));
     return createPaginatedResponse(results, total, pagination);
   }
 
@@ -173,17 +239,26 @@ export class WebhooksService {
     webhookId: string,
     deliveryId: string
   ): Promise<TestWebhookResultDto> {
-    const webhook = webhookStore.get(webhookId);
-    if (!webhook || webhook.organizationId !== organizationId) {
+    const webhook = await this.prisma.webhookSubscription.findFirst({
+      where: { id: webhookId, organizationId },
+    });
+    if (!webhook) {
       throw new NotFoundException(`Webhook ${webhookId} not found`);
     }
 
-    const delivery = deliveryStore.find((d) => d.id === deliveryId && d.webhookId === webhookId);
+    const delivery = await this.prisma.webhookDelivery.findFirst({
+      where: { id: deliveryId, subscriptionId: webhookId },
+    });
     if (!delivery) {
       throw new NotFoundException(`Delivery ${deliveryId} not found`);
     }
 
-    return this.sendWebhook(webhook, delivery.eventType, delivery.payload);
+    return this.sendWebhook(
+      this.toRecord(webhook),
+      delivery.event as WebhookEventType,
+      delivery.payload as Record<string, unknown>,
+      delivery.id,
+    );
   }
 
   // Called by other services to trigger webhooks
@@ -192,13 +267,13 @@ export class WebhooksService {
     eventType: WebhookEventType,
     payload: Record<string, unknown>
   ): Promise<void> {
-    const webhooks = Array.from(webhookStore.values()).filter(
-      (w) => w.organizationId === organizationId && w.isActive && w.events.includes(eventType)
-    );
+    const webhooks = await this.prisma.webhookSubscription.findMany({
+      where: { organizationId, isActive: true, events: { has: eventType } },
+    });
 
     for (const webhook of webhooks) {
       // Fire and forget - don't block the caller
-      this.sendWebhook(webhook, eventType, payload).catch((err) => {
+      this.sendWebhook(this.toRecord(webhook), eventType, payload).catch((err) => {
         this.logger.error(`Failed to send webhook ${webhook.id}: ${err.message}`);
       });
     }
@@ -207,10 +282,32 @@ export class WebhooksService {
   private async sendWebhook(
     webhook: WebhookRecord,
     eventType: WebhookEventType,
-    payload: Record<string, unknown>
+    payload: Record<string, unknown>,
+    existingDeliveryId?: string,
   ): Promise<TestWebhookResultDto> {
     const startTime = Date.now();
-    const deliveryId = crypto.randomUUID();
+    const deliveryId = existingDeliveryId || crypto.randomUUID();
+    if (existingDeliveryId) {
+      await this.prisma.webhookDelivery.update({
+        where: { id: deliveryId },
+        data: {
+          status: 'delivering',
+          attempts: { increment: 1 },
+          errorMessage: null,
+        },
+      });
+    } else {
+      await this.prisma.webhookDelivery.create({
+        data: {
+          id: deliveryId,
+          subscriptionId: webhook.id,
+          event: eventType,
+          payload: payload as Prisma.InputJsonValue,
+          status: 'delivering',
+          attempts: 1,
+        },
+      });
+    }
 
     const body = JSON.stringify({
       id: deliveryId,
@@ -247,78 +344,73 @@ export class WebhooksService {
 
       const duration = Date.now() - startTime;
       const success = response.ok;
-
-      // Update webhook stats
-      webhook.lastTriggeredAt = new Date();
-      if (success) {
-        webhook.successCount++;
-        webhook.status = WebhookStatus.ACTIVE;
-        webhook.lastError = undefined;
-      } else {
-        webhook.failureCount++;
-        webhook.lastError = `HTTP ${response.status}`;
-        if (webhook.failureCount > 10) {
-          webhook.status = WebhookStatus.FAILED;
-        }
-      }
-      webhook.updatedAt = new Date();
-      webhookStore.set(webhook.id, webhook);
-
-      // Store delivery record
-      const delivery: WebhookDeliveryDto = {
-        id: deliveryId,
-        webhookId: webhook.id,
-        eventType,
-        payload,
-        statusCode: response.status,
-        success,
-        duration,
-        createdAt: new Date(),
-      };
-      deliveryStore.unshift(delivery);
-
-      // Keep only last 1000 deliveries per webhook
-      const webhookDeliveries = deliveryStore.filter((d) => d.webhookId === webhook.id);
-      if (webhookDeliveries.length > 1000) {
-        const toRemove = webhookDeliveries.slice(1000);
-        toRemove.forEach((d) => {
-          const idx = deliveryStore.indexOf(d);
-          if (idx > -1) deliveryStore.splice(idx, 1);
-        });
-      }
+      const responseBody = await response.text().catch(() => 'Unable to read response');
+      await this.prisma.$transaction([
+        this.prisma.webhookSubscription.update({
+          where: { id: webhook.id },
+          data: {
+            lastDeliveryAt: new Date(),
+            lastDeliveryStatus: success ? 'delivered' : 'failed',
+            consecutiveFailures: success ? 0 : { increment: 1 },
+          },
+        }),
+        this.prisma.webhookDelivery.update({
+          where: { id: deliveryId },
+          data: {
+            status: success ? 'delivered' : 'failed',
+            responseStatus: response.status,
+            responseBody,
+            deliveredAt: success ? new Date() : null,
+            errorMessage: success ? null : `HTTP ${response.status}`,
+            durationMs: duration,
+          },
+        }),
+      ]);
+      await auditMutation(this.prisma, {
+        organizationId: webhook.organizationId,
+        action: success ? 'DELIVER' : 'DELIVERY_FAILED',
+        entityType: 'WebhookDelivery',
+        entityId: deliveryId,
+        description: `${success ? 'Delivered' : 'Failed'} webhook event ${eventType}`,
+        metadata: { webhookId: webhook.id, statusCode: response.status },
+      });
 
       return {
         success,
         statusCode: response.status,
-        response: success ? 'OK' : await response.text().catch(() => 'Unable to read response'),
+        response: success ? 'OK' : responseBody,
         duration,
       };
     } catch (error: unknown) {
       const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-      webhook.lastTriggeredAt = new Date();
-      webhook.failureCount++;
-      webhook.lastError = errorMessage;
-      if (webhook.failureCount > 10) {
-        webhook.status = WebhookStatus.FAILED;
-      }
-      webhook.updatedAt = new Date();
-      webhookStore.set(webhook.id, webhook);
-
-      // Store failed delivery
-      const delivery: WebhookDeliveryDto = {
-        id: deliveryId,
-        webhookId: webhook.id,
-        eventType,
-        payload,
-        statusCode: 0,
-        success: false,
-        error: errorMessage,
-        duration,
-        createdAt: new Date(),
-      };
-      deliveryStore.unshift(delivery);
+      await this.prisma.$transaction([
+        this.prisma.webhookSubscription.update({
+          where: { id: webhook.id },
+          data: {
+            lastDeliveryAt: new Date(),
+            lastDeliveryStatus: 'failed',
+            consecutiveFailures: { increment: 1 },
+          },
+        }),
+        this.prisma.webhookDelivery.update({
+          where: { id: deliveryId },
+          data: {
+            status: 'failed',
+            errorMessage,
+            durationMs: duration,
+          },
+        }),
+      ]);
+      await auditMutation(this.prisma, {
+        organizationId: webhook.organizationId,
+        action: 'DELIVERY_FAILED',
+        entityType: 'WebhookDelivery',
+        entityId: deliveryId,
+        description: `Failed webhook event ${eventType}`,
+        metadata: { webhookId: webhook.id, error: errorMessage },
+      });
 
       return {
         success: false,
@@ -344,5 +436,53 @@ export class WebhooksService {
       createdAt: webhook.createdAt,
       updatedAt: webhook.updatedAt,
     };
+  }
+
+  private toRecord(webhook: WebhookSubscription): WebhookRecord {
+    let headers: Record<string, string> | undefined;
+    if (webhook.headers) {
+      try {
+        headers = JSON.parse(webhook.headers) as Record<string, string>;
+      } catch {
+        this.logger.warn(`Ignoring invalid persisted headers for webhook ${webhook.id}`);
+      }
+    }
+    return {
+      id: webhook.id,
+      organizationId: webhook.organizationId,
+      name: webhook.name,
+      url: webhook.url,
+      secret: webhook.secret,
+      events: webhook.events,
+      isActive: webhook.isActive,
+      headers,
+      status: !webhook.isActive
+        ? WebhookStatus.INACTIVE
+        : webhook.consecutiveFailures > 10
+          ? WebhookStatus.FAILED
+          : WebhookStatus.ACTIVE,
+      lastTriggeredAt: webhook.lastDeliveryAt ?? undefined,
+      lastError: webhook.lastDeliveryStatus === 'failed' ? 'Last delivery failed' : undefined,
+      successCount: 0,
+      failureCount: 0,
+      createdAt: webhook.createdAt,
+      updatedAt: webhook.updatedAt,
+    };
+  }
+
+  private async toDtoWithCounts(webhook: WebhookSubscription): Promise<WebhookDto> {
+    const [successCount, failureCount] = await Promise.all([
+      this.prisma.webhookDelivery.count({
+        where: { subscriptionId: webhook.id, status: 'delivered' },
+      }),
+      this.prisma.webhookDelivery.count({
+        where: { subscriptionId: webhook.id, status: 'failed' },
+      }),
+    ]);
+    return this.toDto({
+      ...this.toRecord(webhook),
+      successCount,
+      failureCount,
+    });
   }
 }

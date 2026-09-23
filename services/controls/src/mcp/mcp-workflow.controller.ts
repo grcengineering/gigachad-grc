@@ -1,14 +1,15 @@
 import {
+  Body,
   Controller,
   Get,
-  Post,
-  Body,
-  Param,
   HttpException,
   HttpStatus,
   Logger,
+  Param,
+  Post,
   UseGuards,
 } from '@nestjs/common';
+import { CurrentUser, UserContext } from '@gigachad-grc/shared';
 import { MCPWorkflowService } from './mcp-workflow.service';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 import { PermissionGuard } from '../auth/permission.guard';
@@ -24,84 +25,72 @@ export class MCPWorkflowController {
 
   @Get()
   @RequirePermission(Resource.AI, Action.READ)
-  async listWorkflows() {
+  async listWorkflows(@CurrentUser() user: UserContext) {
     try {
-      const workflows = this.workflowService.getWorkflows();
+      const workflows = await this.workflowService.getWorkflows(user.organizationId);
       return {
         success: true,
-        data: workflows.map((w) => ({
-          id: w.id,
-          name: w.name,
-          description: w.description,
-          trigger: w.trigger,
-          stepCount: w.steps.length,
+        data: workflows.map((workflow) => ({
+          id: workflow.id,
+          name: workflow.name,
+          description: workflow.description,
+          trigger: workflow.trigger,
+          stepCount: workflow.steps.length,
         })),
       };
     } catch (error) {
       this.logger.error('Failed to list workflows', error);
-      throw new HttpException(
-        'Failed to list workflows',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException('Failed to list workflows', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   @Get('executions')
   @RequirePermission(Resource.AI, Action.READ)
-  async listExecutions() {
-    try {
-      const executions = this.workflowService.getExecutions();
-      return {
-        success: true,
-        data: executions,
-      };
-    } catch (error) {
-      this.logger.error('Failed to list executions', error);
-      throw new HttpException(
-        'Failed to list executions',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+  async listExecutions(@CurrentUser() user: UserContext) {
+    const executions = await this.workflowService.getExecutions(user.organizationId);
+    return { success: true, data: executions };
   }
 
   @Get('executions/:executionId')
   @RequirePermission(Resource.AI, Action.READ)
-  async getExecution(@Param('executionId') executionId: string) {
-    const execution = this.workflowService.getExecution(executionId);
+  async getExecution(
+    @CurrentUser() user: UserContext,
+    @Param('executionId') executionId: string,
+  ) {
+    const execution = await this.workflowService.getExecution(user.organizationId, executionId);
     if (!execution) {
       throw new HttpException('Execution not found', HttpStatus.NOT_FOUND);
     }
-    return {
-      success: true,
-      data: execution,
-    };
+    return { success: true, data: execution };
   }
 
   @Post('executions/:executionId/cancel')
   @RequirePermission(Resource.AI, Action.UPDATE)
-  async cancelExecution(@Param('executionId') executionId: string) {
-    try {
-      await this.workflowService.cancelExecution(executionId);
-      return {
-        success: true,
-        message: 'Execution cancelled',
-      };
-    } catch (error) {
-      this.logger.error('Failed to cancel execution', error);
-      throw new HttpException(
-        error instanceof Error ? error.message : 'Failed to cancel execution',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+  async cancelExecution(
+    @CurrentUser() user: UserContext,
+    @Param('executionId') executionId: string,
+  ) {
+    await this.workflowService.cancelExecution(
+      user.organizationId,
+      user.userId,
+      executionId,
+    );
+    return { success: true, message: 'Execution cancelled' };
   }
 
   @Post('events/:eventName')
   @RequirePermission(Resource.AI, Action.UPDATE)
   async dispatchEvent(
+    @CurrentUser() user: UserContext,
     @Param('eventName') eventName: string,
     @Body() payload: Record<string, unknown>,
   ) {
-    const executions = await this.workflowService.triggerEvent(eventName, payload);
+    const executions = await this.workflowService.triggerEvent(
+      user.organizationId,
+      user.userId,
+      eventName,
+      payload,
+    );
     return {
       success: true,
       data: executions,
@@ -113,25 +102,25 @@ export class MCPWorkflowController {
   // "executions" and "events" are never interpreted as workflow IDs.
   @Get(':id')
   @RequirePermission(Resource.AI, Action.READ)
-  async getWorkflow(@Param('id') id: string) {
-    const workflow = this.workflowService.getWorkflow(id);
+  async getWorkflow(@CurrentUser() user: UserContext, @Param('id') id: string) {
+    const workflow = await this.workflowService.getWorkflow(user.organizationId, id);
     if (!workflow) {
       throw new HttpException('Workflow not found', HttpStatus.NOT_FOUND);
     }
-    return {
-      success: true,
-      data: workflow,
-    };
+    return { success: true, data: workflow };
   }
 
   @Post(':id/execute')
   @RequirePermission(Resource.AI, Action.UPDATE)
   async executeWorkflow(
+    @CurrentUser() user: UserContext,
     @Param('id') id: string,
     @Body() body: { input?: Record<string, unknown>; variables?: Record<string, unknown> },
   ) {
     try {
       const execution = await this.workflowService.executeWorkflow(
+        user.organizationId,
+        user.userId,
         id,
         body.input,
         body.variables,

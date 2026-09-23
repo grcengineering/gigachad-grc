@@ -1,8 +1,10 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { CreateScheduledReportDto, UpdateScheduledReportDto } from './dto/scheduled-report.dto';
-import { Prisma } from '@prisma/client';
+import { Prisma, ScheduledReport } from '@prisma/client';
+import { ConfigurableEmailService } from '../notifications-config/configurable-email.service';
+import { ExportsService } from '../exports/exports.service';
 
 @Injectable()
 export class ScheduledReportsService {
@@ -11,6 +13,8 @@ export class ScheduledReportsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly email: ConfigurableEmailService,
+    private readonly exports: ExportsService,
   ) {}
 
   /**
@@ -171,7 +175,12 @@ export class ScheduledReportsService {
       throw new NotFoundException(`Scheduled report with ID ${id} not found`);
     }
 
-    // Create execution record
+    if (report.recipients.length === 0) {
+      throw new BadRequestException('Scheduled report has no recipients');
+    }
+    if (!(await this.email.isConfigured(organizationId))) {
+      throw new BadRequestException('Email delivery is not configured for this organization');
+    }
     const execution = await this.prisma.scheduledReportExecution.create({
       data: {
         scheduledReportId: id,
@@ -180,14 +189,11 @@ export class ScheduledReportsService {
       },
     });
 
-    // Queue the report generation (in a real implementation, this would go to a job queue)
-    this.logger.log(`Queued scheduled report ${id} for immediate execution (execution: ${execution.id})`);
-
-    // For now, we'll mark it as running and return
-    await this.prisma.scheduledReportExecution.update({
-      where: { id: execution.id },
-      data: { status: 'running' },
-    });
+    this.logger.log(`Executing scheduled report ${id} (execution: ${execution.id})`);
+    const result = await this.executeReport(report, execution.id);
+    if (result.status === 'failed') {
+      throw new BadRequestException('Report generation or delivery failed');
+    }
 
     await this.audit.log({
       organizationId,
@@ -200,9 +206,195 @@ export class ScheduledReportsService {
     });
 
     return {
-      message: 'Report queued for generation',
+      message: 'Report generated and delivered',
       executionId: execution.id,
+      status: result.status,
     };
+  }
+
+  /**
+   * Claim and execute reports whose next run is due. The conditional update
+   * prevents multiple scheduler instances from claiming the same occurrence.
+   */
+  async processDueReports(): Promise<number> {
+    const now = new Date();
+    const due = await this.prisma.scheduledReport.findMany({
+      where: { isEnabled: true, nextRunAt: { lte: now } },
+      orderBy: { nextRunAt: 'asc' },
+    });
+    let claimed = 0;
+    for (const report of due) {
+      const nextRunAt = this.calculateNextRun(
+        report.frequency,
+        report.dayOfWeek ?? undefined,
+        report.dayOfMonth ?? undefined,
+        report.time,
+        report.timezone,
+      );
+      const claim = await this.prisma.scheduledReport.updateMany({
+        where: { id: report.id, organizationId: report.organizationId, nextRunAt: { lte: now } },
+        data: { nextRunAt },
+      });
+      if (claim.count === 0) continue;
+      claimed++;
+      const execution = await this.prisma.scheduledReportExecution.create({
+        data: {
+          scheduledReportId: report.id,
+          status: 'pending',
+          recipientCount: report.recipients.length,
+        },
+      });
+      await this.executeReport(report, execution.id);
+    }
+    return claimed;
+  }
+
+  private async executeReport(
+    report: ScheduledReport,
+    executionId: string,
+  ): Promise<{ status: 'success' | 'failed' }> {
+    await this.prisma.scheduledReportExecution.update({
+      where: { id: executionId },
+      data: { status: 'running' },
+    });
+    try {
+      if (!(await this.email.isConfigured(report.organizationId))) {
+        throw new Error('Email delivery is not configured for this organization');
+      }
+      const rows = await this.getReportRows(report.organizationId, report.reportType);
+      const format = report.format as 'pdf' | 'csv' | 'xlsx';
+      const file = await this.exports.formatRows(rows, format);
+      const mimeType = this.exports.getFormatContentType(format);
+      const fileName = `${report.reportType.replace(/[^a-z0-9_-]/gi, '_')}-${new Date()
+        .toISOString()
+        .slice(0, 10)}.${format}`;
+      let deliveredCount = 0;
+      for (const recipient of report.recipients) {
+        const sent = await this.email.sendEmail(report.organizationId, {
+          to: recipient,
+          subject: report.name,
+          html: `<p>Your scheduled GigaChad GRC report <strong>${report.name}</strong> is attached.</p>`,
+          text: `Your scheduled GigaChad GRC report "${report.name}" is attached.`,
+          attachments: [{ filename: fileName, content: file, contentType: mimeType }],
+        });
+        if (!sent) {
+          throw new Error(`Email delivery failed for ${recipient}`);
+        }
+        deliveredCount++;
+        await this.prisma.scheduledReportExecution.update({
+          where: { id: executionId },
+          data: { deliveredCount },
+        });
+      }
+      const completedAt = new Date();
+      await this.prisma.$transaction([
+        this.prisma.scheduledReportExecution.update({
+          where: { id: executionId },
+          data: {
+            status: 'success',
+            completedAt,
+            deliveredCount,
+            fileName,
+            mimeType,
+            fileContent: file,
+            fileSize: file.length,
+          },
+        }),
+        this.prisma.scheduledReport.update({
+          where: { id: report.id },
+          data: {
+            lastRunAt: completedAt,
+            lastRunStatus: 'success',
+            lastRunError: null,
+          },
+        }),
+      ]);
+      await this.audit.log({
+        organizationId: report.organizationId,
+        userId: report.userId,
+        action: 'DELIVER',
+        entityType: 'ScheduledReportExecution',
+        entityId: executionId,
+        entityName: report.name,
+        description: `Delivered scheduled report to ${deliveredCount} recipients`,
+      });
+      return { status: 'success' };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      const completedAt = new Date();
+      await this.prisma.$transaction([
+        this.prisma.scheduledReportExecution.update({
+          where: { id: executionId },
+          data: { status: 'failed', completedAt, error: message },
+        }),
+        this.prisma.scheduledReport.update({
+          where: { id: report.id },
+          data: {
+            lastRunAt: completedAt,
+            lastRunStatus: 'failed',
+            lastRunError: message,
+          },
+        }),
+      ]);
+      await this.audit.log({
+        organizationId: report.organizationId,
+        userId: report.userId,
+        action: 'DELIVERY_FAILED',
+        entityType: 'ScheduledReportExecution',
+        entityId: executionId,
+        entityName: report.name,
+        description: `Scheduled report failed: ${message}`,
+      });
+      this.logger.error(`Scheduled report ${report.id} failed: ${message}`);
+      return { status: 'failed' };
+    }
+  }
+
+  private async getReportRows(
+    organizationId: string,
+    reportType: string,
+  ): Promise<unknown[]> {
+    switch (reportType.replace(/_/g, '-')) {
+      case 'risk-register':
+        return this.prisma.risk.findMany({
+          where: { organizationId, deletedAt: null },
+          orderBy: { updatedAt: 'desc' },
+        });
+      case 'control-coverage':
+        return this.prisma.controlImplementation.findMany({
+          where: { organizationId },
+          include: { control: true },
+          orderBy: { updatedAt: 'desc' },
+        });
+      case 'audit-findings':
+        return this.prisma.auditFinding.findMany({
+          where: { organizationId },
+          orderBy: { updatedAt: 'desc' },
+        });
+      case 'evidence-inventory':
+        return this.prisma.evidence.findMany({
+          where: { organizationId, deletedAt: null },
+          orderBy: { updatedAt: 'desc' },
+        });
+      case 'compliance-rollup':
+      case 'compliance-summary':
+        return this.prisma.readinessAssessment.findMany({
+          where: { organizationId },
+          include: { framework: true },
+          orderBy: { updatedAt: 'desc' },
+        });
+      case 'custom': {
+        const [controls, policies, risks, evidence] = await Promise.all([
+          this.prisma.controlImplementation.count({ where: { organizationId } }),
+          this.prisma.policy.count({ where: { organizationId, deletedAt: null } }),
+          this.prisma.risk.count({ where: { organizationId, deletedAt: null } }),
+          this.prisma.evidence.count({ where: { organizationId, deletedAt: null } }),
+        ]);
+        return [{ controls, policies, risks, evidence, generatedAt: new Date() }];
+      }
+      default:
+        throw new Error(`Unsupported scheduled report type: ${reportType}`);
+    }
   }
 
   /**

@@ -1,6 +1,8 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as crypto from 'crypto';
+import { Prisma } from '@prisma/client';
+import { auditMutation } from '../common/audit-mutation';
 // Simple user agent parsing (no external dependency)
 import {
   SessionDto,
@@ -36,10 +38,6 @@ interface SessionSettings {
   requireReauthForSensitiveActions: boolean;
 }
 
-// In-memory stores (would be Redis/database in production)
-const sessionStore = new Map<string, SessionRecord>();
-const settingsStore = new Map<string, SessionSettings>();
-
 const DEFAULT_SETTINGS: SessionSettings = {
   sessionTimeoutMinutes: 480, // 8 hours
   maxConcurrentSessions: 5,
@@ -59,49 +57,54 @@ export class SessionsService {
     ipAddress: string,
     userAgent: string,
   ): Promise<SessionDto> {
-    const settings = this.getSettings(organizationId);
+    const settings = await this.getSettings(organizationId);
     const { browser, os, device } = this.parseUserAgent(userAgent);
 
-    // Enforce session limits
-    const userSessions = Array.from(sessionStore.values())
-      .filter(s => s.userId === userId && s.isActive);
+    const userSessions = await this.prisma.userSession.findMany({
+      where: { organizationId, userId, isActive: true },
+      orderBy: { lastActivityAt: 'asc' },
+    });
 
     if (settings.enforceSingleSession && userSessions.length > 0) {
-      // Invalidate all existing sessions
-      for (const session of userSessions) {
-        session.isActive = false;
-        sessionStore.set(session.id, session);
-      }
+      await this.prisma.userSession.updateMany({
+        where: { organizationId, userId, isActive: true },
+        data: { isActive: false, invalidatedAt: new Date(), invalidReason: 'single_session' },
+      });
       this.logger.log(`Enforced single session for user ${userId}, invalidated ${userSessions.length} sessions`);
     } else if (userSessions.length >= settings.maxConcurrentSessions) {
-      // Remove oldest session
-      const oldest = userSessions.sort((a, b) => 
-        a.lastActivityAt.getTime() - b.lastActivityAt.getTime()
-      )[0];
-      oldest.isActive = false;
-      sessionStore.set(oldest.id, oldest);
+      const oldest = userSessions[0];
+      await this.prisma.userSession.update({
+        where: { id: oldest.id },
+        data: { isActive: false, invalidatedAt: new Date(), invalidReason: 'session_limit' },
+      });
       this.logger.log(`Session limit reached for user ${userId}, removed oldest session`);
     }
 
     const now = new Date();
     const expiresAt = new Date(now.getTime() + settings.sessionTimeoutMinutes * 60 * 1000);
-
-    const session: SessionRecord = {
-      id: crypto.randomUUID(),
-      userId,
+    const created = await this.prisma.userSession.create({
+      data: {
+        id: crypto.randomUUID(),
+        userId,
+        organizationId,
+        deviceInfo: device,
+        browser,
+        os,
+        ipAddress,
+        userAgent,
+        expiresAt,
+      },
+    });
+    const session = this.toRecord(created);
+    await auditMutation(this.prisma, {
       organizationId,
-      deviceInfo: device,
-      browser,
-      os,
-      ipAddress,
-      userAgent,
-      isActive: true,
-      createdAt: now,
-      lastActivityAt: now,
-      expiresAt,
-    };
-
-    sessionStore.set(session.id, session);
+      userId,
+      action: 'CREATE',
+      entityType: 'UserSession',
+      entityId: session.id,
+      description: `Created user session for ${userId}`,
+      metadata: { ipAddress, deviceInfo: device },
+    });
     this.logger.log(`Created session ${session.id} for user ${userId}`);
 
     return this.toDto(session, session.id);
@@ -118,21 +121,22 @@ export class SessionsService {
       limit: query.limit,
     });
 
-    let sessions = Array.from(sessionStore.values())
-      .filter(s => s.organizationId === organizationId && s.userId === userId);
-
-    if (query.activeOnly) {
-      sessions = sessions.filter(s => s.isActive && s.expiresAt > new Date());
-    }
-
-    // Sort by last activity (most recent first)
-    sessions.sort((a, b) => b.lastActivityAt.getTime() - a.lastActivityAt.getTime());
-
-    const total = sessions.length;
-    const offset = (pagination.page - 1) * pagination.limit;
-    const paginatedSessions = sessions.slice(offset, offset + pagination.limit);
-
-    const dtos = paginatedSessions.map(s => this.toDto(s, currentSessionId));
+    const where: Prisma.UserSessionWhereInput = {
+      organizationId,
+      userId,
+      isActive: query.activeOnly ? true : undefined,
+      expiresAt: query.activeOnly ? { gt: new Date() } : undefined,
+    };
+    const [sessions, total] = await Promise.all([
+      this.prisma.userSession.findMany({
+        where,
+        orderBy: { lastActivityAt: 'desc' },
+        skip: (pagination.page - 1) * pagination.limit,
+        take: pagination.limit,
+      }),
+      this.prisma.userSession.count({ where }),
+    ]);
+    const dtos = sessions.map(s => this.toDto(this.toRecord(s), currentSessionId));
 
     return createPaginatedResponse(dtos, total, pagination);
   }
@@ -146,24 +150,22 @@ export class SessionsService {
       limit: query.limit,
     });
 
-    let sessions = Array.from(sessionStore.values())
-      .filter(s => s.organizationId === organizationId);
-
-    if (query.activeOnly) {
-      sessions = sessions.filter(s => s.isActive && s.expiresAt > new Date());
-    }
-
-    if (query.userId) {
-      sessions = sessions.filter(s => s.userId === query.userId);
-    }
-
-    sessions.sort((a, b) => b.lastActivityAt.getTime() - a.lastActivityAt.getTime());
-
-    const total = sessions.length;
-    const offset = (pagination.page - 1) * pagination.limit;
-    const paginatedSessions = sessions.slice(offset, offset + pagination.limit);
-
-    const dtos = paginatedSessions.map(s => this.toDto(s, ''));
+    const where: Prisma.UserSessionWhereInput = {
+      organizationId,
+      userId: query.userId,
+      isActive: query.activeOnly ? true : undefined,
+      expiresAt: query.activeOnly ? { gt: new Date() } : undefined,
+    };
+    const [sessions, total] = await Promise.all([
+      this.prisma.userSession.findMany({
+        where,
+        orderBy: { lastActivityAt: 'desc' },
+        skip: (pagination.page - 1) * pagination.limit,
+        take: pagination.limit,
+      }),
+      this.prisma.userSession.count({ where }),
+    ]);
+    const dtos = sessions.map(s => this.toDto(this.toRecord(s), ''));
 
     return createPaginatedResponse(dtos, total, pagination);
   }
@@ -174,8 +176,10 @@ export class SessionsService {
     currentSessionId: string,
     reason?: string,
   ): Promise<void> {
-    const session = sessionStore.get(sessionId);
-    if (!session || session.organizationId !== organizationId) {
+    const session = await this.prisma.userSession.findFirst({
+      where: { id: sessionId, organizationId },
+    });
+    if (!session) {
       throw new NotFoundException(`Session ${sessionId} not found`);
     }
 
@@ -183,8 +187,18 @@ export class SessionsService {
       throw new ForbiddenException('Cannot invalidate your current session');
     }
 
-    session.isActive = false;
-    sessionStore.set(sessionId, session);
+    await this.prisma.userSession.update({
+      where: { id: sessionId },
+      data: { isActive: false, invalidatedAt: new Date(), invalidReason: reason || 'manual' },
+    });
+    await auditMutation(this.prisma, {
+      organizationId,
+      action: 'INVALIDATE',
+      entityType: 'UserSession',
+      entityId: sessionId,
+      description: `Invalidated session ${sessionId}`,
+      metadata: { reason },
+    });
 
     this.logger.log(`Invalidated session ${sessionId}${reason ? `: ${reason}` : ''}`);
   }
@@ -195,21 +209,28 @@ export class SessionsService {
     currentSessionId: string,
     reason?: string,
   ): Promise<number> {
-    const sessions = Array.from(sessionStore.values())
-      .filter(s => 
-        s.organizationId === organizationId && 
-        s.userId === userId && 
-        s.id !== currentSessionId &&
-        s.isActive
-      );
-
-    for (const session of sessions) {
-      session.isActive = false;
-      sessionStore.set(session.id, session);
+    const result = await this.prisma.userSession.updateMany({
+      where: {
+        organizationId,
+        userId,
+        id: { not: currentSessionId },
+        isActive: true,
+      },
+      data: { isActive: false, invalidatedAt: new Date(), invalidReason: reason || 'manual' },
+    });
+    if (result.count > 0) {
+      await auditMutation(this.prisma, {
+        organizationId,
+        userId,
+        action: 'INVALIDATE_MANY',
+        entityType: 'UserSession',
+        entityId: userId,
+        description: `Invalidated ${result.count} sessions for user ${userId}`,
+        metadata: { reason, count: result.count },
+      });
     }
-
-    this.logger.log(`Invalidated ${sessions.length} sessions for user ${userId}${reason ? `: ${reason}` : ''}`);
-    return sessions.length;
+    this.logger.log(`Invalidated ${result.count} sessions for user ${userId}${reason ? `: ${reason}` : ''}`);
+    return result.count;
   }
 
   async invalidateAllSessions(
@@ -217,29 +238,35 @@ export class SessionsService {
     currentSessionId: string,
     reason?: string,
   ): Promise<number> {
-    const sessions = Array.from(sessionStore.values())
-      .filter(s => 
-        s.organizationId === organizationId && 
-        s.id !== currentSessionId &&
-        s.isActive
-      );
-
-    for (const session of sessions) {
-      session.isActive = false;
-      sessionStore.set(session.id, session);
+    const result = await this.prisma.userSession.updateMany({
+      where: { organizationId, id: { not: currentSessionId }, isActive: true },
+      data: { isActive: false, invalidatedAt: new Date(), invalidReason: reason || 'manual' },
+    });
+    if (result.count > 0) {
+      await auditMutation(this.prisma, {
+        organizationId,
+        action: 'INVALIDATE_ALL',
+        entityType: 'UserSession',
+        entityId: organizationId,
+        description: `Invalidated ${result.count} sessions for organization`,
+        metadata: { reason, count: result.count },
+      });
     }
-
-    this.logger.log(`Invalidated all ${sessions.length} sessions for org ${organizationId}${reason ? `: ${reason}` : ''}`);
-    return sessions.length;
+    this.logger.log(`Invalidated all ${result.count} sessions for org ${organizationId}${reason ? `: ${reason}` : ''}`);
+    return result.count;
   }
 
   async updateSessionActivity(sessionId: string): Promise<void> {
-    const session = sessionStore.get(sessionId);
+    const session = await this.prisma.userSession.findUnique({ where: { id: sessionId } });
     if (session && session.isActive) {
-      const settings = this.getSettings(session.organizationId);
-      session.lastActivityAt = new Date();
-      session.expiresAt = new Date(Date.now() + settings.sessionTimeoutMinutes * 60 * 1000);
-      sessionStore.set(sessionId, session);
+      const settings = await this.getSettings(session.organizationId);
+      await this.prisma.userSession.update({
+        where: { id: sessionId },
+        data: {
+          lastActivityAt: new Date(),
+          expiresAt: new Date(Date.now() + settings.sessionTimeoutMinutes * 60 * 1000),
+        },
+      });
     }
   }
 
@@ -248,8 +275,9 @@ export class SessionsService {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const weekStart = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const sessions = Array.from(sessionStore.values())
-      .filter(s => s.organizationId === organizationId);
+    const sessions = (await this.prisma.userSession.findMany({
+      where: { organizationId },
+    })).map((session) => this.toRecord(session));
 
     const activeSessions = sessions.filter(s => s.isActive && s.expiresAt > now);
 
@@ -275,28 +303,49 @@ export class SessionsService {
     };
   }
 
-  getSessionSettings(organizationId: string): SessionSettingsDto {
+  async getSessionSettings(organizationId: string): Promise<SessionSettingsDto> {
     return this.getSettings(organizationId);
   }
 
-  updateSessionSettings(
+  async updateSessionSettings(
     organizationId: string,
     dto: UpdateSessionSettingsDto,
-  ): SessionSettingsDto {
-    const current = this.getSettings(organizationId);
+  ): Promise<SessionSettingsDto> {
+    const current = await this.getSettings(organizationId);
     const updated: SessionSettings = {
       sessionTimeoutMinutes: dto.sessionTimeoutMinutes ?? current.sessionTimeoutMinutes,
       maxConcurrentSessions: dto.maxConcurrentSessions ?? current.maxConcurrentSessions,
       enforceSingleSession: dto.enforceSingleSession ?? current.enforceSingleSession,
       requireReauthForSensitiveActions: dto.requireReauthForSensitiveActions ?? current.requireReauthForSensitiveActions,
     };
-    settingsStore.set(organizationId, updated);
+    await this.prisma.sessionSettings.upsert({
+      where: { organizationId },
+      create: { organizationId, ...updated },
+      update: updated,
+    });
+    await auditMutation(this.prisma, {
+      organizationId,
+      action: 'UPDATE',
+      entityType: 'SessionSettings',
+      entityId: organizationId,
+      description: 'Updated organization session settings',
+    });
     this.logger.log(`Updated session settings for org ${organizationId}`);
     return updated;
   }
 
-  private getSettings(organizationId: string): SessionSettings {
-    return settingsStore.get(organizationId) || { ...DEFAULT_SETTINGS };
+  private async getSettings(organizationId: string): Promise<SessionSettings> {
+    const settings = await this.prisma.sessionSettings.findUnique({
+      where: { organizationId },
+    });
+    return settings
+      ? {
+          sessionTimeoutMinutes: settings.sessionTimeoutMinutes,
+          maxConcurrentSessions: settings.maxConcurrentSessions,
+          enforceSingleSession: settings.enforceSingleSession,
+          requireReauthForSensitiveActions: settings.requireReauthForSensitiveActions,
+        }
+      : { ...DEFAULT_SETTINGS };
   }
 
   private parseUserAgent(userAgent: string): { browser: string; os: string; device: string } {
@@ -336,6 +385,23 @@ export class SessionsService {
     }
 
     return { browser, os, device };
+  }
+
+  private toRecord(session: {
+    id: string;
+    userId: string;
+    organizationId: string;
+    deviceInfo: string;
+    browser: string;
+    os: string;
+    ipAddress: string;
+    userAgent: string;
+    isActive: boolean;
+    createdAt: Date;
+    lastActivityAt: Date;
+    expiresAt: Date;
+  }): SessionRecord {
+    return session;
   }
 
   private toDto(session: SessionRecord, currentSessionId: string): SessionDto {

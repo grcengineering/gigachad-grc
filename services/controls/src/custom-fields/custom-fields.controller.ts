@@ -80,7 +80,7 @@ export class CustomFieldsController {
     @Param('id') id: string,
     @Body() dto: UpdateCustomFieldDto,
   ): Promise<CustomFieldDto> {
-    return this.customFieldsService.updateField(user.organizationId, id, dto);
+    return this.customFieldsService.updateField(user.organizationId, user.userId, id, dto);
   }
 
   @Delete(':id')
@@ -90,7 +90,7 @@ export class CustomFieldsController {
     @CurrentUser() user: UserContext,
     @Param('id') id: string,
   ): Promise<void> {
-    return this.customFieldsService.deleteField(user.organizationId, id);
+    return this.customFieldsService.deleteField(user.organizationId, user.userId, id);
   }
 
   // Entity Field Values
@@ -137,6 +137,7 @@ export class CustomFieldsController {
   ): Promise<void> {
     return this.customFieldsService.deleteEntityFieldValue(
       user.organizationId,
+      user.userId,
       entityType,
       entityId,
       fieldIdOrSlug,

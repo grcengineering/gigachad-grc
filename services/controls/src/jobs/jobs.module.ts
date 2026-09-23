@@ -13,6 +13,7 @@ import { SessionsModule } from '../sessions/sessions.module';
 import { JiraModule } from '../integrations/jira/jira.module';
 import { ServiceNowModule } from '../integrations/servicenow/servicenow.module';
 import { CollectorsModule } from '../collectors/collectors.module';
+import { ScheduledReportsModule } from '../scheduled-reports/scheduled-reports.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { CollectorsModule } from '../collectors/collectors.module';
     forwardRef(() => JiraModule),
     forwardRef(() => ServiceNowModule),
     forwardRef(() => CollectorsModule),
+    forwardRef(() => ScheduledReportsModule),
   ],
   providers: [JobsService, JobSchedulerService],
   controllers: [JobsController],

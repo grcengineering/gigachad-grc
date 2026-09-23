@@ -1813,6 +1813,7 @@ model WebhookDelivery {
   nextRetryAt    DateTime? @map("next_retry_at")
   deliveredAt    DateTime? @map("delivered_at")
   errorMessage   String?   @map("error_message")
+  durationMs     Int       @default(0) @map("duration_ms")
   createdAt      DateTime  @default(now()) @map("created_at")
 
   // Relations
@@ -4631,7 +4632,11 @@ model ScheduledReportExecution {
   completedAt       DateTime? @map("completed_at")
   error             String?   @db.Text
   recipientCount    Int       @default(0) @map("recipient_count")
+  deliveredCount    Int       @default(0) @map("delivered_count")
   filePath          String?   @map("file_path") // S3 path to generated report
+  fileName          String?   @map("file_name")
+  mimeType          String?   @map("mime_type")
+  fileContent       Bytes?    @map("file_content")
   fileSize          Int?      @map("file_size") // bytes
 
   // Relations
@@ -5352,6 +5357,7 @@ model ApprovalWorkflow {
   name              String
   description       String?
   entityType        String   @map("entity_type") // policy, risk, control, vendor, etc.
+  trigger           String   @default("manual")
   mode              String   @default("sequential") // sequential, parallel, any
   steps             Json // Array of workflow steps
   triggerConditions Json?    @map("trigger_conditions") // JSON logic for auto-triggering
@@ -5377,11 +5383,14 @@ model ApprovalRequest {
   entityName      String?   @map("entity_name")
   title           String
   justification   String?
+  context         Json?
+  stepApprovals   Json      @default("[]") @map("step_approvals")
   priority        String    @default("medium")
   status          String    @default("pending") // pending, approved, rejected, cancelled, expired
   currentStep     Int       @default(1) @map("current_step")
   requestedBy     String    @map("requested_by")
   requestedByName String    @map("requested_by_name")
+  expiresAt       DateTime? @map("expires_at")
   completedAt     DateTime? @map("completed_at")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
@@ -5437,6 +5446,8 @@ model ExportJob {
   progress             Int       @default(0) // 0-100
   recordCount          Int?      @map("record_count")
   fileSize             Int?      @map("file_size") // bytes
+  fileName             String?   @map("file_name")
+  fileContent          Bytes?    @map("file_content")
   storagePath          String?   @map("storage_path")
   downloadUrl          String?   @map("download_url")
   downloadUrlExpiresAt DateTime? @map("download_url_expires_at")
@@ -5465,6 +5476,7 @@ model CustomFieldDefinition {
   label          String // Display label
   description    String?
   fieldType      String   @map("field_type") // text, number, date, select, etc.
+  entityType     String   @default("control") @map("entity_type")
   entityTypes    String[] @map("entity_types") // Which entity types this applies to
   isRequired     Boolean  @default(false) @map("is_required")
   defaultValue   Json?    @map("default_value")
@@ -5476,13 +5488,14 @@ model CustomFieldDefinition {
   showInList     Boolean  @default(false) @map("show_in_list")
   searchable     Boolean  @default(false)
   isActive       Boolean  @default(true) @map("is_active")
+  createdBy      String?  @map("created_by")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   // Relations
   values CustomFieldValue[]
 
-  @@unique([organizationId, name])
+  @@unique([organizationId, entityType, name])
   @@index([organizationId, isActive])
   @@map("custom_field_definitions")
 }
@@ -5493,6 +5506,7 @@ model CustomFieldValue {
   entityType String   @map("entity_type")
   entityId   String   @map("entity_id")
   value      Json
+  createdBy  String?  @map("created_by")
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
@@ -5542,10 +5556,12 @@ model UserDelegation {
 model RetentionPolicy {
   id                  String    @id @default(uuid())
   organizationId      String    @map("organization_id")
+  name                String
   entityType          String    @map("entity_type") // audit_logs, evidence, etc.
   periodValue         Int       @map("period_value")
   periodUnit          String    @map("period_unit") // days, months, years
   action              String // archive, delete, anonymize
+  status              String    @default("draft")
   isEnabled           Boolean   @default(true) @map("is_enabled")
   filterConditions    Json?     @map("filter_conditions")
   description         String?
@@ -5553,14 +5569,145 @@ model RetentionPolicy {
   notifyBeforeAction  Boolean   @default(true) @map("notify_before_action")
   notifyDaysBefore    Int?      @map("notify_days_before")
   lastRunAt           DateTime? @map("last_run_at")
+  nextRunAt           DateTime? @map("next_run_at")
   lastRunResult       String?   @map("last_run_result")
   recordsAffected     Int?      @map("records_affected")
+  createdBy           String?   @map("created_by")
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
 
+  runs RetentionRun[]
+
   @@unique([organizationId, entityType])
   @@index([organizationId, isEnabled])
+  @@index([organizationId, status, nextRunAt])
   @@map("retention_policies")
+}
+
+model RetentionRun {
+  id               String    @id @default(uuid())
+  policyId         String    @map("policy_id")
+  organizationId   String    @map("organization_id")
+  dryRun           Boolean   @default(true) @map("dry_run")
+  status           String    @default("running")
+  recordsFound     Int       @default(0) @map("records_found")
+  recordsProcessed Int       @default(0) @map("records_processed")
+  error            String?   @db.Text
+  startedAt        DateTime  @default(now()) @map("started_at")
+  completedAt      DateTime? @map("completed_at")
+
+  policy RetentionPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, startedAt])
+  @@index([policyId, startedAt])
+  @@map("retention_runs")
+}
+
+// Durable session, authentication, and operational state.
+model UserSession {
+  id             String    @id
+  userId         String    @map("user_id")
+  organizationId String    @map("organization_id")
+  deviceInfo     String    @map("device_info")
+  browser        String    @default("Unknown")
+  os             String    @default("Unknown")
+  ipAddress      String    @map("ip_address")
+  userAgent      String    @map("user_agent") @db.Text
+  isActive       Boolean   @default(true) @map("is_active")
+  invalidatedAt  DateTime? @map("invalidated_at")
+  invalidReason  String?   @map("invalid_reason")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  lastActivityAt DateTime  @default(now()) @map("last_activity_at")
+  expiresAt      DateTime  @map("expires_at")
+
+  @@index([organizationId, userId, isActive])
+  @@index([isActive, expiresAt])
+  @@map("user_sessions")
+}
+
+model SessionSettings {
+  organizationId                  String  @id @map("organization_id")
+  sessionTimeoutMinutes           Int     @default(480) @map("session_timeout_minutes")
+  maxConcurrentSessions           Int     @default(5) @map("max_concurrent_sessions")
+  enforceSingleSession            Boolean @default(false) @map("enforce_single_session")
+  requireReauthForSensitiveActions Boolean @default(true) @map("require_reauth_for_sensitive_actions")
+  updatedAt                       DateTime @updatedAt @map("updated_at")
+
+  @@map("session_settings")
+}
+
+model LoginAttempt {
+  id             String    @id @default(uuid())
+  identifierHash String    @map("identifier_hash")
+  identifier     String
+  ipAddress      String    @map("ip_address")
+  attemptCount   Int       @default(0) @map("attempt_count")
+  lastAttemptAt  DateTime  @default(now()) @map("last_attempt_at")
+  lockedUntil    DateTime? @map("locked_until")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@unique([identifierHash, ipAddress])
+  @@index([identifier, lockedUntil])
+  @@index([lastAttemptAt])
+  @@map("login_attempts")
+}
+
+model McpWorkflowDefinition {
+  id             String   @id
+  organizationId String?  @map("organization_id")
+  name           String
+  description    String
+  trigger        Json
+  steps          Json
+  variables      Json?
+  timeoutMs      Int?     @map("timeout_ms")
+  isBuiltIn      Boolean  @default(false) @map("is_built_in")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  executions McpWorkflowExecution[]
+
+  @@index([organizationId, name])
+  @@map("mcp_workflow_definitions")
+}
+
+model McpWorkflowExecution {
+  id             String    @id
+  workflowId     String    @map("workflow_id")
+  organizationId String    @map("organization_id")
+  requestedBy    String?   @map("requested_by")
+  status         String
+  steps          Json
+  input          Json?
+  variables      Json?
+  output         Json?
+  error          String?   @db.Text
+  startedAt      DateTime  @default(now()) @map("started_at")
+  completedAt    DateTime? @map("completed_at")
+
+  workflow McpWorkflowDefinition @relation(fields: [workflowId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, startedAt])
+  @@index([workflowId, status])
+  @@map("mcp_workflow_executions")
+}
+
+model McpCredential {
+  id                     String   @id @default(uuid())
+  organizationId         String   @map("organization_id")
+  serverId               String   @map("server_id")
+  templateId             String   @map("template_id")
+  serverName             String   @map("server_name")
+  encryptedEnv           String   @map("encrypted_env") @db.Text
+  configuredIntegrations String[] @default([]) @map("configured_integrations")
+  createdBy              String   @map("created_by")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  @@unique([organizationId, serverId])
+  @@index([organizationId, createdAt])
+  @@map("mcp_credentials")
 }
 
 // ===========================================

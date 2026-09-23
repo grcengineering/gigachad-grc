@@ -13,6 +13,7 @@ import { RetentionService } from '../retention/retention.service';
 import { RetentionPolicyStatus } from '../retention/dto/retention.dto';
 import { WebhooksService } from '../webhooks/webhooks.service';
 import { SessionService } from '../auth/session.service';
+import { ScheduledReportsService } from '../scheduled-reports/scheduled-reports.service';
 
 /**
  * Job execution result with mock mode indicator
@@ -73,6 +74,8 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     private readonly webhooksService: WebhooksService | null,
     @Optional() @Inject(forwardRef(() => SessionService))
     private readonly sessionService: SessionService | null,
+    @Optional() @Inject(forwardRef(() => ScheduledReportsService))
+    private readonly scheduledReportsService: ScheduledReportsService | null,
   ) {}
 
   onModuleInit() {
@@ -106,6 +109,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
       this.jobsService.processScheduledJobs().catch(err => {
         this.logger.error('Error processing scheduled jobs', err);
       });
+      this.processScheduledReports();
     }, this.SCHEDULER_INTERVAL);
 
     // Run initial processing
@@ -115,6 +119,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     this.jobsService.processScheduledJobs().catch(err => {
       this.logger.error('Error in initial scheduled job processing', err);
     });
+    this.processScheduledReports();
 
     this.logger.log(
       `Job scheduler started (processing: ${this.JOB_PROCESSING_INTERVAL / 1000}s, scheduling: ${this.SCHEDULER_INTERVAL / 1000}s)`,
@@ -131,6 +136,18 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
       this.schedulerIntervalId = null;
     }
     this.logger.log('Job scheduler stopped');
+  }
+
+  private processScheduledReports(): void {
+    if (!this.scheduledReportsService) {
+      if (process.env.NODE_ENV === 'production') {
+        this.logger.error('ScheduledReportsService is unavailable in production');
+      }
+      return;
+    }
+    this.scheduledReportsService.processDueReports().catch((error) => {
+      this.logger.error('Error processing scheduled reports', error);
+    });
   }
 
   /**
@@ -555,6 +572,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
       for (const policy of policies.data || []) {
         const result = await this.retentionService.runPolicy(
           organizationId,
+          'system-scheduler',
           policy.id,
           { dryRun: false },
         );

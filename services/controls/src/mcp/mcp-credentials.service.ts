@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { auditMutation } from '../common/audit-mutation';
 
 interface EncryptedData {
   iv: string;
@@ -102,6 +103,7 @@ export class MCPCredentialsService {
    * Store encrypted credentials for an MCP server
    */
   async storeCredentials(
+    organizationId: string,
     serverId: string,
     templateId: string,
     serverName: string,
@@ -129,122 +131,101 @@ export class MCPCredentialsService {
     const encryptedData = this.encrypt(JSON.stringify(sensitiveEnv));
     const encryptedEnvString = JSON.stringify(encryptedData);
 
-    // Store in database using raw query (MCP credentials table may not exist in schema)
-    try {
-      await this.prisma.$executeRaw`
-        INSERT INTO mcp_credentials (
-          server_id, 
-          template_id, 
-          server_name,
-          encrypted_env, 
-          configured_integrations,
-          created_at,
-          created_by,
-          last_updated
-        ) VALUES (
-          ${serverId},
-          ${templateId},
-          ${serverName},
-          ${encryptedEnvString},
-          ${JSON.stringify(configuredIntegrations)},
-          NOW(),
-          ${createdBy},
-          NOW()
-        )
-        ON CONFLICT (server_id) 
-        DO UPDATE SET 
-          encrypted_env = ${encryptedEnvString},
-          configured_integrations = ${JSON.stringify(configuredIntegrations)},
-          last_updated = NOW()
-      `;
-      
-      // Cache the decrypted credentials
-      this.credentialsCache.set(serverId, sensitiveEnv);
-      
-      this.logger.log(`Stored encrypted credentials for MCP server: ${serverId}`);
-    } catch {
-      // If table doesn't exist, just cache in memory
-      this.logger.warn('MCP credentials table not found, using in-memory storage only');
-      this.credentialsCache.set(serverId, sensitiveEnv);
-    }
+    await this.prisma.mcpCredential.upsert({
+      where: { organizationId_serverId: { organizationId, serverId } },
+      create: {
+        organizationId,
+        serverId,
+        templateId,
+        serverName,
+        encryptedEnv: encryptedEnvString,
+        configuredIntegrations,
+        createdBy,
+      },
+      update: {
+        templateId,
+        serverName,
+        encryptedEnv: encryptedEnvString,
+        configuredIntegrations,
+      },
+    });
+    this.credentialsCache.set(this.cacheKey(organizationId, serverId), sensitiveEnv);
+    await auditMutation(this.prisma, {
+      organizationId,
+      userId: createdBy,
+      action: 'UPSERT',
+      entityType: 'McpCredential',
+      entityId: serverId,
+      entityName: serverName,
+      description: `Stored encrypted MCP credentials for ${serverName}`,
+    });
+    this.logger.log(`Stored encrypted credentials for MCP server: ${serverId}`);
   }
 
   /**
    * Retrieve and decrypt credentials for an MCP server
    */
-  async getCredentials(serverId: string): Promise<Record<string, string> | null> {
+  async getCredentials(
+    organizationId: string,
+    serverId: string,
+  ): Promise<Record<string, string> | null> {
+    const cacheKey = this.cacheKey(organizationId, serverId);
     // Check cache first
-    if (this.credentialsCache.has(serverId)) {
-      return this.credentialsCache.get(serverId) || null;
+    if (this.credentialsCache.has(cacheKey)) {
+      return this.credentialsCache.get(cacheKey) || null;
     }
 
-    try {
-      const result = await this.prisma.$queryRaw<Array<{ encrypted_env: string }>>`
-        SELECT encrypted_env FROM mcp_credentials WHERE server_id = ${serverId}
-      `;
-
-      if (result.length === 0) {
-        return null;
-      }
-
-      const encryptedData: EncryptedData = JSON.parse(result[0].encrypted_env);
-      const decrypted = this.decrypt(encryptedData);
-      const credentials = JSON.parse(decrypted);
-
-      // Cache for future use
-      this.credentialsCache.set(serverId, credentials);
-
-      return credentials;
-    } catch (error) {
-      this.logger.warn(`Failed to retrieve credentials for ${serverId}:`, error);
+    const result = await this.prisma.mcpCredential.findUnique({
+      where: { organizationId_serverId: { organizationId, serverId } },
+    });
+    if (!result) {
       return null;
     }
+    const encryptedData: EncryptedData = JSON.parse(result.encryptedEnv);
+    const credentials = JSON.parse(this.decrypt(encryptedData)) as Record<string, string>;
+    this.credentialsCache.set(cacheKey, credentials);
+    return credentials;
   }
 
   /**
    * Delete credentials for an MCP server
    */
-  async deleteCredentials(serverId: string): Promise<void> {
-    this.credentialsCache.delete(serverId);
-
-    try {
-      await this.prisma.$executeRaw`
-        DELETE FROM mcp_credentials WHERE server_id = ${serverId}
-      `;
-      this.logger.log(`Deleted credentials for MCP server: ${serverId}`);
-    } catch {
-      // Table might not exist
-      this.logger.warn('Could not delete from mcp_credentials table');
-    }
+  async deleteCredentials(
+    organizationId: string,
+    userId: string,
+    serverId: string,
+  ): Promise<void> {
+    this.credentialsCache.delete(this.cacheKey(organizationId, serverId));
+    await this.prisma.mcpCredential.deleteMany({ where: { organizationId, serverId } });
+    await auditMutation(this.prisma, {
+      organizationId,
+      userId,
+      action: 'DELETE',
+      entityType: 'McpCredential',
+      entityId: serverId,
+      description: `Deleted MCP credentials for ${serverId}`,
+    });
+    this.logger.log(`Deleted credentials for MCP server: ${serverId}`);
   }
 
   /**
    * Get all stored MCP server configurations (without decrypted credentials)
    */
-  async getAllServerConfigs(): Promise<MCPCredentialRecord[]> {
-    try {
-      const results = await this.prisma.$queryRaw<MCPCredentialRecord[]>`
-        SELECT 
-          server_id as "serverId",
-          template_id as "templateId",
-          server_name as "serverName",
-          configured_integrations as "configuredIntegrations",
-          created_at as "createdAt",
-          created_by as "createdBy",
-          last_updated as "lastUpdated"
-        FROM mcp_credentials
-        ORDER BY created_at DESC
-      `;
-      
-      return results.map(r => ({
-        ...r,
-        configuredIntegrations: typeof r.configuredIntegrations === 'string' 
-          ? JSON.parse(r.configuredIntegrations) 
-          : r.configuredIntegrations,
-      }));
-    } catch {
-      return [];
-    }
+  async getAllServerConfigs(organizationId: string): Promise<MCPCredentialRecord[]> {
+    const results = await this.prisma.mcpCredential.findMany({
+      where: { organizationId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return results.map((record) => ({
+      serverId: record.serverId,
+      templateId: record.templateId,
+      serverName: record.serverName,
+      encryptedEnv: record.encryptedEnv,
+      configuredIntegrations: record.configuredIntegrations,
+      createdAt: record.createdAt,
+      createdBy: record.createdBy,
+      lastUpdated: record.updatedAt,
+    }));
   }
 
   /**
@@ -260,8 +241,11 @@ export class MCPCredentialsService {
   /**
    * Get masked credentials for audit display
    */
-  async getMaskedCredentials(serverId: string): Promise<Record<string, string>> {
-    const credentials = await this.getCredentials(serverId);
+  async getMaskedCredentials(
+    organizationId: string,
+    serverId: string,
+  ): Promise<Record<string, string>> {
+    const credentials = await this.getCredentials(organizationId, serverId);
     if (!credentials) {
       return {};
     }
@@ -276,11 +260,15 @@ export class MCPCredentialsService {
   /**
    * Validate that required credentials exist for a server
    */
-  async validateCredentials(serverId: string, requiredKeys: string[]): Promise<{
+  async validateCredentials(
+    organizationId: string,
+    serverId: string,
+    requiredKeys: string[],
+  ): Promise<{
     valid: boolean;
     missing: string[];
   }> {
-    const credentials = await this.getCredentials(serverId);
+    const credentials = await this.getCredentials(organizationId, serverId);
     if (!credentials) {
       return { valid: false, missing: requiredKeys };
     }
@@ -310,7 +298,7 @@ export class MCPCredentialsService {
    * @param newKey - The new encryption key (must be at least 32 characters)
    * @returns Summary of the rotation operation
    */
-  async rotateEncryptionKey(newKey: string): Promise<{
+  async rotateEncryptionKey(organizationId: string, newKey: string): Promise<{
     success: boolean;
     credentialsRotated: number;
     errors: string[];
@@ -331,7 +319,7 @@ export class MCPCredentialsService {
 
     try {
       // Get all stored credentials
-      const allCredentials = await this.getAllStoredCredentials();
+      const allCredentials = await this.getAllStoredCredentials(organizationId);
       
       if (allCredentials.length === 0) {
         this.logger.log('No credentials to rotate');
@@ -344,7 +332,7 @@ export class MCPCredentialsService {
       for (const credential of allCredentials) {
         try {
           // Decrypt with old key
-          const decrypted = await this.getCredentials(credential.serverId);
+          const decrypted = await this.getCredentials(organizationId, credential.serverId);
           
           if (!decrypted) {
             errors.push(`Could not decrypt credentials for ${credential.serverId}`);
@@ -356,12 +344,15 @@ export class MCPCredentialsService {
           const reEncryptedString = JSON.stringify(reEncrypted);
 
           // Update in database
-          await this.prisma.$executeRaw`
-            UPDATE mcp_credentials 
-            SET encrypted_env = ${reEncryptedString},
-                last_updated = NOW()
-            WHERE server_id = ${credential.serverId}
-          `;
+          await this.prisma.mcpCredential.update({
+            where: {
+              organizationId_serverId: {
+                organizationId,
+                serverId: credential.serverId,
+              },
+            },
+            data: { encryptedEnv: reEncryptedString },
+          });
 
           credentialsRotated++;
           this.logger.log(`Rotated credentials for server: ${credential.serverId}`);
@@ -400,19 +391,14 @@ export class MCPCredentialsService {
   /**
    * Get all stored credentials from database (for rotation)
    */
-  private async getAllStoredCredentials(): Promise<Array<{ serverId: string; encryptedEnv: string }>> {
-    try {
-      const results = await this.prisma.$queryRaw<Array<{ server_id: string; encrypted_env: string }>>`
-        SELECT server_id, encrypted_env FROM mcp_credentials
-      `;
-      
-      return results.map(r => ({
-        serverId: r.server_id,
-        encryptedEnv: r.encrypted_env,
-      }));
-    } catch {
-      return [];
-    }
+  private async getAllStoredCredentials(
+    organizationId: string,
+  ): Promise<Array<{ serverId: string; encryptedEnv: string }>> {
+    const results = await this.prisma.mcpCredential.findMany({
+      where: { organizationId },
+      select: { serverId: true, encryptedEnv: true },
+    });
+    return results;
   }
 
   /**
@@ -443,12 +429,12 @@ export class MCPCredentialsService {
    * Verify that credentials can be decrypted with the current key
    * Useful for health checks and troubleshooting
    */
-  async verifyCredentialIntegrity(): Promise<{
+  async verifyCredentialIntegrity(organizationId: string): Promise<{
     total: number;
     valid: number;
     invalid: string[];
   }> {
-    const allCredentials = await this.getAllStoredCredentials();
+    const allCredentials = await this.getAllStoredCredentials(organizationId);
     const invalid: string[] = [];
 
     for (const credential of allCredentials) {
@@ -465,6 +451,10 @@ export class MCPCredentialsService {
       valid: allCredentials.length - invalid.length,
       invalid,
     };
+  }
+
+  private cacheKey(organizationId: string, serverId: string): string {
+    return `${organizationId}:${serverId}`;
   }
 }
 

@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import * as crypto from 'crypto';
+import { Prisma } from '@prisma/client';
+import { auditMutation } from '../common/audit-mutation';
 import {
   CreateWorkflowDto,
   UpdateWorkflowDto,
@@ -62,10 +63,6 @@ interface ApprovalRequestRecord {
   expiresAt?: Date;
 }
 
-// In-memory stores
-const workflowStore = new Map<string, WorkflowRecord>();
-const requestStore = new Map<string, ApprovalRequestRecord>();
-
 @Injectable()
 export class WorkflowsService {
   private readonly logger = new Logger(WorkflowsService.name);
@@ -79,88 +76,110 @@ export class WorkflowsService {
     userId: string,
     dto: CreateWorkflowDto,
   ): Promise<WorkflowDto> {
-    const id = crypto.randomUUID();
-    const now = new Date();
-
-    // Sort steps by order
     const steps = [...dto.steps].sort((a, b) => a.order - b.order);
-
-    const workflow: WorkflowRecord = {
-      id,
+    const created = await this.prisma.approvalWorkflow.create({
+      data: {
+        organizationId,
+        name: dto.name,
+        description: dto.description,
+        entityType: dto.entityType,
+        trigger: dto.trigger || WorkflowTrigger.Manual,
+        mode: dto.approvalType || ApprovalType.Sequential,
+        steps: steps as unknown as Prisma.InputJsonValue,
+        isActive: dto.isActive !== false,
+        createdBy: userId,
+      },
+    });
+    await auditMutation(this.prisma, {
       organizationId,
-      name: dto.name,
-      description: dto.description,
-      entityType: dto.entityType,
-      trigger: dto.trigger || WorkflowTrigger.Manual,
-      approvalType: dto.approvalType || ApprovalType.Sequential,
-      steps,
-      isActive: dto.isActive !== false,
-      createdBy: userId,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    workflowStore.set(id, workflow);
-    this.logger.log(`Created workflow ${id} (${dto.name})`);
-
-    return this.toWorkflowDto(workflow);
+      userId,
+      action: 'CREATE',
+      entityType: 'ApprovalWorkflow',
+      entityId: created.id,
+      entityName: created.name,
+      description: `Created approval workflow: ${created.name}`,
+    });
+    this.logger.log(`Created workflow ${created.id} (${dto.name})`);
+    return this.toWorkflowDto(this.toWorkflowRecord(created));
   }
 
   async updateWorkflow(
     organizationId: string,
+    userId: string,
     workflowId: string,
     dto: UpdateWorkflowDto,
   ): Promise<WorkflowDto> {
-    const workflow = workflowStore.get(workflowId);
-    if (!workflow || workflow.organizationId !== organizationId) {
+    const existing = await this.prisma.approvalWorkflow.findFirst({
+      where: { id: workflowId, organizationId },
+    });
+    if (!existing) {
       throw new NotFoundException(`Workflow ${workflowId} not found`);
     }
-
-    const steps = dto.steps 
-      ? [...dto.steps].sort((a, b) => a.order - b.order)
-      : workflow.steps;
-
-    const updated: WorkflowRecord = {
-      ...workflow,
-      name: dto.name ?? workflow.name,
-      description: dto.description ?? workflow.description,
-      trigger: dto.trigger ?? workflow.trigger,
-      approvalType: dto.approvalType ?? workflow.approvalType,
-      steps,
-      isActive: dto.isActive ?? workflow.isActive,
-      updatedAt: new Date(),
-    };
-
-    workflowStore.set(workflowId, updated);
-    return this.toWorkflowDto(updated);
+    const updated = await this.prisma.approvalWorkflow.update({
+      where: { id: workflowId },
+      data: {
+        name: dto.name,
+        description: dto.description,
+        trigger: dto.trigger,
+        mode: dto.approvalType,
+        steps: dto.steps
+          ? ([...dto.steps].sort((a, b) => a.order - b.order) as unknown as Prisma.InputJsonValue)
+          : undefined,
+        isActive: dto.isActive,
+      },
+    });
+    await auditMutation(this.prisma, {
+      organizationId,
+      userId,
+      action: 'UPDATE',
+      entityType: 'ApprovalWorkflow',
+      entityId: updated.id,
+      entityName: updated.name,
+      description: `Updated approval workflow: ${updated.name}`,
+    });
+    return this.toWorkflowDto(this.toWorkflowRecord(updated));
   }
 
-  async deleteWorkflow(organizationId: string, workflowId: string): Promise<void> {
-    const workflow = workflowStore.get(workflowId);
-    if (!workflow || workflow.organizationId !== organizationId) {
+  async deleteWorkflow(organizationId: string, userId: string, workflowId: string): Promise<void> {
+    const workflow = await this.prisma.approvalWorkflow.findFirst({
+      where: { id: workflowId, organizationId },
+    });
+    if (!workflow) {
       throw new NotFoundException(`Workflow ${workflowId} not found`);
     }
 
-    // Check for pending requests
-    const pendingRequests = Array.from(requestStore.values()).filter(
-      r => r.workflowId === workflowId && 
-        [ApprovalRequestStatus.Pending, ApprovalRequestStatus.InProgress].includes(r.status)
-    );
-
-    if (pendingRequests.length > 0) {
+    const pendingRequests = await this.prisma.approvalRequest.count({
+      where: {
+        workflowId,
+        organizationId,
+        status: { in: [ApprovalRequestStatus.Pending, ApprovalRequestStatus.InProgress] },
+      },
+    });
+    if (pendingRequests > 0) {
       throw new BadRequestException('Cannot delete workflow with pending approval requests');
     }
 
-    workflowStore.delete(workflowId);
+    await this.prisma.approvalWorkflow.delete({ where: { id: workflowId } });
+    await auditMutation(this.prisma, {
+      organizationId,
+      userId,
+      action: 'DELETE',
+      entityType: 'ApprovalWorkflow',
+      entityId: workflowId,
+      entityName: workflow.name,
+      description: `Deleted approval workflow: ${workflow.name}`,
+    });
     this.logger.log(`Deleted workflow ${workflowId}`);
   }
 
   async getWorkflow(organizationId: string, workflowId: string): Promise<WorkflowDto> {
-    const workflow = workflowStore.get(workflowId);
-    if (!workflow || workflow.organizationId !== organizationId) {
+    const workflow = await this.prisma.approvalWorkflow.findFirst({
+      where: { id: workflowId, organizationId },
+    });
+    if (!workflow) {
       throw new NotFoundException(`Workflow ${workflowId} not found`);
     }
-    return this.toWorkflowDto(workflow);
+    return this.toWorkflowDto(this.toWorkflowRecord(workflow));
   }
 
   async listWorkflows(
@@ -172,25 +191,23 @@ export class WorkflowsService {
       limit: query.limit,
     });
 
-    let workflows = Array.from(workflowStore.values())
-      .filter(w => w.organizationId === organizationId);
-
-    if (query.entityType) {
-      workflows = workflows.filter(w => w.entityType === query.entityType);
-    }
-
-    if (query.activeOnly) {
-      workflows = workflows.filter(w => w.isActive);
-    }
-
-    workflows.sort((a, b) => a.name.localeCompare(b.name));
-
-    const total = workflows.length;
-    const offset = (pagination.page - 1) * pagination.limit;
-    const paginatedWorkflows = workflows.slice(offset, offset + pagination.limit);
+    const where: Prisma.ApprovalWorkflowWhereInput = {
+      organizationId,
+      entityType: query.entityType,
+      isActive: query.activeOnly ? true : undefined,
+    };
+    const [workflows, total] = await Promise.all([
+      this.prisma.approvalWorkflow.findMany({
+        where,
+        orderBy: { name: 'asc' },
+        skip: (pagination.page - 1) * pagination.limit,
+        take: pagination.limit,
+      }),
+      this.prisma.approvalWorkflow.count({ where }),
+    ]);
 
     return createPaginatedResponse(
-      paginatedWorkflows.map(w => this.toWorkflowDto(w)),
+      workflows.map((w) => this.toWorkflowDto(this.toWorkflowRecord(w))),
       total,
       pagination,
     );
@@ -203,59 +220,66 @@ export class WorkflowsService {
     userId: string,
     dto: CreateApprovalRequestDto,
   ): Promise<ApprovalRequestDto> {
-    const workflow = workflowStore.get(dto.workflowId);
-    if (!workflow || workflow.organizationId !== organizationId) {
+    const workflowRow = await this.prisma.approvalWorkflow.findFirst({
+      where: { id: dto.workflowId, organizationId },
+    });
+    if (!workflowRow) {
       throw new NotFoundException(`Workflow ${dto.workflowId} not found`);
     }
+    const workflow = this.toWorkflowRecord(workflowRow);
 
     if (!workflow.isActive) {
       throw new BadRequestException('Workflow is not active');
     }
 
-    // Check for existing pending request
-    const existing = Array.from(requestStore.values()).find(
-      r => r.workflowId === dto.workflowId && 
-           r.entityId === dto.entityId &&
-           [ApprovalRequestStatus.Pending, ApprovalRequestStatus.InProgress].includes(r.status)
-    );
-
+    const existing = await this.prisma.approvalRequest.findFirst({
+      where: {
+        organizationId,
+        workflowId: dto.workflowId,
+        entityId: dto.entityId,
+        status: { in: [ApprovalRequestStatus.Pending, ApprovalRequestStatus.InProgress] },
+      },
+    });
     if (existing) {
       throw new BadRequestException('An approval request is already pending for this entity');
     }
 
-    const id = crypto.randomUUID();
     const now = new Date();
-
-    // Initialize step approvals
     const stepApprovals: StepApprovalRecord[] = workflow.steps.map(step => ({
       stepOrder: step.order,
       stepName: step.name,
       status: ApprovalStepStatus.Pending,
     }));
-
-    const request: ApprovalRequestRecord = {
-      id,
-      organizationId,
-      workflowId: dto.workflowId,
-      entityId: dto.entityId,
-      status: ApprovalRequestStatus.Pending,
-      currentStep: 1,
-      stepApprovals,
-      comment: dto.comment,
-      context: dto.context,
-      requestedBy: userId,
-      createdAt: now,
-    };
-
-    // Set expiration if any step has a timeout
     const maxTimeout = Math.max(...workflow.steps.map(s => s.timeoutHours || 0));
-    if (maxTimeout > 0) {
-      request.expiresAt = new Date(now.getTime() + maxTimeout * 60 * 60 * 1000);
-    }
-
-    requestStore.set(id, request);
-    this.logger.log(`Created approval request ${id} for ${workflow.entityType} ${dto.entityId}`);
-
+    const created = await this.prisma.approvalRequest.create({
+      data: {
+        organizationId,
+        workflowId: dto.workflowId,
+        entityType: workflow.entityType,
+        entityId: dto.entityId,
+        title: `${workflow.name}: ${dto.entityId}`,
+        justification: dto.comment,
+        context: dto.context as Prisma.InputJsonValue | undefined,
+        stepApprovals: stepApprovals as unknown as Prisma.InputJsonValue,
+        status: ApprovalRequestStatus.Pending,
+        currentStep: workflow.steps[0]?.order ?? 1,
+        requestedBy: userId,
+        requestedByName: userId,
+        expiresAt: maxTimeout > 0
+          ? new Date(now.getTime() + maxTimeout * 60 * 60 * 1000)
+          : undefined,
+      },
+    });
+    await auditMutation(this.prisma, {
+      organizationId,
+      userId,
+      action: 'CREATE',
+      entityType: 'ApprovalRequest',
+      entityId: created.id,
+      description: `Created approval request for ${workflow.entityType} ${dto.entityId}`,
+    });
+    const request = this.toApprovalRequestRecord(created);
+    this.logger.log(`Created approval request ${created.id} for ${workflow.entityType} ${dto.entityId}`);
     return this.toApprovalRequestDto(request, workflow);
   }
 
@@ -265,19 +289,27 @@ export class WorkflowsService {
     requestId: string,
     dto: ApprovalActionDto,
   ): Promise<ApprovalRequestDto> {
-    const request = requestStore.get(requestId);
-    if (!request || request.organizationId !== organizationId) {
+    const requestRow = await this.prisma.approvalRequest.findFirst({
+      where: { id: requestId, organizationId },
+      include: { workflow: true },
+    });
+    if (!requestRow) {
       throw new NotFoundException(`Approval request ${requestId} not found`);
     }
+    const request = this.toApprovalRequestRecord(requestRow);
 
-    if (![ApprovalRequestStatus.Pending, ApprovalRequestStatus.InProgress].includes(request.status)) {
+    if (
+      ![ApprovalRequestStatus.Pending, ApprovalRequestStatus.InProgress].includes(
+        request.status as ApprovalRequestStatus,
+      )
+    ) {
       throw new BadRequestException(`Request is already ${request.status}`);
     }
 
-    const workflow = workflowStore.get(request.workflowId);
-    if (!workflow) {
+    if (requestRow.workflow.organizationId !== organizationId) {
       throw new NotFoundException('Workflow not found');
     }
+    const workflow = this.toWorkflowRecord(requestRow.workflow);
 
     // Find current step
     const currentStepDef = workflow.steps.find(s => s.order === request.currentStep);
@@ -286,7 +318,7 @@ export class WorkflowsService {
     }
 
     // Check if user can approve this step
-    const canApprove = await this.canUserApproveStep(userId, currentStepDef);
+    const canApprove = await this.canUserApproveStep(organizationId, userId, currentStepDef);
     if (!canApprove) {
       throw new ForbiddenException('You are not authorized to approve this step');
     }
@@ -318,12 +350,28 @@ export class WorkflowsService {
       }
     }
 
-    request.stepApprovals = [...request.stepApprovals];
-    requestStore.set(requestId, request);
+    const updated = await this.prisma.approvalRequest.update({
+      where: { id: requestId },
+      data: {
+        status: request.status,
+        currentStep: request.currentStep,
+        stepApprovals: request.stepApprovals as unknown as Prisma.InputJsonValue,
+        completedAt: request.completedAt,
+      },
+    });
+    await auditMutation(this.prisma, {
+      organizationId,
+      userId,
+      action: dto.action === 'approve' ? 'APPROVE' : 'REJECT',
+      entityType: 'ApprovalRequest',
+      entityId: requestId,
+      description: `${dto.action === 'approve' ? 'Approved' : 'Rejected'} approval request ${requestId}`,
+      metadata: { comment: dto.comment },
+    });
 
     this.logger.log(`Approval request ${requestId} step ${request.currentStep - 1} ${dto.action}d by ${userId}`);
 
-    return this.toApprovalRequestDto(request, workflow);
+    return this.toApprovalRequestDto(this.toApprovalRequestRecord(updated), workflow);
   }
 
   async cancelRequest(
@@ -331,8 +379,10 @@ export class WorkflowsService {
     userId: string,
     requestId: string,
   ): Promise<void> {
-    const request = requestStore.get(requestId);
-    if (!request || request.organizationId !== organizationId) {
+    const request = await this.prisma.approvalRequest.findFirst({
+      where: { id: requestId, organizationId },
+    });
+    if (!request) {
       throw new NotFoundException(`Approval request ${requestId} not found`);
     }
 
@@ -341,13 +391,29 @@ export class WorkflowsService {
       throw new ForbiddenException('Only the requester can cancel this request');
     }
 
-    if (![ApprovalRequestStatus.Pending, ApprovalRequestStatus.InProgress].includes(request.status)) {
+    if (
+      ![ApprovalRequestStatus.Pending, ApprovalRequestStatus.InProgress].includes(
+        request.status as ApprovalRequestStatus,
+      )
+    ) {
       throw new BadRequestException(`Request is already ${request.status}`);
     }
 
-    request.status = ApprovalRequestStatus.Cancelled;
-    request.completedAt = new Date();
-    requestStore.set(requestId, request);
+    await this.prisma.approvalRequest.update({
+      where: { id: requestId },
+      data: {
+        status: ApprovalRequestStatus.Cancelled,
+        completedAt: new Date(),
+      },
+    });
+    await auditMutation(this.prisma, {
+      organizationId,
+      userId,
+      action: 'CANCEL',
+      entityType: 'ApprovalRequest',
+      entityId: requestId,
+      description: `Cancelled approval request ${requestId}`,
+    });
 
     this.logger.log(`Approval request ${requestId} cancelled by ${userId}`);
   }
@@ -356,13 +422,18 @@ export class WorkflowsService {
     organizationId: string,
     requestId: string,
   ): Promise<ApprovalRequestDto> {
-    const request = requestStore.get(requestId);
-    if (!request || request.organizationId !== organizationId) {
+    const request = await this.prisma.approvalRequest.findFirst({
+      where: { id: requestId, organizationId },
+      include: { workflow: true },
+    });
+    if (!request) {
       throw new NotFoundException(`Approval request ${requestId} not found`);
     }
 
-    const workflow = workflowStore.get(request.workflowId);
-    return this.toApprovalRequestDto(request, workflow!);
+    return this.toApprovalRequestDto(
+      this.toApprovalRequestRecord(request),
+      this.toWorkflowRecord(request.workflow),
+    );
   }
 
   async listApprovalRequests(
@@ -375,66 +446,61 @@ export class WorkflowsService {
       limit: query.limit,
     });
 
-    let requests = Array.from(requestStore.values())
-      .filter(r => r.organizationId === organizationId);
-
-    if (query.status) {
-      requests = requests.filter(r => r.status === query.status);
-    }
-
-    if (query.entityType) {
-      requests = requests.filter(r => {
-        const workflow = workflowStore.get(r.workflowId);
-        return workflow?.entityType === query.entityType;
-      });
-    }
-
-    if (query.myRequests) {
-      requests = requests.filter(r => r.requestedBy === userId);
-    }
+    const rows = await this.prisma.approvalRequest.findMany({
+      where: {
+        organizationId,
+        status: query.status,
+        entityType: query.entityType,
+        requestedBy: query.myRequests ? userId : undefined,
+      },
+      include: { workflow: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    let requests = rows.map((row) => ({
+      request: this.toApprovalRequestRecord(row),
+      workflow: this.toWorkflowRecord(row.workflow),
+    }));
 
     if (query.pendingMyApproval) {
-      // Filter to requests where user can approve the current step
-      const filtered: ApprovalRequestRecord[] = [];
-      for (const request of requests) {
-        if (![ApprovalRequestStatus.Pending, ApprovalRequestStatus.InProgress].includes(request.status)) {
+      const filtered: typeof requests = [];
+      for (const item of requests) {
+        if (![ApprovalRequestStatus.Pending, ApprovalRequestStatus.InProgress].includes(item.request.status)) {
           continue;
         }
-        const workflow = workflowStore.get(request.workflowId);
-        if (!workflow) continue;
-        const currentStep = workflow.steps.find(s => s.order === request.currentStep);
-        if (currentStep && await this.canUserApproveStep(userId, currentStep)) {
-          filtered.push(request);
+        const currentStep = item.workflow.steps.find(s => s.order === item.request.currentStep);
+        if (currentStep && await this.canUserApproveStep(organizationId, userId, currentStep)) {
+          filtered.push(item);
         }
       }
       requests = filtered;
     }
 
-    requests.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
     const total = requests.length;
     const offset = (pagination.page - 1) * pagination.limit;
     const paginatedRequests = requests.slice(offset, offset + pagination.limit);
 
-    const dtos = paginatedRequests.map(r => {
-      const workflow = workflowStore.get(r.workflowId);
-      return this.toApprovalRequestDto(r, workflow!);
-    });
+    const dtos = paginatedRequests.map(({ request, workflow }) =>
+      this.toApprovalRequestDto(request, workflow),
+    );
 
     return createPaginatedResponse(dtos, total, pagination);
   }
 
   // ==================== Helpers ====================
 
-  private async canUserApproveStep(userId: string, step: WorkflowStepDto): Promise<boolean> {
+  private async canUserApproveStep(
+    organizationId: string,
+    userId: string,
+    step: WorkflowStepDto,
+  ): Promise<boolean> {
     // Check if user is in approver list
     if (step.approverUserIds?.includes(userId)) {
       return true;
     }
 
     // Check user roles and groups
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, organizationId },
     });
 
     if (!user) return false;
@@ -456,6 +522,68 @@ export class WorkflowsService {
     }
 
     return false;
+  }
+
+  private toWorkflowRecord(workflow: {
+    id: string;
+    organizationId: string;
+    name: string;
+    description: string | null;
+    entityType: string;
+    trigger: string;
+    mode: string;
+    steps: Prisma.JsonValue;
+    isActive: boolean;
+    createdBy: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }): WorkflowRecord {
+    return {
+      id: workflow.id,
+      organizationId: workflow.organizationId,
+      name: workflow.name,
+      description: workflow.description ?? undefined,
+      entityType: workflow.entityType as WorkflowEntityType,
+      trigger: workflow.trigger as WorkflowTrigger,
+      approvalType: workflow.mode as ApprovalType,
+      steps: workflow.steps as unknown as WorkflowStepDto[],
+      isActive: workflow.isActive,
+      createdBy: workflow.createdBy,
+      createdAt: workflow.createdAt,
+      updatedAt: workflow.updatedAt,
+    };
+  }
+
+  private toApprovalRequestRecord(request: {
+    id: string;
+    organizationId: string;
+    workflowId: string;
+    entityId: string;
+    status: string;
+    currentStep: number;
+    stepApprovals: Prisma.JsonValue;
+    justification: string | null;
+    context: Prisma.JsonValue | null;
+    requestedBy: string;
+    createdAt: Date;
+    completedAt: Date | null;
+    expiresAt: Date | null;
+  }): ApprovalRequestRecord {
+    return {
+      id: request.id,
+      organizationId: request.organizationId,
+      workflowId: request.workflowId,
+      entityId: request.entityId,
+      status: request.status as ApprovalRequestStatus,
+      currentStep: request.currentStep,
+      stepApprovals: request.stepApprovals as unknown as StepApprovalRecord[],
+      comment: request.justification ?? undefined,
+      context: request.context as Record<string, unknown> | undefined,
+      requestedBy: request.requestedBy,
+      createdAt: request.createdAt,
+      completedAt: request.completedAt ?? undefined,
+      expiresAt: request.expiresAt ?? undefined,
+    };
   }
 
   private toWorkflowDto(workflow: WorkflowRecord): WorkflowDto {

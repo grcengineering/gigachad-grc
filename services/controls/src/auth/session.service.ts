@@ -20,12 +20,6 @@ interface UserSession {
 }
 
 /**
- * In-memory session store (for development)
- * In production, this should be backed by Redis for distributed systems
- */
-const sessionStore = new Map<string, UserSession>();
-
-/**
  * Session configuration
  */
 const SESSION_CONFIG = {
@@ -89,8 +83,7 @@ export class SessionService {
     // Check concurrent session limit
     await this.enforceSessionLimit(userId);
 
-    // Store session
-    sessionStore.set(sessionId, session);
+    await this.prisma.userSession.create({ data: session });
 
     // Log session creation
     this.logger.log(`Session created: user=${userId}, session=${sessionId.substring(0, 8)}...`);
@@ -109,7 +102,7 @@ export class SessionService {
    * Validate a session and update activity
    */
   async validateSession(sessionId: string): Promise<UserSession | null> {
-    const session = sessionStore.get(sessionId);
+    const session = await this.prisma.userSession.findUnique({ where: { id: sessionId } });
     
     if (!session || !session.isActive) {
       return null;
@@ -135,7 +128,10 @@ export class SessionService {
     // Extend session on activity
     if (SESSION_CONFIG.extendOnActivity) {
       session.lastActivityAt = now;
-      sessionStore.set(sessionId, session);
+      await this.prisma.userSession.update({
+        where: { id: sessionId },
+        data: { lastActivityAt: now },
+      });
     }
 
     return session;
@@ -145,11 +141,17 @@ export class SessionService {
    * Invalidate a specific session
    */
   async invalidateSession(sessionId: string, reason: string = 'manual'): Promise<void> {
-    const session = sessionStore.get(sessionId);
+    const session = await this.prisma.userSession.findUnique({ where: { id: sessionId } });
     
     if (session) {
-      session.isActive = false;
-      sessionStore.set(sessionId, session);
+      await this.prisma.userSession.update({
+        where: { id: sessionId },
+        data: {
+          isActive: false,
+          invalidatedAt: new Date(),
+          invalidReason: reason,
+        },
+      });
 
       this.logger.log(
         `Session invalidated: user=${session.userId}, ` +
@@ -162,7 +164,6 @@ export class SessionService {
       });
     }
 
-    sessionStore.delete(sessionId);
   }
 
   /**
@@ -173,18 +174,31 @@ export class SessionService {
     reason: string = 'logout_all',
     excludeSessionId?: string,
   ): Promise<number> {
-    let count = 0;
-
-    for (const [sessionId, session] of sessionStore.entries()) {
-      if (session.userId === userId && sessionId !== excludeSessionId) {
-        await this.invalidateSession(sessionId, reason);
-        count++;
-      }
+    const sessions = await this.prisma.userSession.findMany({
+      where: {
+        userId,
+        id: excludeSessionId ? { not: excludeSessionId } : undefined,
+        isActive: true,
+      },
+      select: { id: true, organizationId: true },
+    });
+    const result = await this.prisma.userSession.updateMany({
+      where: {
+        id: { in: sessions.map((session) => session.id) },
+      },
+      data: { isActive: false, invalidatedAt: new Date(), invalidReason: reason },
+    });
+    const organizationIds = [...new Set(sessions.map((session) => session.organizationId))];
+    for (const organizationId of organizationIds) {
+      await this.logSessionEvent(userId, organizationId, 'session.invalidated_all', {
+        reason,
+        count: sessions.filter((session) => session.organizationId === organizationId).length,
+      });
     }
 
-    this.logger.log(`Invalidated ${count} sessions for user ${userId}: reason=${reason}`);
+    this.logger.log(`Invalidated ${result.count} sessions for user ${userId}: reason=${reason}`);
 
-    return count;
+    return result.count;
   }
 
   /**
@@ -211,54 +225,37 @@ export class SessionService {
     createdAt: Date;
     isCurrent: boolean;
   }>> {
-    const sessions: Array<{
-      id: string;
-      deviceInfo: string;
-      ipAddress: string;
-      lastActivityAt: Date;
-      createdAt: Date;
-      isCurrent: boolean;
-    }> = [];
+    const rows = await this.prisma.userSession.findMany({
+      where: { userId, isActive: true, expiresAt: { gt: new Date() } },
+      orderBy: { lastActivityAt: 'desc' },
+    });
+    const sessions = rows.map((session) => ({
+      id: session.id.substring(0, 8) + '...',
+      deviceInfo: session.deviceInfo,
+      ipAddress: this.maskIpAddress(session.ipAddress),
+      lastActivityAt: session.lastActivityAt,
+      createdAt: session.createdAt,
+      isCurrent: false,
+    }));
 
-    for (const [sessionId, session] of sessionStore.entries()) {
-      if (session.userId === userId && session.isActive) {
-        sessions.push({
-          id: sessionId.substring(0, 8) + '...',
-          deviceInfo: session.deviceInfo,
-          ipAddress: this.maskIpAddress(session.ipAddress),
-          lastActivityAt: session.lastActivityAt,
-          createdAt: session.createdAt,
-          isCurrent: false, // Set by controller based on current request
-        });
-      }
-    }
-
-    return sessions.sort((a, b) => b.lastActivityAt.getTime() - a.lastActivityAt.getTime());
+    return sessions;
   }
 
   /**
    * Enforce maximum concurrent sessions
    */
   private async enforceSessionLimit(userId: string): Promise<void> {
-    const userSessions: Array<[string, UserSession]> = [];
-
-    for (const [sessionId, session] of sessionStore.entries()) {
-      if (session.userId === userId && session.isActive) {
-        userSessions.push([sessionId, session]);
-      }
-    }
+    const userSessions = await this.prisma.userSession.findMany({
+      where: { userId, isActive: true },
+      orderBy: { lastActivityAt: 'asc' },
+    });
 
     // If at or over limit, remove oldest sessions
     if (userSessions.length >= SESSION_CONFIG.maxConcurrentSessions) {
       // Sort by last activity (oldest first)
-      userSessions.sort((a, b) => 
-        a[1].lastActivityAt.getTime() - b[1].lastActivityAt.getTime()
-      );
-
-      // Remove oldest sessions to make room
       const toRemove = userSessions.length - SESSION_CONFIG.maxConcurrentSessions + 1;
       for (let i = 0; i < toRemove; i++) {
-        await this.invalidateSession(userSessions[i][0], 'session_limit');
+        await this.invalidateSession(userSessions[i].id, 'session_limit');
       }
     }
   }
@@ -321,22 +318,18 @@ export class SessionService {
     action: string,
     details: Record<string, unknown>,
   ): Promise<void> {
-    try {
-      await this.prisma.auditLog.create({
-        data: {
-          organizationId,
-          userId,
-          action,
-          entityType: 'session',
-          entityId: (details.sessionId as string) || 'system',
-          description: `Session event: ${action}`,
-          metadata: details as Prisma.InputJsonValue,
-          ipAddress: (details.ipAddress as string) || null,
-        },
-      });
-    } catch (error) {
-      this.logger.error(`Failed to log session event: ${error}`);
-    }
+    await this.prisma.auditLog.create({
+      data: {
+        organizationId,
+        userId,
+        action,
+        entityType: 'session',
+        entityId: (details.sessionId as string) || 'system',
+        description: `Session event: ${action}`,
+        metadata: details as Prisma.InputJsonValue,
+        ipAddress: (details.ipAddress as string) || null,
+      },
+    });
   }
 
   /**
@@ -345,23 +338,38 @@ export class SessionService {
    */
   async cleanupExpiredSessions(): Promise<number> {
     const now = new Date();
-    let cleaned = 0;
-
-    for (const [sessionId, session] of sessionStore.entries()) {
-      const inactivityMs = now.getTime() - session.lastActivityAt.getTime();
-      const timeoutMs = SESSION_CONFIG.inactivityTimeoutMinutes * 60 * 1000;
-
-      if (now > session.expiresAt || inactivityMs > timeoutMs) {
-        sessionStore.delete(sessionId);
-        cleaned++;
-      }
+    const inactivityCutoff = new Date(
+      now.getTime() - SESSION_CONFIG.inactivityTimeoutMinutes * 60 * 1000,
+    );
+    const expired = await this.prisma.userSession.findMany({
+      where: {
+        isActive: true,
+        OR: [
+          { expiresAt: { lt: now } },
+          { lastActivityAt: { lt: inactivityCutoff } },
+        ],
+      },
+      select: { id: true, userId: true, organizationId: true },
+    });
+    const result = await this.prisma.userSession.updateMany({
+      where: { id: { in: expired.map((session) => session.id) } },
+      data: {
+        isActive: false,
+        invalidatedAt: now,
+        invalidReason: 'expired',
+      },
+    });
+    for (const organizationId of [...new Set(expired.map((session) => session.organizationId))]) {
+      await this.logSessionEvent('system', organizationId, 'session.cleanup', {
+        count: expired.filter((session) => session.organizationId === organizationId).length,
+      });
     }
 
-    if (cleaned > 0) {
-      this.logger.log(`Cleaned up ${cleaned} expired sessions`);
+    if (result.count > 0) {
+      this.logger.log(`Cleaned up ${result.count} expired sessions`);
     }
 
-    return cleaned;
+    return result.count;
   }
 
   /**
