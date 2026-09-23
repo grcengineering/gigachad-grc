@@ -25,6 +25,11 @@ describe('ApplicationAuthGuard', () => {
       : (process.env.USE_DEV_AUTH = originalUseDevAuth);
   });
 
+  it('retains injectable runtime metadata without an auth-guard import cycle', () => {
+    const parameterTypes = Reflect.getMetadata('design:paramtypes', ApplicationAuthGuard);
+    expect(parameterTypes?.[1]).toBe(CombinedAuthGuard);
+  });
+
   it('rejects a production request instead of honoring USE_DEV_AUTH', async () => {
     process.env.NODE_ENV = 'production';
     process.env.USE_DEV_AUTH = 'true';

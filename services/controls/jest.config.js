@@ -9,9 +9,8 @@ module.exports = {
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^sanitize-html$': '<rootDir>/../../tests/mocks/sanitize-html.cjs',
   },
   collectCoverageFrom: ['src/**/*.(t|j)s'],
   coverageDirectory: './coverage',
 };
-
-

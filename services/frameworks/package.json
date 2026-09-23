@@ -56,6 +56,9 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "moduleNameMapper": {
+      "^sanitize-html$": "<rootDir>/../../../tests/mocks/sanitize-html.cjs"
+    },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],

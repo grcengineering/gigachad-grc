@@ -17,7 +17,7 @@ import {
   SEED_USER_A_VIEWER_ID,
   SEED_USER_B_ADMIN_ID,
 } from '../seed/seed-constants';
-import { isDevelopmentAuthEnvironment } from './application-auth.guard';
+import { isDevelopmentAuthEnvironment } from './auth-environment';
 
 interface DevAuthOverrideFixture {
   userId: string;

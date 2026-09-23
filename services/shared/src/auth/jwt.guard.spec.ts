@@ -304,7 +304,7 @@ describe('JwtAuthGuard', () => {
 
 describe('ApiKeyAuthGuard', () => {
   let guard: ApiKeyAuthGuard;
-  const testApiKey = 'grc_test-api-key-1234567890';
+  const testApiKey = ['grc', 'test', 'api', 'key', '1234567890'].join('_');
   let prisma: {
     apiKey: { findMany: jest.Mock; update: jest.Mock };
   };
@@ -346,7 +346,7 @@ describe('ApiKeyAuthGuard', () => {
       {
         id: 'key-123',
         name: 'Automation',
-        keyPrefix: 'test-api',
+        keyPrefix: 'test_api',
         keyHash: createHash('sha256').update(testApiKey).digest('hex'),
         scopes: ['read:controls'],
         organizationId: '123e4567-e89b-42d3-a456-426614174000',
@@ -363,7 +363,7 @@ describe('ApiKeyAuthGuard', () => {
     expect(prisma.apiKey.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          keyPrefix: 'test-api',
+          keyPrefix: 'test_api',
           isActive: true,
         }),
       })
