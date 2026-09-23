@@ -31,9 +31,10 @@ export class MappingHistoryService {
     const mapping = await this.prisma.controlMapping.findFirst({
       where: {
         id: mappingId,
-        OR: [
+        AND: [
           { control: { OR: [{ organizationId }, { organizationId: null }] } },
           { framework: { OR: [{ organizationId }, { organizationId: null }] } },
+          { OR: [{ control: { organizationId } }, { framework: { organizationId } }] },
         ],
       },
     });
@@ -52,9 +53,10 @@ export class MappingHistoryService {
     const mapping = await this.prisma.controlMapping.findFirst({
       where: {
         id: mappingId,
-        OR: [
+        AND: [
           { control: { OR: [{ organizationId }, { organizationId: null }] } },
           { framework: { OR: [{ organizationId }, { organizationId: null }] } },
+          { OR: [{ control: { organizationId } }, { framework: { organizationId } }] },
         ],
       },
     });

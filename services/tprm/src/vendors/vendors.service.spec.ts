@@ -138,14 +138,14 @@ describe('VendorsService', () => {
             organizationId: 'org-123',
             deletedAt: null,
           }),
-        }),
+        })
       );
       expect(mockPrismaService.vendor.count).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             organizationId: 'org-123',
           }),
-        }),
+        })
       );
     });
 
@@ -160,7 +160,7 @@ describe('VendorsService', () => {
           where: expect.objectContaining({
             tier: 'tier_1',
           }),
-        }),
+        })
       );
     });
 
@@ -171,6 +171,32 @@ describe('VendorsService', () => {
       await service.findAll({ organizationId: 'org-123', search: 'Test' });
 
       expect(mockPrismaService.vendor.findMany).toHaveBeenCalled();
+    });
+  });
+
+  describe('create tenant context', () => {
+    it('uses the authenticated organization instead of body organizationId', async () => {
+      mockPrismaService.vendor.findMany.mockResolvedValue([]);
+      mockPrismaService.vendor.create.mockImplementation(async ({ data }) => ({
+        id: 'vendor-a',
+        ...data,
+      }));
+
+      await service.create(
+        {
+          organizationId: 'org-b',
+          name: 'Injected Vendor',
+        },
+        'user-a',
+        'org-a'
+      );
+
+      expect(mockPrismaService.vendor.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          organizationId: 'org-a',
+          name: 'Injected Vendor',
+        }),
+      });
     });
   });
 
@@ -193,7 +219,7 @@ describe('VendorsService', () => {
       expect(mockPrismaService.vendor.findFirst).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 'vendor-123', organizationId: 'org-123', deletedAt: null },
-        }),
+        })
       );
       expect(result).toEqual(mockVendor);
     });
@@ -201,9 +227,7 @@ describe('VendorsService', () => {
     it('should throw NotFoundException if vendor not found', async () => {
       mockPrismaService.vendor.findFirst.mockResolvedValue(null);
 
-      await expect(service.findOne('nonexistent', 'org-123')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findOne('nonexistent', 'org-123')).rejects.toThrow(NotFoundException);
     });
   });
 });

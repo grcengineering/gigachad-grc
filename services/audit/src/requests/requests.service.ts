@@ -10,6 +10,22 @@ export class RequestsService {
 
   async create(createRequestDto: CreateAuditRequestDto, createdBy: string) {
     const { auditId, assigneeId, ...rest } = createRequestDto;
+    const organizationId = createRequestDto.organizationId!;
+    const assignedTo = createRequestDto.assignedTo || assigneeId;
+    const [audit, assignee] = await Promise.all([
+      this.prisma.audit.findFirst({
+        where: { id: auditId, organizationId, deletedAt: null },
+        select: { id: true },
+      }),
+      assignedTo
+        ? this.prisma.user.findFirst({
+            where: { id: assignedTo, organizationId, status: 'active' },
+            select: { id: true },
+          })
+        : Promise.resolve({ id: 'none' }),
+    ]);
+    if (!audit) throw new NotFoundException(`Audit with ID ${auditId} not found`);
+    if (!assignee) throw new NotFoundException('Assignee not found');
 
     // Generate request number if not provided
     const requestCount = await this.prisma.auditRequest.count({
@@ -21,8 +37,8 @@ export class RequestsService {
     const data: Prisma.AuditRequestUncheckedCreateInput = {
       ...rest,
       auditId,
-      organizationId: createRequestDto.organizationId!,
-      assignedTo: createRequestDto.assignedTo || assigneeId,
+      organizationId,
+      assignedTo,
       requestNumber,
       dueDate: createRequestDto.dueDate ? new Date(createRequestDto.dueDate) : undefined,
       createdBy,
@@ -116,6 +132,18 @@ export class RequestsService {
       updates.assignedTo = updateRequestDto.assigneeId;
     }
     delete updates.assigneeId;
+    delete updates.organizationId;
+    if (updates.assignedTo) {
+      const assignee = await this.prisma.user.findFirst({
+        where: {
+          id: updates.assignedTo as string,
+          organizationId,
+          status: 'active',
+        },
+        select: { id: true },
+      });
+      if (!assignee) throw new NotFoundException('Assignee not found');
+    }
 
     // Update timestamps based on status changes
     if (updateRequestDto.status === 'submitted' && !updates.submittedAt) {

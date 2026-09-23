@@ -53,8 +53,8 @@ export class RiskWorkflowTasksService {
     }
 
     // Verify assignee exists
-    const assignee = await this.prisma.user.findUnique({
-      where: { id: dto.assigneeId },
+    const assignee = await this.prisma.user.findFirst({
+      where: { id: dto.assigneeId, organizationId, status: 'active' },
     });
 
     if (!assignee) {
@@ -121,6 +121,13 @@ export class RiskWorkflowTasksService {
       throw new NotFoundException('Risk not found');
     }
 
+    const assignee = await this.prisma.user.findFirst({
+      where: { id: assigneeId, organizationId, status: 'active' },
+    });
+    if (!assignee) {
+      throw new NotFoundException('Assignee not found');
+    }
+
     // Calculate due date
     const dueDate = config.dueDaysFromNow
       ? new Date(Date.now() + config.dueDaysFromNow * 24 * 60 * 60 * 1000)
@@ -155,12 +162,7 @@ export class RiskWorkflowTasksService {
     });
 
     // Send notification to assignee
-    const assignee = await this.prisma.user.findUnique({
-      where: { id: assigneeId },
-    });
-    if (assignee) {
-      await this.sendTaskAssignedNotification(task, assignee);
-    }
+    await this.sendTaskAssignedNotification(task, assignee);
 
     this.logger.log(`Auto-created ${config.taskType} task for risk ${risk.riskId}`);
 
@@ -525,8 +527,8 @@ export class RiskWorkflowTasksService {
     }
 
     // Verify new assignee exists
-    const newAssignee = await this.prisma.user.findUnique({
-      where: { id: dto.newAssigneeId },
+    const newAssignee = await this.prisma.user.findFirst({
+      where: { id: dto.newAssigneeId, organizationId, status: 'active' },
     });
 
     if (!newAssignee) {

@@ -90,12 +90,28 @@ export class ContractsService {
     @Inject(STORAGE_PROVIDER) private storage: StorageProvider
   ) {}
 
-  async create(createContractDto: CreateContractDto, userId: string) {
-    const { status, startDate, endDate, renewalDate, requiresHipaa, requiresGdpr, ...rest } =
-      createContractDto;
+  async create(createContractDto: CreateContractDto, userId: string, organizationId: string) {
+    const vendor = await this.prisma.vendor.findFirst({
+      where: { id: createContractDto.vendorId, organizationId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!vendor) {
+      throw new NotFoundException(`Vendor with ID ${createContractDto.vendorId} not found`);
+    }
+
+    const {
+      organizationId: _organizationId,
+      status,
+      startDate,
+      endDate,
+      renewalDate,
+      requiresHipaa,
+      requiresGdpr,
+      ...rest
+    } = createContractDto;
     const data: Prisma.VendorContractUncheckedCreateInput = {
       ...rest,
-      organizationId: createContractDto.organizationId!,
+      organizationId,
       dataProcessingAddendum: rest.dataProcessingAddendum ?? requiresHipaa,
       requiresRightToAudit: rest.requiresRightToAudit ?? requiresGdpr,
       status: toContractStatus(status),
@@ -206,8 +222,26 @@ export class ContractsService {
     // SECURITY: Verify contract belongs to user's organization before updating
     const existingContract = await this.findOne(id, organizationId);
 
-    const { status, startDate, endDate, renewalDate, requiresHipaa, requiresGdpr, ...rest } =
-      updateContractDto;
+    const {
+      organizationId: _organizationId,
+      status,
+      startDate,
+      endDate,
+      renewalDate,
+      requiresHipaa,
+      requiresGdpr,
+      ...rest
+    } = updateContractDto;
+
+    if (rest.vendorId) {
+      const vendor = await this.prisma.vendor.findFirst({
+        where: { id: rest.vendorId, organizationId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!vendor) {
+        throw new NotFoundException(`Vendor with ID ${rest.vendorId} not found`);
+      }
+    }
     const data: Prisma.VendorContractUpdateInput = { ...rest };
 
     if (requiresHipaa !== undefined && data.dataProcessingAddendum === undefined) {

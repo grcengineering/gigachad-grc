@@ -37,9 +37,20 @@ export class QuestionnairesService {
     private cache: CacheService
   ) {}
 
+  private async requireAssignee(organizationId: string, userId?: string) {
+    if (!userId) return;
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, organizationId, status: 'active' },
+      select: { id: true },
+    });
+    if (!user) throw new NotFoundException('Assignee not found');
+  }
+
   // Questionnaire CRUD
   async create(createQuestionnaireDto: TenantScopedQuestionnaireDto, userId: string) {
     const { status, priority, dueDate, metadata, assignedTo, ...restDto } = createQuestionnaireDto;
+    await this.requireAssignee(createQuestionnaireDto.organizationId, assignedTo);
+
     const questionnaire = await this.prisma.questionnaireRequest.create({
       data: {
         ...restDto,
@@ -137,6 +148,7 @@ export class QuestionnairesService {
   ) {
     // SECURITY: Verify questionnaire belongs to user's organization before updating
     const _questionnaire = await this.findOne(id, organizationId);
+    await this.requireAssignee(organizationId, updateQuestionnaireDto.assignedTo);
 
     const { status, priority, assignedTo, metadata, dueDate, completedAt, ...restDto } =
       updateQuestionnaireDto;

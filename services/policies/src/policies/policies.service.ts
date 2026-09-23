@@ -23,6 +23,34 @@ export class PoliciesService {
     @Inject(STORAGE_PROVIDER) private storage: StorageProvider
   ) {}
 
+  private async requireOrganizationUser(userId: string, organizationId: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, organizationId, status: 'active' },
+      select: { id: true },
+    });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+  }
+
+  private async getAccessibleControls(controlIds: string[], organizationId: string) {
+    const uniqueIds = [...new Set(controlIds)];
+    const controls = await this.prisma.control.findMany({
+      where: {
+        id: { in: uniqueIds },
+        deletedAt: null,
+        OR: [{ organizationId }, { organizationId: null }],
+      },
+      select: { id: true, controlId: true, title: true },
+    });
+
+    if (controls.length !== uniqueIds.length) {
+      throw new NotFoundException('One or more controls not found');
+    }
+
+    return controls;
+  }
+
   async findAll(organizationId: string, filters: PolicyFilterDto) {
     const page = filters.page || 1;
     const limit = filters.limit || 20;
@@ -107,6 +135,12 @@ export class PoliciesService {
       include: {
         owner: { select: { id: true, displayName: true, email: true } },
         controlLinks: {
+          where: {
+            control: {
+              deletedAt: null,
+              OR: [{ organizationId }, { organizationId: null }],
+            },
+          },
           include: {
             control: { select: { id: true, controlId: true, title: true } },
           },
@@ -169,6 +203,8 @@ export class PoliciesService {
     userEmail?: string,
     userName?: string
   ) {
+    await this.requireOrganizationUser(dto.ownerId || userId, organizationId);
+
     const policyId = generateId();
     const versionNumber = dto.version || '1.0';
     // SECURITY: Sanitize filename to prevent path traversal attacks
@@ -280,6 +316,9 @@ export class PoliciesService {
     userName?: string
   ) {
     const before = await this.findOne(id, organizationId);
+    if (dto.ownerId) {
+      await this.requireOrganizationUser(dto.ownerId, organizationId);
+    }
 
     const updated = await this.prisma.policy.update({
       where: { id },
@@ -538,15 +577,13 @@ export class PoliciesService {
 
     const policy = await this.findOne(policyId, organizationId);
 
-    // Get control info for audit log
-    const controls = await this.prisma.control.findMany({
-      where: { id: { in: validControlIds }, deletedAt: null },
-      select: { id: true, controlId: true, title: true },
-    });
+    // Validate every requested control. Global controls are intentionally
+    // visible, while controls from another tenant are treated as not found.
+    const controls = await this.getAccessibleControls(validControlIds, organizationId);
 
-    const links = validControlIds.map((controlId) => ({
+    const links = controls.map((control) => ({
       policyId,
-      controlId,
+      controlId: control.id,
       linkedBy: userId,
     }));
 
@@ -587,13 +624,25 @@ export class PoliciesService {
     const policy = await this.findOne(policyId, organizationId);
 
     // Get control info for audit log
-    const control = await this.prisma.control.findUnique({
-      where: { id: controlId },
+    const control = await this.prisma.control.findFirst({
+      where: {
+        id: controlId,
+        deletedAt: null,
+        OR: [{ organizationId }, { organizationId: null }],
+      },
       select: { controlId: true, title: true },
     });
+    if (!control) {
+      throw new NotFoundException(`Control with ID ${controlId} not found`);
+    }
 
     await this.prisma.policyControlLink.deleteMany({
-      where: { policyId, controlId },
+      where: {
+        policyId,
+        controlId,
+        policy: { organizationId },
+        control: { OR: [{ organizationId }, { organizationId: null }] },
+      },
     });
 
     // Audit log

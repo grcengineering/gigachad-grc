@@ -140,7 +140,13 @@ describe('MappingsService.exportFile', () => {
 
       expect(mockPrismaService.controlMapping.findMany).toHaveBeenCalledTimes(1);
       const call = mockPrismaService.controlMapping.findMany.mock.calls[0][0];
-      expect(call.where).toEqual({ frameworkId: FW_ID });
+      expect(call.where).toEqual({
+        frameworkId: FW_ID,
+        control: {
+          deletedAt: null,
+          OR: [{ organizationId: ORG_ID }, { organizationId: null }],
+        },
+      });
     });
 
     it('scopes framework lookup to caller org + system (organizationId null)', async () => {

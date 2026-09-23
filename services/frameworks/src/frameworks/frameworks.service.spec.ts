@@ -24,6 +24,7 @@ describe('FrameworksService', () => {
     },
     user: {
       findMany: jest.fn(),
+      findFirst: jest.fn(),
     },
   };
 
@@ -119,7 +120,20 @@ describe('FrameworksService', () => {
           organizationId: 'org-123',
           isActive: true,
         },
-        include: { _count: { select: { requirements: true, mappings: true } } },
+        include: {
+          _count: {
+            select: {
+              requirements: true,
+              mappings: {
+                where: {
+                  control: {
+                    OR: [{ organizationId: null }, { organizationId: 'org-123' }],
+                  },
+                },
+              },
+            },
+          },
+        },
       });
       expect(result).toEqual(mockCreatedFramework);
     });
@@ -154,10 +168,14 @@ describe('FrameworksService', () => {
     it('should return a framework by id', async () => {
       mockPrismaService.framework.findFirst.mockResolvedValue(mockFramework);
 
-      const result = await service.findOne('fw-123');
+      const result = await service.findOne('fw-123', 'org-123');
 
       expect(mockPrismaService.framework.findFirst).toHaveBeenCalledWith({
-        where: { id: 'fw-123', deletedAt: null },
+        where: {
+          id: 'fw-123',
+          deletedAt: null,
+          OR: [{ organizationId: null }, { organizationId: 'org-123' }],
+        },
         include: { _count: { select: { requirements: true, mappings: true } } },
       });
       expect(result).toEqual(mockFramework);
@@ -166,7 +184,7 @@ describe('FrameworksService', () => {
     it('should throw NotFoundException if framework not found', async () => {
       mockPrismaService.framework.findFirst.mockResolvedValue(null);
 
-      await expect(service.findOne('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('nonexistent', 'org-123')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -239,7 +257,7 @@ describe('FrameworksService', () => {
         level: 0,
       });
 
-      const result = await service.createRequirement('fw-123', mockCreateDto);
+      const result = await service.createRequirement('fw-123', mockCreateDto, 'org-123');
 
       expect(mockPrismaService.frameworkRequirement.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -270,10 +288,14 @@ describe('FrameworksService', () => {
         level: 2,
       });
 
-      await service.createRequirement('fw-123', {
-        ...mockCreateDto,
-        parentId: 'parent-123',
-      });
+      await service.createRequirement(
+        'fw-123',
+        {
+          ...mockCreateDto,
+          parentId: 'parent-123',
+        },
+        'org-123'
+      );
 
       expect(mockPrismaService.frameworkRequirement.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -296,7 +318,7 @@ describe('FrameworksService', () => {
       mockPrismaService.framework.findFirst.mockResolvedValue({ id: 'fw-123' });
       mockPrismaService.frameworkRequirement.findMany.mockResolvedValue(mockRequirements);
 
-      const result = await service.getRequirements('fw-123');
+      const result = await service.getRequirements('fw-123', undefined, 'org-123');
 
       expect(mockPrismaService.frameworkRequirement.findMany).toHaveBeenCalledWith({
         where: { frameworkId: 'fw-123', parentId: null },
@@ -310,7 +332,7 @@ describe('FrameworksService', () => {
       mockPrismaService.framework.findFirst.mockResolvedValue({ id: 'fw-123' });
       mockPrismaService.frameworkRequirement.findMany.mockResolvedValue([]);
 
-      await service.getRequirements('fw-123', 'parent-123');
+      await service.getRequirements('fw-123', 'parent-123', 'org-123');
 
       expect(mockPrismaService.frameworkRequirement.findMany).toHaveBeenCalledWith({
         where: { frameworkId: 'fw-123', parentId: 'parent-123' },
@@ -365,6 +387,58 @@ describe('FrameworksService', () => {
 
       expect(result.score).toBe(0);
       expect(result.requirementsByStatus.not_applicable).toBe(1);
+    });
+
+    it('rejects readiness reads for a framework owned by another organization', async () => {
+      mockPrismaService.framework.findFirst.mockResolvedValue(null);
+
+      await expect(service.calculateReadiness('org-b-framework', 'org-a')).rejects.toThrow(
+        NotFoundException
+      );
+      expect(mockPrismaService.frameworkRequirement.findMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('tenant integrity', () => {
+    it('keeps global frameworks readable to a tenant', async () => {
+      mockPrismaService.framework.findFirst.mockResolvedValue({
+        id: 'global-framework',
+        organizationId: null,
+      });
+
+      await expect(service.findOne('global-framework', 'org-a')).resolves.toEqual(
+        expect.objectContaining({ id: 'global-framework' })
+      );
+      expect(mockPrismaService.framework.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: [{ organizationId: null }, { organizationId: 'org-a' }],
+          }),
+        })
+      );
+    });
+
+    it('forbids requirement mutations on global or foreign frameworks', async () => {
+      mockPrismaService.framework.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.updateRequirement(
+          'global-or-org-b-framework',
+          'requirement-1',
+          { ownerNotes: 'tamper' },
+          'org-a'
+        )
+      ).rejects.toThrow(NotFoundException);
+      expect(mockPrismaService.frameworkRequirement.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects foreign framework trees before loading children', async () => {
+      mockPrismaService.framework.findFirst.mockResolvedValue(null);
+
+      await expect(service.getRequirementTree('org-b-framework', 'org-a')).rejects.toThrow(
+        NotFoundException
+      );
+      expect(mockPrismaService.frameworkRequirement.findMany).not.toHaveBeenCalled();
     });
   });
 

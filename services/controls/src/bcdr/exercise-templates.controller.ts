@@ -1,27 +1,8 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { CurrentUser, UserContext } from '@gigachad-grc/shared';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { ExerciseTemplatesService } from './exercise-templates.service';
-import {
-  CreateExerciseTemplateDto,
-  ExerciseTemplateFilterDto,
-} from './dto/bcdr.dto';
+import { CreateExerciseTemplateDto, ExerciseTemplateFilterDto } from './dto/bcdr.dto';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 /**
@@ -45,7 +26,7 @@ export class ExerciseTemplatesController {
   @ApiResponse({ status: 200, description: 'Paginated template list' })
   async listTemplates(
     @Query() filters: ExerciseTemplateFilterDto,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
     return this.templatesService.findAll(user.organizationId, filters);
   }
@@ -68,8 +49,8 @@ export class ExerciseTemplatesController {
   @ApiParam({ name: 'id', description: 'Template ID' })
   @ApiResponse({ status: 200, description: 'Template details' })
   @ApiResponse({ status: 404, description: 'Template not found' })
-  async getTemplate(@Param('id') id: string) {
-    return this.templatesService.findOne(id);
+  async getTemplate(@Param('id') id: string, @CurrentUser() user: UserContext) {
+    return this.templatesService.findOne(id, user.organizationId);
   }
 
   /**
@@ -79,16 +60,13 @@ export class ExerciseTemplatesController {
   @ApiOperation({ summary: 'Clone template to organization' })
   @ApiParam({ name: 'id', description: 'Template ID to clone' })
   @ApiResponse({ status: 201, description: 'Cloned template' })
-  async cloneTemplate(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  async cloneTemplate(@Param('id') id: string, @CurrentUser() user: UserContext) {
     return this.templatesService.cloneToOrganization(
       id,
       user.organizationId,
       user.userId,
       user.email,
-      user.name,
+      user.name
     );
   }
 
@@ -98,16 +76,13 @@ export class ExerciseTemplatesController {
   @Post()
   @ApiOperation({ summary: 'Create custom template' })
   @ApiResponse({ status: 201, description: 'Created template' })
-  async createTemplate(
-    @Body() dto: CreateExerciseTemplateDto,
-    @CurrentUser() user: UserContext,
-  ) {
+  async createTemplate(@Body() dto: CreateExerciseTemplateDto, @CurrentUser() user: UserContext) {
     return this.templatesService.create(
       user.organizationId,
       user.userId,
       dto,
       user.email,
-      user.name,
+      user.name
     );
   }
 
@@ -121,7 +96,7 @@ export class ExerciseTemplatesController {
   async createFromTest(
     @Param('testId') testId: string,
     @Body('title') title: string,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
     return this.templatesService.createFromTest(
       testId,
@@ -129,7 +104,7 @@ export class ExerciseTemplatesController {
       user.userId,
       title,
       user.email,
-      user.name,
+      user.name
     );
   }
 
@@ -144,7 +119,7 @@ export class ExerciseTemplatesController {
   async updateTemplate(
     @Param('id') id: string,
     @Body() dto: Partial<CreateExerciseTemplateDto>,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
     return this.templatesService.update(
       id,
@@ -152,7 +127,7 @@ export class ExerciseTemplatesController {
       user.userId,
       dto,
       user.email,
-      user.name,
+      user.name
     );
   }
 
@@ -164,16 +139,13 @@ export class ExerciseTemplatesController {
   @ApiParam({ name: 'id', description: 'Template ID' })
   @ApiResponse({ status: 200, description: 'Template deleted' })
   @ApiResponse({ status: 409, description: 'Cannot delete global template' })
-  async deleteTemplate(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  async deleteTemplate(@Param('id') id: string, @CurrentUser() user: UserContext) {
     return this.templatesService.delete(
       id,
       user.organizationId,
       user.userId,
       user.email,
-      user.name,
+      user.name
     );
   }
 

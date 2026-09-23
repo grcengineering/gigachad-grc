@@ -10,19 +10,16 @@ describe('frameworkImportFileFilter', () => {
   function runFilter(mimetype: string) {
     return new Promise<{ err: Error | null; accepted: boolean }>((resolve) => {
       frameworkImportFileFilter({} as unknown, { mimetype }, (err, accepted) =>
-        resolve({ err, accepted }),
+        resolve({ err, accepted })
       );
     });
   }
 
-  it.each(FRAMEWORK_IMPORT_MIME_ALLOWLIST)(
-    'accepts allowed MIME type: %s',
-    async (mime) => {
-      const { err, accepted } = await runFilter(mime);
-      expect(err).toBeNull();
-      expect(accepted).toBe(true);
-    },
-  );
+  it.each(FRAMEWORK_IMPORT_MIME_ALLOWLIST)('accepts allowed MIME type: %s', async (mime) => {
+    const { err, accepted } = await runFilter(mime);
+    expect(err).toBeNull();
+    expect(accepted).toBe(true);
+  });
 
   it.each([
     'application/x-msdownload',
@@ -53,7 +50,8 @@ describe('FrameworksController uploads', () => {
     await expect(
       controller.bulkUploadRequirements(
         'framework-1',
-        undefined as unknown as Express.Multer.File
+        undefined as unknown as Express.Multer.File,
+        { organizationId: 'org-a' } as never
       )
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(frameworksService.bulkUploadRequirements).not.toHaveBeenCalled();

@@ -75,9 +75,15 @@ describe('MappingHistoryService', () => {
       expect(mockPrisma.controlMapping.findFirst).toHaveBeenCalledWith({
         where: {
           id: 'm-1',
-          OR: [
+          AND: [
             { control: { OR: [{ organizationId: 'org-1' }, { organizationId: null }] } },
             { framework: { OR: [{ organizationId: 'org-1' }, { organizationId: null }] } },
+            {
+              OR: [
+                { control: { organizationId: 'org-1' } },
+                { framework: { organizationId: 'org-1' } },
+              ],
+            },
           ],
         },
       });
@@ -120,9 +126,15 @@ describe('MappingHistoryService', () => {
       expect(mockPrisma.controlMapping.findFirst).toHaveBeenCalledWith({
         where: {
           id: 'm-1',
-          OR: [
+          AND: [
             { control: { OR: [{ organizationId: 'org-1' }, { organizationId: null }] } },
             { framework: { OR: [{ organizationId: 'org-1' }, { organizationId: null }] } },
+            {
+              OR: [
+                { control: { organizationId: 'org-1' } },
+                { framework: { organizationId: 'org-1' } },
+              ],
+            },
           ],
         },
       });

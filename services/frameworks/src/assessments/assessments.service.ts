@@ -1,13 +1,87 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateAssessmentDto, UpdateRequirementStatusDto, CreateGapDto, CreateRemediationTaskDto } from './dto/assessment.dto';
+import {
+  CreateAssessmentDto,
+  UpdateRequirementStatusDto,
+  CreateGapDto,
+  CreateRemediationTaskDto,
+} from './dto/assessment.dto';
 import { Prisma, TaskStatus } from '@prisma/client';
 
 @Injectable()
 export class AssessmentsService {
   constructor(private prisma: PrismaService) {}
 
+  private frameworkScope(organizationId: string) {
+    return [{ organizationId }, { organizationId: null }];
+  }
+
+  private async requireFrameworkAccess(frameworkId: string, organizationId: string) {
+    const framework = await this.prisma.framework.findFirst({
+      where: {
+        id: frameworkId,
+        deletedAt: null,
+        OR: this.frameworkScope(organizationId),
+      },
+      select: { id: true },
+    });
+    if (!framework) {
+      throw new NotFoundException(`Framework with ID ${frameworkId} not found`);
+    }
+  }
+
+  private async requireRequirement(requirementId: string, frameworkId: string): Promise<void> {
+    const requirement = await this.prisma.frameworkRequirement.findFirst({
+      where: { id: requirementId, frameworkId },
+      select: { id: true },
+    });
+    if (!requirement) {
+      throw new NotFoundException(`Requirement with ID ${requirementId} not found`);
+    }
+  }
+
+  private async requireOrganizationUser(userId: string | undefined, organizationId: string) {
+    if (!userId) return;
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, organizationId, status: 'active' },
+      select: { id: true },
+    });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+  }
+
+  private async requireControls(controlIds: string[] | undefined, organizationId: string) {
+    if (!controlIds?.length) return;
+    const uniqueIds = [...new Set(controlIds)];
+    const count = await this.prisma.control.count({
+      where: {
+        id: { in: uniqueIds },
+        deletedAt: null,
+        OR: [{ organizationId }, { organizationId: null }],
+      },
+    });
+    if (count !== uniqueIds.length) {
+      throw new NotFoundException('One or more controls not found');
+    }
+  }
+
+  private async requireEvidence(evidenceIds: string[] | undefined, organizationId: string) {
+    if (!evidenceIds?.length) return;
+    const uniqueIds = [...new Set(evidenceIds)];
+    const count = await this.prisma.evidence.count({
+      where: { id: { in: uniqueIds }, organizationId, deletedAt: null },
+    });
+    if (count !== uniqueIds.length) {
+      throw new NotFoundException('One or more evidence items not found');
+    }
+  }
+
   async findAll(organizationId: string, frameworkId?: string) {
+    if (frameworkId) {
+      await this.requireFrameworkAccess(frameworkId, organizationId);
+    }
+
     const where: { organizationId: string; frameworkId?: string } = { organizationId };
     if (frameworkId) {
       where.frameworkId = frameworkId;
@@ -27,7 +101,11 @@ export class AssessmentsService {
 
   async findOne(id: string, organizationId: string) {
     const assessment = await this.prisma.readinessAssessment.findFirst({
-      where: { id, organizationId },
+      where: {
+        id,
+        organizationId,
+        framework: { OR: this.frameworkScope(organizationId) },
+      },
       include: {
         framework: true,
         requirementStatuses: {
@@ -55,6 +133,8 @@ export class AssessmentsService {
   }
 
   async create(organizationId: string, userId: string, dto: CreateAssessmentDto) {
+    await this.requireFrameworkAccess(dto.frameworkId, organizationId);
+
     // Create assessment
     const assessment = await this.prisma.readinessAssessment.create({
       data: {
@@ -75,7 +155,7 @@ export class AssessmentsService {
     });
 
     await this.prisma.requirementStatus.createMany({
-      data: requirements.map(req => ({
+      data: requirements.map((req) => ({
         assessmentId: assessment.id,
         requirementId: req.id,
         status: 'not_assessed',
@@ -90,9 +170,14 @@ export class AssessmentsService {
     requirementId: string,
     organizationId: string,
     userId: string,
-    dto: UpdateRequirementStatusDto,
+    dto: UpdateRequirementStatusDto
   ) {
-    await this.findOne(assessmentId, organizationId);
+    const assessment = await this.findOne(assessmentId, organizationId);
+    await Promise.all([
+      this.requireRequirement(requirementId, assessment.frameworkId),
+      this.requireEvidence(dto.evidenceIds, organizationId),
+      this.requireControls(dto.linkedControlIds, organizationId),
+    ]);
 
     const status = await this.prisma.requirementStatus.upsert({
       where: {
@@ -168,19 +253,16 @@ export class AssessmentsService {
         requirement: { select: { id: true, reference: true, title: true } },
         remediationTasks: true,
       },
-      orderBy: [
-        { severity: 'asc' },
-        { remediationStatus: 'asc' },
-      ],
+      orderBy: [{ severity: 'asc' }, { remediationStatus: 'asc' }],
     });
   }
 
-  async createGap(
-    assessmentId: string,
-    organizationId: string,
-    dto: CreateGapDto,
-  ) {
-    await this.findOne(assessmentId, organizationId);
+  async createGap(assessmentId: string, organizationId: string, dto: CreateGapDto) {
+    const assessment = await this.findOne(assessmentId, organizationId);
+    await Promise.all([
+      this.requireRequirement(dto.requirementId, assessment.frameworkId),
+      this.requireOrganizationUser(dto.assignedTo, organizationId),
+    ]);
 
     const gap = await this.prisma.gap.create({
       data: {
@@ -191,9 +273,7 @@ export class AssessmentsService {
         recommendation: dto.recommendation,
         remediationStatus: 'open',
         assignedTo: dto.assignedTo,
-        remediationDueDate: dto.remediationDueDate
-          ? new Date(dto.remediationDueDate)
-          : null,
+        remediationDueDate: dto.remediationDueDate ? new Date(dto.remediationDueDate) : null,
       },
     });
 
@@ -211,7 +291,7 @@ export class AssessmentsService {
 
     // Find all non-compliant requirements
     const nonCompliantStatuses = assessment.requirementStatuses.filter(
-      s => s.status === 'non_compliant' || s.status === 'partial',
+      (s) => s.status === 'non_compliant' || s.status === 'partial'
     );
 
     if (nonCompliantStatuses.length === 0) {
@@ -219,7 +299,7 @@ export class AssessmentsService {
     }
 
     // Batch query: Get all existing gaps for these requirements in one query
-    const requirementIds = nonCompliantStatuses.map(s => s.requirementId);
+    const requirementIds = nonCompliantStatuses.map((s) => s.requirementId);
     const existingGaps = await this.prisma.gap.findMany({
       where: {
         assessmentId,
@@ -228,11 +308,11 @@ export class AssessmentsService {
       select: { requirementId: true },
     });
 
-    const existingRequirementIds = new Set(existingGaps.map(g => g.requirementId));
+    const existingRequirementIds = new Set(existingGaps.map((g) => g.requirementId));
 
     // Filter statuses that don't have existing gaps
     const statusesNeedingGaps = nonCompliantStatuses.filter(
-      s => !existingRequirementIds.has(s.requirementId),
+      (s) => !existingRequirementIds.has(s.requirementId)
     );
 
     if (statusesNeedingGaps.length === 0) {
@@ -240,7 +320,7 @@ export class AssessmentsService {
     }
 
     // Batch create: Create all gaps in one operation
-    const gapData = statusesNeedingGaps.map(status => ({
+    const gapData = statusesNeedingGaps.map((status) => ({
       assessmentId,
       requirementId: status.requirementId,
       severity: status.status === 'non_compliant' ? 'high' : 'medium',
@@ -258,7 +338,7 @@ export class AssessmentsService {
     const newGaps = await this.prisma.gap.findMany({
       where: {
         assessmentId,
-        requirementId: { in: statusesNeedingGaps.map(s => s.requirementId) },
+        requirementId: { in: statusesNeedingGaps.map((s) => s.requirementId) },
       },
     });
 
@@ -275,9 +355,20 @@ export class AssessmentsService {
     assessmentId: string,
     organizationId: string,
     userId: string,
-    dto: CreateRemediationTaskDto,
+    dto: CreateRemediationTaskDto
   ) {
     await this.findOne(assessmentId, organizationId);
+    const gap = await this.prisma.gap.findFirst({
+      where: { id: dto.gapId, assessmentId },
+      select: { id: true },
+    });
+    if (!gap) {
+      throw new NotFoundException(`Gap with ID ${dto.gapId} not found`);
+    }
+    await Promise.all([
+      this.requireOrganizationUser(dto.assignedTo, organizationId),
+      this.requireControls(dto.linkedControlIds, organizationId),
+    ]);
 
     const task = await this.prisma.remediationTask.create({
       data: {
@@ -311,9 +402,30 @@ export class AssessmentsService {
     assessmentId: string,
     taskId: string,
     organizationId: string,
-    dto: Partial<CreateRemediationTaskDto> & { status?: string },
+    dto: Partial<CreateRemediationTaskDto> & { status?: string }
   ) {
     await this.findOne(assessmentId, organizationId);
+    const existingTask = await this.prisma.remediationTask.findFirst({
+      where: { id: taskId, assessmentId },
+      select: { id: true },
+    });
+    if (!existingTask) {
+      throw new NotFoundException(`Remediation task with ID ${taskId} not found`);
+    }
+    await Promise.all([
+      this.requireOrganizationUser(dto.assignedTo, organizationId),
+      this.requireControls(dto.linkedControlIds, organizationId),
+    ]);
+
+    if (dto.gapId !== undefined) {
+      const gap = await this.prisma.gap.findFirst({
+        where: { id: dto.gapId, assessmentId },
+        select: { id: true },
+      });
+      if (!gap) {
+        throw new NotFoundException(`Gap with ID ${dto.gapId} not found`);
+      }
+    }
 
     const updateData: Prisma.RemediationTaskUpdateInput = {};
     if (dto.gapId !== undefined) updateData.gap = { connect: { id: dto.gapId } };
@@ -372,14 +484,12 @@ export class AssessmentsService {
     });
 
     const total = statuses.length;
-    const compliant = statuses.filter(s => s.status === 'compliant').length;
-    const partial = statuses.filter(s => s.status === 'partial').length;
-    const na = statuses.filter(s => s.status === 'not_applicable').length;
+    const compliant = statuses.filter((s) => s.status === 'compliant').length;
+    const partial = statuses.filter((s) => s.status === 'partial').length;
+    const na = statuses.filter((s) => s.status === 'not_applicable').length;
 
     const applicable = total - na;
-    const score = applicable > 0
-      ? Math.round(((compliant + partial * 0.5) / applicable) * 100)
-      : 0;
+    const score = applicable > 0 ? Math.round(((compliant + partial * 0.5) / applicable) * 100) : 0;
 
     await this.prisma.readinessAssessment.update({
       where: { id: assessmentId },
@@ -387,6 +497,3 @@ export class AssessmentsService {
     });
   }
 }
-
-
-

@@ -99,6 +99,42 @@ export class BusinessProcessesService {
     private readonly auditService: AuditService
   ) {}
 
+  private async requireTenantReferences(
+    organizationId: string,
+    requestingUserId: string,
+    workspaceId?: string,
+    ownerId?: string
+  ) {
+    const requestingUser = workspaceId
+      ? await this.prisma.user.findFirst({
+          where: { id: requestingUserId, organizationId, status: 'active' },
+          select: { role: true },
+        })
+      : null;
+    const [workspace, owner] = await Promise.all([
+      workspaceId
+        ? this.prisma.workspace.findFirst({
+            where: {
+              id: workspaceId,
+              organizationId,
+              ...(requestingUser?.role !== 'admin' && {
+                members: { some: { userId: requestingUserId } },
+              }),
+            },
+            select: { id: true },
+          })
+        : Promise.resolve({ id: 'none' }),
+      ownerId
+        ? this.prisma.user.findFirst({
+            where: { id: ownerId, organizationId, status: 'active' },
+            select: { id: true },
+          })
+        : Promise.resolve({ id: 'none' }),
+    ]);
+    if (!workspace) throw new NotFoundException('Workspace not found');
+    if (!owner) throw new NotFoundException('Owner not found');
+  }
+
   async findAll(organizationId: string, filters: BusinessProcessFilterDto) {
     const {
       search,
@@ -225,6 +261,8 @@ export class BusinessProcessesService {
     userEmail?: string,
     userName?: string
   ) {
+    await this.requireTenantReferences(organizationId, userId, dto.workspaceId, dto.ownerId);
+
     // Check for duplicate processId
     const existing = await this.prisma.$queryRaw<IdRecord[]>`
       SELECT id FROM bcdr.business_processes 
@@ -300,6 +338,7 @@ export class BusinessProcessesService {
     userName?: string
   ) {
     await this.findOne(id, organizationId);
+    await this.requireTenantReferences(organizationId, userId, undefined, dto.ownerId);
 
     // SECURITY: Allowed column names for dynamic UPDATE query.
     // Only these hardcoded column names can be included in the query.

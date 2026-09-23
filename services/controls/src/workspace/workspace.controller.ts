@@ -98,7 +98,12 @@ export class WorkspaceController {
   @Get(':id')
   @RequirePermission(Resource.WORKSPACES, Action.READ)
   async findOne(@Param('id') id: string, @Req() req: WorkspaceRequest) {
-    return this.workspaceService.findOne(id, req.user.organizationId, req.user.id || req.user.userId, req.user.role);
+    return this.workspaceService.findOne(
+      id,
+      req.user.organizationId,
+      req.user.id || req.user.userId,
+      req.user.role
+    );
   }
 
   /**
@@ -121,7 +126,11 @@ export class WorkspaceController {
   @Post()
   @RequirePermission(Resource.WORKSPACES, Action.CREATE)
   async create(@Req() req: WorkspaceRequest, @Body() dto: CreateWorkspaceDto) {
-    return this.workspaceService.create(req.user.organizationId, req.user.id || req.user.userId, dto);
+    return this.workspaceService.create(
+      req.user.organizationId,
+      req.user.id || req.user.userId,
+      dto
+    );
   }
 
   /**
@@ -129,8 +138,18 @@ export class WorkspaceController {
    */
   @Put(':id')
   @RequirePermission(Resource.WORKSPACES, Action.UPDATE)
-  async update(@Param('id') id: string, @Req() req: WorkspaceRequest, @Body() dto: UpdateWorkspaceDto) {
-    return this.workspaceService.update(id, req.user.organizationId, dto);
+  async update(
+    @Param('id') id: string,
+    @Req() req: WorkspaceRequest,
+    @Body() dto: UpdateWorkspaceDto
+  ) {
+    return this.workspaceService.update(
+      id,
+      req.user.organizationId,
+      req.user.id || req.user.userId,
+      req.user.role || UserRole.viewer,
+      dto
+    );
   }
 
   /**
@@ -140,7 +159,12 @@ export class WorkspaceController {
   @RequirePermission(Resource.WORKSPACES, Action.DELETE)
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string, @Req() req: WorkspaceRequest) {
-    await this.workspaceService.remove(id, req.user.organizationId);
+    await this.workspaceService.remove(
+      id,
+      req.user.organizationId,
+      req.user.id || req.user.userId,
+      req.user.role || UserRole.viewer
+    );
   }
 
   /**
@@ -168,7 +192,13 @@ export class WorkspaceController {
     @Req() req: WorkspaceRequest,
     @Body() dto: AddWorkspaceMemberDto
   ) {
-    return this.workspaceService.addMember(id, req.user.organizationId, dto);
+    return this.workspaceService.addMember(
+      id,
+      req.user.organizationId,
+      req.user.id || req.user.userId,
+      req.user.role || UserRole.viewer,
+      dto
+    );
   }
 
   /**
@@ -182,7 +212,14 @@ export class WorkspaceController {
     @Req() req: WorkspaceRequest,
     @Body() dto: UpdateWorkspaceMemberDto
   ) {
-    return this.workspaceService.updateMember(id, userId, req.user.organizationId, dto);
+    return this.workspaceService.updateMember(
+      id,
+      userId,
+      req.user.organizationId,
+      req.user.id || req.user.userId,
+      req.user.role || UserRole.viewer,
+      dto
+    );
   }
 
   /**
@@ -196,6 +233,12 @@ export class WorkspaceController {
     @Param('userId') userId: string,
     @Req() req: WorkspaceRequest
   ) {
-    await this.workspaceService.removeMember(id, userId, req.user.organizationId);
+    await this.workspaceService.removeMember(
+      id,
+      userId,
+      req.user.organizationId,
+      req.user.id || req.user.userId,
+      req.user.role || UserRole.viewer
+    );
   }
 }

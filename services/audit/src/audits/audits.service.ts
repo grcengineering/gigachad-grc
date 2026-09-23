@@ -122,6 +122,7 @@ export class AuditsService {
 
     // Update finding counts if status is changing to completed
     let updates: Record<string, unknown> = { ...updateAuditDto };
+    delete updates.organizationId;
 
     if (updateAuditDto.status === 'completed') {
       const findingCounts = await this.prisma.auditFinding.groupBy({

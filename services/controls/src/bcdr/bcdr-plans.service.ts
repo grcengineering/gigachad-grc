@@ -29,6 +29,44 @@ export class BCDRPlansService {
     @Inject(STORAGE_PROVIDER) private readonly storage: StorageProvider
   ) {}
 
+  private async requireTenantReferences(
+    organizationId: string,
+    requestingUserId: string,
+    workspaceId?: string,
+    userIds: Array<string | undefined> = []
+  ) {
+    const uniqueUserIds = [...new Set(userIds.filter((id): id is string => Boolean(id)))];
+    const requestingUser = workspaceId
+      ? await this.prisma.user.findFirst({
+          where: { id: requestingUserId, organizationId, status: 'active' },
+          select: { role: true },
+        })
+      : null;
+    const [workspace, userCount] = await Promise.all([
+      workspaceId
+        ? this.prisma.workspace.findFirst({
+            where: {
+              id: workspaceId,
+              organizationId,
+              ...(requestingUser?.role !== 'admin' && {
+                members: { some: { userId: requestingUserId } },
+              }),
+            },
+            select: { id: true },
+          })
+        : Promise.resolve({ id: 'none' }),
+      uniqueUserIds.length
+        ? this.prisma.user.count({
+            where: { id: { in: uniqueUserIds }, organizationId, status: 'active' },
+          })
+        : Promise.resolve(0),
+    ]);
+    if (!workspace) throw new NotFoundException('Workspace not found');
+    if (userCount !== uniqueUserIds.length) {
+      throw new NotFoundException('One or more assigned users not found');
+    }
+  }
+
   async findAll(organizationId: string, filters: BCDRPlanFilterDto) {
     const { search, planType, status, page = 1, limit = 25 } = filters;
     const offset = (page - 1) * limit;
@@ -131,6 +169,8 @@ export class BCDRPlansService {
     userEmail?: string,
     userName?: string
   ) {
+    await this.requireTenantReferences(organizationId, userId, dto.workspaceId, [dto.ownerId]);
+
     // Check for duplicate planId
     const existing = await this.prisma.$queryRaw<IdRecord[]>`
       SELECT id FROM bcdr.bcdr_plans 
@@ -198,6 +238,10 @@ export class BCDRPlansService {
     userName?: string
   ) {
     const _existing = await this.findOne(id, organizationId);
+    await this.requireTenantReferences(organizationId, userId, undefined, [
+      dto.ownerId,
+      dto.approverId,
+    ]);
 
     // SECURITY: Allowed column names for dynamic UPDATE query.
     // Only these hardcoded column names can be included in the query.

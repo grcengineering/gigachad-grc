@@ -40,7 +40,7 @@ export const FRAMEWORK_IMPORT_MAX_BYTES = 25 * 1024 * 1024;
 export function frameworkImportFileFilter(
   _req: unknown,
   file: { mimetype: string },
-  cb: (err: Error | null, acceptFile: boolean) => void,
+  cb: (err: Error | null, acceptFile: boolean) => void
 ): void {
   if (FRAMEWORK_IMPORT_MIME_ALLOWLIST.includes(file.mimetype)) {
     cb(null, true);
@@ -155,8 +155,8 @@ export class FrameworksController {
 
   @Get('types')
   @ApiOperation({ summary: 'Get framework types' })
-  async getTypes() {
-    return this.frameworksService.getFrameworkTypes();
+  async getTypes(@CurrentUser() user: UserContext) {
+    return this.frameworksService.getFrameworkTypes(user.organizationId);
   }
 
   @Get(':id')
@@ -194,10 +194,10 @@ export class FrameworksController {
   @ApiParam({ name: 'id', description: 'Framework ID' })
   async getRequirements(
     @Param('id') id: string,
-    @Query('parentId') parentId?: string,
-    @CurrentUser() user?: UserContext
+    @CurrentUser() user: UserContext,
+    @Query('parentId') parentId?: string
   ) {
-    return this.frameworksService.getRequirements(id, parentId, user?.organizationId);
+    return this.frameworksService.getRequirements(id, parentId, user.organizationId);
   }
 
   @Post(':id/requirements')
@@ -206,8 +206,12 @@ export class FrameworksController {
   @ApiParam({ name: 'id', description: 'Framework ID' })
   @ApiBody({ type: CreateRequirementDto })
   @ApiResponse({ status: 201, description: 'Requirement created successfully' })
-  async createRequirement(@Param('id') id: string, @Body() dto: CreateRequirementDto) {
-    return this.frameworksService.createRequirement(id, dto);
+  async createRequirement(
+    @Param('id') id: string,
+    @Body() dto: CreateRequirementDto,
+    @CurrentUser() user: UserContext
+  ) {
+    return this.frameworksService.createRequirement(id, dto, user.organizationId);
   }
 
   @Post(':id/requirements/bulk-upload')
@@ -221,12 +225,16 @@ export class FrameworksController {
   @ApiOperation({ summary: 'Bulk upload requirements from CSV or Excel file' })
   @ApiParam({ name: 'id', description: 'Framework ID' })
   @ApiResponse({ status: 201, description: 'Requirements uploaded successfully' })
-  async bulkUploadRequirements(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
+  async bulkUploadRequirements(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: UserContext
+  ) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
 
-    return this.frameworksService.bulkUploadRequirements(id, file);
+    return this.frameworksService.bulkUploadRequirements(id, file, user.organizationId);
   }
 
   @Get(':id/requirements/tree')
@@ -241,9 +249,9 @@ export class FrameworksController {
   async getRequirement(
     @Param('id') id: string,
     @Param('requirementId') requirementId: string,
-    @CurrentUser() user?: UserContext
+    @CurrentUser() user: UserContext
   ) {
-    return this.frameworksService.getRequirement(id, requirementId, user?.organizationId);
+    return this.frameworksService.getRequirement(id, requirementId, user.organizationId);
   }
 
   @Put(':id/requirements/:requirementId')
@@ -255,9 +263,10 @@ export class FrameworksController {
   async updateRequirement(
     @Param('id') id: string,
     @Param('requirementId') requirementId: string,
-    @Body() dto: UpdateRequirementOwnerDto
+    @Body() dto: UpdateRequirementOwnerDto,
+    @CurrentUser() user: UserContext
   ) {
-    return this.frameworksService.updateRequirement(id, requirementId, dto);
+    return this.frameworksService.updateRequirement(id, requirementId, dto, user.organizationId);
   }
 
   @Get(':id/readiness')

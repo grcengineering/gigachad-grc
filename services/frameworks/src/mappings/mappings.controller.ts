@@ -52,24 +52,28 @@ export class MappingsController {
   @Get()
   @ApiOperation({ summary: 'List control-to-requirement mappings' })
   async findAll(
+    @CurrentUser() user: UserContext,
     @Query('frameworkId') frameworkId?: string,
     @Query('controlId') controlId?: string
   ) {
-    return this.mappingsService.findAll(frameworkId, controlId);
+    return this.mappingsService.findAll(user.organizationId, frameworkId, controlId);
   }
 
   @Get('by-control/:controlId')
   @ApiOperation({ summary: 'Get mappings for a control' })
   @ApiParam({ name: 'controlId', description: 'Control ID' })
-  async findByControl(@Param('controlId') controlId: string) {
-    return this.mappingsService.findByControl(controlId);
+  async findByControl(@Param('controlId') controlId: string, @CurrentUser() user: UserContext) {
+    return this.mappingsService.findByControl(controlId, user.organizationId);
   }
 
   @Get('by-requirement/:requirementId')
   @ApiOperation({ summary: 'Get mappings for a requirement' })
   @ApiParam({ name: 'requirementId', description: 'Requirement ID' })
-  async findByRequirement(@Param('requirementId') requirementId: string) {
-    return this.mappingsService.findByRequirement(requirementId);
+  async findByRequirement(
+    @Param('requirementId') requirementId: string,
+    @CurrentUser() user: UserContext
+  ) {
+    return this.mappingsService.findByRequirement(requirementId, user.organizationId);
   }
 
   @Get('control-coverage')
@@ -81,8 +85,11 @@ export class MappingsController {
   @Get('requirement-coverage/:frameworkId')
   @ApiOperation({ summary: 'Get requirement coverage for a framework' })
   @ApiParam({ name: 'frameworkId', description: 'Framework ID' })
-  async getRequirementCoverage(@Param('frameworkId') frameworkId: string) {
-    return this.mappingsService.getRequirementCoverage(frameworkId);
+  async getRequirementCoverage(
+    @Param('frameworkId') frameworkId: string,
+    @CurrentUser() user: UserContext
+  ) {
+    return this.mappingsService.getRequirementCoverage(frameworkId, user.organizationId);
   }
 
   @Get('gaps')

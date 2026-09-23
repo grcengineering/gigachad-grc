@@ -21,7 +21,45 @@ export class ImplementationsService {
     private auditService: AuditService
   ) {}
 
-  async findAll(organizationId: string, filters: ImplementationFilterDto) {
+  private async requireOrganizationUser(userId: string | undefined, organizationId: string) {
+    if (!userId) return;
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, organizationId, status: 'active' },
+      select: { id: true },
+    });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+  }
+
+  private async requireWorkspaceAccess(
+    workspaceId: string | undefined,
+    organizationId: string,
+    userId: string
+  ) {
+    if (!workspaceId) return;
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, organizationId, status: 'active' },
+      select: { role: true },
+    });
+    const workspace = user
+      ? await this.prisma.workspace.findFirst({
+          where: {
+            id: workspaceId,
+            organizationId,
+            ...(user.role !== 'admin' && { members: { some: { userId } } }),
+          },
+          select: { id: true },
+        })
+      : null;
+    if (!workspace) {
+      throw new NotFoundException('Workspace not found');
+    }
+  }
+
+  async findAll(organizationId: string, filters: ImplementationFilterDto, userId: string) {
+    await this.requireWorkspaceAccess(filters.workspaceId, organizationId, userId);
+
     const pagination = parsePaginationParams({
       page: filters.page,
       limit: filters.limit,
@@ -114,6 +152,8 @@ export class ImplementationsService {
   }
 
   async update(id: string, organizationId: string, userId: string, dto: UpdateImplementationDto) {
+    await this.requireOrganizationUser(dto.ownerId, organizationId);
+
     // Get existing implementation for before/after comparison
     const existing = await this.findOne(id, organizationId);
 
@@ -179,6 +219,8 @@ export class ImplementationsService {
   }
 
   async bulkUpdate(organizationId: string, userId: string, dto: BulkUpdateImplementationsDto) {
+    await this.requireOrganizationUser(dto.ownerId, organizationId);
+
     const bulkUpdateData: Prisma.ControlImplementationUncheckedUpdateManyInput = {
       updatedBy: userId,
       ...(dto.status && { status: dto.status }),

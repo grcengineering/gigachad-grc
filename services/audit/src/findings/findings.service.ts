@@ -140,6 +140,7 @@ export class FindingsService {
     await this.findOne(id, organizationId); // Verify existence
 
     const data: Record<string, unknown> = { ...updateFindingDto };
+    delete data.organizationId;
 
     // Convert dates
     if (data.targetDate) {

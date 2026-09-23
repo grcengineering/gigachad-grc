@@ -70,11 +70,13 @@ export class ExerciseTemplatesService {
   /**
    * Get a single template by ID.
    */
-  async findOne(id: string) {
+  async findOne(id: string, organizationId: string) {
     const templates = await this.prisma.$queryRaw<any[]>`
       SELECT *
       FROM bcdr_exercise_templates
       WHERE id = ${id}
+        AND is_active = true
+        AND (organization_id = ${organizationId} OR is_global = true)
     `;
 
     if (!templates || templates.length === 0) {
@@ -107,7 +109,7 @@ export class ExerciseTemplatesService {
     userEmail?: string,
     userName?: string
   ) {
-    const template = await this.findOne(templateId);
+    const template = await this.findOne(templateId, organizationId);
 
     // Generate new template ID
     const newTemplateId = `${template.template_id}-CLONE-${Date.now()}`;
@@ -276,7 +278,7 @@ export class ExerciseTemplatesService {
     userEmail?: string,
     userName?: string
   ) {
-    const template = await this.findOne(id);
+    const template = await this.findOne(id, organizationId);
 
     if (template.is_global) {
       throw new ConflictException('Global templates cannot be modified. Clone it first.');
@@ -299,6 +301,7 @@ export class ExerciseTemplatesService {
         estimated_duration_minutes = COALESCE(${dto.estimatedDuration ?? null}, estimated_duration_minutes),
         tags = COALESCE(${dto.tags ?? null}::text[], tags)
       WHERE id = ${id}
+        AND organization_id = ${organizationId}
       RETURNING *
     `;
 
@@ -327,7 +330,7 @@ export class ExerciseTemplatesService {
     userEmail?: string,
     userName?: string
   ) {
-    const template = await this.findOne(id);
+    const template = await this.findOne(id, organizationId);
 
     if (template.is_global) {
       throw new ConflictException('Global templates cannot be deleted');
@@ -341,6 +344,7 @@ export class ExerciseTemplatesService {
       UPDATE bcdr_exercise_templates
       SET is_active = false
       WHERE id = ${id}
+        AND organization_id = ${organizationId}
     `;
 
     await this.auditService.log({
