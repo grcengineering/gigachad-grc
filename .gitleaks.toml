@@ -99,6 +99,11 @@ title = "GigaChad GRC Gitleaks Configuration"
   tags = ["api", "credentials"]
   
   [rules.allowlist]
+    commits = [
+      # Test-only API-key fixture introduced before it was split into
+      # non-secret fragments. This commit contains no real credential.
+      '''9a8a669a8121dcd9a89634dec1de186c460ae6c7''',
+    ]
     regexes = [
       '''process\.env''',
       '''\$\{''',

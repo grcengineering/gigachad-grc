@@ -251,6 +251,7 @@ jobs:
 
       - name: Generate ephemeral TLS certificate
         run: |
+          mkdir -p gateway/certs
           openssl req -x509 -newkey rsa:2048 -nodes \
             -keyout gateway/certs/localhost.key \
             -out gateway/certs/localhost.crt \

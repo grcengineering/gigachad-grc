@@ -99,8 +99,9 @@ export function generateApiKey(): { key: string; hash: string; prefix: string } 
   const keyBytes = crypto.randomBytes(32);
   const key = `grc_${keyBytes.toString('base64url')}`;
 
-  // Hash the key for storage
-  const hash = crypto.createHash('sha256').update(key).digest('hex');
+  // API keys have 256 bits of CSPRNG entropy; this deterministic digest is
+  // solely an indexed lookup value, not a password KDF.
+  const hash = crypto.createHash('sha256').update(key).digest('hex'); // lgtm[js/insufficient-password-hash]
 
   // Get first 8 characters as prefix for identification
   const prefix = key.substring(4, 12);
