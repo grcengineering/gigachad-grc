@@ -32,7 +32,13 @@ const keycloakConfig = {
 const ORGANIZATION_ID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-export const DEV_AUTH_ENABLED = import.meta.env.DEV || import.meta.env.MODE === 'test';
+const LOCAL_DOCKER_DEV_AUTH_ENABLED =
+  import.meta.env.VITE_ENABLE_DEV_AUTH === 'true' &&
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+export const DEV_AUTH_ENABLED =
+  import.meta.env.DEV || import.meta.env.MODE === 'test' || LOCAL_DOCKER_DEV_AUTH_ENABLED;
 
 let keycloak: Keycloak | null = null;
 let initPromise: Promise<boolean> | null = null;
