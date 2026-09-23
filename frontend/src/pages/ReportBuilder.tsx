@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
   BarChart3,
   CheckCircle2,
@@ -11,7 +12,7 @@ import {
   ShieldCheck,
   X,
 } from 'lucide-react';
-import api from '@/lib/api';
+import { scheduledReportsApi } from '@/lib/api';
 import {
   Button,
   Card,
@@ -122,10 +123,10 @@ const FORMAT_OPTS = [
 ];
 
 const SCHEDULE_OPTS = [
-  { value: 'one_time', label: 'One-time' },
   { value: 'daily', label: 'Daily' },
   { value: 'weekly', label: 'Weekly' },
   { value: 'monthly', label: 'Monthly' },
+  { value: 'quarterly', label: 'Quarterly' },
 ];
 
 interface ReportConfig {
@@ -139,6 +140,7 @@ interface ReportConfig {
   name: string;
   format: string;
   schedule: string;
+  time: string;
   recipients: string;
 }
 
@@ -152,7 +154,8 @@ const DEFAULT_CONFIG: ReportConfig = {
   severity: '',
   name: '',
   format: 'pdf',
-  schedule: 'one_time',
+  schedule: 'monthly',
+  time: '09:00',
   recipients: '',
 };
 
@@ -166,18 +169,17 @@ export default function ReportBuilder() {
         .split(/[\n,]/)
         .map((s) => s.trim())
         .filter(Boolean);
-      const res = await api.post('/api/reports/scheduled', {
-        templateId: payload.templateId,
+      const res = await scheduledReportsApi.create({
+        reportType: payload.templateId,
         name: payload.name,
         format: payload.format,
-        schedule: payload.schedule,
+        frequency: payload.schedule,
+        time: payload.time,
         recipients,
-        data: {
+        filters: {
           dateRange: payload.dateRange,
           frameworks: payload.frameworks,
           riskCategories: payload.riskCategories,
-        },
-        filters: {
           status: payload.status || undefined,
           owner: payload.owner || undefined,
           severity: payload.severity || undefined,
@@ -186,8 +188,10 @@ export default function ReportBuilder() {
       return res.data;
     },
     onSuccess: () => {
+      toast.success('Scheduled report created');
       navigate('/scheduled-reports');
     },
+    onError: () => toast.error('Failed to create scheduled report'),
   });
 
   const toggleArray = (key: 'frameworks' | 'riskCategories', value: string) => {

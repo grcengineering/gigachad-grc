@@ -1,11 +1,11 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import {
-  AIProvider,
-  OpenAIProvider,
-  AnthropicProvider,
-  MockAIProvider,
-} from './providers';
+  Injectable,
+  Logger,
+  BadRequestException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { AIProvider, OpenAIProvider, AnthropicProvider, MockAIProvider } from './providers';
 import {
   AIProvider as AIProviderEnum,
   AIConfigDto,
@@ -35,23 +35,15 @@ export class AIService {
     this.providers.set('anthropic', new AnthropicProvider());
     this.providers.set('mock', new MockAIProvider());
 
-    // Check if mock mode is explicitly enabled or if no real providers are configured
-    this.mockModeEnabled = process.env.AI_MOCK_MODE === 'true';
+    // Mock output is an explicit development-only capability. Never silently
+    // turn a provider outage into plausible analysis in production.
+    this.mockModeEnabled =
+      process.env.NODE_ENV !== 'production' && process.env.AI_MOCK_MODE === 'true';
 
     if (this.mockModeEnabled) {
       this.logger.log('AI Mock Mode explicitly enabled via AI_MOCK_MODE=true');
-    } else {
-      // Check if any real provider is configured
-      const openaiConfigured = this.providers.get('openai')?.isConfigured() ?? false;
-      const anthropicConfigured = this.providers.get('anthropic')?.isConfigured() ?? false;
-      
-      if (!openaiConfigured && !anthropicConfigured) {
-        this.logger.warn(
-          'No AI API keys configured (OPENAI_API_KEY or ANTHROPIC_API_KEY). ' +
-          'Falling back to Mock AI Provider for testing/demo purposes.'
-        );
-        this.mockModeEnabled = true;
-      }
+    } else if (process.env.AI_MOCK_MODE === 'true') {
+      this.logger.warn('Ignoring AI_MOCK_MODE in production');
     }
   }
 
@@ -85,7 +77,7 @@ export class AIService {
     });
 
     const settings = (org?.settings as Record<string, unknown>) || {};
-    
+
     return {
       provider: (settings.aiProvider as AIProviderEnum) || AIProviderEnum.OPENAI,
       model: (settings.aiModel as string) || 'gpt-4o',
@@ -102,7 +94,7 @@ export class AIService {
     });
 
     const oldSettings = (existing?.settings as Record<string, unknown>) || {};
-    
+
     const newSettings = {
       ...oldSettings,
       ...(dto.provider !== undefined && { aiProvider: dto.provider }),
@@ -128,14 +120,15 @@ export class AIService {
     mockModeReason?: string;
   }> {
     const config = await this.getConfig(organizationId);
-    
+
     // Check if we're in mock mode
     if (this.mockModeEnabled) {
       const mockProvider = this.providers.get('mock')!;
-      const reason = process.env.AI_MOCK_MODE === 'true'
-        ? 'Mock mode explicitly enabled via AI_MOCK_MODE environment variable'
-        : 'No AI API keys configured (OPENAI_API_KEY or ANTHROPIC_API_KEY not set)';
-      
+      const reason =
+        process.env.AI_MOCK_MODE === 'true'
+          ? 'Mock mode explicitly enabled via AI_MOCK_MODE environment variable'
+          : 'No AI API keys configured (OPENAI_API_KEY or ANTHROPIC_API_KEY not set)';
+
       return {
         provider: 'mock',
         isConfigured: true,
@@ -148,15 +141,14 @@ export class AIService {
     const provider = this.providers.get(config.provider);
     const isConfigured = provider?.isConfigured() ?? false;
 
-    // If configured provider isn't set up, report that we'll fall back to mock
+    // An unavailable real provider is not mock mode unless demo mode was
+    // explicitly selected above.
     if (!isConfigured) {
-      const mockProvider = this.providers.get('mock')!;
       return {
         provider: config.provider,
         isConfigured: false,
-        availableModels: mockProvider.getAvailableModels(),
-        isMockMode: true,
-        mockModeReason: `${config.provider} API key not configured. Mock mode will be used.`,
+        availableModels: [],
+        isMockMode: false,
       };
     }
 
@@ -174,7 +166,7 @@ export class AIService {
 
   private async getActiveProvider(organizationId: string): Promise<AIProvider> {
     const config = await this.getConfig(organizationId);
-    
+
     if (!config.enabled) {
       throw new BadRequestException('AI features are disabled for this organization');
     }
@@ -187,17 +179,14 @@ export class AIService {
 
     // Try to use the configured provider
     const provider = this.providers.get(config.provider);
-    
+
     if (!provider) {
       throw new BadRequestException(`Unknown AI provider: ${config.provider}`);
     }
 
-    // If configured provider isn't set up, fall back to mock
+    // Never represent an unconfigured provider as a successful AI response.
     if (!provider.isConfigured()) {
-      this.logger.warn(
-        `AI provider ${config.provider} is not configured. Falling back to Mock provider.`
-      );
-      return this.providers.get('mock')!;
+      throw new ServiceUnavailableException(`AI provider ${config.provider} is not configured`);
     }
 
     return provider;
@@ -339,27 +328,59 @@ Provide:
   private getCategoryMappings(entityType: EntityType): string[] {
     const mappings: Record<EntityType, string[]> = {
       [EntityType.CONTROL]: [
-        'Access Control', 'Asset Management', 'Business Continuity',
-        'Cryptography', 'Human Resources Security', 'Incident Management',
-        'Network Security', 'Operations Security', 'Physical Security',
-        'Risk Management', 'Supplier Relationships', 'System Development',
+        'Access Control',
+        'Asset Management',
+        'Business Continuity',
+        'Cryptography',
+        'Human Resources Security',
+        'Incident Management',
+        'Network Security',
+        'Operations Security',
+        'Physical Security',
+        'Risk Management',
+        'Supplier Relationships',
+        'System Development',
       ],
       [EntityType.RISK]: [
-        'Operational', 'Strategic', 'Financial', 'Compliance',
-        'Security', 'Technical', 'Third-Party', 'Reputational',
+        'Operational',
+        'Strategic',
+        'Financial',
+        'Compliance',
+        'Security',
+        'Technical',
+        'Third-Party',
+        'Reputational',
       ],
       [EntityType.POLICY]: [
-        'Information Security', 'Access Control', 'Data Protection',
-        'Acceptable Use', 'Incident Response', 'Business Continuity',
-        'Risk Management', 'Vendor Management', 'Human Resources',
+        'Information Security',
+        'Access Control',
+        'Data Protection',
+        'Acceptable Use',
+        'Incident Response',
+        'Business Continuity',
+        'Risk Management',
+        'Vendor Management',
+        'Human Resources',
       ],
       [EntityType.EVIDENCE]: [
-        'Policy Document', 'Procedure', 'Screenshot', 'Configuration',
-        'Report', 'Log', 'Certificate', 'Training Record', 'Audit Report',
+        'Policy Document',
+        'Procedure',
+        'Screenshot',
+        'Configuration',
+        'Report',
+        'Log',
+        'Certificate',
+        'Training Record',
+        'Audit Report',
       ],
       [EntityType.VENDOR]: [
-        'Cloud Provider', 'SaaS', 'Infrastructure', 'Security',
-        'Professional Services', 'Data Processing', 'Software',
+        'Cloud Provider',
+        'SaaS',
+        'Infrastructure',
+        'Security',
+        'Professional Services',
+        'Data Processing',
+        'Software',
       ],
     };
 
@@ -376,7 +397,7 @@ Provide:
   ): Promise<SmartSearchResponseDto> {
     const provider = await this.getActiveProvider(organizationId);
     const config = await this.getConfig(organizationId);
-    
+
     const limit = dto.limit || 10;
     const entityTypes = dto.entityTypes || Object.values(EntityType);
 
@@ -445,7 +466,7 @@ For each result, explain why it's relevant and provide a relevance score (0-100)
         select: { id: true, title: true, description: true },
         take: limit,
       });
-      data.controls = controls.map(c => ({
+      data.controls = controls.map((c) => ({
         id: c.id,
         title: c.title,
         description: c.description || '',
@@ -458,7 +479,7 @@ For each result, explain why it's relevant and provide a relevance score (0-100)
         select: { id: true, title: true, description: true },
         take: limit,
       });
-      data.risks = risks.map(r => ({
+      data.risks = risks.map((r) => ({
         id: r.id,
         title: r.title,
         description: r.description || '',
@@ -471,7 +492,7 @@ For each result, explain why it's relevant and provide a relevance score (0-100)
         select: { id: true, title: true, description: true },
         take: limit,
       });
-      data.policies = policies.map(p => ({
+      data.policies = policies.map((p) => ({
         id: p.id,
         title: p.title,
         description: p.description || '',
@@ -484,7 +505,7 @@ For each result, explain why it's relevant and provide a relevance score (0-100)
         select: { id: true, title: true, description: true },
         take: limit,
       });
-      data.evidence = evidence.map(e => ({
+      data.evidence = evidence.map((e) => ({
         id: e.id,
         title: e.title,
         description: e.description || '',
@@ -497,7 +518,7 @@ For each result, explain why it's relevant and provide a relevance score (0-100)
         select: { id: true, name: true, description: true },
         take: limit,
       });
-      data.vendors = vendors.map(v => ({
+      data.vendors = vendors.map((v) => ({
         id: v.id,
         title: v.name,
         description: v.description || '',
@@ -526,7 +547,7 @@ Your policies are clear, actionable, and suitable for enterprise organizations.`
 
 ${dto.industry ? `Industry: ${dto.industry}` : ''}
 ${dto.frameworks?.length ? `Compliance Frameworks to Address: ${dto.frameworks.join(', ')}` : ''}
-${dto.requirements?.length ? `Specific Requirements to Include:\n${dto.requirements.map(r => `- ${r}`).join('\n')}` : ''}
+${dto.requirements?.length ? `Specific Requirements to Include:\n${dto.requirements.map((r) => `- ${r}`).join('\n')}` : ''}
 ${dto.additionalContext ? `Additional Context: ${dto.additionalContext}` : ''}
 ${dto.tone ? `Desired Tone: ${dto.tone}` : 'Tone: Professional and formal'}
 
@@ -667,11 +688,11 @@ Provide:
     const provider = await this.getActiveProvider(organizationId);
     const config = await this.getConfig(organizationId);
 
-    const result = await provider.generateText(
-      prompt,
-      systemPrompt,
-      { model: config.model, temperature: config.temperature, maxTokens: config.maxTokens }
-    );
+    const result = await provider.generateText(prompt, systemPrompt, {
+      model: config.model,
+      temperature: config.temperature,
+      maxTokens: config.maxTokens,
+    });
 
     return {
       content: result.content,

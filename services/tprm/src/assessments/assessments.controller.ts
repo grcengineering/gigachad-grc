@@ -12,16 +12,16 @@ import {
 import { AssessmentsService } from './assessments.service';
 import { CreateAssessmentDto } from './dto/create-assessment.dto';
 import { UpdateAssessmentDto } from './dto/update-assessment.dto';
-import { CurrentUser, UserContext } from '@gigachad-grc/shared';
+import { CurrentUser, UserContext, Roles, RolesGuard } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
-@Controller('assessments')
-@UseGuards(DevAuthGuard)
-// Note: RolesGuard temporarily removed - DevAuthGuard provides admin access in development
+@Controller('api/vendor-assessments')
+@UseGuards(DevAuthGuard, RolesGuard)
 export class AssessmentsController {
   constructor(private readonly assessmentsService: AssessmentsService) {}
 
   @Post()
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   create(@Body() createAssessmentDto: CreateAssessmentDto, @CurrentUser() user: UserContext) {
     return this.assessmentsService.create(
       {
@@ -68,6 +68,7 @@ export class AssessmentsController {
   }
 
   @Patch(':id')
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   update(
     @Param('id') id: string,
     @Body() updateAssessmentDto: UpdateAssessmentDto,
@@ -83,6 +84,7 @@ export class AssessmentsController {
   }
 
   @Delete(':id')
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   remove(@Param('id') id: string, @CurrentUser() user: UserContext) {
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.assessmentsService.remove(id, user.userId, user.organizationId);

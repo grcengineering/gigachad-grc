@@ -1,8 +1,20 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Request } from 'express';
 import { PlanningService, CreatePlanEntryDto, UpdatePlanEntryDto } from './planning.service';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
+import { Roles, RolesGuard } from '@gigachad-grc/shared';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -13,12 +25,13 @@ interface AuthenticatedRequest extends Request {
 
 @ApiTags('Audit Planning')
 @ApiBearerAuth()
-@UseGuards(DevAuthGuard)
-@Controller('planning')
+@UseGuards(DevAuthGuard, RolesGuard)
+@Controller('api/audit/planning')
 export class PlanningController {
   constructor(private readonly planningService: PlanningService) {}
 
   @Post()
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Create a plan entry' })
   create(@Body() dto: CreatePlanEntryDto, @Req() req: AuthenticatedRequest) {
     return this.planningService.create(req.user.organizationId, dto, req.user.userId);
@@ -26,8 +39,16 @@ export class PlanningController {
 
   @Get()
   @ApiOperation({ summary: 'List plan entries' })
-  findAll(@Query('year') year: string, @Query('status') status: string, @Req() req: AuthenticatedRequest) {
-    return this.planningService.findAll(req.user.organizationId, year ? parseInt(year) : undefined, status);
+  findAll(
+    @Query('year') year: string,
+    @Query('status') status: string,
+    @Req() req: AuthenticatedRequest
+  ) {
+    return this.planningService.findAll(
+      req.user.organizationId,
+      year ? parseInt(year) : undefined,
+      status
+    );
   }
 
   @Get('calendar')
@@ -35,13 +56,13 @@ export class PlanningController {
   getCalendarView(
     @Query('startYear') startYear: string,
     @Query('endYear') endYear: string,
-    @Req() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest
   ) {
     const currentYear = new Date().getFullYear();
     return this.planningService.getCalendarView(
       req.user.organizationId,
       startYear ? parseInt(startYear) : currentYear,
-      endYear ? parseInt(endYear) : currentYear + 2,
+      endYear ? parseInt(endYear) : currentYear + 2
     );
   }
 
@@ -50,7 +71,7 @@ export class PlanningController {
   getCapacityAnalysis(@Query('year') year: string, @Req() req: AuthenticatedRequest) {
     return this.planningService.getCapacityAnalysis(
       req.user.organizationId,
-      year ? parseInt(year) : new Date().getFullYear(),
+      year ? parseInt(year) : new Date().getFullYear()
     );
   }
 
@@ -61,21 +82,27 @@ export class PlanningController {
   }
 
   @Put(':id')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Update a plan entry' })
-  update(@Param('id') id: string, @Body() dto: UpdatePlanEntryDto, @Req() req: AuthenticatedRequest) {
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdatePlanEntryDto,
+    @Req() req: AuthenticatedRequest
+  ) {
     return this.planningService.update(id, req.user.organizationId, dto);
   }
 
   @Delete(':id')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Delete a plan entry' })
   delete(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.planningService.delete(id, req.user.organizationId);
   }
 
   @Post(':id/convert-to-audit')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Convert plan entry to audit' })
   convertToAudit(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.planningService.convertToAudit(id, req.user.organizationId, req.user.userId);
   }
 }
-

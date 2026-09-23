@@ -15,6 +15,7 @@ import { AuditsService } from './audits.service';
 import { CreateAuditDto } from './dto/create-audit.dto';
 import { UpdateAuditDto } from './dto/update-audit.dto';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
+import { Roles, RolesGuard } from '@gigachad-grc/shared';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -28,11 +29,12 @@ interface AuthenticatedRequest extends Request {
 @ApiTags('Audits')
 @ApiBearerAuth()
 @Controller('api/audits')
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 export class AuditsController {
   constructor(private readonly auditsService: AuditsService) {}
 
   @Post()
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Create a new audit' })
   @ApiResponse({ status: 201, description: 'Audit created successfully' })
   create(@Body() createAuditDto: CreateAuditDto, @Req() req: AuthenticatedRequest) {
@@ -51,7 +53,7 @@ export class AuditsController {
     @Req() req: AuthenticatedRequest,
     @Query('status') status?: string,
     @Query('auditType') auditType?: string,
-    @Query('isExternal') isExternal?: string,
+    @Query('isExternal') isExternal?: string
   ) {
     const { organizationId } = req.user;
     return this.auditsService.findAll(organizationId, {
@@ -79,18 +81,20 @@ export class AuditsController {
   }
 
   @Patch(':id')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Update an audit' })
   @ApiResponse({ status: 200, description: 'Audit updated successfully' })
   update(
     @Param('id') id: string,
     @Body() updateAuditDto: UpdateAuditDto,
-    @Req() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest
   ) {
     const { organizationId } = req.user;
     return this.auditsService.update(id, organizationId, updateAuditDto);
   }
 
   @Delete(':id')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Delete an audit' })
   @ApiResponse({ status: 200, description: 'Audit deleted successfully' })
   remove(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
@@ -99,15 +103,21 @@ export class AuditsController {
   }
 
   @Post(':id/portal/enable')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Enable auditor portal access' })
   @ApiResponse({ status: 200, description: 'Portal enabled successfully' })
-  enablePortal(@Param('id') id: string, @Req() req: AuthenticatedRequest, @Query('days') days?: string) {
+  enablePortal(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+    @Query('days') days?: string
+  ) {
     const { organizationId } = req.user;
     const expiresInDays = days ? parseInt(days) : 90;
     return this.auditsService.enablePortal(id, organizationId, expiresInDays);
   }
 
   @Post(':id/portal/disable')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Disable auditor portal access' })
   @ApiResponse({ status: 200, description: 'Portal disabled successfully' })
   disablePortal(@Param('id') id: string, @Req() req: AuthenticatedRequest) {

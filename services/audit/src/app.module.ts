@@ -16,12 +16,14 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { PlanningModule } from './planning/planning.module';
 import { ReportsModule } from './reports/reports.module';
 import { PortalModule } from './portal/portal.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    AuthModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000, // 1 minute
@@ -29,6 +31,7 @@ import { PortalModule } from './portal/portal.module';
       },
     ]),
     PrismaModule,
+    AuthModule,
     AuditsModule,
     RequestsModule,
     FindingsModule,

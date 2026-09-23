@@ -2,9 +2,6 @@ import { IsString, IsOptional, IsBoolean, IsNumber } from 'class-validator';
 
 export class CreateTrustCenterContentDto {
   @IsString()
-  organizationId: string;
-
-  @IsString()
   section: string;
 
   @IsString()

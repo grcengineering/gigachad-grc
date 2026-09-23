@@ -26,7 +26,7 @@ export class RecoveryStrategiesService {
              bp.process_id, bp.name as process_name
       FROM bcdr.recovery_strategies rs
       LEFT JOIN bcdr.business_processes bp ON rs.process_id = bp.id
-      WHERE rs.organization_id = ${organizationId}::uuid
+      WHERE rs.organization_id = ${organizationId}
         AND rs.deleted_at IS NULL
         AND (${searchPattern}::text IS NULL OR rs.name ILIKE ${searchPattern})
         AND (${strategyType}::text IS NULL OR rs.strategy_type = ${strategyType})
@@ -44,7 +44,7 @@ export class RecoveryStrategiesService {
       FROM bcdr.recovery_strategies rs
       LEFT JOIN bcdr.business_processes bp ON rs.process_id = bp.id
       WHERE rs.id = ${id}::uuid
-        AND rs.organization_id = ${organizationId}::uuid
+        AND rs.organization_id = ${organizationId}
         AND rs.deleted_at IS NULL
     `;
 
@@ -63,7 +63,7 @@ export class RecoveryStrategiesService {
     // Get linked assets
     const assets = await this.prisma.$queryRaw<any[]>`
       SELECT id, name, type, status
-      FROM controls.assets
+      FROM public.assets
       WHERE recovery_strategy_id = ${id}::uuid
         AND deleted_at IS NULL
     `;
@@ -97,7 +97,7 @@ export class RecoveryStrategiesService {
         ${dto.requiredPersonnel || null}, ${dto.requiredEquipment || null},
         ${dto.requiredData || null}, ${dto.vendorName || null},
         ${dto.vendorContact || null}, ${dto.contractReference || null},
-        ${dto.tags || []}::text[], ${userId}::uuid, ${userId}::uuid
+        ${dto.tags || []}::text[], ${userId}, ${userId}
       )
       RETURNING *
     `;
@@ -152,7 +152,7 @@ export class RecoveryStrategiesService {
       'updated_at',
     ]);
 
-    const updates: string[] = ['updated_by = $2::uuid', 'updated_at = NOW()'];
+    const updates: string[] = ['updated_by = $2', 'updated_at = NOW()'];
     const values: any[] = [id, userId];
     let paramIndex = 3;
 
@@ -278,7 +278,7 @@ export class RecoveryStrategiesService {
       SET is_tested = true,
           last_tested_at = NOW(),
           test_result = ${result}::bcdr.test_result,
-          updated_by = ${userId}::uuid,
+          updated_by = ${userId},
           updated_at = NOW()
       WHERE id = ${id}::uuid
       RETURNING *
@@ -298,7 +298,7 @@ export class RecoveryStrategiesService {
         AVG(estimated_recovery_time_hours) as avg_recovery_time,
         COUNT(DISTINCT strategy_type) as strategy_type_count
       FROM bcdr.recovery_strategies
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = ${organizationId}
         AND deleted_at IS NULL
     `;
 

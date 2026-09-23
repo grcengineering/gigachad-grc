@@ -21,7 +21,7 @@ export class RecoveryTeamsService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly auditService: AuditService,
+    private readonly auditService: AuditService
   ) {}
 
   /**
@@ -40,7 +40,7 @@ export class RecoveryTeamsService {
                (SELECT COUNT(*) FROM bcdr_recovery_team_members WHERE team_id = t.id) as member_count,
                (SELECT COUNT(*) FROM bcdr_recovery_team_plan_links WHERE team_id = t.id) as plan_count
         FROM bcdr_recovery_teams t
-        WHERE t.organization_id = ${organizationId}::uuid
+        WHERE t.organization_id = ${organizationId}
           AND t.deleted_at IS NULL
           AND (${searchPattern}::text IS NULL OR (t.name ILIKE ${searchPattern} OR t.description ILIKE ${searchPattern}))
           AND (${teamType}::text IS NULL OR t.team_type = ${teamType})
@@ -51,7 +51,7 @@ export class RecoveryTeamsService {
       this.prisma.$queryRaw<[{ count: bigint }]>`
         SELECT COUNT(*) as count
         FROM bcdr_recovery_teams t
-        WHERE t.organization_id = ${organizationId}::uuid
+        WHERE t.organization_id = ${organizationId}
           AND t.deleted_at IS NULL
           AND (${searchPattern}::text IS NULL OR (t.name ILIKE ${searchPattern} OR t.description ILIKE ${searchPattern}))
           AND (${teamType}::text IS NULL OR t.team_type = ${teamType})
@@ -75,8 +75,8 @@ export class RecoveryTeamsService {
     const teams = await this.prisma.$queryRaw<any[]>`
       SELECT t.*
       FROM bcdr_recovery_teams t
-      WHERE t.id = ${id}::uuid
-        AND t.organization_id = ${organizationId}::uuid
+      WHERE t.id = ${id}
+        AND t.organization_id = ${organizationId}
         AND t.deleted_at IS NULL
     `;
 
@@ -91,7 +91,7 @@ export class RecoveryTeamsService {
              u.email as user_email
       FROM bcdr_recovery_team_members m
       LEFT JOIN public.users u ON m.user_id::text = u.id
-      WHERE m.team_id = ${id}::uuid
+      WHERE m.team_id = ${id}
       ORDER BY m.sort_order ASC, m.role ASC
     `;
 
@@ -100,7 +100,7 @@ export class RecoveryTeamsService {
       SELECT l.*, p.title as plan_title, p.plan_type
       FROM bcdr_recovery_team_plan_links l
       JOIN bcdr.bcdr_plans p ON l.plan_id::text = p.id::text
-      WHERE l.team_id = ${id}::uuid
+      WHERE l.team_id = ${id}
         AND p.deleted_at IS NULL
     `;
 
@@ -119,7 +119,7 @@ export class RecoveryTeamsService {
     userId: string,
     dto: CreateRecoveryTeamDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const result = await this.prisma.$queryRaw<any[]>`
       INSERT INTO bcdr_recovery_teams (
@@ -161,7 +161,7 @@ export class RecoveryTeamsService {
     userId: string,
     dto: UpdateRecoveryTeamDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     await this.findOne(id, organizationId);
 
@@ -177,7 +177,7 @@ export class RecoveryTeamsService {
         assembly_location = CASE WHEN ${dto.assemblyLocation !== undefined} THEN ${dto.assemblyLocation ?? null} ELSE assembly_location END,
         communication_channel = CASE WHEN ${dto.communicationChannel !== undefined} THEN ${dto.communicationChannel ?? null} ELSE communication_channel END,
         is_active = COALESCE(${dto.isActive ?? null}, is_active)
-      WHERE id = ${id}::uuid
+      WHERE id = ${id}
       RETURNING *
     `;
 
@@ -204,14 +204,14 @@ export class RecoveryTeamsService {
     organizationId: string,
     userId: string,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const team = await this.findOne(id, organizationId);
 
     await this.prisma.$executeRaw`
       UPDATE bcdr_recovery_teams
       SET deleted_at = NOW()
-      WHERE id = ${id}::uuid
+      WHERE id = ${id}
     `;
 
     await this.auditService.log({
@@ -238,7 +238,7 @@ export class RecoveryTeamsService {
     userId: string,
     dto: AddTeamMemberDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     await this.findOne(teamId, organizationId);
 
@@ -246,7 +246,7 @@ export class RecoveryTeamsService {
     const maxOrder = await this.prisma.$queryRaw<[{ max: number }]>`
       SELECT COALESCE(MAX(sort_order), 0) as max
       FROM bcdr_recovery_team_members
-      WHERE team_id = ${teamId}::uuid
+      WHERE team_id = ${teamId}
     `;
 
     const result = await this.prisma.$queryRaw<any[]>`
@@ -255,10 +255,10 @@ export class RecoveryTeamsService {
         external_name, external_email, external_phone,
         responsibilities, is_primary, alternate_for, sort_order
       ) VALUES (
-        ${teamId}::uuid, ${dto.role}, ${dto.userId || null}::uuid,
+        ${teamId}, ${dto.role}, ${dto.userId || null},
         ${dto.externalName || null}, ${dto.externalEmail || null}, ${dto.externalPhone || null},
         ${dto.responsibilities || null}, ${dto.isPrimary ?? true},
-        ${dto.alternateFor || null}::uuid, ${(maxOrder[0]?.max || 0) + 1}
+        ${dto.alternateFor || null}, ${(maxOrder[0]?.max || 0) + 1}
       )
       RETURNING *
     `;
@@ -285,7 +285,7 @@ export class RecoveryTeamsService {
     teamId: string,
     memberId: string,
     organizationId: string,
-    dto: Partial<AddTeamMemberDto>,
+    dto: Partial<AddTeamMemberDto>
   ) {
     await this.findOne(teamId, organizationId);
 
@@ -297,8 +297,8 @@ export class RecoveryTeamsService {
         role = COALESCE(${dto.role ?? null}, role),
         responsibilities = CASE WHEN ${dto.responsibilities !== undefined} THEN ${dto.responsibilities ?? null} ELSE responsibilities END,
         is_primary = COALESCE(${dto.isPrimary ?? null}, is_primary),
-        alternate_for = CASE WHEN ${dto.alternateFor !== undefined} THEN ${dto.alternateFor ?? null}::uuid ELSE alternate_for END
-      WHERE id = ${memberId}::uuid AND team_id = ${teamId}::uuid
+        alternate_for = CASE WHEN ${dto.alternateFor !== undefined} THEN ${dto.alternateFor ?? null} ELSE alternate_for END
+      WHERE id = ${memberId} AND team_id = ${teamId}
       RETURNING *
     `;
 
@@ -314,20 +314,20 @@ export class RecoveryTeamsService {
     organizationId: string,
     userId: string,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     await this.findOne(teamId, organizationId);
 
     await this.prisma.$executeRaw`
       DELETE FROM bcdr_recovery_team_members
-      WHERE id = ${memberId}::uuid AND team_id = ${teamId}::uuid
+      WHERE id = ${memberId} AND team_id = ${teamId}
     `;
 
     // Clear any alternate_for references to this member
     await this.prisma.$executeRaw`
       UPDATE bcdr_recovery_team_members
       SET alternate_for = NULL
-      WHERE alternate_for = ${memberId}::uuid
+      WHERE alternate_for = ${memberId}
     `;
 
     await this.auditService.log({
@@ -354,14 +354,14 @@ export class RecoveryTeamsService {
     userId: string,
     dto: LinkTeamToPlanDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     await this.findOne(teamId, organizationId);
 
     // Check if link already exists
     const existing = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM bcdr_recovery_team_plan_links
-      WHERE team_id = ${teamId}::uuid AND plan_id = ${dto.planId}::uuid
+      WHERE team_id = ${teamId} AND plan_id = ${dto.planId}
     `;
 
     if (existing && existing.length > 0) {
@@ -370,7 +370,7 @@ export class RecoveryTeamsService {
 
     const result = await this.prisma.$queryRaw<any[]>`
       INSERT INTO bcdr_recovery_team_plan_links (team_id, plan_id, role_in_plan)
-      VALUES (${teamId}::uuid, ${dto.planId}::uuid, ${dto.roleInPlan || null})
+      VALUES (${teamId}, ${dto.planId}, ${dto.roleInPlan || null})
       RETURNING *
     `;
 
@@ -398,13 +398,13 @@ export class RecoveryTeamsService {
     organizationId: string,
     userId: string,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     await this.findOne(teamId, organizationId);
 
     await this.prisma.$executeRaw`
       DELETE FROM bcdr_recovery_team_plan_links
-      WHERE team_id = ${teamId}::uuid AND plan_id = ${planId}::uuid
+      WHERE team_id = ${teamId} AND plan_id = ${planId}
     `;
 
     await this.auditService.log({
@@ -431,8 +431,8 @@ export class RecoveryTeamsService {
              (SELECT COUNT(*) FROM bcdr_recovery_team_members WHERE team_id = t.id) as member_count
       FROM bcdr_recovery_teams t
       JOIN bcdr_recovery_team_plan_links l ON t.id = l.team_id
-      WHERE l.plan_id = ${planId}::uuid
-        AND t.organization_id = ${organizationId}::uuid
+      WHERE l.plan_id = ${planId}
+        AND t.organization_id = ${organizationId}
         AND t.deleted_at IS NULL
       ORDER BY t.name ASC
     `;
@@ -453,9 +453,9 @@ export class RecoveryTeamsService {
         COUNT(*) FILTER (WHERE team_type = 'business_recovery') as business_recovery_count,
         (SELECT COUNT(*) FROM bcdr_recovery_team_members m
          JOIN bcdr_recovery_teams t ON m.team_id = t.id
-         WHERE t.organization_id = ${organizationId}::uuid AND t.deleted_at IS NULL) as total_members
+         WHERE t.organization_id = ${organizationId} AND t.deleted_at IS NULL) as total_members
       FROM bcdr_recovery_teams
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = ${organizationId}
         AND deleted_at IS NULL
     `;
 

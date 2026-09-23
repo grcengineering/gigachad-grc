@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 import { AuditsService } from './audits.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -235,12 +236,21 @@ describe('AuditsService', () => {
       expect(result).toEqual(mockAudit);
     });
 
-    it('should return null if audit not found', async () => {
+    it('should return 404 if the audit is outside the tenant or missing', async () => {
       mockPrismaService.audit.findFirst.mockResolvedValue(null);
 
-      const result = await service.findOne('nonexistent', 'org-123');
-
-      expect(result).toBeNull();
+      await expect(service.findOne('other-tenant-audit', 'org-123')).rejects.toBeInstanceOf(
+        NotFoundException
+      );
+      expect(mockPrismaService.audit.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            id: 'other-tenant-audit',
+            organizationId: 'org-123',
+            deletedAt: null,
+          },
+        })
+      );
     });
   });
 
@@ -256,7 +266,10 @@ describe('AuditsService', () => {
     };
 
     it('should update an audit', async () => {
-      mockPrismaService.audit.findFirst.mockResolvedValue({ id: 'audit-123', organizationId: 'org-123' });
+      mockPrismaService.audit.findFirst.mockResolvedValue({
+        id: 'audit-123',
+        organizationId: 'org-123',
+      });
       mockPrismaService.audit.update.mockResolvedValue(mockUpdatedAudit);
 
       const result = await service.update('audit-123', 'org-123', mockUpdateDto);
@@ -274,7 +287,10 @@ describe('AuditsService', () => {
 
     it('should calculate finding counts when status changes to completed', async () => {
       const completedDto = { status: 'completed' };
-      mockPrismaService.audit.findFirst.mockResolvedValue({ id: 'audit-123', organizationId: 'org-123' });
+      mockPrismaService.audit.findFirst.mockResolvedValue({
+        id: 'audit-123',
+        organizationId: 'org-123',
+      });
       mockPrismaService.auditFinding.groupBy.mockResolvedValue([
         { severity: 'critical', _count: { severity: 1 } },
         { severity: 'high', _count: { severity: 2 } },
@@ -317,7 +333,10 @@ describe('AuditsService', () => {
         plannedStartDate: '2024-01-01',
         plannedEndDate: '2024-03-31',
       };
-      mockPrismaService.audit.findFirst.mockResolvedValue({ id: 'audit-123', organizationId: 'org-123' });
+      mockPrismaService.audit.findFirst.mockResolvedValue({
+        id: 'audit-123',
+        organizationId: 'org-123',
+      });
       mockPrismaService.audit.update.mockResolvedValue(mockUpdatedAudit);
 
       await service.update('audit-123', 'org-123', dtoWithDates);

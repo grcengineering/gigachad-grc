@@ -55,15 +55,20 @@ export function getStorageConfigFromEnv(): StorageConfig {
 
   // S3-compatible storage (RustFS, MinIO, or AWS S3)
   // Prefers S3_* env vars, falls back to MINIO_* for backwards compatibility
+  const useSSL =
+    process.env.S3_USE_SSL !== undefined
+      ? process.env.S3_USE_SSL === 'true'
+      : process.env.MINIO_USE_SSL === 'true';
+
   return {
     type,
     endpoint: process.env.S3_ENDPOINT || process.env.MINIO_ENDPOINT,
     port: parseInt(process.env.S3_PORT || process.env.MINIO_PORT || '9000', 10),
-    useSSL: process.env.S3_USE_SSL === 'true' || process.env.MINIO_USE_SSL === 'true',
+    useSSL,
     accessKey: process.env.S3_ACCESS_KEY || process.env.MINIO_ACCESS_KEY || process.env.AWS_ACCESS_KEY_ID,
     secretKey: process.env.S3_SECRET_KEY || process.env.MINIO_SECRET_KEY || process.env.AWS_SECRET_ACCESS_KEY,
     bucket: process.env.S3_BUCKET || process.env.MINIO_BUCKET || 'grc-storage',
-    region: process.env.AWS_REGION || 'us-east-1',
+    region: process.env.S3_REGION || process.env.AWS_REGION || 'us-east-1',
   };
 }
 

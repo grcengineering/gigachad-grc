@@ -77,8 +77,7 @@ export default function KnowledgeBaseDetail() {
 
   const createMutation = useMutation({
     mutationFn: async (data: Partial<KnowledgeEntry>) => {
-      const payload = { ...data, organizationId: '8924f0c1-7bb1-4be8-84ee-ad8725c712bf' };
-      const response = await knowledgeBaseApi.create(payload);
+      const response = await knowledgeBaseApi.create(data);
       return response.data;
     },
     onSuccess: (data) => {

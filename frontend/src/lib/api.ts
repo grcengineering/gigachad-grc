@@ -1,6 +1,19 @@
 import axios, { AxiosError } from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
+const TOKEN_STORAGE_KEY = 'token';
+
+export function setApiBearerToken(token: string | null): void {
+  if (token) {
+    localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  } else {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+  }
+}
+
+function getApiBearerToken(): string | null {
+  return localStorage.getItem(TOKEN_STORAGE_KEY);
+}
 
 const api = axios.create({
   baseURL: API_URL,
@@ -12,19 +25,16 @@ const api = axios.create({
 // Request interceptor to add auth token and user ID
 api.interceptors.request.use((config) => {
   // Token will be added by the auth context
-  const token = localStorage.getItem('token');
+  const token = getApiBearerToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-  }
-  // Add user ID for notifications and other user-specific endpoints
-  const userId = localStorage.getItem('userId');
-  if (userId) {
-    config.headers['x-user-id'] = userId;
-  }
-  // Add organization ID
-  const orgId = localStorage.getItem('organizationId');
-  if (orgId) {
-    config.headers['x-organization-id'] = orgId;
+  } else {
+    // Development auth fixtures use explicit context headers only when no
+    // production bearer token is present.
+    const userId = localStorage.getItem('userId');
+    if (userId) config.headers['x-user-id'] = userId;
+    const orgId = localStorage.getItem('organizationId');
+    if (orgId) config.headers['x-organization-id'] = orgId;
   }
   return config;
 });
@@ -33,14 +43,37 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    if (error.response?.status === 401) {
+    const isAuditorPortalRequest = error.config?.url?.startsWith('/api/audit-portal');
+    if (error.response?.status === 401 && !isAuditorPortalRequest) {
       // Handle unauthorized
-      localStorage.removeItem('token');
+      setApiBearerToken(null);
       window.location.href = '/login';
     }
     return Promise.reject(error);
   }
 );
+
+export function authenticatedFetch(
+  input: RequestInfo | URL,
+  init: RequestInit = {}
+): Promise<Response> {
+  const headers = new Headers(init.headers);
+  const token = getApiBearerToken();
+  const userId = localStorage.getItem('userId');
+  const organizationId = localStorage.getItem('organizationId');
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  } else {
+    if (userId) headers.set('x-user-id', userId);
+    if (organizationId) headers.set('x-organization-id', organizationId);
+  }
+
+  const resolvedInput =
+    typeof input === 'string' && API_URL && input.startsWith('/')
+      ? `${API_URL.replace(/\/$/, '')}${input}`
+      : input;
+  return fetch(resolvedInput, { ...init, headers });
+}
 
 // API functions
 export interface OrganizationProfile {
@@ -149,21 +182,20 @@ export const evidenceApi = {
         }
       }
     });
-    // Use fetch directly for FormData to avoid axios Content-Type issues
-    return fetch('/api/evidence', {
-      method: 'POST',
-      body: formData,
-    }).then(async (res) => {
-      if (!res.ok) {
-        const error = await res.json().catch(() => ({ message: res.statusText }));
-        throw new Error(error.message || 'Upload failed');
-      }
-      return { data: await res.json() };
-    });
+    return api.post('/api/evidence', formData);
   },
   update: (id: string, data: any) => api.put(`/api/evidence/${id}`, data),
   delete: (id: string) => api.delete(`/api/evidence/${id}`),
   getDownloadUrl: (id: string) => api.get(`/api/evidence/${id}/download`),
+  download: async (id: string) => {
+    const { data } = await api.get<{ url: string; filename?: string }>(
+      `/api/evidence/${id}/download`
+    );
+    const response = data.url.startsWith('/')
+      ? await api.get<Blob>(data.url, { responseType: 'blob' })
+      : await axios.get<Blob>(data.url, { responseType: 'blob' });
+    return { blob: response.data, filename: data.filename || `evidence-${id}` };
+  },
   review: (id: string, data: any) => api.post(`/api/evidence/${id}/review`, data),
   link: (id: string, controlIds: string[]) => api.post(`/api/evidence/${id}/link`, { controlIds }),
   unlink: (id: string, controlId: string) => api.delete(`/api/evidence/${id}/link/${controlId}`),
@@ -300,15 +332,8 @@ export const policiesApi = {
         }
       }
     });
-    const response = await fetch('/api/policies', {
-      method: 'POST',
-      body: formData,
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to upload policy');
-    }
-    return response.json();
+    const response = await api.post('/api/policies', formData);
+    return response.data;
   },
   update: (id: string, data: any) => api.put(`/api/policies/${id}`, data),
   updateStatus: (id: string, status: string, notes?: string) =>
@@ -321,15 +346,8 @@ export const policiesApi = {
     formData.append('file', file);
     formData.append('versionNumber', versionNumber);
     if (changeNotes) formData.append('changeNotes', changeNotes);
-    const response = await fetch(`/api/policies/${id}/versions`, {
-      method: 'POST',
-      body: formData,
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to upload new version');
-    }
-    return response.json();
+    const response = await api.post(`/api/policies/${id}/versions`, formData);
+    return response.data;
   },
   linkToControls: (id: string, controlIds: string[]) =>
     api.post(`/api/policies/${id}/link`, { controlIds }),
@@ -388,6 +406,15 @@ export const assessmentsApi = {
   updateRemediation: (id: string, taskId: string, data: any) =>
     api.put(`/api/assessments/${id}/remediation/${taskId}`, data),
   complete: (id: string) => api.post(`/api/assessments/${id}/complete`),
+};
+
+export const vendorAssessmentsApi = {
+  list: (params?: { vendorId?: string; assessmentType?: string; status?: string }) =>
+    api.get('/api/vendor-assessments', { params }),
+  get: (id: string) => api.get(`/api/vendor-assessments/${id}`),
+  create: (data: any) => api.post('/api/vendor-assessments', data),
+  update: (id: string, data: any) => api.patch(`/api/vendor-assessments/${id}`, data),
+  delete: (id: string) => api.delete(`/api/vendor-assessments/${id}`),
 };
 
 export const mappingsApi = {
@@ -525,8 +552,10 @@ export const contractsApi = {
   list: () => api.get('/api/contracts'),
   get: (id: string) => api.get(`/api/contracts/${id}`),
   create: (data: any) => api.post('/api/contracts', data),
-  update: (id: string, data: any) => api.put(`/api/contracts/${id}`, data),
+  update: (id: string, data: any) => api.patch(`/api/contracts/${id}`, data),
   delete: (id: string) => api.delete(`/api/contracts/${id}`),
+  downloadDocument: (id: string) =>
+    api.get<Blob>(`/api/contracts/${id}/document`, { responseType: 'blob' }),
 };
 
 export const questionnairesApi = {
@@ -541,7 +570,9 @@ export const knowledgeBaseApi = {
   list: () => api.get('/api/knowledge-base'),
   get: (id: string) => api.get(`/api/knowledge-base/${id}`),
   create: (data: any) => api.post('/api/knowledge-base', data),
-  update: (id: string, data: any) => api.put(`/api/knowledge-base/${id}`, data),
+  bulkCreate: (entries: Array<Record<string, unknown>>) =>
+    api.post('/api/knowledge-base/bulk', { entries }),
+  update: (id: string, data: any) => api.patch(`/api/knowledge-base/${id}`, data),
   delete: (id: string) => api.delete(`/api/knowledge-base/${id}`),
 };
 
@@ -741,6 +772,52 @@ export const risksApi = {
       residualImpact?: string;
     }
   ) => api.post(`/api/risks/${id}/treatment/mitigation-update`, data),
+};
+
+export const riskScenariosApi = {
+  list: (params?: { search?: string; category?: string; page?: number; limit?: number }) =>
+    api.get('/api/risk-scenarios', { params }),
+  create: (data: {
+    title: string;
+    description: string;
+    category: string;
+    threatActor: string;
+    attackVector: string;
+    targetAssets: string[];
+    likelihood: string;
+    impact: string;
+    tags?: string[];
+    isTemplate?: boolean;
+  }) => api.post('/api/risk-scenarios', data),
+};
+
+export const findingsApi = {
+  list: () => api.get('/api/findings'),
+  create: (data: {
+    auditId: string;
+    title: string;
+    description: string;
+    category: string;
+    severity: string;
+    remediationOwner?: string;
+    targetDate?: string;
+  }) => api.post('/api/findings', data),
+};
+
+export const employeeComplianceApi = {
+  list: (params?: Record<string, string | number | undefined>) =>
+    api.get('/api/employee-compliance', { params }),
+  get: (id: string) => api.get(`/api/employee-compliance/${id}`),
+  getDashboard: () => api.get('/api/employee-compliance/dashboard'),
+  getDepartments: () => api.get<string[]>('/api/employee-compliance/departments'),
+};
+
+export const scheduledReportsApi = {
+  list: () => api.get('/api/scheduled-reports'),
+  create: (data: any) => api.post('/api/scheduled-reports', data),
+  run: (id: string) => api.post(`/api/scheduled-reports/${id}/run`),
+  delete: (id: string) => api.delete(`/api/scheduled-reports/${id}`),
+  executions: (id: string) => api.get(`/api/scheduled-reports/${id}/executions`),
 };
 
 export const assetsApi = {

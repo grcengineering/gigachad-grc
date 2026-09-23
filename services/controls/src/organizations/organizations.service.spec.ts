@@ -1,4 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { DEV_USER } from '@gigachad-grc/shared';
 import { OrganizationsService } from './organizations.service';
 
 describe('OrganizationsService', () => {
@@ -19,6 +20,10 @@ describe('OrganizationsService', () => {
     organization: {
       findUnique: jest.fn(),
       update: jest.fn(),
+      upsert: jest.fn(),
+    },
+    user: {
+      upsert: jest.fn(),
     },
     auditLog: {
       create: jest.fn(),
@@ -47,6 +52,24 @@ describe('OrganizationsService', () => {
         enabledModules: ['compliance'],
       },
     });
+  });
+
+  it('creates the development organization on first access', async () => {
+    prisma.organization.upsert.mockResolvedValue({});
+    prisma.user.upsert.mockResolvedValue({});
+    prisma.organization.findUnique.mockResolvedValue({
+      ...organization,
+      id: DEV_USER.organizationId,
+    });
+
+    await service.getCurrent(DEV_USER.organizationId);
+
+    expect(prisma.organization.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: DEV_USER.organizationId } })
+    );
+    expect(prisma.user.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: DEV_USER.userId } })
+    );
   });
 
   it('merges editable settings without dropping unrelated keys and writes an audit log', async () => {
@@ -93,6 +116,15 @@ describe('OrganizationsService', () => {
     await expect(service.updateCurrent('org-1', 'user-1', { name: '   ' })).rejects.toBeInstanceOf(
       BadRequestException
     );
+  });
+
+  it('rejects timezone-shaped strings that are not real IANA zones', async () => {
+    await expect(
+      service.updateCurrent('org-1', 'user-1', {
+        settings: { timezone: 'America/Definitely_Not_Real' },
+      })
+    ).rejects.toThrow('timezone must be UTC or a valid IANA timezone');
+    expect(prisma.organization.update).not.toHaveBeenCalled();
   });
 
   it('returns not found for an unknown tenant', async () => {

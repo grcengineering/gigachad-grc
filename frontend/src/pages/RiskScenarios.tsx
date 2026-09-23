@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { Zap, Plus, Search, Tag, AlertTriangle } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Zap, Plus, Search, Tag } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { riskScenariosApi } from '@/lib/api';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
   Button,
   Badge,
@@ -13,6 +17,7 @@ import {
   FilterBar,
   EmptyState,
   Dialog,
+  Skeleton,
   type BadgeVariant,
   type ActiveFilter,
 } from '@/components/ui';
@@ -102,101 +107,25 @@ const IMPACT_VARIANT: Record<string, BadgeVariant> = {
   negligible: 'neutral',
 };
 
-const mockScenarios: Scenario[] = [
-  {
-    id: '1',
-    title: 'Phishing Attack on Employees',
-    description:
-      'Targeted phishing campaign to obtain employee credentials and access corporate systems',
-    category: 'Data Breach',
-    threatActor: 'external_attacker',
-    attackVector: 'phishing',
-    targetAssets: ['Email System', 'Corporate Network', 'User Credentials'],
-    likelihood: 'likely',
-    impact: 'major',
-    tags: ['email', 'credentials', 'social-engineering'],
-    isTemplate: true,
-    usageCount: 15,
-    createdAt: '2024-01-15',
-  },
-  {
-    id: '2',
-    title: 'Ransomware Infection',
-    description: 'Ransomware attack encrypting critical business data and demanding payment',
-    category: 'System Compromise',
-    threatActor: 'organized_crime',
-    attackVector: 'malware',
-    targetAssets: ['File Servers', 'Databases', 'Backup Systems'],
-    likelihood: 'possible',
-    impact: 'severe',
-    tags: ['ransomware', 'encryption', 'extortion'],
-    isTemplate: true,
-    usageCount: 12,
-    createdAt: '2024-01-20',
-  },
-  {
-    id: '3',
-    title: 'Insider Data Theft',
-    description:
-      'Employee with access to sensitive data exfiltrates information before leaving company',
-    category: 'Data Breach',
-    threatActor: 'insider_malicious',
-    attackVector: 'insider_access',
-    targetAssets: ['Customer Database', 'Financial Records', 'IP/Trade Secrets'],
-    likelihood: 'possible',
-    impact: 'major',
-    tags: ['insider', 'data-theft', 'exfiltration'],
-    isTemplate: true,
-    usageCount: 8,
-    createdAt: '2024-02-01',
-  },
-  {
-    id: '4',
-    title: 'DDoS Attack on Public Services',
-    description: 'Distributed denial of service attack targeting public-facing web applications',
-    category: 'Service Disruption',
-    threatActor: 'hacktivist',
-    attackVector: 'network',
-    targetAssets: ['Web Servers', 'Load Balancers', 'CDN'],
-    likelihood: 'likely',
-    impact: 'moderate',
-    tags: ['ddos', 'availability', 'web'],
-    isTemplate: true,
-    usageCount: 6,
-    createdAt: '2024-02-10',
-  },
-  {
-    id: '5',
-    title: 'Supply Chain Compromise',
-    description: 'Third-party vendor compromise leading to access to internal systems',
-    category: 'Third Party Risk',
-    threatActor: 'nation_state',
-    attackVector: 'supply_chain',
-    targetAssets: ['Vendor Integrations', 'API Connections', 'Shared Systems'],
-    likelihood: 'unlikely',
-    impact: 'severe',
-    tags: ['supply-chain', 'vendor', 'solarwinds-style'],
-    isTemplate: true,
-    usageCount: 4,
-    createdAt: '2024-02-15',
-  },
-];
-
 export default function RiskScenarios() {
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
 
-  const scenarios = mockScenarios;
-  const filteredScenarios = scenarios.filter((s) => {
-    const matchesSearch =
-      s.title.toLowerCase().includes(search.toLowerCase()) ||
-      s.description.toLowerCase().includes(search.toLowerCase()) ||
-      s.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()));
-    const matchesCategory = !selectedCategory || s.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+  const { data, isLoading, isError, refetch } = useQuery<{ data: Scenario[] }>({
+    queryKey: ['risk-scenarios', debouncedSearch, selectedCategory],
+    queryFn: () =>
+      riskScenariosApi
+        .list({
+          search: debouncedSearch || undefined,
+          category: selectedCategory || undefined,
+          limit: 100,
+        })
+        .then((response) => response.data),
   });
+  const scenarios = data?.data ?? [];
 
   const activeFilters: ActiveFilter[] = [];
   if (search)
@@ -249,17 +178,36 @@ export default function RiskScenarios() {
         />
       </FilterBar>
 
-      {filteredScenarios.length === 0 ? (
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <Skeleton key={index} className="h-56" />
+          ))}
+        </div>
+      ) : isError ? (
+        <Card>
+          <EmptyState
+            icon={<Zap className="h-8 w-8" />}
+            title="Couldn't load scenarios"
+            description="The risk scenario service didn't respond."
+            action={<Button onClick={() => refetch()}>Try again</Button>}
+          />
+        </Card>
+      ) : scenarios.length === 0 ? (
         <Card>
           <EmptyState
             icon={<Zap className="h-8 w-8" />}
             title="No scenarios found"
-            description="Try adjusting your search or filters."
+            description={
+              activeFilters.length
+                ? 'Try adjusting your search or filters.'
+                : 'Create a scenario to begin building your threat library.'
+            }
           />
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredScenarios.map((scenario) => (
+          {scenarios.map((scenario) => (
             <Card
               key={scenario.id}
               interactive
@@ -325,12 +273,9 @@ export default function RiskScenarios() {
         description={selectedScenario?.category}
         size="lg"
         footer={
-          <>
-            <Button variant="ghost" onClick={() => setSelectedScenario(null)}>
-              Close
-            </Button>
-            <Button leftIcon={<AlertTriangle className="h-4 w-4" />}>Use for New Risk</Button>
-          </>
+          <Button variant="ghost" onClick={() => setSelectedScenario(null)}>
+            Close
+          </Button>
         }
       >
         {selectedScenario && (
@@ -424,6 +369,7 @@ export default function RiskScenarios() {
 }
 
 function CreateScenarioModal({ onClose }: { onClose: () => void }) {
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -437,6 +383,34 @@ function CreateScenarioModal({ onClose }: { onClose: () => void }) {
     isTemplate: true,
   });
 
+  const createMutation = useMutation({
+    mutationFn: () =>
+      riskScenariosApi.create({
+        ...formData,
+        targetAssets: formData.targetAssets
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean),
+        tags: formData.tags
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['risk-scenarios'] });
+      toast.success('Risk scenario created');
+      onClose();
+    },
+    onError: () => toast.error('Failed to create risk scenario'),
+  });
+  const canCreate = Boolean(
+    formData.title.trim() &&
+    formData.description.trim() &&
+    formData.category &&
+    formData.threatActor &&
+    formData.attackVector
+  );
+
   return (
     <Dialog
       open
@@ -448,7 +422,13 @@ function CreateScenarioModal({ onClose }: { onClose: () => void }) {
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button>Create Scenario</Button>
+          <Button
+            loading={createMutation.isPending}
+            disabled={!canCreate}
+            onClick={() => createMutation.mutate()}
+          >
+            Create Scenario
+          </Button>
         </>
       }
     >

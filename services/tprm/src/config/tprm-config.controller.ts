@@ -1,10 +1,10 @@
 import { Controller, Get, Put, Post, Delete, Body, Param, UseGuards } from '@nestjs/common';
-import { DevAuthGuard, CurrentUser, UserContext } from '@gigachad-grc/shared';
+import { DevAuthGuard, CurrentUser, UserContext, Roles, RolesGuard } from '@gigachad-grc/shared';
 import { TprmConfigService } from './tprm-config.service';
 import { UpdateTprmConfigurationDto, VendorCategoryDto } from './dto/tprm-config.dto';
 
 @Controller('api/tprm-config')
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 export class TprmConfigController {
   constructor(private readonly tprmConfigService: TprmConfigService) {}
 
@@ -29,6 +29,7 @@ export class TprmConfigController {
    * Update TPRM configuration
    */
   @Put()
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   async updateConfiguration(
     @CurrentUser() user: UserContext,
     @Body() dto: UpdateTprmConfigurationDto
@@ -41,6 +42,7 @@ export class TprmConfigController {
    * Reset configuration to defaults
    */
   @Post('reset')
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   async resetToDefaults(@CurrentUser() user: UserContext) {
     // SECURITY: Organization ID and user ID extracted from authenticated context, not headers
     return this.tprmConfigService.resetToDefaults(user.organizationId, user.userId);
@@ -50,6 +52,7 @@ export class TprmConfigController {
    * Add a new vendor category
    */
   @Post('categories')
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   async addCategory(
     @CurrentUser() user: UserContext,
     @Body() category: Omit<VendorCategoryDto, 'id'>
@@ -62,6 +65,7 @@ export class TprmConfigController {
    * Remove a vendor category
    */
   @Delete('categories/:categoryId')
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   async removeCategory(@CurrentUser() user: UserContext, @Param('categoryId') categoryId: string) {
     // SECURITY: Organization ID and user ID extracted from authenticated context, not headers
     return this.tprmConfigService.removeCategory(user.organizationId, categoryId, user.userId);

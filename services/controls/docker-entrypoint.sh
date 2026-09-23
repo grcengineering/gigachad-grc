@@ -12,15 +12,24 @@ echo "GigaChad GRC - Controls Service Starting"
 echo "================================================"
 
 # Give the database a moment to be fully ready
-echo "[1/2] Waiting for database..."
+echo "[1/3] Waiting for database..."
 sleep 5
 
-# Run database migrations
-echo "[2/2] Synchronizing database schema..."
+# Synchronize the canonical public Prisma schema first. Do not allow destructive
+# changes implicitly and do not continue with a partially synchronized schema.
+echo "[2/3] Synchronizing Prisma schema..."
 cd /app
-./node_modules/.bin/prisma db push --schema=/app/shared/prisma/schema.prisma --accept-data-loss --skip-generate 2>&1 || {
-  echo "  Note: Schema may already be up to date."
-}
+./node_modules/.bin/prisma db push \
+  --schema=/app/shared/prisma/schema.prisma \
+  --skip-generate
+
+# The BC/DR core tables use a dedicated PostgreSQL schema and are intentionally
+# outside Prisma's single-public-schema model. Apply their idempotent migration
+# after db push so public organizations/users/workspaces/entities exist first.
+echo "[3/3] Applying BC/DR schema..."
+./node_modules/.bin/prisma db execute \
+  --schema=/app/shared/prisma/schema.prisma \
+  --file=/app/database/migrations/12-bcdr-module.sql
 
 echo "================================================"
 echo "Starting application..."

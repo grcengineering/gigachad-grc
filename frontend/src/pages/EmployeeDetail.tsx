@@ -6,7 +6,6 @@ import {
   Building2,
   Calendar,
   CheckCircle2,
-  Edit2,
   Key,
   Mail,
   MapPin,
@@ -14,7 +13,7 @@ import {
   UserIcon,
   XCircle,
 } from 'lucide-react';
-import api from '@/lib/api';
+import { employeeComplianceApi } from '@/lib/api';
 import {
   Badge,
   Button,
@@ -188,8 +187,18 @@ export default function EmployeeDetail() {
   const { data: employee, isLoading } = useQuery<EmployeeDetailData>({
     queryKey: ['people', id],
     queryFn: async () => {
-      const res = await api.get(`/api/people/${id}`);
-      return res.data;
+      const res = await employeeComplianceApi.get(id!);
+      const data = res.data;
+      return {
+        ...data,
+        fullName: [data.firstName, data.lastName].filter(Boolean).join(' ') || data.email,
+        status: data.employmentStatus,
+        attestations: (data.attestations ?? []).map((attestation: any) => ({
+          ...attestation,
+          policyTitle: attestation.policy?.title,
+          policyCategory: attestation.policy?.category,
+        })),
+      };
     },
     enabled: !!id,
   });
@@ -745,11 +754,6 @@ export default function EmployeeDetail() {
             )}
             {employee.department && <CategoryChip value={employee.department} />}
           </>
-        }
-        actions={
-          <Button variant="outline" size="sm" leftIcon={<Edit2 className="h-4 w-4" />}>
-            Edit
-          </Button>
         }
       />
 

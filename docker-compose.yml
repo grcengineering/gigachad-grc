@@ -191,6 +191,7 @@ services:
     environment:
       RUSTFS_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
       RUSTFS_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+      RUSTFS_DEFAULT_BUCKETS: ${S3_BUCKET:-grc-storage}
     ports:
       # SECURITY: Bound to localhost - internal services access via Docker network
       # Direct port access only for local development/debugging
@@ -270,11 +271,14 @@ services:
       PORT: 3001
       DATABASE_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-gigachad_grc}
       REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
+      STORAGE_TYPE: s3
       S3_ENDPOINT: rustfs
       S3_PORT: 9000
-      S3_USE_SSL: ${MINIO_USE_SSL:-true}
+      S3_USE_SSL: 'false'
       S3_ACCESS_KEY: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+      S3_BUCKET: ${S3_BUCKET:-grc-storage}
+      S3_REGION: ${S3_REGION:-us-east-1}
       # Legacy MinIO env vars (for backwards compatibility)
       MINIO_ENDPOINT: rustfs
       MINIO_PORT: 9000
@@ -379,11 +383,14 @@ services:
       PORT: 3002
       DATABASE_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-gigachad_grc}
       REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
+      STORAGE_TYPE: s3
       S3_ENDPOINT: rustfs
       S3_PORT: 9000
-      S3_USE_SSL: ${MINIO_USE_SSL:-true}
+      S3_USE_SSL: 'false'
       S3_ACCESS_KEY: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+      S3_BUCKET: ${S3_BUCKET:-grc-storage}
+      S3_REGION: ${S3_REGION:-us-east-1}
       MINIO_ENDPOINT: rustfs
       MINIO_PORT: 9000
       MINIO_USE_SSL: ${MINIO_USE_SSL:-true}
@@ -412,8 +419,6 @@ services:
       - 'traefik.http.routers.frameworks.rule=PathPrefix(`/api/frameworks`)'
       # SECURITY: Apply rate limiting and security headers middleware
       - 'traefik.http.routers.frameworks.middlewares=api-security@file'
-      - 'traefik.http.routers.frameworks-assessments.rule=PathPrefix(`/api/assessments`)'
-      - 'traefik.http.routers.frameworks-assessments.middlewares=api-security@file'
       - 'traefik.http.routers.frameworks-mappings.rule=PathPrefix(`/api/mappings`)'
       - 'traefik.http.routers.frameworks-mappings.middlewares=api-security@file'
       - 'traefik.http.services.frameworks.loadbalancer.server.port=3002'
@@ -435,11 +440,14 @@ services:
       PORT: 3004
       DATABASE_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-gigachad_grc}
       REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
+      STORAGE_TYPE: s3
       S3_ENDPOINT: rustfs
       S3_PORT: 9000
-      S3_USE_SSL: ${MINIO_USE_SSL:-true}
+      S3_USE_SSL: 'false'
       S3_ACCESS_KEY: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+      S3_BUCKET: ${S3_BUCKET:-grc-storage}
+      S3_REGION: ${S3_REGION:-us-east-1}
       MINIO_ENDPOINT: rustfs
       MINIO_PORT: 9000
       MINIO_USE_SSL: ${MINIO_USE_SSL:-true}
@@ -486,11 +494,14 @@ services:
       PORT: 3005
       DATABASE_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-gigachad_grc}
       REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
+      STORAGE_TYPE: s3
       S3_ENDPOINT: rustfs
       S3_PORT: 9000
-      S3_USE_SSL: ${MINIO_USE_SSL:-true}
+      S3_USE_SSL: 'false'
       S3_ACCESS_KEY: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+      S3_BUCKET: ${S3_BUCKET:-grc-storage}
+      S3_REGION: ${S3_REGION:-us-east-1}
       MINIO_ENDPOINT: rustfs
       MINIO_PORT: 9000
       MINIO_USE_SSL: ${MINIO_USE_SSL:-true}
@@ -519,9 +530,10 @@ services:
       - 'traefik.http.routers.tprm-vendors.rule=PathPrefix(`/api/vendors`)'
       # SECURITY: Apply rate limiting and security headers middleware
       - 'traefik.http.routers.tprm-vendors.middlewares=api-security@file'
-      # NOTE: TPRM's own /assessments controller (vendor risk assessments) has
-      # no frontend caller and deliberately has no router here - /api/assessments
-      # is the frameworks service's compliance-assessment resource (see below).
+      # Vendor risk assessments are distinct from the frameworks service's
+      # compliance assessments at /api/assessments.
+      - 'traefik.http.routers.tprm-vendor-assessments.rule=PathPrefix(`/api/vendor-assessments`)'
+      - 'traefik.http.routers.tprm-vendor-assessments.middlewares=api-security@file'
       - 'traefik.http.routers.tprm-contracts.rule=PathPrefix(`/api/contracts`)'
       - 'traefik.http.routers.tprm-contracts.middlewares=api-security@file'
       - 'traefik.http.routers.tprm-config.rule=PathPrefix(`/api/tprm-config`)'
@@ -582,6 +594,10 @@ services:
       - 'traefik.http.routers.trust-knowledge-base.middlewares=api-security@file'
       - 'traefik.http.routers.trust-center.rule=PathPrefix(`/api/trust-center`)'
       - 'traefik.http.routers.trust-center.middlewares=api-security@file'
+      - 'traefik.http.routers.trust-answer-templates.rule=PathPrefix(`/api/answer-templates`)'
+      - 'traefik.http.routers.trust-answer-templates.middlewares=api-security@file'
+      - 'traefik.http.routers.trust-config.rule=PathPrefix(`/api/trust-config`)'
+      - 'traefik.http.routers.trust-config.middlewares=api-security@file'
       - 'traefik.http.services.trust.loadbalancer.server.port=3006'
     restart: unless-stopped
 

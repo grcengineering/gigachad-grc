@@ -7,7 +7,8 @@ import {
   Inject,
   Optional,
 } from '@nestjs/common';
-import { DEV_USER, ensureDevUserExists } from './index';
+import { DEV_USER } from './dev-user.constants';
+import { ensureDevUserExists } from './dev-user-sync';
 import {
   SEED_ORG_A_ID,
   SEED_ORG_B_ID,
@@ -17,6 +18,7 @@ import {
   SEED_USER_A_VIEWER_ID,
   SEED_USER_B_ADMIN_ID,
 } from '../seed/seed-constants';
+import { isDevelopmentAuthEnvironment } from './auth-environment';
 
 interface DevAuthOverrideFixture {
   userId: string;
@@ -108,6 +110,10 @@ export const User = createParamDecorator((data: unknown, ctx: ExecutionContext):
  * Default permissions for development user.
  */
 const DEV_PERMISSIONS = [
+  // Development's built-in admin must remain usable as new protected
+  // endpoints are added. PermissionGuard only honors this wildcard outside
+  // production, while non-admin RBAC fixtures receive no dev permissions.
+  '*:*',
   'controls:read',
   'controls:write',
   'controls:delete',
@@ -165,8 +171,8 @@ const DEV_PERMISSIONS = [
  * Development auth guard that bypasses JWT validation
  * and injects a mock user context.
  *
- * WARNING: Only use in development mode
- * CRITICAL: This guard will throw an error in production
+ * WARNING: Only use in explicit development or test environments.
+ * CRITICAL: Runtime feature flags cannot enable this guard in production.
  *
  * AUTO-SYNC: Automatically ensures the mock user and organization
  * exist in the database to prevent foreign key constraint errors.
@@ -199,16 +205,10 @@ export class DevAuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // SECURITY: Only allow in explicit development/test environments unless
-    // USE_DEV_AUTH is explicitly enabled for sandbox/demo environments.
-    const nodeEnv = process.env.NODE_ENV;
-    const allowedEnvs = ['development', 'test'];
-    const devAuthExplicitlyEnabled = process.env.USE_DEV_AUTH === 'true';
-
-    if ((!nodeEnv || !allowedEnvs.includes(nodeEnv)) && !devAuthExplicitlyEnabled) {
+    if (!isDevelopmentAuthEnvironment()) {
       throw new Error(
-        `SECURITY ERROR: DevAuthGuard cannot be used in ${nodeEnv || 'undefined'} environment. ` +
-          'This guard is only permitted in development/test or when USE_DEV_AUTH=true. ' +
+        `SECURITY ERROR: DevAuthGuard cannot be used in ${process.env.NODE_ENV || 'undefined'} environment. ` +
+          'This guard is only permitted when NODE_ENV is development or test. ' +
           'Please use proper JWT authentication in production.'
       );
     }

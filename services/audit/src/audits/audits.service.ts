@@ -83,7 +83,7 @@ export class AuditsService {
   }
 
   async findOne(id: string, organizationId: string) {
-    return this.prisma.audit.findFirst({
+    const audit = await this.prisma.audit.findFirst({
       where: { id, organizationId, deletedAt: null },
       include: {
         requests: {
@@ -102,6 +102,12 @@ export class AuditsService {
         },
       },
     });
+
+    if (!audit) {
+      throw new NotFoundException(`Audit with ID ${id} not found`);
+    }
+
+    return audit;
   }
 
   async update(id: string, organizationId: string, updateAuditDto: UpdateAuditDto) {

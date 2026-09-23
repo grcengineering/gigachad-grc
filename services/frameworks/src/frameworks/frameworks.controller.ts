@@ -222,6 +222,10 @@ export class FrameworksController {
   @ApiParam({ name: 'id', description: 'Framework ID' })
   @ApiResponse({ status: 201, description: 'Requirements uploaded successfully' })
   async bulkUploadRequirements(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
     return this.frameworksService.bulkUploadRequirements(id, file);
   }
 

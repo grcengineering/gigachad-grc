@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Request } from 'express';
 import { AuditAIService } from './audit-ai.service';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
+import { Roles, RolesGuard } from '@gigachad-grc/shared';
 import {
   CategorizeFindingDto,
   FindingCategorizationResult,
@@ -25,74 +26,58 @@ interface AuthenticatedRequest extends Request {
 
 @ApiTags('Audit AI')
 @ApiBearerAuth()
-@UseGuards(DevAuthGuard)
-@Controller('audit-ai')
+@UseGuards(DevAuthGuard, RolesGuard)
+@Controller('api/audit/audit-ai')
 export class AuditAIController {
   constructor(private readonly auditAIService: AuditAIService) {}
 
   @Post('categorize-finding')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'AI-categorize an audit finding' })
   async categorizeFinding(
     @Body() dto: CategorizeFindingDto,
-    @Req() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest
   ): Promise<FindingCategorizationResult> {
-    return this.auditAIService.categorizeFinding(
-      req.user.organizationId,
-      dto,
-      req.user.userId,
-    );
+    return this.auditAIService.categorizeFinding(req.user.organizationId, dto, req.user.userId);
   }
 
   @Post('analyze-gaps')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Analyze evidence gaps for an audit' })
   async analyzeGaps(
     @Body() dto: AnalyzeGapsDto,
-    @Req() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest
   ): Promise<GapAnalysisResult> {
-    return this.auditAIService.analyzeGaps(
-      req.user.organizationId,
-      dto,
-      req.user.userId,
-    );
+    return this.auditAIService.analyzeGaps(req.user.organizationId, dto, req.user.userId);
   }
 
   @Post('suggest-remediation')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Generate AI remediation suggestions for a finding' })
   async suggestRemediation(
     @Body() dto: SuggestRemediationDto,
-    @Req() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest
   ): Promise<RemediationSuggestion> {
-    return this.auditAIService.suggestRemediation(
-      req.user.organizationId,
-      dto,
-      req.user.userId,
-    );
+    return this.auditAIService.suggestRemediation(req.user.organizationId, dto, req.user.userId);
   }
 
   @Post('map-controls')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Map audit requests to relevant controls' })
   async mapControls(
     @Body() dto: MapControlsDto,
-    @Req() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest
   ): Promise<ControlMappingResult> {
-    return this.auditAIService.mapControls(
-      req.user.organizationId,
-      dto,
-      req.user.userId,
-    );
+    return this.auditAIService.mapControls(req.user.organizationId, dto, req.user.userId);
   }
 
   @Post('generate-summary')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Generate an AI audit summary' })
   async generateSummary(
     @Body() dto: GenerateSummaryDto,
-    @Req() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest
   ): Promise<AuditSummary> {
-    return this.auditAIService.generateSummary(
-      req.user.organizationId,
-      dto,
-      req.user.userId,
-    );
+    return this.auditAIService.generateSummary(req.user.organizationId, dto, req.user.userId);
   }
 }
-

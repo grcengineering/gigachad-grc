@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import {
+  EvidenceController,
   EVIDENCE_MAX_BYTES,
   EVIDENCE_MIME_ALLOWLIST,
   evidenceFileFilter,
@@ -37,5 +38,29 @@ describe('evidenceFileFilter', () => {
 
   it('exposes a 50 MB max byte ceiling', () => {
     expect(EVIDENCE_MAX_BYTES).toBe(50 * 1024 * 1024);
+  });
+});
+
+describe('EvidenceController uploads and deletion', () => {
+  const evidenceService = {
+    upload: jest.fn(),
+    delete: jest.fn(),
+  };
+  const controller = new EvidenceController(evidenceService as never);
+  const user = { organizationId: 'org-1', userId: 'user-1' } as never;
+
+  beforeEach(() => jest.clearAllMocks());
+
+  it('rejects a missing upload with HTTP 400', async () => {
+    await expect(
+      controller.upload(user, undefined as unknown as Express.Multer.File, {} as never)
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(evidenceService.upload).not.toHaveBeenCalled();
+  });
+
+  it('passes the authenticated user ID when deleting evidence', async () => {
+    evidenceService.delete.mockResolvedValue({ success: true });
+    await controller.delete('evidence-1', user);
+    expect(evidenceService.delete).toHaveBeenCalledWith('evidence-1', 'org-1', 'user-1');
   });
 });

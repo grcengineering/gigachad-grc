@@ -158,6 +158,10 @@ export class PoliciesController {
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: UploadPolicyDto
   ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
     return this.policiesService.upload(user.organizationId, user.userId, file, dto);
   }
 
@@ -202,6 +206,10 @@ export class PoliciesController {
     @Body('versionNumber') versionNumber: string,
     @Body('changeNotes') changeNotes?: string
   ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
     return this.policiesService.uploadNewVersion(
       id,
       user.organizationId,

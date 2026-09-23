@@ -140,7 +140,12 @@ jobs:
         # npm audit only needs the dep tree; skipping postinstall avoids
         # the "Unexpected end of JSON input" error from Prisma's engine
         # checksum fetch on hardened runners.
-        run: npm ci --ignore-scripts
+        run: |
+          if [ "${{ matrix.name }}" = "workspace" ]; then
+            npm ci --ignore-scripts --omit=dev
+          else
+            npm ci --ignore-scripts
+          fi
 
       - name: Verify npm package signatures (BLOCKING)
         # Sigstore attestation check. See pr-validation.yml for rationale.
@@ -350,7 +355,7 @@ jobs:
         # --ignore-scripts skips prisma generate (and other postinstall hooks).
         # license-checker reads package.json + node_modules layout; it doesn't
         # need generated Prisma client. Avoids the same Prisma JSON error.
-        run: npm ci --ignore-scripts
+        run: npm ci --ignore-scripts --omit=dev
 
       - name: Check licenses
         run: |

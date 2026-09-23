@@ -1,4 +1,5 @@
 export * from './jwt.guard';
+export * from './application-auth.guard';
 export * from './roles.decorator';
 export * from './roles.guard';
 export * from './user.decorator';

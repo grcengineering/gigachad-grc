@@ -1,12 +1,4 @@
- 
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  UseGuards,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { SeedDataService } from './seed.service';
 import { ResetDataService } from './reset.service';
@@ -24,7 +16,7 @@ interface ResetDto {
 export class SeedController {
   constructor(
     private readonly seedService: SeedDataService,
-    private readonly resetService: ResetDataService,
+    private readonly resetService: ResetDataService
   ) {}
 
   @Get('status')
@@ -47,6 +39,8 @@ export class SeedController {
   @EndpointRateLimit(ENDPOINT_RATE_LIMITS.SEED)
   @ApiOperation({ summary: 'Load demo data into the organization' })
   async loadDemoData(@User() user: UserContext) {
+    this.assertDemoMutationsAllowed();
+
     // Check if user is admin
     if (!this.isAdmin(user)) {
       throw new ForbiddenException('Only administrators can load demo data');
@@ -71,6 +65,8 @@ export class SeedController {
     },
   })
   async resetData(@User() user: UserContext, @Body() dto: ResetDto) {
+    this.assertDemoMutationsAllowed();
+
     // Check if user is admin
     if (!this.isAdmin(user)) {
       throw new ForbiddenException('Only administrators can reset data');
@@ -79,7 +75,7 @@ export class SeedController {
     return this.resetService.resetOrganizationData(
       user.organizationId,
       user.userId,
-      dto.confirmationPhrase,
+      dto.confirmationPhrase
     );
   }
 
@@ -94,5 +90,10 @@ export class SeedController {
     const adminRoles = ['admin', 'super_admin', 'owner'];
     return adminRoles.includes(user.role || '');
   }
-}
 
+  private assertDemoMutationsAllowed(): void {
+    if (process.env.NODE_ENV === 'production') {
+      throw new ForbiddenException('Demo data mutations are disabled in production');
+    }
+  }
+}

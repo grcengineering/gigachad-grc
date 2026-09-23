@@ -24,14 +24,14 @@ function getEncryptionKey(): Buffer {
 export function encrypt(text: string): string {
   const key = getEncryptionKey();
   const iv = crypto.randomBytes(IV_LENGTH);
-  
+
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
-  
+
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
-  
+
   const authTag = cipher.getAuthTag();
-  
+
   // Format: iv:authTag:encrypted
   return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
 }
@@ -42,21 +42,21 @@ export function encrypt(text: string): string {
 export function decrypt(encryptedText: string): string {
   const key = getEncryptionKey();
   const parts = encryptedText.split(':');
-  
+
   if (parts.length !== 3) {
     throw new Error('Invalid encrypted text format');
   }
-  
+
   const iv = Buffer.from(parts[0], 'hex');
   const authTag = Buffer.from(parts[1], 'hex');
   const encrypted = parts[2];
-  
+
   const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
   decipher.setAuthTag(authTag);
-  
+
   let decrypted = decipher.update(encrypted, 'hex', 'utf8');
   decrypted += decipher.final('utf8');
-  
+
   return decrypted;
 }
 
@@ -66,15 +66,9 @@ export function decrypt(encryptedText: string): string {
 export function hashPassword(password: string): string {
   const salt = crypto.randomBytes(SALT_LENGTH);
   const iterations = 100000;
-  
-  const hash = crypto.pbkdf2Sync(
-    password,
-    salt,
-    iterations,
-    KEY_LENGTH,
-    'sha256'
-  );
-  
+
+  const hash = crypto.pbkdf2Sync(password, salt, iterations, KEY_LENGTH, 'sha256');
+
   return `${iterations}:${salt.toString('hex')}:${hash.toString('hex')}`;
 }
 
@@ -83,23 +77,17 @@ export function hashPassword(password: string): string {
  */
 export function verifyPassword(password: string, storedHash: string): boolean {
   const parts = storedHash.split(':');
-  
+
   if (parts.length !== 3) {
     return false;
   }
-  
+
   const iterations = parseInt(parts[0], 10);
   const salt = Buffer.from(parts[1], 'hex');
   const hash = Buffer.from(parts[2], 'hex');
-  
-  const verifyHash = crypto.pbkdf2Sync(
-    password,
-    salt,
-    iterations,
-    KEY_LENGTH,
-    'sha256'
-  );
-  
+
+  const verifyHash = crypto.pbkdf2Sync(password, salt, iterations, KEY_LENGTH, 'sha256');
+
   return crypto.timingSafeEqual(hash, verifyHash);
 }
 
@@ -110,13 +98,14 @@ export function generateApiKey(): { key: string; hash: string; prefix: string } 
   // Generate a 32-byte random key
   const keyBytes = crypto.randomBytes(32);
   const key = `grc_${keyBytes.toString('base64url')}`;
-  
-  // Hash the key for storage
-  const hash = crypto.createHash('sha256').update(key).digest('hex');
-  
+
+  // API keys have 256 bits of CSPRNG entropy; this deterministic digest is
+  // solely an indexed lookup value, not a password KDF.
+  const hash = crypto.hash('sha256', key, 'hex');
+
   // Get first 8 characters as prefix for identification
   const prefix = key.substring(4, 12);
-  
+
   return { key, hash, prefix };
 }
 
@@ -124,7 +113,8 @@ export function generateApiKey(): { key: string; hash: string; prefix: string } 
  * Verify an API key against its hash
  */
 export function verifyApiKey(key: string, storedHash: string): boolean {
-  const hash = crypto.createHash('sha256').update(key).digest('hex');
+  // Keep verification byte-for-byte compatible with existing stored hashes.
+  const hash = crypto.hash('sha256', key, 'hex');
   return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(storedHash));
 }
 
@@ -158,7 +148,7 @@ export function signWebhookPayload(payload: string, secret: string): string {
     .createHmac('sha256', secret)
     .update(`${timestamp}.${payload}`)
     .digest('hex');
-  
+
   return `t=${timestamp},v1=${signature}`;
 }
 
@@ -172,33 +162,27 @@ export function verifyWebhookSignature(
   toleranceSeconds = 300
 ): boolean {
   const parts = signature.split(',');
-  const timestampPart = parts.find(p => p.startsWith('t='));
-  const signaturePart = parts.find(p => p.startsWith('v1='));
-  
+  const timestampPart = parts.find((p) => p.startsWith('t='));
+  const signaturePart = parts.find((p) => p.startsWith('v1='));
+
   if (!timestampPart || !signaturePart) {
     return false;
   }
-  
+
   const timestamp = parseInt(timestampPart.substring(2), 10);
   const receivedSignature = signaturePart.substring(3);
-  
+
   // Check timestamp tolerance
   const now = Math.floor(Date.now() / 1000);
   if (Math.abs(now - timestamp) > toleranceSeconds) {
     return false;
   }
-  
+
   // Compute expected signature
   const expectedSignature = crypto
     .createHmac('sha256', secret)
     .update(`${timestamp}.${payload}`)
     .digest('hex');
-  
-  return crypto.timingSafeEqual(
-    Buffer.from(receivedSignature),
-    Buffer.from(expectedSignature)
-  );
+
+  return crypto.timingSafeEqual(Buffer.from(receivedSignature), Buffer.from(expectedSignature));
 }
-
-
-

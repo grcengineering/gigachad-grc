@@ -6,6 +6,7 @@ import {
   ForbiddenException,
   Inject,
   Optional,
+  Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
@@ -14,6 +15,8 @@ import jwksRsa from 'jwks-rsa';
 import { UserContext, UserRole, RolePermissions } from '../types';
 import { ROLES_KEY } from './roles.decorator';
 import { TokenBlacklistService } from './token-blacklist.service';
+import { PRISMA_SERVICE } from './dev-auth.guard';
+import { verifyApiKey } from '../utils/crypto';
 
 export interface JwtPayload {
   sub: string;
@@ -33,14 +36,26 @@ export interface JwtPayload {
   iss: string;
 }
 
+const ORGANIZATION_ID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function requireOrganizationId(value: unknown): string {
+  if (typeof value !== 'string' || !ORGANIZATION_ID_PATTERN.test(value)) {
+    throw new UnauthorizedException('Valid organization claim required');
+  }
+  return value;
+}
+
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   private jwksClient: jwksRsa.JwksClient;
+  private readonly reflector: Reflector;
 
   constructor(
-    private reflector: Reflector,
+    @Optional() @Inject(Reflector) reflector?: Reflector,
     @Optional() @Inject(TokenBlacklistService) private tokenBlacklistService?: TokenBlacklistService
   ) {
+    this.reflector = reflector ?? new Reflector();
     const keycloakUrl = process.env.KEYCLOAK_URL || 'http://localhost:8080';
     const realm = process.env.KEYCLOAK_REALM || 'gigachad-grc';
 
@@ -77,6 +92,10 @@ export class JwtAuthGuard implements CanActivate {
       request.user = userContext;
       request.tokenJti = decoded.jti;
       request.tokenExp = decoded.exp;
+      request.headers['x-user-id'] = userContext.userId;
+      request.headers['x-organization-id'] = userContext.organizationId;
+      request.headers['x-user-email'] = userContext.email;
+      request.headers['x-auth-method'] = 'jwt';
 
       // Check role requirements
       const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(ROLES_KEY, [
@@ -147,53 +166,123 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     const permissions = RolePermissions[role];
+    const organizationId = requireOrganizationId(payload.organization_id);
 
     return {
       userId: payload.sub,
       keycloakId: payload.sub,
       email: payload.email,
-      organizationId: payload.organization_id || 'default',
+      organizationId,
       role,
       permissions,
     };
   }
 }
 
-/**
- * Optional guard for API key authentication.
- *
- * SECURITY NOTE: This guard only verifies that an API key header is present.
- * It does NOT validate the API key against any database or secret store.
- *
- * Services using this guard MUST implement their own API key validation logic
- * because the shared module cannot access service-specific databases.
- *
- * Implementation pattern for services:
- * 1. Use this guard to extract the API key from the request
- * 2. In your service/controller, validate request.apiKey against your database
- * 3. Throw UnauthorizedException if the key is invalid or expired
- *
- * Example:
- *   const apiKeyRecord = await this.prisma.apiKey.findFirst({
- *     where: { key: request.apiKey, organizationId, revokedAt: null }
- *   });
- *   if (!apiKeyRecord) throw new UnauthorizedException('Invalid API key');
- */
+interface ApiKeyStore {
+  apiKey?: {
+    findMany(args: unknown): Promise<any[]>;
+    update(args: unknown): Promise<unknown>;
+  };
+}
+
 @Injectable()
 export class ApiKeyAuthGuard implements CanActivate {
+  private readonly logger = new Logger(ApiKeyAuthGuard.name);
+
+  constructor(
+    @Optional()
+    @Inject(PRISMA_SERVICE)
+    private readonly prisma?: ApiKeyStore
+  ) {}
+
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const apiKey = request.headers['x-api-key'];
+    const apiKey = this.extractApiKey(request);
 
     if (!apiKey) {
       throw new UnauthorizedException('No API key provided');
     }
 
-    // SECURITY: This guard only checks for header presence.
-    // Actual API key validation MUST be performed by the consuming service
-    // since this shared module cannot access service-specific databases.
-    request.apiKey = apiKey;
+    if (!this.prisma?.apiKey) {
+      this.logger.error('API key authentication is unavailable: no API key store configured');
+      throw new UnauthorizedException('API key authentication unavailable');
+    }
+
+    if (!apiKey.startsWith('grc_') || apiKey.length < 20) {
+      throw new UnauthorizedException('Invalid or expired API key');
+    }
+
+    const keyPrefix = apiKey.substring(4, 12);
+    const candidates = await this.prisma.apiKey.findMany({
+      where: {
+        keyPrefix,
+        isActive: true,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
+      include: {
+        apiKeyScopes: { select: { scope: true } },
+      },
+      take: 5,
+    });
+    const record = candidates.find(
+      (candidate) =>
+        typeof candidate.keyHash === 'string' &&
+        candidate.keyHash.length === 64 &&
+        verifyApiKey(apiKey, candidate.keyHash)
+    );
+    if (!record) {
+      throw new UnauthorizedException('Invalid or expired API key');
+    }
+
+    const organizationId = requireOrganizationId(record.organizationId);
+    const scopes = [
+      ...(Array.isArray(record.scopes) ? record.scopes : []),
+      ...(Array.isArray(record.apiKeyScopes)
+        ? record.apiKeyScopes.map((entry: { scope: string }) => entry.scope)
+        : []),
+    ];
+    const scopeActions = new Set(['read', 'write', 'create', 'update', 'delete', 'export']);
+
+    request.user = {
+      userId: record.createdBy,
+      keycloakId: `api-key:${record.id}`,
+      email: `api-key-${record.keyPrefix}@system`,
+      organizationId,
+      role: 'viewer',
+      permissions: [...new Set(scopes)].map((scope) => {
+        const [first, second] = scope.split(':');
+        return first && second && scopeActions.has(first) ? `${second}:${first}` : scope;
+      }),
+      name: `API Key: ${record.name}`,
+    } satisfies UserContext;
+    request.apiKeyId = record.id;
+    request.headers['x-user-id'] = record.createdBy;
+    request.headers['x-organization-id'] = organizationId;
+    request.headers['x-auth-method'] = 'api-key';
+
+    void this.prisma.apiKey
+      .update({ where: { id: record.id }, data: { lastUsedAt: new Date() } })
+      .catch((error: unknown) => {
+        this.logger.warn(
+          `Failed to update API key usage timestamp: ${
+            error instanceof Error ? error.message : 'unknown error'
+          }`
+        );
+      });
     return true;
+  }
+
+  private extractApiKey(request: Request): string | null {
+    const headerKey = request.headers['x-api-key'];
+    if (typeof headerKey === 'string' && headerKey.length > 0) return headerKey;
+
+    const authorization = request.headers.authorization;
+    if (typeof authorization === 'string' && authorization.startsWith('ApiKey ')) {
+      const key = authorization.slice('ApiKey '.length);
+      return key.length > 0 ? key : null;
+    }
+    return null;
   }
 }
 
@@ -208,8 +297,11 @@ export class CombinedAuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
 
-    // Check for API key first
-    if (request.headers['x-api-key']) {
+    if (
+      request.headers['x-api-key'] ||
+      (typeof request.headers.authorization === 'string' &&
+        request.headers.authorization.startsWith('ApiKey '))
+    ) {
       return this.apiKeyGuard.canActivate(context);
     }
 

@@ -1,5 +1,15 @@
 import { Global, Module } from '@nestjs/common';
-import { DevAuthGuard, RolesGuard, PermissionsGuard, PRISMA_SERVICE } from '@gigachad-grc/shared';
+import {
+  ApiKeyAuthGuard,
+  ApplicationAuthGuard,
+  CombinedAuthGuard,
+  DEVELOPMENT_AUTH_GUARD,
+  DevAuthGuard,
+  JwtAuthGuard,
+  PermissionsGuard,
+  PRISMA_SERVICE,
+  RolesGuard,
+} from '@gigachad-grc/shared';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Global()
@@ -11,13 +21,28 @@ import { PrismaService } from '../prisma/prisma.service';
       useExisting: PrismaService,
     },
     {
-      provide: DevAuthGuard,
+      provide: DEVELOPMENT_AUTH_GUARD,
       useFactory: (prisma) => new DevAuthGuard(prisma),
       inject: [PRISMA_SERVICE],
     },
+    JwtAuthGuard,
+    ApiKeyAuthGuard,
+    CombinedAuthGuard,
+    ApplicationAuthGuard,
+    { provide: DevAuthGuard, useExisting: ApplicationAuthGuard },
     RolesGuard,
     PermissionsGuard,
   ],
-  exports: [PrismaService, PRISMA_SERVICE, DevAuthGuard, RolesGuard, PermissionsGuard],
+  exports: [
+    PrismaService,
+    PRISMA_SERVICE,
+    DevAuthGuard,
+    ApplicationAuthGuard,
+    JwtAuthGuard,
+    ApiKeyAuthGuard,
+    CombinedAuthGuard,
+    RolesGuard,
+    PermissionsGuard,
+  ],
 })
 export class AuthModule {}

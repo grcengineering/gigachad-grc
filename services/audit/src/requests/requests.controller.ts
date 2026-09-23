@@ -15,6 +15,7 @@ import { RequestsService } from './requests.service';
 import { CreateAuditRequestDto } from './dto/create-request.dto';
 import { UpdateAuditRequestDto } from './dto/update-request.dto';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
+import { Roles, RolesGuard } from '@gigachad-grc/shared';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -28,11 +29,12 @@ interface AuthenticatedRequest extends Request {
 @ApiTags('Audit Requests')
 @ApiBearerAuth()
 @Controller('api/audit-requests')
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 export class RequestsController {
   constructor(private readonly requestsService: RequestsService) {}
 
   @Post()
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Create a new audit request' })
   @ApiResponse({ status: 201, description: 'Request created successfully' })
   create(@Body() createRequestDto: CreateAuditRequestDto, @Req() req: AuthenticatedRequest) {
@@ -72,6 +74,7 @@ export class RequestsController {
   }
 
   @Patch(':id')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Update a request' })
   @ApiResponse({ status: 200, description: 'Request updated successfully' })
   update(
@@ -87,6 +90,7 @@ export class RequestsController {
   }
 
   @Delete(':id')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Delete a request' })
   @ApiResponse({ status: 200, description: 'Request deleted successfully' })
   remove(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
@@ -95,6 +99,7 @@ export class RequestsController {
   }
 
   @Post(':id/comments')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Add comment to request' })
   @ApiResponse({ status: 201, description: 'Comment added successfully' })
   addComment(

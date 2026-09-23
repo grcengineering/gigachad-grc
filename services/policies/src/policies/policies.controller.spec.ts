@@ -5,6 +5,7 @@
 
 import { BadRequestException } from '@nestjs/common';
 import {
+  PoliciesController,
   POLICY_MAX_BYTES,
   POLICY_MIME_ALLOWLIST,
   policyFileFilter,
@@ -43,5 +44,35 @@ describe('policyFileFilter', () => {
 
   it('exposes a 25 MB max byte ceiling', () => {
     expect(POLICY_MAX_BYTES).toBe(25 * 1024 * 1024);
+  });
+});
+
+describe('PoliciesController uploads', () => {
+  const policiesService = {
+    upload: jest.fn(),
+    uploadNewVersion: jest.fn(),
+  };
+  const controller = new PoliciesController(policiesService as never);
+  const user = { organizationId: 'org-1', userId: 'user-1' } as never;
+
+  beforeEach(() => jest.clearAllMocks());
+
+  it('rejects a missing initial policy file with HTTP 400', async () => {
+    await expect(
+      controller.upload(user, undefined as unknown as Express.Multer.File, {} as never)
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(policiesService.upload).not.toHaveBeenCalled();
+  });
+
+  it('rejects a missing policy-version file with HTTP 400', async () => {
+    await expect(
+      controller.uploadNewVersion(
+        'policy-1',
+        user,
+        undefined as unknown as Express.Multer.File,
+        '2.0'
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(policiesService.uploadNewVersion).not.toHaveBeenCalled();
   });
 });

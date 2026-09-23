@@ -13,34 +13,30 @@ import { KnowledgeBaseService } from './knowledge-base.service';
 import { CreateKnowledgeBaseDto } from './dto/create-knowledge-base.dto';
 import { UpdateKnowledgeBaseDto } from './dto/update-knowledge-base.dto';
 import { BulkCreateKnowledgeBaseDto } from './dto/bulk-create-knowledge-base.dto';
-import { CurrentUser, UserContext } from '@gigachad-grc/shared';
+import { CurrentUser, UserContext, Roles, RolesGuard } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 @Controller('api/knowledge-base')
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 export class KnowledgeBaseController {
   constructor(private readonly knowledgeBaseService: KnowledgeBaseService) {}
 
   @Post()
-  create(
-    @Body() createKnowledgeBaseDto: CreateKnowledgeBaseDto,
-    @CurrentUser() user: UserContext,
-  ) {
+  @Roles('admin', 'compliance_manager', 'auditor')
+  create(@Body() createKnowledgeBaseDto: CreateKnowledgeBaseDto, @CurrentUser() user: UserContext) {
     // SECURITY: Tenant isolation. Override organizationId in the body
     // with the caller's authenticated org. Without this, an attacker
     // could POST `{ organizationId: <other-org-id>, ... }` and have the
     // entry persist under a different tenant.
     return this.knowledgeBaseService.create(
       { ...createKnowledgeBaseDto, organizationId: user.organizationId },
-      user.userId,
+      user.userId
     );
   }
 
   @Post('bulk')
-  bulkCreate(
-    @Body() bulkCreateDto: BulkCreateKnowledgeBaseDto,
-    @CurrentUser() user: UserContext,
-  ) {
+  @Roles('admin', 'compliance_manager', 'auditor')
+  bulkCreate(@Body() bulkCreateDto: BulkCreateKnowledgeBaseDto, @CurrentUser() user: UserContext) {
     // SECURITY: Tenant isolation — see comment on create() above.
     const entries = bulkCreateDto.entries.map((e) => ({
       ...e,
@@ -56,7 +52,7 @@ export class KnowledgeBaseController {
     @Query('status') status?: string,
     @Query('framework') framework?: string,
     @Query('isPublic') isPublic?: string,
-    @Query('search') search?: string,
+    @Query('search') search?: string
   ) {
     return this.knowledgeBaseService.findAll(user.organizationId, {
       category,
@@ -73,18 +69,12 @@ export class KnowledgeBaseController {
   }
 
   @Get('search')
-  search(
-    @CurrentUser() user: UserContext,
-    @Query('q') query: string,
-  ) {
+  search(@CurrentUser() user: UserContext, @Query('q') query: string) {
     return this.knowledgeBaseService.search(user.organizationId, query);
   }
 
   @Get('public')
-  getPublicEntries(
-    @CurrentUser() user: UserContext,
-    @Query('category') category?: string,
-  ) {
+  getPublicEntries(@CurrentUser() user: UserContext, @Query('category') category?: string) {
     return this.knowledgeBaseService.getPublicEntries(user.organizationId, category);
   }
 
@@ -95,34 +85,37 @@ export class KnowledgeBaseController {
   }
 
   @Patch(':id')
+  @Roles('admin', 'compliance_manager', 'auditor')
   update(
     @Param('id') id: string,
     @Body() updateKnowledgeBaseDto: UpdateKnowledgeBaseDto,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
     // SECURITY: Pass organizationId to ensure tenant isolation
-    return this.knowledgeBaseService.update(id, updateKnowledgeBaseDto, user.userId, user.organizationId);
+    return this.knowledgeBaseService.update(
+      id,
+      updateKnowledgeBaseDto,
+      user.userId,
+      user.organizationId
+    );
   }
 
   @Delete(':id')
-  remove(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  @Roles('admin', 'compliance_manager', 'auditor')
+  remove(@Param('id') id: string, @CurrentUser() user: UserContext) {
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.knowledgeBaseService.remove(id, user.userId, user.organizationId);
   }
 
   @Post(':id/approve')
-  approve(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  @Roles('admin', 'compliance_manager', 'auditor')
+  approve(@Param('id') id: string, @CurrentUser() user: UserContext) {
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.knowledgeBaseService.approve(id, user.userId, user.organizationId);
   }
 
   @Post(':id/use')
+  @Roles('admin', 'compliance_manager', 'auditor')
   incrementUsage(@Param('id') id: string, @CurrentUser() user: UserContext) {
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.knowledgeBaseService.incrementUsage(id, user.organizationId);

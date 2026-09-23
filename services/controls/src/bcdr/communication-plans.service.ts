@@ -32,7 +32,7 @@ export class CommunicationPlansService {
              (SELECT COUNT(*) FROM bcdr.communication_contacts WHERE communication_plan_id = cp.id) as contact_count
       FROM bcdr.communication_plans cp
       LEFT JOIN bcdr.bcdr_plans bp ON cp.bcdr_plan_id = bp.id
-      WHERE cp.organization_id = ${organizationId}::uuid
+      WHERE cp.organization_id = ${organizationId}
         AND cp.deleted_at IS NULL
         AND (${searchPattern}::text IS NULL OR cp.name ILIKE ${searchPattern})
         AND (${planType}::text IS NULL OR cp.plan_type = ${planType})
@@ -49,7 +49,7 @@ export class CommunicationPlansService {
       FROM bcdr.communication_plans cp
       LEFT JOIN bcdr.bcdr_plans bp ON cp.bcdr_plan_id = bp.id
       WHERE cp.id = ${id}::uuid
-        AND cp.organization_id = ${organizationId}::uuid
+        AND cp.organization_id = ${organizationId}
         AND cp.deleted_at IS NULL
     `;
 
@@ -86,7 +86,7 @@ export class CommunicationPlansService {
       ) VALUES (
         ${organizationId}, ${dto.name}, ${dto.description || null},
         ${dto.planType || 'emergency'}, ${dto.bcdrPlanId || null}::uuid,
-        ${dto.activationTriggers || null}, ${userId}::uuid, ${userId}::uuid
+        ${dto.activationTriggers || null}, ${userId}, ${userId}
       )
       RETURNING *
     `;
@@ -132,7 +132,7 @@ export class CommunicationPlansService {
       'updated_at',
     ]);
 
-    const updates: string[] = ['updated_by = $2::uuid', 'updated_at = NOW()'];
+    const updates: string[] = ['updated_by = $2', 'updated_at = NOW()'];
     const values: (string | boolean | null)[] = [id, userId];
     let paramIndex = 3;
 
@@ -241,7 +241,7 @@ export class CommunicationPlansService {
         ${dto.roleInPlan || null}, ${dto.responsibilities || null},
         ${dto.escalationLevel || 1}, ${dto.escalationWaitMinutes || 30},
         ${dto.availabilityHours || null}, ${dto.notes || null},
-        ${dto.sortOrder || 0}, ${userId}::uuid
+        ${dto.sortOrder || 0}, ${userId}
       )
       RETURNING *
     `;
@@ -397,7 +397,7 @@ export class CommunicationPlansService {
       SELECT c.*, cp.name as plan_name
       FROM bcdr.communication_contacts c
       JOIN bcdr.communication_plans cp ON c.communication_plan_id = cp.id
-      WHERE cp.organization_id = ${organizationId}::uuid
+      WHERE cp.organization_id = ${organizationId}
         AND cp.is_active = true
         AND c.is_active = true
         AND (${planId}::text IS NULL OR cp.id = ${planId}::uuid)

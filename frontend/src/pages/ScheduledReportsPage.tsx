@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { CalendarClock, Play, Plus, Trash2 } from 'lucide-react';
-import api from '@/lib/api';
+import { AlertTriangle, CalendarClock, Play, Plus, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { scheduledReportsApi } from '@/lib/api';
 import {
   Badge,
   Button,
@@ -17,7 +18,7 @@ import {
 interface ScheduledReportRun {
   id: string;
   startedAt: string;
-  finishedAt?: string;
+  completedAt?: string;
   status: 'success' | 'failed' | 'running' | 'pending';
   durationMs?: number;
   fileUrl?: string;
@@ -26,15 +27,12 @@ interface ScheduledReportRun {
 interface ScheduledReport {
   id: string;
   name: string;
-  templateId: string;
-  templateLabel?: string;
-  schedule: string;
-  scheduleLabel?: string;
+  reportType: string;
+  schedule: { frequency: string; time: string; dayOfWeek?: number; dayOfMonth?: number };
   format: 'pdf' | 'xlsx' | 'csv';
   recipients: string[];
-  lastRunAt?: string;
-  lastRunStatus?: 'success' | 'failed' | 'running' | 'pending';
-  runs?: ScheduledReportRun[];
+  lastRun?: string;
+  nextRun?: string;
 }
 
 interface ScheduledReportsResponse {
@@ -67,23 +65,21 @@ function formatDateTime(s?: string) {
 }
 
 function templateLabel(report: ScheduledReport): string {
-  if (report.templateLabel) return report.templateLabel;
-  return report.templateId.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  return report.reportType.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function scheduleLabel(report: ScheduledReport): string {
-  if (report.scheduleLabel) return report.scheduleLabel;
-  switch (report.schedule) {
-    case 'one_time':
-      return 'One-time';
+  switch (report.schedule.frequency) {
     case 'daily':
       return 'Daily';
     case 'weekly':
       return 'Weekly';
     case 'monthly':
       return 'Monthly';
+    case 'quarterly':
+      return 'Quarterly';
     default:
-      return report.schedule;
+      return report.schedule.frequency;
   }
 }
 
@@ -92,36 +88,41 @@ export default function ScheduledReportsPage() {
   const queryClient = useQueryClient();
   const [detailReport, setDetailReport] = useState<ScheduledReport | null>(null);
 
-  const { data, isLoading } = useQuery<ScheduledReportsResponse>({
+  const { data, isLoading, isError, refetch } = useQuery<ScheduledReportsResponse>({
     queryKey: ['reports', 'scheduled'],
     queryFn: async () => {
-      const res = await api.get('/api/reports/scheduled');
-      const payload = res.data;
-      if (Array.isArray(payload)) return { reports: payload };
-      return { reports: payload?.reports ?? [] };
+      const response = await scheduledReportsApi.list();
+      return { reports: response.data?.data ?? [] };
     },
   });
 
   const reports = data?.reports ?? [];
+  const { data: executions = [], isLoading: executionsLoading } = useQuery<ScheduledReportRun[]>({
+    queryKey: ['reports', 'scheduled', detailReport?.id, 'executions'],
+    queryFn: () =>
+      scheduledReportsApi
+        .executions(detailReport!.id)
+        .then((response) => response.data?.data ?? []),
+    enabled: !!detailReport,
+  });
 
   const runMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await api.post(`/api/reports/scheduled/${id}/run`);
-      return res.data;
-    },
+    mutationFn: (id: string) => scheduledReportsApi.run(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reports', 'scheduled'] });
+      toast.success('Report queued for generation');
     },
+    onError: () => toast.error('Failed to run scheduled report'),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await api.delete(`/api/reports/scheduled/${id}`);
-    },
+    mutationFn: (id: string) => scheduledReportsApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reports', 'scheduled'] });
       setDetailReport(null);
+      toast.success('Scheduled report deleted');
     },
+    onError: () => toast.error('Failed to delete scheduled report'),
   });
 
   const handleDelete = (report: ScheduledReport) => {
@@ -139,16 +140,16 @@ export default function ScheduledReportsPage() {
     },
     {
       id: 'template',
-      accessorKey: 'templateId',
+      accessorKey: 'reportType',
       header: 'Template',
       mobileLabel: 'Template',
       cell: ({ row }) => (
-        <CategoryChip value={row.original.templateId} label={templateLabel(row.original)} />
+        <CategoryChip value={row.original.reportType} label={templateLabel(row.original)} />
       ),
     },
     {
       id: 'schedule',
-      accessorKey: 'schedule',
+      accessorFn: (report) => report.schedule.frequency,
       header: 'Schedule',
       mobileLabel: 'Schedule',
       cell: ({ row }) => <span className="text-surface-700">{scheduleLabel(row.original)}</span>,
@@ -166,21 +167,14 @@ export default function ScheduledReportsPage() {
     },
     {
       id: 'lastRun',
-      accessorKey: 'lastRunAt',
+      accessorKey: 'lastRun',
       header: 'Last run',
       mobileLabel: 'Last run',
       cell: ({ row }) => {
-        const { lastRunAt, lastRunStatus } = row.original;
-        if (!lastRunAt) return <span className="text-surface-500">Never</span>;
-        return (
-          <div className="flex items-center gap-2">
-            <span className="text-surface-700">{formatDateTime(lastRunAt)}</span>
-            {lastRunStatus && (
-              <Badge variant={STATUS_VARIANT[lastRunStatus] ?? 'neutral'} dot size="sm">
-                {lastRunStatus}
-              </Badge>
-            )}
-          </div>
+        return row.original.lastRun ? (
+          <span>{formatDateTime(row.original.lastRun)}</span>
+        ) : (
+          <span className="text-surface-500">Never</span>
         );
       },
     },
@@ -247,29 +241,40 @@ export default function ScheduledReportsPage() {
         }
       />
 
-      <DataTable
-        data={reports}
-        columns={columns}
-        loading={isLoading}
-        getRowId={(r) => r.id}
-        onRowClick={(r) => setDetailReport(r)}
-        emptyState={
+      {isError ? (
+        <div className="rounded-lg border bg-white">
           <EmptyState
-            icon={<CalendarClock className="h-8 w-8" />}
-            title="No scheduled reports"
-            description="Schedule your first report to start delivering recurring GRC insights to stakeholders."
-            action={
-              <Button
-                size="sm"
-                leftIcon={<Plus className="h-4 w-4" />}
-                onClick={() => navigate('/reports/builder')}
-              >
-                Schedule new report
-              </Button>
-            }
+            icon={<AlertTriangle className="h-8 w-8" />}
+            title="Couldn't load scheduled reports"
+            description="The scheduled reports service didn't respond."
+            action={<Button onClick={() => refetch()}>Try again</Button>}
           />
-        }
-      />
+        </div>
+      ) : (
+        <DataTable
+          data={reports}
+          columns={columns}
+          loading={isLoading}
+          getRowId={(r) => r.id}
+          onRowClick={(r) => setDetailReport(r)}
+          emptyState={
+            <EmptyState
+              icon={<CalendarClock className="h-8 w-8" />}
+              title="No scheduled reports"
+              description="Schedule your first report to start delivering recurring GRC insights to stakeholders."
+              action={
+                <Button
+                  size="sm"
+                  leftIcon={<Plus className="h-4 w-4" />}
+                  onClick={() => navigate('/reports/builder')}
+                >
+                  Schedule new report
+                </Button>
+              }
+            />
+          }
+        />
+      )}
 
       <Dialog
         open={!!detailReport}
@@ -327,7 +332,9 @@ export default function ScheduledReportsPage() {
 
             <div>
               <h4 className="text-h3 text-surface-900 mb-2">Run history</h4>
-              {detailReport.runs && detailReport.runs.length > 0 ? (
+              {executionsLoading ? (
+                <p className="text-small text-surface-500">Loading run history…</p>
+              ) : executions.length > 0 ? (
                 <div className="rounded-lg border border-surface-200 bg-white overflow-hidden">
                   <table className="w-full text-small">
                     <thead className="bg-surface-50/40">
@@ -344,13 +351,13 @@ export default function ScheduledReportsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {detailReport.runs.map((run) => (
+                      {executions.map((run) => (
                         <tr key={run.id} className="border-b border-surface-200/60 last:border-b-0">
                           <td className="px-3 py-2 text-surface-800">
                             {formatDateTime(run.startedAt)}
                           </td>
                           <td className="px-3 py-2 text-surface-800">
-                            {formatDateTime(run.finishedAt)}
+                            {formatDateTime(run.completedAt)}
                           </td>
                           <td className="px-3 py-2">
                             <Badge variant={STATUS_VARIANT[run.status] ?? 'neutral'} dot>

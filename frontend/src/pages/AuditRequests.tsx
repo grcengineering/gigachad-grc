@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Search, FileText, AlertTriangle, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { authenticatedFetch } from '@/lib/api';
 import {
   Button,
   Badge,
@@ -93,9 +94,7 @@ export default function AuditRequests() {
         if (statusFilter) params.append('status', statusFilter);
         if (priorityFilter) params.append('priority', priorityFilter);
 
-        const response = await fetch(`/api/audit-requests?${params}`, {
-          headers: { 'x-organization-id': 'default-org', 'x-user-id': 'system' },
-        });
+        const response = await authenticatedFetch(`/api/audit-requests?${params}`);
         const data = await response.json();
         setRequests(Array.isArray(data) ? data : []);
       } catch (error) {

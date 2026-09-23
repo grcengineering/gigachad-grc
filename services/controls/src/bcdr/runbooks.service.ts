@@ -36,7 +36,7 @@ export class RunbooksService {
       FROM bcdr.runbooks r
       LEFT JOIN public.users u ON r.owner_id::text = u.id
       LEFT JOIN bcdr.business_processes bp ON r.process_id = bp.id
-      WHERE r.organization_id = ${organizationId}::uuid
+      WHERE r.organization_id = ${organizationId}
         AND r.deleted_at IS NULL
         AND (${searchPattern}::text IS NULL OR (r.title ILIKE ${searchPattern} OR r.runbook_id ILIKE ${searchPattern}))
         AND (${category}::text IS NULL OR r.category = ${category})
@@ -59,11 +59,11 @@ export class RunbooksService {
              bp.name as process_name,
              rs.name as strategy_name
       FROM bcdr.runbooks r
-      LEFT JOIN shared.users u ON r.owner_id = u.id
+      LEFT JOIN public.users u ON r.owner_id = u.id
       LEFT JOIN bcdr.business_processes bp ON r.process_id = bp.id
       LEFT JOIN bcdr.recovery_strategies rs ON r.recovery_strategy_id = rs.id
       WHERE r.id = ${id}::uuid
-        AND r.organization_id = ${organizationId}::uuid
+        AND r.organization_id = ${organizationId}
         AND r.deleted_at IS NULL
     `;
 
@@ -95,7 +95,7 @@ export class RunbooksService {
     // Check for duplicate runbookId
     const existing = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM bcdr.runbooks 
-      WHERE organization_id = ${organizationId}::uuid 
+      WHERE organization_id = ${organizationId}
         AND runbook_id = ${dto.runbookId}
         AND deleted_at IS NULL
     `;
@@ -111,13 +111,13 @@ export class RunbooksService {
         estimated_duration_minutes, required_access_level, prerequisites, tags,
         created_by, updated_by
       ) VALUES (
-        ${organizationId}::uuid, ${dto.runbookId}, ${dto.title}, ${dto.description || null},
+        ${organizationId}, ${dto.runbookId}, ${dto.title}, ${dto.description || null},
         'draft'::bcdr.runbook_status, ${dto.category || null}, ${dto.systemName || null},
         ${dto.processId || null}::uuid, ${dto.recoveryStrategyId || null}::uuid,
-        ${dto.content || null}, ${dto.version || '1.0'}, ${dto.ownerId || null}::uuid,
+        ${dto.content || null}, ${dto.version || '1.0'}, ${dto.ownerId || null},
         ${dto.estimatedDurationMinutes || null}, ${dto.requiredAccessLevel || null},
         ${dto.prerequisites || null}, ${dto.tags || []}::text[],
-        ${userId}::uuid, ${userId}::uuid
+        ${userId}, ${userId}
       )
       RETURNING *
     `;
@@ -170,7 +170,7 @@ export class RunbooksService {
       'updated_at',
     ]);
 
-    const updates: string[] = ['updated_by = $2::uuid', 'updated_at = NOW()'];
+    const updates: string[] = ['updated_by = $2', 'updated_at = NOW()'];
     const values: any[] = [id, userId];
     let paramIndex = 3;
 
@@ -209,7 +209,7 @@ export class RunbooksService {
       addUpdate('version', dto.version);
     }
     if (dto.ownerId !== undefined) {
-      addUpdate('owner_id', dto.ownerId, '::uuid');
+      addUpdate('owner_id', dto.ownerId);
     }
     if (dto.estimatedDurationMinutes !== undefined) {
       addUpdate('estimated_duration_minutes', dto.estimatedDurationMinutes);
@@ -434,7 +434,7 @@ export class RunbooksService {
         COUNT(*) FILTER (WHERE status = 'needs_review') as needs_review_count,
         COUNT(DISTINCT category) as category_count
       FROM bcdr.runbooks
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = ${organizationId}
         AND deleted_at IS NULL
     `;
 

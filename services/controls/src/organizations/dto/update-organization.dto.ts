@@ -3,7 +3,6 @@ import {
   IsIn,
   IsOptional,
   IsString,
-  Matches,
   MaxLength,
   MinLength,
   ValidateNested,
@@ -12,9 +11,6 @@ import {
 export class UpdateOrganizationSettingsDto {
   @IsOptional()
   @IsString()
-  @Matches(/^(UTC|[A-Za-z_]+(?:\/[A-Za-z0-9_+-]+)+)$/, {
-    message: 'timezone must be UTC or a valid IANA timezone',
-  })
   timezone?: string;
 
   @IsOptional()

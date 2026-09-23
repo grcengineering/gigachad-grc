@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../../audit/audit.service';
 import {
@@ -106,6 +112,9 @@ export class MappingSuggestionsService {
     let mockModeReason: string | undefined;
 
     if (skipReason) {
+      if (!this.isExplicitDemoMode()) {
+        throw new ServiceUnavailableException(skipReason);
+      }
       isMockMode = true;
       mockModeReason = skipReason;
       suggestions = this.runDemoMode(anchor, candidates, limit);
@@ -121,7 +130,10 @@ export class MappingSuggestionsService {
         );
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        this.logger.warn(`AI suggestion call failed, falling back to demo mode: ${message}`);
+        if (!this.isExplicitDemoMode()) {
+          throw new ServiceUnavailableException(`AI suggestion service failed: ${message}`);
+        }
+        this.logger.warn(`AI suggestion call failed, using explicit demo mode: ${message}`);
         isMockMode = true;
         mockModeReason = `AI service call failed: ${message}`;
         suggestions = this.runDemoMode(anchor, candidates, limit);
@@ -288,12 +300,19 @@ export class MappingSuggestionsService {
 
   private shouldSkipAi(): string | undefined {
     if (process.env.AI_MOCK_MODE === 'true') {
+      if (process.env.NODE_ENV === 'production') {
+        return 'AI mock mode is disabled in production';
+      }
       return 'AI_MOCK_MODE is enabled';
     }
     if (!process.env.OPENAI_API_KEY && !process.env.ANTHROPIC_API_KEY) {
       return 'AI provider not configured';
     }
     return undefined;
+  }
+
+  private isExplicitDemoMode(): boolean {
+    return process.env.NODE_ENV !== 'production' && process.env.AI_MOCK_MODE === 'true';
   }
 
   private async runAi(

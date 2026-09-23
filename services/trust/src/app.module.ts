@@ -8,15 +8,16 @@ import { TrustCenterModule } from './trust-center/trust-center.module';
 import { TrustConfigModule } from './config/trust-config.module';
 import { TemplatesModule } from './templates/templates.module';
 import { TrustAiModule } from './ai/trust-ai.module';
-import { PrismaService } from './common/prisma.service';
 import { AuditService } from './common/audit.service';
 import { CacheModule } from '@gigachad-grc/shared';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    AuthModule,
     // Rate limiting - multiple tiers for different use cases
     ThrottlerModule.forRoot([
       {
@@ -36,6 +37,7 @@ import { CacheModule } from '@gigachad-grc/shared';
       },
     ]),
     CacheModule.forRoot({ defaultTtl: 300 }), // 5-minute cache for dashboard widgets
+    AuthModule,
     QuestionnairesModule,
     KnowledgeBaseModule,
     TrustCenterModule,
@@ -44,7 +46,6 @@ import { CacheModule } from '@gigachad-grc/shared';
     TrustAiModule,
   ],
   providers: [
-    PrismaService,
     AuditService,
     // Global rate limiting guard
     {
@@ -52,6 +53,6 @@ import { CacheModule } from '@gigachad-grc/shared';
       useClass: ThrottlerGuard,
     },
   ],
-  exports: [PrismaService, AuditService],
+  exports: [AuthModule, AuditService],
 })
 export class AppModule {}

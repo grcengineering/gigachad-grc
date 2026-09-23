@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Plus, BookOpen, Search, Upload, Download } from 'lucide-react';
-import axios from 'axios';
 import { knowledgeBaseApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 import {
@@ -50,7 +49,6 @@ const CATEGORY_OPTS = [
 ];
 
 interface ParsedEntry {
-  organizationId: string;
   tags?: string[];
   isPublic?: boolean;
   [key: string]: string | string[] | boolean | undefined;
@@ -81,7 +79,7 @@ function parseCsv(csvText: string): ParsedEntry[] {
   for (let i = 1; i < lines.length; i++) {
     if (!lines[i].trim()) continue;
     const values = parseCsvLine(lines[i]);
-    const entry: ParsedEntry = { organizationId: 'default-org' };
+    const entry: ParsedEntry = {};
     headers.forEach((header, index) => {
       const value = values[index];
       if (value) {
@@ -109,7 +107,12 @@ export default function KnowledgeBase() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: entries = [], isLoading } = useQuery<KnowledgeEntry[]>({
+  const {
+    data: entries = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery<KnowledgeEntry[]>({
     queryKey: ['knowledge-base'],
     queryFn: () => knowledgeBaseApi.list().then((res) => res.data),
   });
@@ -192,6 +195,15 @@ export default function KnowledgeBase() {
             <Skeleton key={i} className="h-36" />
           ))}
         </div>
+      ) : isError ? (
+        <Card>
+          <EmptyState
+            icon={<BookOpen className="h-8 w-8" />}
+            title="Couldn't load knowledge base"
+            description="The knowledge base service didn't respond."
+            action={<Button onClick={() => refetch()}>Try again</Button>}
+          />
+        </Card>
       ) : filtered.length === 0 ? (
         <Card>
           <EmptyState
@@ -290,12 +302,7 @@ privacy,GDPR Compliance,Are you GDPR compliant?,"We are fully GDPR compliant.",G
     try {
       const text = await csvFile.text();
       const parsedEntries = parseCsv(text);
-      const apiBase = import.meta.env.VITE_API_URL || '';
-      const response = await axios.post(
-        `${apiBase}/knowledge-base/bulk`,
-        { entries: parsedEntries },
-        { withCredentials: true }
-      );
+      const response = await knowledgeBaseApi.bulkCreate(parsedEntries);
       const result = response.data;
       toast.success(
         `Uploaded ${result.success} entries${result.failed > 0 ? `, ${result.failed} failed` : ''}`

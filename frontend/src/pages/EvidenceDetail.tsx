@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { evidenceApi } from '@/lib/api';
+import { authenticatedFetch, evidenceApi } from '@/lib/api';
+import { saveBlob } from '@/lib/download';
 import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
@@ -99,11 +100,10 @@ export default function EvidenceDetail() {
 
   const handleDownload = async () => {
     try {
-      const response = await evidenceApi.getDownloadUrl(id!);
-      const url = response.data.url;
-      window.open(url, '_blank');
+      const { blob, filename } = await evidenceApi.download(id!);
+      saveBlob(blob, filename || evidence.filename);
     } catch {
-      toast.error('Failed to get download URL');
+      toast.error('Failed to download evidence');
     }
   };
 
@@ -519,7 +519,7 @@ function TextPreview({ evidenceId }: { evidenceId: string }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/evidence/${evidenceId}/preview`)
+    authenticatedFetch(`/api/evidence/${evidenceId}/preview`)
       .then(async (res) => {
         if (!res.ok) throw new Error('Failed to load preview');
         const text = await res.text();
@@ -561,7 +561,7 @@ function ExcelPreview({ evidenceId }: { evidenceId: string }) {
   useEffect(() => {
     const loadExcel = async () => {
       try {
-        const response = await fetch(`/api/evidence/${evidenceId}/preview`);
+        const response = await authenticatedFetch(`/api/evidence/${evidenceId}/preview`);
         if (!response.ok) throw new Error('Failed to load file');
 
         const arrayBuffer = await response.arrayBuffer();
@@ -683,7 +683,7 @@ function WordPreview({ evidenceId }: { evidenceId: string }) {
   useEffect(() => {
     const loadWord = async () => {
       try {
-        const response = await fetch(`/api/evidence/${evidenceId}/preview`);
+        const response = await authenticatedFetch(`/api/evidence/${evidenceId}/preview`);
         if (!response.ok) throw new Error('Failed to load file');
 
         const arrayBuffer = await response.arrayBuffer();

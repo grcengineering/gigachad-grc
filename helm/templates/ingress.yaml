@@ -23,16 +23,6 @@ spec:
     - host: {{ .Values.ingress.host }}
       http:
         paths:
-          # Frontend (catch-all, lowest priority)
-          {{- if .Values.frontend.enabled }}
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ include "gigachad-grc.fullname" . }}-frontend
-                port:
-                  number: 80
-          {{- end }}
           # Controls API routes
           {{- if .Values.controls.enabled }}
           - path: /api/controls
@@ -108,6 +98,20 @@ spec:
                 name: {{ include "gigachad-grc.fullname" . }}-frameworks
                 port:
                   number: {{ .Values.frameworks.port }}
+          - path: /api/assessments
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-frameworks
+                port:
+                  number: {{ .Values.frameworks.port }}
+          - path: /api/mappings
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-frameworks
+                port:
+                  number: {{ .Values.frameworks.port }}
           {{- end }}
           # Policies API routes
           {{- if .Values.policies.enabled }}
@@ -128,7 +132,7 @@ spec:
                 name: {{ include "gigachad-grc.fullname" . }}-tprm
                 port:
                   number: {{ .Values.tprm.port }}
-          - path: /api/assessments
+          - path: /api/vendor-assessments
             pathType: Prefix
             backend:
               service:
@@ -173,6 +177,20 @@ spec:
                 name: {{ include "gigachad-grc.fullname" . }}-trust
                 port:
                   number: {{ .Values.trust.port }}
+          - path: /api/answer-templates
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-trust
+                port:
+                  number: {{ .Values.trust.port }}
+          - path: /api/trust-config
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-trust
+                port:
+                  number: {{ .Values.trust.port }}
           {{- end }}
           # Audit API routes
           {{- if .Values.audit.enabled }}
@@ -204,12 +222,82 @@ spec:
                 name: {{ include "gigachad-grc.fullname" . }}-audit
                 port:
                   number: {{ .Values.audit.port }}
-          - path: /api/audit
+          - path: /api/audit/templates
             pathType: Prefix
             backend:
               service:
                 name: {{ include "gigachad-grc.fullname" . }}-audit
                 port:
                   number: {{ .Values.audit.port }}
+          - path: /api/audit/workpapers
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-audit
+                port:
+                  number: {{ .Values.audit.port }}
+          - path: /api/audit/test-procedures
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-audit
+                port:
+                  number: {{ .Values.audit.port }}
+          - path: /api/audit/remediation
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-audit
+                port:
+                  number: {{ .Values.audit.port }}
+          - path: /api/audit/analytics
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-audit
+                port:
+                  number: {{ .Values.audit.port }}
+          - path: /api/audit/planning
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-audit
+                port:
+                  number: {{ .Values.audit.port }}
+          - path: /api/audit/reports
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-audit
+                port:
+                  number: {{ .Values.audit.port }}
+          - path: /api/audit/audit-ai
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-audit
+                port:
+                  number: {{ .Values.audit.port }}
+          {{- end }}
+          # API fallback. Kubernetes uses longest-prefix matching, so every
+          # service-specific path above wins over this controls route.
+          {{- if .Values.controls.enabled }}
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-controls
+                port:
+                  number: {{ .Values.controls.port }}
+          {{- end }}
+          # Frontend SPA catch-all (must remain last).
+          {{- if .Values.frontend.enabled }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-frontend
+                port:
+                  number: 80
           {{- end }}
 {{- end }}

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -70,6 +70,23 @@ interface AuditorPortalResponse {
   workpapers?: PortalWorkpaper[];
 }
 
+interface AuditorPortalSession {
+  auditId: string;
+  auditName: string;
+  auditorName: string;
+}
+
+function readPortalSession(): AuditorPortalSession | undefined {
+  const stored = localStorage.getItem('auditorPortalSession');
+  if (!stored) return undefined;
+  try {
+    return JSON.parse(stored) as AuditorPortalSession;
+  } catch {
+    localStorage.removeItem('auditorPortalSession');
+    return undefined;
+  }
+}
+
 const REQUEST_STATUS_VARIANT: Record<string, BadgeVariant> = {
   open: 'info',
   in_progress: 'warning',
@@ -108,24 +125,39 @@ export default function AuditorPortal() {
   const { data, isLoading } = useQuery<AuditorPortalResponse>({
     queryKey: ['auditor-portal'],
     queryFn: async () => {
-      const res = await api.get('/api/auditor/portal');
-      return res.data;
+      const accessCode = localStorage.getItem('auditorAccessCode');
+      if (!accessCode) {
+        throw new Error('Portal access code is missing');
+      }
+
+      const session = readPortalSession();
+      const res = await api.get('/api/audit-portal/requests', {
+        headers: { 'x-portal-access-code': accessCode },
+      });
+      const requests = (res.data?.data ?? []) as PortalRequest[];
+
+      return {
+        auditorName: session?.auditorName,
+        activeAudits: session ? [{ id: session.auditId, name: session.auditName }] : [],
+        requests,
+        workpapers: [],
+        stats: {
+          activeAudits: session ? 1 : 0,
+          pendingRequests: requests.filter(
+            (request) => !['approved', 'rejected'].includes(request.status)
+          ).length,
+          workpapersAwaiting: 0,
+          findingsToReview: 0,
+        },
+      };
     },
   });
 
-  const logoutMutation = useMutation({
-    mutationFn: async () => {
-      await api.post('/api/auditor/auth/logout');
-    },
-    onSettled: () => {
-      try {
-        localStorage.removeItem('auditorToken');
-      } catch {
-        /* ignore */
-      }
-      navigate('/auditor-login');
-    },
-  });
+  const handleLogout = () => {
+    localStorage.removeItem('auditorAccessCode');
+    localStorage.removeItem('auditorPortalSession');
+    navigate('/auditor-login');
+  };
 
   const auditorName =
     data?.auditorName ??
@@ -219,8 +251,7 @@ export default function AuditorPortal() {
             size="sm"
             variant="secondary"
             leftIcon={<LogOut className="h-4 w-4" />}
-            loading={logoutMutation.isPending}
-            onClick={() => logoutMutation.mutate()}
+            onClick={handleLogout}
           >
             Sign out
           </Button>

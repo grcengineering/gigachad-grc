@@ -84,7 +84,7 @@ export class RequestsService {
   }
 
   async findOne(id: string, organizationId: string) {
-    return this.prisma.auditRequest.findFirst({
+    const request = await this.prisma.auditRequest.findFirst({
       where: { id, organizationId, deletedAt: null },
       include: {
         audit: true,
@@ -94,6 +94,12 @@ export class RequestsService {
         },
       },
     });
+
+    if (!request) {
+      throw new NotFoundException(`Request with ID ${id} not found`);
+    }
+
+    return request;
   }
 
   async update(id: string, organizationId: string, updateRequestDto: UpdateAuditRequestDto) {

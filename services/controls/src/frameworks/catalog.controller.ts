@@ -40,8 +40,7 @@ export class FrameworkCatalogController {
   @Get('status')
   @RequirePermission(Resource.FRAMEWORKS, Action.READ)
   async getCatalogStatus(@Req() req: AuthenticatedRequest) {
-    const organizationId = req.user?.organizationId || 'default-org';
-    return this.catalogService.getCatalogStatus(organizationId);
+    return this.catalogService.getCatalogStatus(req.user.organizationId);
   }
 
   /**
@@ -60,10 +59,11 @@ export class FrameworkCatalogController {
   @HttpCode(HttpStatus.CREATED)
   @RequirePermission(Resource.FRAMEWORKS, Action.CREATE)
   async activateFramework(@Param('catalogId') catalogId: string, @Req() req: AuthenticatedRequest) {
-    const organizationId = req.user?.organizationId || 'default-org';
-    const userId = req.user?.userId || 'system';
-
-    return this.catalogService.activateFramework(organizationId, catalogId, userId);
+    return this.catalogService.activateFramework(
+      req.user.organizationId,
+      catalogId,
+      req.user.userId
+    );
   }
 
   /**
@@ -72,8 +72,7 @@ export class FrameworkCatalogController {
   @Get('activated/list')
   @RequirePermission(Resource.FRAMEWORKS, Action.READ)
   async getActivatedFrameworks(@Req() req: AuthenticatedRequest) {
-    const organizationId = req.user?.organizationId || 'default-org';
-    return this.catalogService.getActivatedFrameworks(organizationId);
+    return this.catalogService.getActivatedFrameworks(req.user.organizationId);
   }
 
   /**
@@ -85,8 +84,10 @@ export class FrameworkCatalogController {
     @Param('catalogId') catalogId: string,
     @Req() req: AuthenticatedRequest
   ) {
-    const organizationId = req.user?.organizationId || 'default-org';
-    const isActivated = await this.catalogService.isFrameworkActivated(organizationId, catalogId);
+    const isActivated = await this.catalogService.isFrameworkActivated(
+      req.user.organizationId,
+      catalogId
+    );
     return { catalogId, isActivated };
   }
 
@@ -99,9 +100,10 @@ export class FrameworkCatalogController {
     @Param('frameworkId') frameworkId: string,
     @Req() req: AuthenticatedRequest
   ) {
-    const organizationId = req.user?.organizationId || 'default-org';
-    const userId = req.user?.userId || 'system';
-
-    return this.catalogService.deactivateFramework(organizationId, frameworkId, userId);
+    return this.catalogService.deactivateFramework(
+      req.user.organizationId,
+      frameworkId,
+      req.user.userId
+    );
   }
 }

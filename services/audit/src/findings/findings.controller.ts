@@ -16,6 +16,7 @@ import { FindingsService } from './findings.service';
 import { CreateFindingDto } from './dto/create-finding.dto';
 import { UpdateFindingDto } from './dto/update-finding.dto';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
+import { Roles, RolesGuard } from '@gigachad-grc/shared';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -29,11 +30,12 @@ interface AuthenticatedRequest extends Request {
 @ApiTags('Findings')
 @ApiBearerAuth()
 @Controller('api/findings')
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 export class FindingsController {
   constructor(private readonly findingsService: FindingsService) {}
 
   @Post()
+  @Roles('admin', 'compliance_manager', 'auditor')
   create(@Body() createFindingDto: CreateFindingDto, @Req() req: AuthenticatedRequest) {
     return this.findingsService.create(createFindingDto, req.user.organizationId, req.user.userId);
   }
@@ -67,6 +69,7 @@ export class FindingsController {
   }
 
   @Patch(':id')
+  @Roles('admin', 'compliance_manager', 'auditor')
   update(
     @Param('id') id: string,
     @Body() updateFindingDto: UpdateFindingDto,
@@ -76,11 +79,13 @@ export class FindingsController {
   }
 
   @Delete(':id')
+  @Roles('admin', 'compliance_manager', 'auditor')
   delete(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.findingsService.delete(id, req.user.organizationId);
   }
 
   @Post('bulk/status')
+  @Roles('admin', 'compliance_manager', 'auditor')
   bulkUpdateStatus(
     @Body() body: { ids: string[]; status: string },
     @Req() req: AuthenticatedRequest

@@ -7,6 +7,9 @@ import {
   DocumentArrowDownIcon,
 } from '@heroicons/react/24/outline';
 import { Button, Badge, Dialog, Input, Select, Textarea } from '@/components/ui';
+import toast from 'react-hot-toast';
+import { contractsApi } from '@/lib/api';
+import { saveBlob } from '@/lib/download';
 
 interface Contract {
   id: string;
@@ -291,10 +294,12 @@ function ContractView({
   contract,
   onEdit,
   onDelete,
+  onDownload,
 }: {
   contract: Contract;
   onEdit: () => void;
   onDelete: () => void;
+  onDownload: () => void;
 }) {
   return (
     <div className="space-y-6">
@@ -441,7 +446,7 @@ function ContractView({
                     : 'Unknown size'}
                 </p>
               </div>
-              <Button variant="link" size="sm">
+              <Button variant="link" size="sm" onClick={onDownload}>
                 Download
               </Button>
             </div>
@@ -462,9 +467,8 @@ export default function ContractDetail() {
 
   const fetchContract = useCallback(async () => {
     try {
-      const response = await fetch(`/api/contracts/${id}`);
-      const data = await response.json();
-      setContract(data);
+      const response = await contractsApi.get(id!);
+      setContract(response.data);
     } catch (error) {
       console.error('Error fetching contract:', error);
     } finally {
@@ -483,27 +487,17 @@ export default function ContractDetail() {
 
   const handleSave = async (formData: Partial<Contract>) => {
     try {
-      const url = id === 'new' ? '/api/contracts' : `/api/contracts/${id}`;
-      const method = id === 'new' ? 'POST' : 'PATCH';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': 'system', // TODO: Get from auth context
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (id === 'new') {
-          navigate(`/contracts/${data.id}`);
-        } else {
-          setContract(data);
-          setEditing(false);
-        }
+      const response =
+        id === 'new'
+          ? await contractsApi.create(formData)
+          : await contractsApi.update(id!, formData);
+      if (id === 'new') {
+        navigate(`/contracts/${response.data.id}`);
+      } else {
+        setContract(response.data);
+        setEditing(false);
       }
+      toast.success('Contract saved');
     } catch (error) {
       console.error('Error saving contract:', error);
     }
@@ -515,18 +509,20 @@ export default function ContractDetail() {
     }
 
     try {
-      const response = await fetch(`/api/contracts/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'x-user-id': 'system', // TODO: Get from auth context
-        },
-      });
-
-      if (response.ok) {
-        navigate('/contracts');
-      }
+      await contractsApi.delete(id!);
+      navigate('/contracts');
     } catch (error) {
       console.error('Error deleting contract:', error);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!id || !contract) return;
+    try {
+      const response = await contractsApi.downloadDocument(id);
+      saveBlob(response.data, contract.filename || `${contract.title}.document`);
+    } catch {
+      toast.error('Failed to download contract document');
     }
   };
 
@@ -572,7 +568,12 @@ export default function ContractDetail() {
           }}
         />
       ) : contract ? (
-        <ContractView contract={contract} onEdit={() => setEditing(true)} onDelete={handleDelete} />
+        <ContractView
+          contract={contract}
+          onEdit={() => setEditing(true)}
+          onDelete={handleDelete}
+          onDownload={handleDownload}
+        />
       ) : null}
       {/* Delete Confirmation Modal */}
       <Dialog
@@ -588,10 +589,7 @@ export default function ContractDetail() {
               variant="danger"
               onClick={async () => {
                 try {
-                  await fetch(`/api/contracts/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'x-user-id': 'system' },
-                  });
+                  await contractsApi.delete(id!);
                   navigate('/contracts');
                 } catch (error) {
                   console.error('Error deleting contract:', error);

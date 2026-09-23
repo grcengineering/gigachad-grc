@@ -4,7 +4,6 @@ import { AuditService } from '../common/audit.service';
 import { Prisma } from '@prisma/client';
 
 export interface CreateTemplateDto {
-  organizationId: string;
   title: string;
   content: string;
   category?: string;
@@ -28,14 +27,14 @@ export class TemplatesService {
     private audit: AuditService
   ) {}
 
-  async create(dto: CreateTemplateDto, userId: string) {
+  async create(organizationId: string, dto: CreateTemplateDto, userId: string) {
     // Extract variables from content (pattern: {{variable_name}})
     const extractedVariables = this.extractVariables(dto.content);
     const variables = dto.variables || extractedVariables;
 
     const template = await this.prisma.answerTemplate.create({
       data: {
-        organizationId: dto.organizationId,
+        organizationId,
         title: dto.title,
         content: dto.content,
         category: dto.category,
@@ -46,7 +45,7 @@ export class TemplatesService {
     });
 
     await this.audit.log({
-      organizationId: dto.organizationId,
+      organizationId,
       userId,
       action: 'CREATE_ANSWER_TEMPLATE',
       entityType: 'answer_template',

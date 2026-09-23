@@ -33,7 +33,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import api from '@/lib/api';
 
 interface RouteItem {
   label: string;
@@ -143,10 +143,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     queryFn: async () => {
       if (!query || query.length < 2) return [];
       try {
-        const apiBase = import.meta.env.VITE_API_URL || '';
-        const res = await axios.get(`${apiBase}/search/global`, {
+        const res = await api.get('/api/search/global', {
           params: { q: query },
-          withCredentials: true,
         });
         return res.data?.data || [];
       } catch {

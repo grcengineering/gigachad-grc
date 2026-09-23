@@ -12,9 +12,7 @@ import { WebhooksModule } from '../webhooks/webhooks.module';
 import { SessionsModule } from '../sessions/sessions.module';
 import { JiraModule } from '../integrations/jira/jira.module';
 import { ServiceNowModule } from '../integrations/servicenow/servicenow.module';
-
-// Note: CollectorsModule import is handled separately to avoid circular dependencies
-// The CollectorsService is injected optionally
+import { CollectorsModule } from '../collectors/collectors.module';
 
 @Module({
   imports: [
@@ -29,6 +27,7 @@ import { ServiceNowModule } from '../integrations/servicenow/servicenow.module';
     forwardRef(() => SessionsModule),
     forwardRef(() => JiraModule),
     forwardRef(() => ServiceNowModule),
+    forwardRef(() => CollectorsModule),
   ],
   providers: [JobsService, JobSchedulerService],
   controllers: [JobsController],

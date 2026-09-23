@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma.service';
 import { AuditService } from '../common/audit.service';
 import axios from 'axios';
@@ -265,6 +265,10 @@ Provide your response in the following JSON format:
       const errorMessage = getErrorMessage(error);
       this.logger.error(`AI answer generation failed: ${errorMessage}`, getErrorStack(error));
 
+      if (!this.isExplicitDemoMode()) {
+        throw new ServiceUnavailableException(`AI answer generation failed: ${errorMessage}`);
+      }
+
       // Return a fallback response with relevant KB entries
       const relevantEntries = this.findRelevantEntries(questionText, kbEntries);
 
@@ -350,6 +354,10 @@ Respond in JSON format:
       this.logger.error(`AI categorization failed: ${getErrorMessage(error)}`);
     }
 
+    if (!this.isExplicitDemoMode()) {
+      throw new ServiceUnavailableException('AI categorization service is unavailable');
+    }
+
     // Fallback: simple keyword-based categorization
     return this.fallbackCategorization(questionText);
   }
@@ -425,6 +433,10 @@ Respond in JSON format:
       this.logger.error(`AI answer improvement failed: ${getErrorMessage(error)}`);
     }
 
+    if (!this.isExplicitDemoMode()) {
+      throw new ServiceUnavailableException('AI answer improvement service is unavailable');
+    }
+
     return {
       suggestedAnswer: currentAnswer,
       confidence: 0,
@@ -434,6 +446,10 @@ Respond in JSON format:
   }
 
   // Simple keyword-based relevance matching
+  private isExplicitDemoMode(): boolean {
+    return process.env.NODE_ENV !== 'production' && process.env.AI_MOCK_MODE === 'true';
+  }
+
   private findRelevantEntries(
     questionText: string,
     entries: KnowledgeBaseEntryForSearch[]

@@ -18,7 +18,7 @@ export class DRTestsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
-    private readonly notificationsService: NotificationsService,
+    private readonly notificationsService: NotificationsService
   ) {}
 
   async findAll(organizationId: string, filters: DRTestFilterDto) {
@@ -36,7 +36,7 @@ export class DRTestsService {
       FROM bcdr.dr_tests dt
       LEFT JOIN public.users u ON dt.coordinator_id::text = u.id
       LEFT JOIN bcdr.bcdr_plans bp ON dt.plan_id = bp.id
-      WHERE dt.organization_id = ${organizationId}::uuid
+      WHERE dt.organization_id = ${organizationId}
         AND dt.deleted_at IS NULL
         AND (${searchPattern}::text IS NULL OR (dt.name ILIKE ${searchPattern} OR dt.test_id ILIKE ${searchPattern}))
         AND (${testType}::text IS NULL OR dt.test_type = ${testType})
@@ -49,7 +49,7 @@ export class DRTestsService {
     const total = await this.prisma.$queryRaw<[{ count: bigint }]>`
       SELECT COUNT(*) as count
       FROM bcdr.dr_tests
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = ${organizationId}
         AND deleted_at IS NULL
     `;
 
@@ -68,10 +68,10 @@ export class DRTestsService {
              u.display_name as coordinator_name, u.email as coordinator_email,
              bp.title as plan_title
       FROM bcdr.dr_tests dt
-      LEFT JOIN shared.users u ON dt.coordinator_id = u.id
+      LEFT JOIN public.users u ON dt.coordinator_id = u.id
       LEFT JOIN bcdr.bcdr_plans bp ON dt.plan_id = bp.id
       WHERE dt.id = ${id}::uuid
-        AND dt.organization_id = ${organizationId}::uuid
+        AND dt.organization_id = ${organizationId}
         AND dt.deleted_at IS NULL
     `;
 
@@ -85,7 +85,7 @@ export class DRTestsService {
              u.display_name as remediation_owner_name,
              bp.name as affected_process_name
       FROM bcdr.dr_test_findings f
-      LEFT JOIN shared.users u ON f.remediation_owner_id = u.id
+      LEFT JOIN public.users u ON f.remediation_owner_id = u.id
       LEFT JOIN bcdr.business_processes bp ON f.affected_process_id = bp.id
       WHERE f.test_id = ${id}::uuid
       ORDER BY f.finding_number ASC
@@ -102,8 +102,8 @@ export class DRTestsService {
     // Get participants
     const participants = await this.prisma.$queryRaw<any[]>`
       SELECT id, display_name, email
-      FROM shared.users
-      WHERE id = ANY(${tests[0].participant_ids || []}::uuid[])
+      FROM public.users
+      WHERE id = ANY(${tests[0].participant_ids || []}::text[])
     `;
 
     return {
@@ -119,7 +119,7 @@ export class DRTestsService {
     userId: string,
     dto: CreateDRTestDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     // Check for duplicate testId
     const existing = await this.prisma.$queryRaw<any[]>`
@@ -141,18 +141,18 @@ export class DRTestsService {
         systems_in_scope, participant_ids, external_participants, tags,
         created_by, updated_by
       ) VALUES (
-        ${organizationId}, ${dto.workspaceId || null}::uuid,
+        ${organizationId}, ${dto.workspaceId || null},
         ${dto.testId}, ${dto.name}, ${dto.description || null}, 
         ${dto.testType}::bcdr.test_type, 'planned'::bcdr.test_status,
         ${dto.planId || null}::uuid, ${dto.processIds || []}::uuid[],
         ${dto.scheduledDate ? new Date(dto.scheduledDate) : null}::date, 
         ${dto.scheduledStartTime || null}::time,
         ${dto.scheduledDurationHours || null},
-        ${dto.coordinatorId || null}::uuid, ${dto.testObjectives || null}, 
+        ${dto.coordinatorId || null}, ${dto.testObjectives || null},
         ${dto.successCriteria || null}, ${dto.scopeDescription || null},
-        ${dto.systemsInScope || []}::text[], ${dto.participantIds || []}::uuid[], 
+        ${dto.systemsInScope || []}::text[], ${dto.participantIds || []}::text[],
         ${dto.externalParticipants || null}, ${dto.tags || []}::text[],
-        ${userId}::uuid, ${userId}::uuid
+        ${userId}, ${userId}
       )
       RETURNING *
     `;
@@ -181,7 +181,7 @@ export class DRTestsService {
     userId: string,
     dto: UpdateDRTestDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     await this.findOne(id, organizationId);
 
@@ -189,12 +189,23 @@ export class DRTestsService {
     // Only these hardcoded column names can be included in the query.
     // This prevents SQL injection even though column names come from code, not user input.
     const ALLOWED_COLUMNS = new Set([
-      'name', 'description', 'status', 'scheduled_date', 'scheduled_start_time',
-      'scheduled_duration_hours', 'coordinator_id', 'test_objectives', 'success_criteria',
-      'participant_ids', 'external_participants', 'tags', 'updated_by', 'updated_at',
+      'name',
+      'description',
+      'status',
+      'scheduled_date',
+      'scheduled_start_time',
+      'scheduled_duration_hours',
+      'coordinator_id',
+      'test_objectives',
+      'success_criteria',
+      'participant_ids',
+      'external_participants',
+      'tags',
+      'updated_by',
+      'updated_at',
     ]);
 
-    const updates: string[] = ['updated_by = $2::uuid', 'updated_at = NOW()'];
+    const updates: string[] = ['updated_by = $2', 'updated_at = NOW()'];
     const values: any[] = [id, userId];
     let paramIndex = 3;
 
@@ -227,7 +238,7 @@ export class DRTestsService {
       addUpdate('scheduled_duration_hours', dto.scheduledDurationHours);
     }
     if (dto.coordinatorId !== undefined) {
-      addUpdate('coordinator_id', dto.coordinatorId, '::uuid');
+      addUpdate('coordinator_id', dto.coordinatorId);
     }
     if (dto.testObjectives !== undefined) {
       addUpdate('test_objectives', dto.testObjectives);
@@ -236,7 +247,7 @@ export class DRTestsService {
       addUpdate('success_criteria', dto.successCriteria);
     }
     if (dto.participantIds !== undefined) {
-      addUpdate('participant_ids', dto.participantIds, '::uuid[]');
+      addUpdate('participant_ids', dto.participantIds, '::text[]');
     }
     if (dto.externalParticipants !== undefined) {
       addUpdate('external_participants', dto.externalParticipants);
@@ -252,7 +263,7 @@ export class DRTestsService {
     // 3. No user input is interpolated into column names
     const result = await this.prisma.$queryRawUnsafe<any[]>(
       `UPDATE bcdr.dr_tests SET ${updates.join(', ')} WHERE id = $1::uuid RETURNING *`,
-      ...values,
+      ...values
     );
 
     const test = result[0];
@@ -280,7 +291,7 @@ export class DRTestsService {
       UPDATE bcdr.dr_tests
       SET status = 'in_progress'::bcdr.test_status,
           actual_start_at = NOW(),
-          updated_by = ${userId}::uuid,
+          updated_by = ${userId},
           updated_at = NOW()
       WHERE id = ${id}::uuid
       RETURNING *
@@ -295,7 +306,7 @@ export class DRTestsService {
     userId: string,
     dto: RecordTestResultDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const test = await this.findOne(id, organizationId);
 
@@ -309,7 +320,7 @@ export class DRTestsService {
           data_loss_minutes = ${dto.dataLossMinutes || null},
           executive_summary = ${dto.executiveSummary || null},
           lessons_learned = ${dto.lessonsLearned || null},
-          updated_by = ${userId}::uuid,
+          updated_by = ${userId},
           updated_at = NOW()
       WHERE id = ${id}::uuid
       RETURNING *
@@ -338,7 +349,7 @@ export class DRTestsService {
     testId: string,
     organizationId: string,
     userId: string,
-    dto: CreateTestFindingDto,
+    dto: CreateTestFindingDto
   ) {
     await this.findOne(testId, organizationId);
 
@@ -361,9 +372,9 @@ export class DRTestsService {
         ${dto.severity || 'medium'}, ${dto.category || null},
         ${dto.affectedProcessId || null}::uuid, ${dto.affectedSystem || null},
         ${dto.remediationRequired ?? true}, ${dto.remediationPlan || null},
-        ${dto.remediationOwnerId || null}::uuid, 
+        ${dto.remediationOwnerId || null},
         ${dto.remediationDueDate ? new Date(dto.remediationDueDate) : null}::date,
-        ${userId}::uuid
+        ${userId}
       )
       RETURNING *
     `;
@@ -390,13 +401,23 @@ export class DRTestsService {
     testId: string,
     findingId: string,
     userId: string,
-    updates: Partial<CreateTestFindingDto> & { remediationStatus?: string; remediationNotes?: string },
+    updates: Partial<CreateTestFindingDto> & {
+      remediationStatus?: string;
+      remediationNotes?: string;
+    }
   ) {
     // SECURITY: Allowed column names for dynamic UPDATE query.
     // Only these hardcoded column names can be included in the query.
     const ALLOWED_COLUMNS = new Set([
-      'title', 'description', 'severity', 'remediation_status', 'remediation_completed_at',
-      'remediation_plan', 'remediation_owner_id', 'remediation_due_date', 'remediation_notes',
+      'title',
+      'description',
+      'severity',
+      'remediation_status',
+      'remediation_completed_at',
+      'remediation_plan',
+      'remediation_owner_id',
+      'remediation_due_date',
+      'remediation_notes',
       'updated_at',
     ]);
 
@@ -442,10 +463,14 @@ export class DRTestsService {
       addUpdate('remediation_plan', updates.remediationPlan);
     }
     if (updates.remediationOwnerId !== undefined) {
-      addUpdate('remediation_owner_id', updates.remediationOwnerId, '::uuid');
+      addUpdate('remediation_owner_id', updates.remediationOwnerId);
     }
     if (updates.remediationDueDate !== undefined) {
-      addUpdate('remediation_due_date', updates.remediationDueDate ? new Date(updates.remediationDueDate) : null, '::date');
+      addUpdate(
+        'remediation_due_date',
+        updates.remediationDueDate ? new Date(updates.remediationDueDate) : null,
+        '::date'
+      );
     }
     if (updates.remediationNotes !== undefined) {
       addUpdate('remediation_notes', updates.remediationNotes);
@@ -458,7 +483,7 @@ export class DRTestsService {
     // 3. No user input is interpolated into column names
     const result = await this.prisma.$queryRawUnsafe<any[]>(
       `UPDATE bcdr.dr_test_findings SET ${updateFields.join(', ')} WHERE id = $1::uuid RETURNING *`,
-      ...values,
+      ...values
     );
 
     return result[0];
@@ -469,7 +494,7 @@ export class DRTestsService {
     organizationId: string,
     userId: string,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const test = await this.findOne(id, organizationId);
 
@@ -499,7 +524,7 @@ export class DRTestsService {
       SELECT dt.*, bp.title as plan_title
       FROM bcdr.dr_tests dt
       LEFT JOIN bcdr.bcdr_plans bp ON dt.plan_id = bp.id
-      WHERE dt.organization_id = ${organizationId}::uuid
+      WHERE dt.organization_id = ${organizationId}
         AND dt.deleted_at IS NULL
         AND dt.status IN ('planned', 'scheduled')
         AND dt.scheduled_date >= CURRENT_DATE
@@ -521,7 +546,7 @@ export class DRTestsService {
         COUNT(*) FILTER (WHERE result = 'passed_with_issues') as issues_count,
         AVG(actual_recovery_time_minutes) FILTER (WHERE result IS NOT NULL) as avg_recovery_time
       FROM bcdr.dr_tests
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = ${organizationId}
         AND deleted_at IS NULL
     `;
 
@@ -530,7 +555,7 @@ export class DRTestsService {
       SELECT COUNT(*) as count
       FROM bcdr.dr_test_findings f
       JOIN bcdr.dr_tests t ON f.test_id = t.id
-      WHERE t.organization_id = ${organizationId}::uuid
+      WHERE t.organization_id = ${organizationId}
         AND f.remediation_required = true
         AND f.remediation_status NOT IN ('resolved', 'accepted')
     `;
@@ -541,4 +566,3 @@ export class DRTestsService {
     };
   }
 }
-

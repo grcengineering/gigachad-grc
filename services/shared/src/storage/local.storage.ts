@@ -25,6 +25,19 @@ export class LocalStorageProvider implements StorageProvider {
    * Ensures the resolved path is within the base storage directory
    */
   private getFullPath(relativePath: string): string {
+    const normalizedPath = relativePath.replace(/\\/g, '/');
+    let decodedPath = normalizedPath;
+    try {
+      decodedPath = decodeURIComponent(normalizedPath);
+    } catch {
+      // Malformed percent sequences are literal filesystem characters. They
+      // are safe unless the original path itself contains traversal segments.
+    }
+
+    if (decodedPath.includes('\0') || decodedPath.split('/').includes('..')) {
+      throw new Error('SECURITY: Path traversal detected - access denied');
+    }
+
     // Resolve the full path
     const fullPath = path.resolve(this.basePath, relativePath);
 

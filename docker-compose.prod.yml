@@ -269,6 +269,7 @@ services:
     environment:
       RUSTFS_ROOT_USER: ${MINIO_ROOT_USER}
       RUSTFS_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      RUSTFS_DEFAULT_BUCKETS: ${S3_BUCKET:-grc-storage}
       RUSTFS_BROWSER: ${MINIO_BROWSER:-on}
       RUSTFS_PROMETHEUS_AUTH_TYPE: public
       RUSTFS_DOMAIN: ${MINIO_DOMAIN:-storage.${APP_DOMAIN}}
@@ -399,11 +400,14 @@ services:
       PORT: 3001
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      STORAGE_TYPE: s3
       S3_ENDPOINT: rustfs
       S3_PORT: 9000
-      S3_USE_SSL: true
+      S3_USE_SSL: 'false'
       S3_ACCESS_KEY: ${MINIO_ROOT_USER}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_BUCKET: ${S3_BUCKET:-grc-storage}
+      S3_REGION: ${S3_REGION:-us-east-1}
       MINIO_ENDPOINT: rustfs
       MINIO_PORT: 9000
       MINIO_USE_SSL: false
@@ -449,6 +453,14 @@ services:
       - 'traefik.http.routers.controls-risk-tasks.entrypoints=websecure'
       - 'traefik.http.routers.controls-risk-tasks.tls.certresolver=letsencrypt'
       - 'traefik.http.routers.controls-risk-tasks.middlewares=controls-ratelimit'
+      - 'traefik.http.routers.controls-frontend-api.rule=Host(`${APP_DOMAIN}`) && (PathPrefix(`/api/risk-scenarios`) || PathPrefix(`/api/employee-compliance`) || PathPrefix(`/api/scheduled-reports`))'
+      - 'traefik.http.routers.controls-frontend-api.entrypoints=websecure'
+      - 'traefik.http.routers.controls-frontend-api.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.controls-frontend-api.middlewares=controls-ratelimit'
+      - 'traefik.http.routers.controls-bcdr.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/bcdr`)'
+      - 'traefik.http.routers.controls-bcdr.entrypoints=websecure'
+      - 'traefik.http.routers.controls-bcdr.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.controls-bcdr.middlewares=controls-ratelimit'
       - 'traefik.http.routers.controls-organization.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/organization`)'
       - 'traefik.http.routers.controls-organization.entrypoints=websecure'
       - 'traefik.http.routers.controls-organization.tls.certresolver=letsencrypt'
@@ -458,6 +470,13 @@ services:
       - 'traefik.http.routers.controls-frameworks-catalog.entrypoints=websecure'
       - 'traefik.http.routers.controls-frameworks-catalog.tls.certresolver=letsencrypt'
       - 'traefik.http.routers.controls-frameworks-catalog.middlewares=controls-ratelimit'
+      # API fallback: service-specific routers have more specific rules and
+      # therefore win. Unknown API paths land on controls and return JSON 404.
+      - 'traefik.http.routers.controls-catchall.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api`)'
+      - 'traefik.http.routers.controls-catchall.priority=2'
+      - 'traefik.http.routers.controls-catchall.entrypoints=websecure'
+      - 'traefik.http.routers.controls-catchall.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.controls-catchall.middlewares=controls-ratelimit'
       - 'traefik.http.routers.controls.entrypoints=websecure'
       - 'traefik.http.routers.controls.tls.certresolver=letsencrypt'
       - 'traefik.http.services.controls.loadbalancer.server.port=3001'
@@ -471,8 +490,9 @@ services:
       - ALL
     read_only: true
     tmpfs:
-      - /tmp
+      - /tmp:rw,nosuid,nodev,mode=1777
       - /app/.npm
+      - /app/uploads:rw,nosuid,nodev,uid=1001,gid=1001,mode=0750
     logging:
       driver: 'json-file'
       options:
@@ -509,11 +529,14 @@ services:
       PORT: 3002
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      STORAGE_TYPE: s3
       S3_ENDPOINT: rustfs
       S3_PORT: 9000
-      S3_USE_SSL: true
+      S3_USE_SSL: 'false'
       S3_ACCESS_KEY: ${MINIO_ROOT_USER}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_BUCKET: ${S3_BUCKET:-grc-storage}
+      S3_REGION: ${S3_REGION:-us-east-1}
       MINIO_ENDPOINT: rustfs
       MINIO_PORT: 9000
       MINIO_USE_SSL: false
@@ -543,6 +566,14 @@ services:
       - 'traefik.http.routers.frameworks.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/frameworks`)'
       - 'traefik.http.routers.frameworks.entrypoints=websecure'
       - 'traefik.http.routers.frameworks.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.frameworks-assessments.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/assessments`)'
+      - 'traefik.http.routers.frameworks-assessments.entrypoints=websecure'
+      - 'traefik.http.routers.frameworks-assessments.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.frameworks-assessments.middlewares=frameworks-ratelimit'
+      - 'traefik.http.routers.frameworks-mappings.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/mappings`)'
+      - 'traefik.http.routers.frameworks-mappings.entrypoints=websecure'
+      - 'traefik.http.routers.frameworks-mappings.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.frameworks-mappings.middlewares=frameworks-ratelimit'
       - 'traefik.http.services.frameworks.loadbalancer.server.port=3002'
       - 'traefik.http.middlewares.frameworks-ratelimit.ratelimit.average=100'
       - 'traefik.http.middlewares.frameworks-ratelimit.ratelimit.burst=50'
@@ -554,7 +585,7 @@ services:
       - ALL
     read_only: true
     tmpfs:
-      - /tmp
+      - /tmp:rw,nosuid,nodev,mode=1777
       - /app/.npm
     logging:
       driver: 'json-file'
@@ -592,11 +623,14 @@ services:
       PORT: 3004
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      STORAGE_TYPE: s3
       S3_ENDPOINT: rustfs
       S3_PORT: 9000
-      S3_USE_SSL: true
+      S3_USE_SSL: 'false'
       S3_ACCESS_KEY: ${MINIO_ROOT_USER}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_BUCKET: ${S3_BUCKET:-grc-storage}
+      S3_REGION: ${S3_REGION:-us-east-1}
       MINIO_ENDPOINT: rustfs
       MINIO_PORT: 9000
       MINIO_USE_SSL: false
@@ -637,7 +671,7 @@ services:
       - ALL
     read_only: true
     tmpfs:
-      - /tmp
+      - /tmp:rw,nosuid,nodev,mode=1777
       - /app/.npm
     logging:
       driver: 'json-file'
@@ -675,11 +709,14 @@ services:
       PORT: 3005
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      STORAGE_TYPE: s3
       S3_ENDPOINT: rustfs
       S3_PORT: 9000
-      S3_USE_SSL: true
+      S3_USE_SSL: 'false'
       S3_ACCESS_KEY: ${MINIO_ROOT_USER}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_BUCKET: ${S3_BUCKET:-grc-storage}
+      S3_REGION: ${S3_REGION:-us-east-1}
       MINIO_ENDPOINT: rustfs
       MINIO_PORT: 9000
       MINIO_USE_SSL: false
@@ -707,10 +744,26 @@ services:
     labels:
       - 'traefik.enable=true'
       - 'traefik.http.routers.tprm-vendors.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/vendors`)'
-      - 'traefik.http.routers.tprm-assessments.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/assessments`)'
+      - 'traefik.http.routers.tprm-vendor-assessments.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/vendor-assessments`)'
+      - 'traefik.http.routers.tprm-vendor-assessments.entrypoints=websecure'
+      - 'traefik.http.routers.tprm-vendor-assessments.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.tprm-vendor-assessments.middlewares=tprm-ratelimit'
       - 'traefik.http.routers.tprm-contracts.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/contracts`)'
+      - 'traefik.http.routers.tprm-contracts.entrypoints=websecure'
+      - 'traefik.http.routers.tprm-contracts.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.tprm-contracts.middlewares=tprm-ratelimit'
+      - 'traefik.http.routers.tprm-config.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/tprm-config`)'
+      - 'traefik.http.routers.tprm-config.entrypoints=websecure'
+      - 'traefik.http.routers.tprm-config.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.tprm-config.middlewares=tprm-ratelimit'
       - 'traefik.http.routers.tprm-vendors.entrypoints=websecure'
       - 'traefik.http.routers.tprm-vendors.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.tprm-assessments.entrypoints=websecure'
+      - 'traefik.http.routers.tprm-assessments.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.tprm-assessments.middlewares=tprm-ratelimit'
+      - 'traefik.http.routers.tprm-contracts.entrypoints=websecure'
+      - 'traefik.http.routers.tprm-contracts.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.tprm-contracts.middlewares=tprm-ratelimit'
       - 'traefik.http.services.tprm.loadbalancer.server.port=3005'
       - 'traefik.http.middlewares.tprm-ratelimit.ratelimit.average=100'
       - 'traefik.http.middlewares.tprm-ratelimit.ratelimit.burst=50'
@@ -722,7 +775,7 @@ services:
       - ALL
     read_only: true
     tmpfs:
-      - /tmp
+      - /tmp:rw,nosuid,nodev,mode=1777
       - /app/.npm
     logging:
       driver: 'json-file'
@@ -793,7 +846,21 @@ services:
       - 'traefik.enable=true'
       - 'traefik.http.routers.trust-questionnaires.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/questionnaires`)'
       - 'traefik.http.routers.trust-knowledge-base.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/knowledge-base`)'
+      - 'traefik.http.routers.trust-knowledge-base.entrypoints=websecure'
+      - 'traefik.http.routers.trust-knowledge-base.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.trust-knowledge-base.middlewares=trust-ratelimit'
       - 'traefik.http.routers.trust-center.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/trust-center`)'
+      - 'traefik.http.routers.trust-center.entrypoints=websecure'
+      - 'traefik.http.routers.trust-center.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.trust-center.middlewares=trust-ratelimit'
+      - 'traefik.http.routers.trust-answer-templates.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/answer-templates`)'
+      - 'traefik.http.routers.trust-answer-templates.entrypoints=websecure'
+      - 'traefik.http.routers.trust-answer-templates.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.trust-answer-templates.middlewares=trust-ratelimit'
+      - 'traefik.http.routers.trust-config.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/trust-config`)'
+      - 'traefik.http.routers.trust-config.entrypoints=websecure'
+      - 'traefik.http.routers.trust-config.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.trust-config.middlewares=trust-ratelimit'
       - 'traefik.http.routers.trust-questionnaires.entrypoints=websecure'
       - 'traefik.http.routers.trust-questionnaires.tls.certresolver=letsencrypt'
       - 'traefik.http.services.trust.loadbalancer.server.port=3006'
@@ -878,10 +945,54 @@ services:
       - 'traefik.enable=true'
       - 'traefik.http.routers.audit-audits.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/audits`)'
       - 'traefik.http.routers.audit-requests.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/audit-requests`)'
-      - 'traefik.http.routers.audit-findings.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/audit-findings`)'
+      - 'traefik.http.routers.audit-requests.entrypoints=websecure'
+      - 'traefik.http.routers.audit-requests.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.audit-requests.middlewares=audit-ratelimit'
+      - 'traefik.http.routers.audit-findings.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/findings`)'
+      - 'traefik.http.routers.audit-findings.entrypoints=websecure'
+      - 'traefik.http.routers.audit-findings.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.audit-findings.middlewares=audit-ratelimit'
       - 'traefik.http.routers.audit-portal.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/audit-portal`)'
+      - 'traefik.http.routers.audit-portal.entrypoints=websecure'
+      - 'traefik.http.routers.audit-portal.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.audit-portal.middlewares=audit-ratelimit'
+      - 'traefik.http.routers.audit-templates.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/audit/templates`)'
+      - 'traefik.http.routers.audit-templates.entrypoints=websecure'
+      - 'traefik.http.routers.audit-templates.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.audit-templates.middlewares=audit-ratelimit'
+      - 'traefik.http.routers.audit-workpapers.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/audit/workpapers`)'
+      - 'traefik.http.routers.audit-workpapers.entrypoints=websecure'
+      - 'traefik.http.routers.audit-workpapers.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.audit-workpapers.middlewares=audit-ratelimit'
+      - 'traefik.http.routers.audit-test-procedures.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/audit/test-procedures`)'
+      - 'traefik.http.routers.audit-test-procedures.entrypoints=websecure'
+      - 'traefik.http.routers.audit-test-procedures.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.audit-test-procedures.middlewares=audit-ratelimit'
+      - 'traefik.http.routers.audit-remediation.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/audit/remediation`)'
+      - 'traefik.http.routers.audit-remediation.entrypoints=websecure'
+      - 'traefik.http.routers.audit-remediation.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.audit-remediation.middlewares=audit-ratelimit'
+      - 'traefik.http.routers.audit-analytics.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/audit/analytics`)'
+      - 'traefik.http.routers.audit-analytics.entrypoints=websecure'
+      - 'traefik.http.routers.audit-analytics.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.audit-analytics.middlewares=audit-ratelimit'
+      - 'traefik.http.routers.audit-planning.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/audit/planning`)'
+      - 'traefik.http.routers.audit-planning.entrypoints=websecure'
+      - 'traefik.http.routers.audit-planning.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.audit-planning.middlewares=audit-ratelimit'
+      - 'traefik.http.routers.audit-reports.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/audit/reports`)'
+      - 'traefik.http.routers.audit-reports.entrypoints=websecure'
+      - 'traefik.http.routers.audit-reports.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.audit-reports.middlewares=audit-ratelimit'
+      - 'traefik.http.routers.audit-ai.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/audit/audit-ai`)'
+      - 'traefik.http.routers.audit-ai.entrypoints=websecure'
+      - 'traefik.http.routers.audit-ai.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.audit-ai.middlewares=audit-ratelimit'
       - 'traefik.http.routers.audit-audits.entrypoints=websecure'
       - 'traefik.http.routers.audit-audits.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.audit-findings.entrypoints=websecure'
+      - 'traefik.http.routers.audit-findings.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.audit-findings.middlewares=audit-ratelimit'
       - 'traefik.http.services.audit.loadbalancer.server.port=3007'
       - 'traefik.http.middlewares.audit-ratelimit.ratelimit.average=100'
       - 'traefik.http.middlewares.audit-ratelimit.ratelimit.burst=50'

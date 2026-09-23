@@ -74,7 +74,7 @@ export default function AuditTemplates() {
       if (debouncedSearch) params.search = debouncedSearch;
       if (framework) params.framework = framework;
       if (auditType) params.auditType = auditType;
-      const res = await api.get('/api/audits/templates', { params });
+      const res = await api.get('/api/audit/templates', { params });
       return res.data;
     },
   });

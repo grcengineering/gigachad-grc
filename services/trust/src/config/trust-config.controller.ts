@@ -1,17 +1,10 @@
-import {
-  Controller,
-  Get,
-  Put,
-  Post,
-  Body,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Put, Post, Body, UseGuards } from '@nestjs/common';
 import { TrustConfigService, UpdateTrustConfigDto } from './trust-config.service';
-import { CurrentUser, UserContext } from '@gigachad-grc/shared';
+import { CurrentUser, UserContext, Roles, RolesGuard } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
-@Controller('trust-config')
-@UseGuards(DevAuthGuard)
+@Controller('api/trust-config')
+@UseGuards(DevAuthGuard, RolesGuard)
 export class TrustConfigController {
   constructor(private readonly configService: TrustConfigService) {}
 
@@ -22,27 +15,17 @@ export class TrustConfigController {
   }
 
   @Put()
-  updateConfiguration(
-    @Body() dto: UpdateTrustConfigDto,
-    @CurrentUser() user: UserContext,
-  ) {
+  @Roles('admin', 'compliance_manager', 'auditor')
+  updateConfiguration(@Body() dto: UpdateTrustConfigDto, @CurrentUser() user: UserContext) {
     // SECURITY: Organization ID extracted from authenticated context, not query param
-    return this.configService.updateConfiguration(
-      user.organizationId,
-      dto,
-      user.userId,
-    );
+    return this.configService.updateConfiguration(user.organizationId, dto, user.userId);
   }
 
   @Post('reset')
-  resetToDefaults(
-    @CurrentUser() user: UserContext,
-  ) {
+  @Roles('admin', 'compliance_manager', 'auditor')
+  resetToDefaults(@CurrentUser() user: UserContext) {
     // SECURITY: Organization ID extracted from authenticated context, not query param
-    return this.configService.resetToDefaults(
-      user.organizationId,
-      user.userId,
-    );
+    return this.configService.resetToDefaults(user.organizationId, user.userId);
   }
 
   @Get('reference')
@@ -50,4 +33,3 @@ export class TrustConfigController {
     return this.configService.getReferenceData();
   }
 }
-

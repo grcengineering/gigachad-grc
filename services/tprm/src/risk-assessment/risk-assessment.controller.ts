@@ -1,18 +1,11 @@
-import {
-  Controller,
-  Post,
-  Get,
-  Body,
-  Param,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseGuards } from '@nestjs/common';
 import { RiskAssessmentService } from './risk-assessment.service';
 import { CreateRiskAssessmentDto } from './dto/risk-assessment.dto';
-import { CurrentUser, UserContext } from '@gigachad-grc/shared';
+import { CurrentUser, UserContext, Roles, RolesGuard } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 @Controller('vendors/:vendorId/risk-assessment')
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 export class RiskAssessmentController {
   constructor(private readonly riskAssessmentService: RiskAssessmentService) {}
 
@@ -20,16 +13,17 @@ export class RiskAssessmentController {
    * Submit a new risk assessment for a vendor
    */
   @Post()
+  @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   async createAssessment(
     @Param('vendorId') vendorId: string,
     @Body() dto: CreateRiskAssessmentDto,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
     return this.riskAssessmentService.createAssessment(
       vendorId,
       dto,
       user.userId,
-      user.organizationId,
+      user.organizationId
     );
   }
 
@@ -37,10 +31,7 @@ export class RiskAssessmentController {
    * Get the latest risk assessment for a vendor
    */
   @Get('latest')
-  async getLatestAssessment(
-    @Param('vendorId') vendorId: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  async getLatestAssessment(@Param('vendorId') vendorId: string, @CurrentUser() user: UserContext) {
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.riskAssessmentService.getLatestAssessment(vendorId, user.organizationId);
   }
@@ -51,7 +42,7 @@ export class RiskAssessmentController {
   @Get('history')
   async getAssessmentHistory(
     @Param('vendorId') vendorId: string,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
     // SECURITY: Pass organizationId to ensure tenant isolation
     return this.riskAssessmentService.getAssessmentHistory(vendorId, user.organizationId);

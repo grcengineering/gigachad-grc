@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon, DocumentArrowUpIcon } from '@heroicons/react/24/outline';
 import { Badge, Button, Dialog, Input, Select, Textarea } from '@/components/ui';
+import { authenticatedFetch } from '@/lib/api';
 
 interface Questionnaire {
   id: string;
@@ -60,7 +61,7 @@ export default function QuestionnaireDetail() {
 
   const fetchQuestionnaire = useCallback(async () => {
     try {
-      const response = await fetch(`/api/questionnaires/${id}`);
+      const response = await authenticatedFetch(`/api/questionnaires/${id}`);
       const data = await response.json();
       setQuestionnaire(data);
     } catch (error) {
@@ -80,11 +81,10 @@ export default function QuestionnaireDetail() {
 
   const updateAnswer = async (questionId: string, answer: string) => {
     try {
-      await fetch(`/api/questionnaires/questions/${questionId}`, {
+      await authenticatedFetch(`/api/questionnaires/questions/${questionId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': 'system',
         },
         body: JSON.stringify({
           answerText: answer,
@@ -163,14 +163,12 @@ export default function QuestionnaireDetail() {
         .filter((line) => line.length > 0);
 
       // Create the questionnaire
-      const response = await fetch('/api/questionnaires', {
+      const response = await authenticatedFetch('/api/questionnaires', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': 'system',
         },
         body: JSON.stringify({
-          organizationId: 'default-org',
           title: formData.title,
           requesterName: formData.requesterName,
           requesterEmail: formData.requesterEmail,
@@ -186,11 +184,10 @@ export default function QuestionnaireDetail() {
 
       // Create questions
       for (let i = 0; i < questionLines.length; i++) {
-        await fetch('/api/questionnaires/questions', {
+        await authenticatedFetch('/api/questionnaires/questions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-user-id': 'system',
           },
           body: JSON.stringify({
             questionnaireId: newQuestionnaire.id,
@@ -548,9 +545,9 @@ export default function QuestionnaireDetail() {
               variant="primary"
               onClick={async () => {
                 try {
-                  await fetch(`/api/questionnaires/${id}`, {
+                  await authenticatedFetch(`/api/questionnaires/${id}`, {
                     method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json', 'x-user-id': 'system' },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(editForm),
                   });
                   setShowEditModal(false);
@@ -653,9 +650,8 @@ export default function QuestionnaireDetail() {
               variant="danger"
               onClick={async () => {
                 try {
-                  await fetch(`/api/questionnaires/${id}`, {
+                  await authenticatedFetch(`/api/questionnaires/${id}`, {
                     method: 'DELETE',
-                    headers: { 'x-user-id': 'system' },
                   });
                   navigate('/questionnaires');
                 } catch (error) {
