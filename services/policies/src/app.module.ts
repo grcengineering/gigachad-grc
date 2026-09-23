@@ -6,12 +6,14 @@ import { PrismaModule } from './prisma/prisma.module';
 import { PoliciesModule } from './policies/policies.module';
 import { AuditModule } from './audit/audit.module';
 import { StorageModule } from '@gigachad-grc/shared';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    AuthModule,
     // Rate limiting - lower limits for file operations
     ThrottlerModule.forRoot([
       {

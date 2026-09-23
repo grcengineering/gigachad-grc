@@ -8,6 +8,9 @@ export {
   JwtAuthGuard,
   ApiKeyAuthGuard,
   CombinedAuthGuard,
+  ApplicationAuthGuard,
+  DEVELOPMENT_AUTH_GUARD,
+  isDevelopmentAuthEnvironment,
   // Roles
   ROLES_KEY,
   Roles,

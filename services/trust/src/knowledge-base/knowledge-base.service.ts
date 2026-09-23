@@ -16,6 +16,8 @@ interface KnowledgeBaseFilters {
   search?: string;
 }
 
+type TenantScopedKnowledgeBaseDto = CreateKnowledgeBaseDto & { organizationId: string };
+
 @Injectable()
 export class KnowledgeBaseService {
   constructor(
@@ -23,7 +25,7 @@ export class KnowledgeBaseService {
     private audit: AuditService
   ) {}
 
-  async create(createKnowledgeBaseDto: CreateKnowledgeBaseDto, userId: string) {
+  async create(createKnowledgeBaseDto: TenantScopedKnowledgeBaseDto, userId: string) {
     const { linkedControls, linkedEvidence, linkedPolicies, status, category, ...createData } =
       createKnowledgeBaseDto;
 
@@ -86,7 +88,7 @@ export class KnowledgeBaseService {
     return entry;
   }
 
-  async bulkCreate(entries: CreateKnowledgeBaseDto[], userId: string) {
+  async bulkCreate(entries: TenantScopedKnowledgeBaseDto[], userId: string) {
     const created = [];
     const errors = [];
 

@@ -27,16 +27,18 @@ interface QueueItemInput {
   questions: { id: string }[];
 }
 
+type TenantScopedQuestionnaireDto = CreateQuestionnaireDto & { organizationId: string };
+
 @Injectable()
 export class QuestionnairesService {
   constructor(
     private prisma: PrismaService,
     private audit: AuditService,
-    private cache: CacheService,
+    private cache: CacheService
   ) {}
 
   // Questionnaire CRUD
-  async create(createQuestionnaireDto: CreateQuestionnaireDto, userId: string) {
+  async create(createQuestionnaireDto: TenantScopedQuestionnaireDto, userId: string) {
     const { status, priority, dueDate, metadata, assignedTo, ...restDto } = createQuestionnaireDto;
     const questionnaire = await this.prisma.questionnaireRequest.create({
       data: {
@@ -90,10 +92,7 @@ export class QuestionnairesService {
           },
         },
       },
-      orderBy: [
-        { priority: 'desc' },
-        { createdAt: 'desc' },
-      ],
+      orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
     });
   }
 
@@ -101,8 +100,8 @@ export class QuestionnairesService {
     // SECURITY: Include organizationId in query to prevent IDOR
     // This ensures users can only access questionnaires within their organization
     const questionnaire = await this.prisma.questionnaireRequest.findFirst({
-      where: { 
-        id, 
+      where: {
+        id,
         organizationId, // Tenant isolation - prevents cross-organization access
         deletedAt: null,
       },
@@ -130,11 +129,17 @@ export class QuestionnairesService {
     return questionnaire;
   }
 
-  async update(id: string, updateQuestionnaireDto: UpdateQuestionnaireDto, userId: string, organizationId: string) {
+  async update(
+    id: string,
+    updateQuestionnaireDto: UpdateQuestionnaireDto,
+    userId: string,
+    organizationId: string
+  ) {
     // SECURITY: Verify questionnaire belongs to user's organization before updating
     const _questionnaire = await this.findOne(id, organizationId);
 
-    const { status, priority, assignedTo, metadata, dueDate, completedAt, ...restDto } = updateQuestionnaireDto;
+    const { status, priority, assignedTo, metadata, dueDate, completedAt, ...restDto } =
+      updateQuestionnaireDto;
 
     const updated = await this.prisma.questionnaireRequest.update({
       where: { id },
@@ -193,10 +198,14 @@ export class QuestionnairesService {
   }
 
   // Question CRUD
-  async createQuestion(createQuestionDto: CreateQuestionDto, userId: string, organizationId: string) {
+  async createQuestion(
+    createQuestionDto: CreateQuestionDto,
+    userId: string,
+    organizationId: string
+  ) {
     // SECURITY: Verify questionnaire belongs to user's organization before creating question
     const questionnaire = await this.prisma.questionnaireRequest.findFirst({
-      where: { 
+      where: {
         id: createQuestionDto.questionnaireId,
         organizationId, // Tenant isolation - prevents cross-organization access
       },
@@ -206,7 +215,11 @@ export class QuestionnairesService {
       throw new NotFoundException(`Questionnaire not found`);
     }
 
-    const { status: questionStatus, assignedTo: questionAssignee, ...restQuestionDto } = createQuestionDto;
+    const {
+      status: questionStatus,
+      assignedTo: questionAssignee,
+      ...restQuestionDto
+    } = createQuestionDto;
 
     const question = await this.prisma.questionnaireQuestion.create({
       data: {
@@ -238,10 +251,15 @@ export class QuestionnairesService {
     return question;
   }
 
-  async updateQuestion(id: string, updateQuestionDto: UpdateQuestionDto, userId: string, organizationId: string) {
+  async updateQuestion(
+    id: string,
+    updateQuestionDto: UpdateQuestionDto,
+    userId: string,
+    organizationId: string
+  ) {
     // SECURITY: Verify question's questionnaire belongs to user's organization
     const question = await this.prisma.questionnaireQuestion.findFirst({
-      where: { 
+      where: {
         id,
         questionnaire: {
           organizationId, // Tenant isolation - prevents cross-organization access
@@ -254,14 +272,21 @@ export class QuestionnairesService {
       throw new NotFoundException(`Question not found`);
     }
 
-    const { status: qStatus, assignedTo: qAssignee, reviewedBy, ...restUpdateDto } = updateQuestionDto;
+    const {
+      status: qStatus,
+      assignedTo: qAssignee,
+      reviewedBy,
+      ...restUpdateDto
+    } = updateQuestionDto;
 
     const updated = await this.prisma.questionnaireQuestion.update({
       where: { id },
       data: {
         ...restUpdateDto,
         status: qStatus as QuestionStatus | undefined,
-        reviewedAt: updateQuestionDto.reviewedAt ? new Date(updateQuestionDto.reviewedAt) : undefined,
+        reviewedAt: updateQuestionDto.reviewedAt
+          ? new Date(updateQuestionDto.reviewedAt)
+          : undefined,
         ...(qAssignee && { assignee: { connect: { id: qAssignee } } }),
         ...(reviewedBy && { reviewer: { connect: { id: reviewedBy } } }),
       },
@@ -292,7 +317,7 @@ export class QuestionnairesService {
   async removeQuestion(id: string, userId: string, organizationId: string) {
     // SECURITY: Verify question's questionnaire belongs to user's organization
     const question = await this.prisma.questionnaireQuestion.findFirst({
-      where: { 
+      where: {
         id,
         questionnaire: {
           organizationId, // Tenant isolation - prevents cross-organization access
@@ -350,26 +375,23 @@ export class QuestionnairesService {
           },
         },
       },
-      orderBy: [
-        { questionnaire: { priority: 'desc' } },
-        { questionnaire: { dueDate: 'asc' } },
-      ],
+      orderBy: [{ questionnaire: { priority: 'desc' } }, { questionnaire: { dueDate: 'asc' } }],
     });
   }
 
   // Dashboard stats
   async getStats(organizationId: string) {
-    const [
-      total,
-      pending,
-      inProgress,
-      completed,
-      overdue,
-    ] = await Promise.all([
+    const [total, pending, inProgress, completed, overdue] = await Promise.all([
       this.prisma.questionnaireRequest.count({ where: { organizationId } }),
-      this.prisma.questionnaireRequest.count({ where: { organizationId, status: QuestionnaireStatus.pending } }),
-      this.prisma.questionnaireRequest.count({ where: { organizationId, status: QuestionnaireStatus.in_progress } }),
-      this.prisma.questionnaireRequest.count({ where: { organizationId, status: QuestionnaireStatus.approved } }),
+      this.prisma.questionnaireRequest.count({
+        where: { organizationId, status: QuestionnaireStatus.pending },
+      }),
+      this.prisma.questionnaireRequest.count({
+        where: { organizationId, status: QuestionnaireStatus.in_progress },
+      }),
+      this.prisma.questionnaireRequest.count({
+        where: { organizationId, status: QuestionnaireStatus.approved },
+      }),
       this.prisma.questionnaireRequest.count({
         where: {
           organizationId,
@@ -464,15 +486,17 @@ export class QuestionnairesService {
 
     // Calculate average questions per questionnaire
     const totalQuestions = avgQuestionsPerQuestionnaire.reduce((sum, q) => sum + q._count, 0);
-    const avgQuestions = avgQuestionsPerQuestionnaire.length > 0
-      ? Math.round(totalQuestions / avgQuestionsPerQuestionnaire.length)
-      : 0;
+    const avgQuestions =
+      avgQuestionsPerQuestionnaire.length > 0
+        ? Math.round(totalQuestions / avgQuestionsPerQuestionnaire.length)
+        : 0;
 
     // Calculate average response time by priority (in hours)
     const responseTimeByPriority: Record<string, { avgHours: number; count: number }> = {};
     avgResponseTime.forEach((q) => {
       if (q.completedAt) {
-        const hours = (new Date(q.completedAt).getTime() - new Date(q.createdAt).getTime()) / (1000 * 60 * 60);
+        const hours =
+          (new Date(q.completedAt).getTime() - new Date(q.createdAt).getTime()) / (1000 * 60 * 60);
         if (!responseTimeByPriority[q.priority]) {
           responseTimeByPriority[q.priority] = { avgHours: 0, count: 0 };
         }
@@ -501,9 +525,10 @@ export class QuestionnairesService {
       summary: {
         totalQuestionnaires,
         completedQuestionnaires,
-        completionRate: totalQuestionnaires > 0 
-          ? Math.round((completedQuestionnaires / totalQuestionnaires) * 100) 
-          : 0,
+        completionRate:
+          totalQuestionnaires > 0
+            ? Math.round((completedQuestionnaires / totalQuestionnaires) * 100)
+            : 0,
         avgQuestionsPerQuestionnaire: avgQuestions,
         totalQuestions,
       },
@@ -531,11 +556,11 @@ export class QuestionnairesService {
   // PERFORMANCE: Cached for 60s + all queries run in parallel for ~4x faster response
   async getDashboardQueue(organizationId: string, userId?: string) {
     const cacheKey = `questionnaire-dashboard-queue:${organizationId}`;
-    
+
     return this.cache.getOrSet(
       cacheKey,
       async () => this.getDashboardQueueUncached(organizationId, userId),
-      60, // 1 minute cache - questionnaire data changes more frequently
+      60 // 1 minute cache - questionnaire data changes more frequently
     );
   }
 
@@ -563,9 +588,9 @@ export class QuestionnairesService {
       dueDate: true,
       createdAt: true,
       _count: { select: { questions: true } },
-      questions: { 
+      questions: {
         where: { status: { in: [QuestionStatus.completed] } },
-        select: { id: true }
+        select: { id: true },
       },
     };
 
@@ -578,10 +603,7 @@ export class QuestionnairesService {
           dueDate: { lt: now },
         },
         select: selectFields,
-        orderBy: [
-          { priority: 'desc' },
-          { dueDate: 'asc' },
-        ],
+        orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }],
         take: 10,
       }),
 
@@ -592,10 +614,7 @@ export class QuestionnairesService {
           dueDate: { gte: now, lte: oneWeekFromNow },
         },
         select: selectFields,
-        orderBy: [
-          { priority: 'desc' },
-          { dueDate: 'asc' },
-        ],
+        orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }],
         take: 10,
       }),
 
@@ -606,10 +625,7 @@ export class QuestionnairesService {
           dueDate: { gt: oneWeekFromNow, lte: twoWeeksFromNow },
         },
         select: selectFields,
-        orderBy: [
-          { priority: 'desc' },
-          { dueDate: 'asc' },
-        ],
+        orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }],
         take: 5,
       }),
 
@@ -621,10 +637,7 @@ export class QuestionnairesService {
           dueDate: null,
         },
         select: selectFields,
-        orderBy: [
-          { priority: 'desc' },
-          { createdAt: 'asc' },
-        ],
+        orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }],
         take: 5,
       }),
     ]);
@@ -640,9 +653,10 @@ export class QuestionnairesService {
       dueDate: item.dueDate,
       totalQuestions: item._count.questions,
       answeredQuestions: item.questions.length,
-      progress: item._count.questions > 0 
-        ? Math.round((item.questions.length / item._count.questions) * 100) 
-        : 0,
+      progress:
+        item._count.questions > 0
+          ? Math.round((item.questions.length / item._count.questions) * 100)
+          : 0,
     });
 
     return {

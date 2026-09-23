@@ -1,5 +1,15 @@
 import { Global, Module } from '@nestjs/common';
-import { DevAuthGuard, RolesGuard, PermissionsGuard, PRISMA_SERVICE } from '@gigachad-grc/shared';
+import {
+  ApiKeyAuthGuard,
+  ApplicationAuthGuard,
+  CombinedAuthGuard,
+  DEVELOPMENT_AUTH_GUARD,
+  DevAuthGuard,
+  JwtAuthGuard,
+  PermissionsGuard,
+  PRISMA_SERVICE,
+  RolesGuard,
+} from '@gigachad-grc/shared';
 import { PrismaService } from '../prisma/prisma.service';
 
 /**
@@ -32,14 +42,31 @@ import { PrismaService } from '../prisma/prisma.service';
     // the controller's module context — the explicit factory removes
     // that ambiguity. Required for the x-dev-user-id override.
     {
-      provide: DevAuthGuard,
+      provide: DEVELOPMENT_AUTH_GUARD,
       useFactory: (prisma: PrismaService) => new DevAuthGuard(prisma as any),
       inject: [PRISMA_SERVICE],
     },
-    // RolesGuard and PermissionsGuard now use optional Reflector injection
+    JwtAuthGuard,
+    ApiKeyAuthGuard,
+    CombinedAuthGuard,
+    ApplicationAuthGuard,
+    {
+      provide: DevAuthGuard,
+      useExisting: ApplicationAuthGuard,
+    },
     RolesGuard,
     PermissionsGuard,
   ],
-  exports: [PrismaService, PRISMA_SERVICE, DevAuthGuard, RolesGuard, PermissionsGuard],
+  exports: [
+    PrismaService,
+    PRISMA_SERVICE,
+    DevAuthGuard,
+    ApplicationAuthGuard,
+    JwtAuthGuard,
+    ApiKeyAuthGuard,
+    CombinedAuthGuard,
+    RolesGuard,
+    PermissionsGuard,
+  ],
 })
 export class AuthModule {}

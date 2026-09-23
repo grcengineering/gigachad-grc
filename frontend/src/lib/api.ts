@@ -1,6 +1,17 @@
 import axios, { AxiosError } from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
+const TOKEN_STORAGE_KEY = 'token';
+
+export function setApiBearerToken(token: string | null): void {
+  token
+    ? localStorage.setItem(TOKEN_STORAGE_KEY, token)
+    : localStorage.removeItem(TOKEN_STORAGE_KEY);
+}
+
+function getApiBearerToken(): string | null {
+  return localStorage.getItem(TOKEN_STORAGE_KEY);
+}
 
 const api = axios.create({
   baseURL: API_URL,
@@ -12,7 +23,7 @@ const api = axios.create({
 // Request interceptor to add auth token and user ID
 api.interceptors.request.use((config) => {
   // Token will be added by the auth context
-  const token = localStorage.getItem('token');
+  const token = getApiBearerToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -35,12 +46,31 @@ api.interceptors.response.use(
   (error: AxiosError) => {
     if (error.response?.status === 401) {
       // Handle unauthorized
-      localStorage.removeItem('token');
+      setApiBearerToken(null);
       window.location.href = '/login';
     }
     return Promise.reject(error);
   }
 );
+
+export function authenticatedFetch(
+  input: RequestInfo | URL,
+  init: RequestInit = {}
+): Promise<Response> {
+  const headers = new Headers(init.headers);
+  const token = getApiBearerToken();
+  const userId = localStorage.getItem('userId');
+  const organizationId = localStorage.getItem('organizationId');
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  if (userId) headers.set('x-user-id', userId);
+  if (organizationId) headers.set('x-organization-id', organizationId);
+
+  const resolvedInput =
+    typeof input === 'string' && API_URL && input.startsWith('/')
+      ? `${API_URL.replace(/\/$/, '')}${input}`
+      : input;
+  return fetch(resolvedInput, { ...init, headers });
+}
 
 // API functions
 export interface OrganizationProfile {
@@ -149,9 +179,7 @@ export const evidenceApi = {
         }
       }
     });
-    return api.post('/api/evidence', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    return api.post('/api/evidence', formData);
   },
   update: (id: string, data: any) => api.put(`/api/evidence/${id}`, data),
   delete: (id: string) => api.delete(`/api/evidence/${id}`),
@@ -301,15 +329,8 @@ export const policiesApi = {
         }
       }
     });
-    const response = await fetch('/api/policies', {
-      method: 'POST',
-      body: formData,
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to upload policy');
-    }
-    return response.json();
+    const response = await api.post('/api/policies', formData);
+    return response.data;
   },
   update: (id: string, data: any) => api.put(`/api/policies/${id}`, data),
   updateStatus: (id: string, status: string, notes?: string) =>
@@ -322,15 +343,8 @@ export const policiesApi = {
     formData.append('file', file);
     formData.append('versionNumber', versionNumber);
     if (changeNotes) formData.append('changeNotes', changeNotes);
-    const response = await fetch(`/api/policies/${id}/versions`, {
-      method: 'POST',
-      body: formData,
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to upload new version');
-    }
-    return response.json();
+    const response = await api.post(`/api/policies/${id}/versions`, formData);
+    return response.data;
   },
   linkToControls: (id: string, controlIds: string[]) =>
     api.post(`/api/policies/${id}/link`, { controlIds }),

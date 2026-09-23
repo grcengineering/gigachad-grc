@@ -10,16 +10,13 @@ import {
   PRISMA_SERVICE,
   RolesGuard,
 } from '@gigachad-grc/shared';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../common/prisma.service';
 
 @Global()
 @Module({
   providers: [
     PrismaService,
-    {
-      provide: PRISMA_SERVICE,
-      useExisting: PrismaService,
-    },
+    { provide: PRISMA_SERVICE, useExisting: PrismaService },
     {
       provide: DEVELOPMENT_AUTH_GUARD,
       useFactory: (prisma) => new DevAuthGuard(prisma),

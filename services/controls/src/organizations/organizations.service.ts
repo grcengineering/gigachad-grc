@@ -158,9 +158,7 @@ export class OrganizationsService {
 
   private async ensureDevelopmentOrganization(organizationId: string) {
     const devAuthEnabled =
-      process.env.NODE_ENV === 'development' ||
-      process.env.NODE_ENV === 'test' ||
-      process.env.USE_DEV_AUTH === 'true';
+      process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
 
     if (devAuthEnabled && organizationId === DEV_USER.organizationId) {
       await ensureDevUserExists(this.prisma, this.logger);

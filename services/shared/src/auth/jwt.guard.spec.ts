@@ -12,6 +12,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ExecutionContext, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { createHash } from 'crypto';
 import { JwtAuthGuard, ApiKeyAuthGuard, CombinedAuthGuard } from './jwt.guard';
 import { TokenBlacklistService } from './token-blacklist.service';
 
@@ -121,7 +122,7 @@ describe('JwtAuthGuard', () => {
         sub: 'user-123',
         email: 'test@example.com',
         realm_access: { roles: ['admin'] },
-        organization_id: 'org-456',
+        organization_id: '123e4567-e89b-42d3-a456-426614174000',
         jti: 'token-jti',
         exp: Math.floor(Date.now() / 1000) + 3600,
         iat: Math.floor(Date.now() / 1000),
@@ -141,6 +142,7 @@ describe('JwtAuthGuard', () => {
       expect(request.user.userId).toBe('user-123');
       expect(request.user.email).toBe('test@example.com');
       expect(request.user.role).toBe('admin');
+      expect(request.user.organizationId).toBe('123e4567-e89b-42d3-a456-426614174000');
     });
   });
 
@@ -149,6 +151,7 @@ describe('JwtAuthGuard', () => {
       const mockPayload = {
         sub: 'user-123',
         email: 'test@example.com',
+        organization_id: '123e4567-e89b-42d3-a456-426614174000',
         realm_access: { roles: ['viewer'] },
         jti: 'revoked-token-jti',
         exp: Math.floor(Date.now() / 1000) + 3600,
@@ -171,6 +174,7 @@ describe('JwtAuthGuard', () => {
       const mockPayload = {
         sub: 'user-123',
         email: 'test@example.com',
+        organization_id: '123e4567-e89b-42d3-a456-426614174000',
         realm_access: { roles: ['admin'] },
         jti: 'token-jti',
         exp: Math.floor(Date.now() / 1000) + 3600,
@@ -191,6 +195,7 @@ describe('JwtAuthGuard', () => {
       const mockPayload = {
         sub: 'user-123',
         email: 'test@example.com',
+        organization_id: '123e4567-e89b-42d3-a456-426614174000',
         realm_access: { roles: ['viewer'] },
         jti: 'token-jti',
         exp: Math.floor(Date.now() / 1000) + 3600,
@@ -214,7 +219,7 @@ describe('JwtAuthGuard', () => {
         sub: 'user-123',
         email: 'admin@example.com',
         realm_access: { roles: ['admin'] },
-        organization_id: 'org-123',
+        organization_id: '123e4567-e89b-42d3-a456-426614174000',
         jti: 'jti',
         exp: Math.floor(Date.now() / 1000) + 3600,
         iat: Math.floor(Date.now() / 1000),
@@ -235,6 +240,7 @@ describe('JwtAuthGuard', () => {
       const mockPayload = {
         sub: 'user-456',
         email: 'manager@example.com',
+        organization_id: '123e4567-e89b-42d3-a456-426614174000',
         realm_access: { roles: ['compliance_manager'] },
         jti: 'jti',
         exp: Math.floor(Date.now() / 1000) + 3600,
@@ -256,6 +262,7 @@ describe('JwtAuthGuard', () => {
       const mockPayload = {
         sub: 'user-789',
         email: 'viewer@example.com',
+        organization_id: '123e4567-e89b-42d3-a456-426614174000',
         realm_access: { roles: ['unknown_role'] },
         jti: 'jti',
         exp: Math.floor(Date.now() / 1000) + 3600,
@@ -273,7 +280,7 @@ describe('JwtAuthGuard', () => {
       expect(request.user.role).toBe('viewer');
     });
 
-    it('should use default organization when not provided', async () => {
+    it('should reject a token without an organization claim', async () => {
       const mockPayload = {
         sub: 'user-123',
         email: 'test@example.com',
@@ -289,18 +296,26 @@ describe('JwtAuthGuard', () => {
       (jwt.verify as jest.Mock).mockReturnValue(mockPayload);
       (reflector.getAllAndOverride as jest.Mock).mockReturnValue(null);
 
-      await guard.canActivate(context);
-      const request = context.switchToHttp().getRequest();
-      expect(request.user.organizationId).toBe('default');
+      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow('Valid organization claim required');
     });
   });
 });
 
 describe('ApiKeyAuthGuard', () => {
   let guard: ApiKeyAuthGuard;
+  let prisma: {
+    apiKey: { findFirst: jest.Mock; update: jest.Mock };
+  };
 
   beforeEach(() => {
-    guard = new ApiKeyAuthGuard();
+    prisma = {
+      apiKey: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        update: jest.fn().mockResolvedValue(undefined),
+      },
+    };
+    guard = new ApiKeyAuthGuard(prisma);
   });
 
   it('should throw UnauthorizedException when no API key header', async () => {
@@ -314,7 +329,7 @@ describe('ApiKeyAuthGuard', () => {
     await expect(guard.canActivate(context)).rejects.toThrow('No API key provided');
   });
 
-  it('should allow access and attach API key when header is present', async () => {
+  it('should reject an API key that is present but not persisted', async () => {
     const request = { headers: { 'x-api-key': 'test-api-key-123' } };
     const context = {
       switchToHttp: () => ({
@@ -322,10 +337,39 @@ describe('ApiKeyAuthGuard', () => {
       }),
     } as ExecutionContext;
 
-    const result = await guard.canActivate(context);
+    await expect(guard.canActivate(context)).rejects.toThrow('Invalid or expired API key');
+  });
 
-    expect(result).toBe(true);
-    expect(request['apiKey']).toBe('test-api-key-123');
+  it('should validate a persisted API key and attach organization context', async () => {
+    prisma.apiKey.findFirst.mockResolvedValue({
+      id: 'key-123',
+      name: 'Automation',
+      keyPrefix: 'test-api',
+      scopes: ['read:controls'],
+      organizationId: '123e4567-e89b-42d3-a456-426614174000',
+      createdBy: '123e4567-e89b-42d3-a456-426614174001',
+      apiKeyScopes: [{ scope: 'write:evidence' }],
+    });
+    const request: any = { headers: { 'x-api-key': 'test-api-key-123' } };
+    const context = {
+      switchToHttp: () => ({ getRequest: () => request }),
+    } as ExecutionContext;
+
+    await expect(guard.canActivate(context)).resolves.toBe(true);
+    expect(prisma.apiKey.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          keyHash: createHash('sha256').update('test-api-key-123').digest('hex'),
+          isActive: true,
+        }),
+      })
+    );
+    expect(request.user).toEqual(
+      expect.objectContaining({
+        organizationId: '123e4567-e89b-42d3-a456-426614174000',
+        permissions: ['controls:read', 'evidence:write'],
+      })
+    );
   });
 });
 

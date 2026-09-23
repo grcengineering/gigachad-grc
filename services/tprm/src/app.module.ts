@@ -9,15 +9,9 @@ import { VendorAIModule } from './ai/vendor-ai.module';
 import { TprmConfigModule } from './config/tprm-config.module';
 import { RiskAssessmentModule } from './risk-assessment/risk-assessment.module';
 import { SecurityScannerModule } from './security-scanner/security-scanner.module';
-import { PrismaService } from './common/prisma.service';
 import { AuditService } from './common/audit.service';
-import {
-  StorageModule,
-  CacheModule,
-  DevAuthGuard,
-  RolesGuard,
-  PRISMA_SERVICE,
-} from '@gigachad-grc/shared';
+import { StorageModule, CacheModule } from '@gigachad-grc/shared';
+import { AuthModule } from './auth/auth.module';
 
 @Global()
 @Module({
@@ -25,6 +19,7 @@ import {
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    AuthModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000, // 1 minute
@@ -45,24 +40,12 @@ import {
     TprmConfigModule,
   ],
   providers: [
-    PrismaService,
     AuditService,
-    // Provide PrismaService under the token expected by DevAuthGuard
-    {
-      provide: PRISMA_SERVICE,
-      useExisting: PrismaService,
-    },
-    {
-      provide: DevAuthGuard,
-      useFactory: (prisma) => new DevAuthGuard(prisma),
-      inject: [PRISMA_SERVICE],
-    },
-    RolesGuard,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
   ],
-  exports: [PrismaService, AuditService, DevAuthGuard, RolesGuard, PRISMA_SERVICE],
+  exports: [AuthModule, AuditService],
 })
 export class AppModule {}

@@ -8,12 +8,14 @@ import { AssessmentsModule } from './assessments/assessments.module';
 import { MappingsModule } from './mappings/mappings.module';
 import { AuditModule } from './audit/audit.module';
 import { EventsModule, StorageModule } from '@gigachad-grc/shared';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    AuthModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000, // 1 minute

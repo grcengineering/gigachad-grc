@@ -23,6 +23,7 @@ import { AuthModule } from './auth/auth.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    AuthModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000, // 1 minute

@@ -18,7 +18,7 @@ import {
   File as FileIcon,
   Maximize2,
 } from 'lucide-react';
-import { evidenceApi } from '@/lib/api';
+import { authenticatedFetch, evidenceApi } from '@/lib/api';
 import { saveBlob } from '@/lib/download';
 import toast from 'react-hot-toast';
 import { Button, Badge, Drawer, Skeleton, type BadgeVariant } from '@/components/ui';
@@ -529,7 +529,7 @@ function TextPreview({ previewUrl, onError }: { previewUrl: string; onError: () 
   const { data, isLoading } = useQuery<string>({
     queryKey: ['evidence-text-preview', previewUrl],
     queryFn: () =>
-      fetch(previewUrl)
+      authenticatedFetch(previewUrl)
         .then((r) => {
           if (!r.ok) throw new Error('preview failed');
           return r.text();

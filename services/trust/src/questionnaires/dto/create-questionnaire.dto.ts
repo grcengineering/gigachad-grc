@@ -2,7 +2,8 @@ import { IsString, IsOptional, IsDateString, IsArray, IsObject } from 'class-val
 
 export class CreateQuestionnaireDto {
   @IsString()
-  organizationId: string;
+  @IsOptional()
+  organizationId?: string;
 
   @IsString()
   requesterName: string;

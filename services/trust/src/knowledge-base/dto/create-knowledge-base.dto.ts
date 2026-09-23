@@ -2,7 +2,8 @@ import { IsString, IsOptional, IsArray, IsBoolean } from 'class-validator';
 
 export class CreateKnowledgeBaseDto {
   @IsString()
-  organizationId: string;
+  @IsOptional()
+  organizationId?: string;
 
   @IsString()
   category: string;

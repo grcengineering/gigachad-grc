@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import Keycloak from 'keycloak-js';
+import { setApiBearerToken } from '../lib/api';
 
 interface User {
   id: string;
@@ -28,14 +29,10 @@ const keycloakConfig = {
   realm: import.meta.env.VITE_KEYCLOAK_REALM || 'gigachad-grc',
   clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'grc-frontend',
 };
+const ORGANIZATION_ID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-// Dev login bypass: on by default under `vite dev`, and opt-in for a built
-// (production-mode) bundle via the VITE_ENABLE_DEV_AUTH build arg — see
-// frontend/Dockerfile and the "Dev Login" section of README.md.
-export const DEV_AUTH_ENABLED =
-  import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEV_AUTH === 'true';
-
-console.log('Keycloak config:', keycloakConfig);
+export const DEV_AUTH_ENABLED = import.meta.env.DEV || import.meta.env.MODE === 'test';
 
 let keycloak: Keycloak | null = null;
 let initPromise: Promise<boolean> | null = null;
@@ -53,13 +50,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
 
-  const loadUserProfile = useCallback(async (kc: Keycloak) => {
+  const loadUserProfile = useCallback(async (kc: Keycloak): Promise<boolean> => {
     try {
       const profile = await kc.loadUserProfile();
       const tokenParsed = kc.tokenParsed as any;
-
-      console.log('Token parsed:', tokenParsed);
-      console.log('Profile:', profile);
 
       const role =
         tokenParsed?.roles?.[0] ||
@@ -69,7 +63,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         'viewer';
 
       const userId = kc.subject || '';
-      const organizationId = tokenParsed?.organization_id || 'default';
+      const organizationId = tokenParsed?.organization_id;
+      if (!ORGANIZATION_ID_PATTERN.test(organizationId || '')) {
+        throw new Error('Authenticated token is missing a valid organization_id claim');
+      }
 
       setUser({
         id: userId,
@@ -83,11 +80,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('userId', userId);
       localStorage.setItem('organizationId', organizationId);
 
-      setToken(kc.token || null);
+      const bearerToken = kc.token || null;
+      setToken(bearerToken);
+      setApiBearerToken(bearerToken);
+      return true;
     } catch (error) {
       console.error('Failed to load user profile:', error);
-      // Still set authenticated even if profile fails
-      setToken(kc.token || null);
+      localStorage.removeItem('userId');
+      localStorage.removeItem('organizationId');
+      setApiBearerToken(null);
+      setUser(null);
+      setToken(null);
+      return false;
     }
   }, []);
 
@@ -97,14 +101,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         typeof window !== 'undefined' &&
         (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
-      if (isLocalHost && new URLSearchParams(window.location.search).get('devAuth') === '1') {
+      if (
+        DEV_AUTH_ENABLED &&
+        isLocalHost &&
+        new URLSearchParams(window.location.search).get('devAuth') === '1'
+      ) {
         // Explicit one-time local opt-in used by Playwright setup; persisted
         // in localStorage so subsequent routes/contexts keep using dev auth.
         localStorage.setItem('grc-dev-auth-enabled', '1');
       }
 
       const hasLocalDevAuthOptIn =
-        isLocalHost && localStorage.getItem('grc-dev-auth-enabled') === '1';
+        DEV_AUTH_ENABLED && isLocalHost && localStorage.getItem('grc-dev-auth-enabled') === '1';
 
       // Check for dev auth first
       if (DEV_AUTH_ENABLED || hasLocalDevAuthOptIn) {
@@ -115,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.log('Restoring dev auth session');
             setUser(devUser);
             setToken('dev-token-not-for-production');
+            setApiBearerToken(null);
             setIsAuthenticated(true);
             // Ensure userId and organizationId are set for API calls
             localStorage.setItem('userId', devUser.id);
@@ -140,10 +149,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (initPromise) {
         try {
           const authenticated = await initPromise;
-          setIsAuthenticated(authenticated);
-          if (authenticated) {
-            await loadUserProfile(kc);
-          }
+          const profileLoaded = authenticated ? await loadUserProfile(kc) : false;
+          setIsAuthenticated(authenticated && profileLoaded);
         } catch (e) {
           console.error('Keycloak init promise failed:', e);
         } finally {
@@ -165,24 +172,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const authenticated = await initPromise;
         console.log('Keycloak initialized, authenticated:', authenticated);
 
-        if (authenticated) {
-          await loadUserProfile(kc);
-        }
-
-        setIsAuthenticated(authenticated);
+        const profileLoaded = authenticated ? await loadUserProfile(kc) : false;
+        setIsAuthenticated(authenticated && profileLoaded);
 
         // Token refresh
         kc.onTokenExpired = () => {
           console.log('Token expired, refreshing...');
           kc.updateToken(30)
             .then((refreshed) => {
-              if (refreshed) {
-                console.log('Token refreshed');
-                setToken(kc.token || null);
-              }
+              if (refreshed) console.log('Token refreshed');
+              const bearerToken = kc.token || null;
+              setToken(bearerToken);
+              setApiBearerToken(bearerToken);
             })
             .catch(() => {
               console.error('Failed to refresh token');
+              setApiBearerToken(null);
               setIsAuthenticated(false);
               setUser(null);
               setToken(null);
@@ -190,14 +195,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
 
         // Handle auth success callback
-        kc.onAuthSuccess = () => {
+        kc.onAuthSuccess = async () => {
           console.log('Auth success');
-          loadUserProfile(kc);
-          setIsAuthenticated(true);
+          const profileLoadedAfterLogin = await loadUserProfile(kc);
+          setIsAuthenticated(profileLoadedAfterLogin);
         };
 
         kc.onAuthError = (error) => {
           console.error('Auth error:', error);
+          setApiBearerToken(null);
         };
       } catch (error) {
         console.error('Keycloak initialization failed:', error);
@@ -226,7 +232,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('grc-dev-auth-enabled');
     localStorage.removeItem('userId');
     localStorage.removeItem('organizationId');
-    localStorage.removeItem('token');
+    setApiBearerToken(null);
     setIsAuthenticated(false);
     setUser(null);
     setToken(null);
@@ -252,6 +258,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
       setUser(devUser);
       setToken('dev-token-not-for-production');
+      setApiBearerToken(null);
       setIsAuthenticated(true);
       // Persist dev auth state and user info for API calls
       localStorage.setItem('grc-dev-auth', JSON.stringify(devUser));

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { risksApi } from '../../lib/api';
+import { authenticatedFetch, risksApi } from '../../lib/api';
 import {
   CheckCircle,
   XCircle,
@@ -1740,7 +1740,7 @@ function AssignRoleModal({
   const { data: usersData } = useQuery({
     queryKey: ['users', 'list'],
     queryFn: async () => {
-      const response = await fetch('/api/users?limit=100');
+      const response = await authenticatedFetch('/api/users?limit=100');
       if (!response.ok) return { users: [] };
       return response.json();
     },

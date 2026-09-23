@@ -15,7 +15,7 @@ import {
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import api from '@/lib/api';
 import { Input } from '@/components/ui';
 
 interface SearchResult {
@@ -77,9 +77,8 @@ export default function GlobalSearch() {
       if (!query || query.length < 2) return [];
 
       try {
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/search/global`, {
+        const response = await api.get('/api/search/global', {
           params: { q: query },
-          withCredentials: true,
         });
         return response.data.data || [];
       } catch (error) {
