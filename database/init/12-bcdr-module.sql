@@ -137,15 +137,15 @@ END $$;
 
 CREATE TABLE IF NOT EXISTS bcdr.business_processes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID NOT NULL REFERENCES shared.organizations(id) ON DELETE CASCADE,
-    workspace_id UUID REFERENCES controls.workspaces(id) ON DELETE SET NULL,
+    organization_id TEXT NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+    workspace_id TEXT REFERENCES public.workspaces(id) ON DELETE SET NULL,
     
     -- Basic Info
     process_id VARCHAR(50) NOT NULL,
     name VARCHAR(255) NOT NULL,
     description TEXT,
     department VARCHAR(100),
-    owner_id UUID REFERENCES shared.users(id) ON DELETE SET NULL,
+    owner_id TEXT REFERENCES public.users(id) ON DELETE SET NULL,
     
     -- Criticality
     criticality_tier bcdr.criticality_tier NOT NULL DEFAULT 'tier_3_important',
@@ -176,14 +176,16 @@ CREATE TABLE IF NOT EXISTS bcdr.business_processes (
     -- Metadata
     tags TEXT[] DEFAULT '{}',
     metadata JSONB DEFAULT '{}',
+    peak_periods TEXT[] DEFAULT '{}',
+    key_stakeholders TEXT,
     
     -- Audit
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    created_by UUID REFERENCES shared.users(id),
-    updated_by UUID REFERENCES shared.users(id),
+    created_by TEXT REFERENCES public.users(id),
+    updated_by TEXT REFERENCES public.users(id),
     deleted_at TIMESTAMP WITH TIME ZONE,
-    deleted_by UUID REFERENCES shared.users(id),
+    deleted_by TEXT REFERENCES public.users(id),
     
     CONSTRAINT unique_process_id_per_org UNIQUE (organization_id, process_id)
 );
@@ -194,7 +196,7 @@ CREATE TABLE IF NOT EXISTS bcdr.business_processes (
 
 CREATE TABLE IF NOT EXISTS bcdr.process_dependencies (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID NOT NULL REFERENCES shared.organizations(id) ON DELETE CASCADE,
+    organization_id TEXT NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
     
     -- The process that depends on another
     dependent_process_id UUID NOT NULL REFERENCES bcdr.business_processes(id) ON DELETE CASCADE,
@@ -217,13 +219,13 @@ CREATE TABLE IF NOT EXISTS bcdr.process_dependencies (
 CREATE TABLE IF NOT EXISTS bcdr.process_assets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     process_id UUID NOT NULL REFERENCES bcdr.business_processes(id) ON DELETE CASCADE,
-    asset_id UUID NOT NULL REFERENCES controls.assets(id) ON DELETE CASCADE,
+    asset_id TEXT NOT NULL REFERENCES public.assets(id) ON DELETE CASCADE,
     
     relationship_type VARCHAR(50) NOT NULL DEFAULT 'supports', -- supports, critical_for, backup_for
     notes TEXT,
     
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    created_by UUID REFERENCES shared.users(id),
+    created_by TEXT REFERENCES public.users(id),
     
     CONSTRAINT unique_process_asset UNIQUE (process_id, asset_id)
 );
@@ -234,8 +236,8 @@ CREATE TABLE IF NOT EXISTS bcdr.process_assets (
 
 CREATE TABLE IF NOT EXISTS bcdr.bcdr_plans (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID NOT NULL REFERENCES shared.organizations(id) ON DELETE CASCADE,
-    workspace_id UUID REFERENCES controls.workspaces(id) ON DELETE SET NULL,
+    organization_id TEXT NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+    workspace_id TEXT REFERENCES public.workspaces(id) ON DELETE SET NULL,
     
     -- Basic Info
     plan_id VARCHAR(50) NOT NULL,
@@ -249,8 +251,8 @@ CREATE TABLE IF NOT EXISTS bcdr.bcdr_plans (
     version_notes TEXT,
     
     -- Ownership
-    owner_id UUID REFERENCES shared.users(id) ON DELETE SET NULL,
-    approver_id UUID REFERENCES shared.users(id) ON DELETE SET NULL,
+    owner_id TEXT REFERENCES public.users(id) ON DELETE SET NULL,
+    approver_id TEXT REFERENCES public.users(id) ON DELETE SET NULL,
     
     -- Document Storage
     filename VARCHAR(255),
@@ -275,6 +277,9 @@ CREATE TABLE IF NOT EXISTS bcdr.bcdr_plans (
     -- Activation
     activation_criteria TEXT,
     activation_authority TEXT,
+    deactivation_criteria TEXT,
+    objectives TEXT,
+    assumptions TEXT,
     
     -- Metadata
     tags TEXT[] DEFAULT '{}',
@@ -283,10 +288,10 @@ CREATE TABLE IF NOT EXISTS bcdr.bcdr_plans (
     -- Audit
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    created_by UUID REFERENCES shared.users(id),
-    updated_by UUID REFERENCES shared.users(id),
+    created_by TEXT REFERENCES public.users(id),
+    updated_by TEXT REFERENCES public.users(id),
     deleted_at TIMESTAMP WITH TIME ZONE,
-    deleted_by UUID REFERENCES shared.users(id),
+    deleted_by TEXT REFERENCES public.users(id),
     
     CONSTRAINT unique_plan_id_per_org UNIQUE (organization_id, plan_id)
 );
@@ -307,7 +312,7 @@ CREATE TABLE IF NOT EXISTS bcdr.plan_versions (
     file_size INTEGER,
     
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    created_by UUID REFERENCES shared.users(id)
+    created_by TEXT REFERENCES public.users(id)
 );
 
 -- =============================================================================
@@ -317,12 +322,12 @@ CREATE TABLE IF NOT EXISTS bcdr.plan_versions (
 CREATE TABLE IF NOT EXISTS bcdr.plan_controls (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     plan_id UUID NOT NULL REFERENCES bcdr.bcdr_plans(id) ON DELETE CASCADE,
-    control_id UUID NOT NULL REFERENCES controls.controls(id) ON DELETE CASCADE,
+    control_id TEXT NOT NULL REFERENCES public.controls(id) ON DELETE CASCADE,
     
     mapping_notes TEXT,
     
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    created_by UUID REFERENCES shared.users(id),
+    created_by TEXT REFERENCES public.users(id),
     
     CONSTRAINT unique_plan_control UNIQUE (plan_id, control_id)
 );
@@ -333,7 +338,7 @@ CREATE TABLE IF NOT EXISTS bcdr.plan_controls (
 
 CREATE TABLE IF NOT EXISTS bcdr.recovery_strategies (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID NOT NULL REFERENCES shared.organizations(id) ON DELETE CASCADE,
+    organization_id TEXT NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
     
     -- Basic Info
     name VARCHAR(255) NOT NULL,
@@ -370,8 +375,8 @@ CREATE TABLE IF NOT EXISTS bcdr.recovery_strategies (
     -- Audit
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    created_by UUID REFERENCES shared.users(id),
-    updated_by UUID REFERENCES shared.users(id),
+    created_by TEXT REFERENCES public.users(id),
+    updated_by TEXT REFERENCES public.users(id),
     deleted_at TIMESTAMP WITH TIME ZONE
 );
 
@@ -381,8 +386,8 @@ CREATE TABLE IF NOT EXISTS bcdr.recovery_strategies (
 
 CREATE TABLE IF NOT EXISTS bcdr.dr_tests (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID NOT NULL REFERENCES shared.organizations(id) ON DELETE CASCADE,
-    workspace_id UUID REFERENCES controls.workspaces(id) ON DELETE SET NULL,
+    organization_id TEXT NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+    workspace_id TEXT REFERENCES public.workspaces(id) ON DELETE SET NULL,
     
     -- Basic Info
     test_id VARCHAR(50) NOT NULL,
@@ -403,7 +408,7 @@ CREATE TABLE IF NOT EXISTS bcdr.dr_tests (
     actual_end_at TIMESTAMP WITH TIME ZONE,
     
     -- Ownership
-    coordinator_id UUID REFERENCES shared.users(id) ON DELETE SET NULL,
+    coordinator_id TEXT REFERENCES public.users(id) ON DELETE SET NULL,
     
     -- Objectives
     test_objectives TEXT,
@@ -414,7 +419,7 @@ CREATE TABLE IF NOT EXISTS bcdr.dr_tests (
     systems_in_scope TEXT[],
     
     -- Participants
-    participant_ids UUID[] DEFAULT '{}',
+    participant_ids TEXT[] DEFAULT '{}',
     external_participants TEXT,
     
     -- Results (populated after test)
@@ -433,8 +438,8 @@ CREATE TABLE IF NOT EXISTS bcdr.dr_tests (
     -- Audit
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    created_by UUID REFERENCES shared.users(id),
-    updated_by UUID REFERENCES shared.users(id),
+    created_by TEXT REFERENCES public.users(id),
+    updated_by TEXT REFERENCES public.users(id),
     deleted_at TIMESTAMP WITH TIME ZONE,
     
     CONSTRAINT unique_test_id_per_org UNIQUE (organization_id, test_id)
@@ -463,7 +468,7 @@ CREATE TABLE IF NOT EXISTS bcdr.dr_test_findings (
     -- Remediation
     remediation_required BOOLEAN DEFAULT true,
     remediation_plan TEXT,
-    remediation_owner_id UUID REFERENCES shared.users(id) ON DELETE SET NULL,
+    remediation_owner_id TEXT REFERENCES public.users(id) ON DELETE SET NULL,
     remediation_due_date DATE,
     remediation_status VARCHAR(20) DEFAULT 'open', -- open, in_progress, resolved, accepted
     remediation_completed_at TIMESTAMP WITH TIME ZONE,
@@ -472,7 +477,7 @@ CREATE TABLE IF NOT EXISTS bcdr.dr_test_findings (
     -- Audit
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    created_by UUID REFERENCES shared.users(id)
+    created_by TEXT REFERENCES public.users(id)
 );
 
 -- =============================================================================
@@ -481,7 +486,7 @@ CREATE TABLE IF NOT EXISTS bcdr.dr_test_findings (
 
 CREATE TABLE IF NOT EXISTS bcdr.runbooks (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID NOT NULL REFERENCES shared.organizations(id) ON DELETE CASCADE,
+    organization_id TEXT NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
     
     -- Basic Info
     runbook_id VARCHAR(50) NOT NULL,
@@ -509,12 +514,12 @@ CREATE TABLE IF NOT EXISTS bcdr.runbooks (
     version VARCHAR(20) NOT NULL DEFAULT '1.0',
     
     -- Ownership
-    owner_id UUID REFERENCES shared.users(id) ON DELETE SET NULL,
+    owner_id TEXT REFERENCES public.users(id) ON DELETE SET NULL,
     
     -- Review
     last_reviewed_at TIMESTAMP WITH TIME ZONE,
     next_review_due TIMESTAMP WITH TIME ZONE,
-    reviewed_by UUID REFERENCES shared.users(id),
+    reviewed_by TEXT REFERENCES public.users(id),
     
     -- Execution Info
     estimated_duration_minutes INTEGER,
@@ -527,8 +532,8 @@ CREATE TABLE IF NOT EXISTS bcdr.runbooks (
     -- Audit
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    created_by UUID REFERENCES shared.users(id),
-    updated_by UUID REFERENCES shared.users(id),
+    created_by TEXT REFERENCES public.users(id),
+    updated_by TEXT REFERENCES public.users(id),
     deleted_at TIMESTAMP WITH TIME ZONE,
     
     CONSTRAINT unique_runbook_id_per_org UNIQUE (organization_id, runbook_id)
@@ -572,7 +577,7 @@ CREATE TABLE IF NOT EXISTS bcdr.runbook_steps (
 
 CREATE TABLE IF NOT EXISTS bcdr.communication_plans (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID NOT NULL REFERENCES shared.organizations(id) ON DELETE CASCADE,
+    organization_id TEXT NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
     
     -- Basic Info
     name VARCHAR(255) NOT NULL,
@@ -593,8 +598,8 @@ CREATE TABLE IF NOT EXISTS bcdr.communication_plans (
     -- Audit
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    created_by UUID REFERENCES shared.users(id),
-    updated_by UUID REFERENCES shared.users(id),
+    created_by TEXT REFERENCES public.users(id),
+    updated_by TEXT REFERENCES public.users(id),
     deleted_at TIMESTAMP WITH TIME ZONE
 );
 
@@ -643,7 +648,7 @@ CREATE TABLE IF NOT EXISTS bcdr.communication_contacts (
     -- Audit
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    created_by UUID REFERENCES shared.users(id)
+    created_by TEXT REFERENCES public.users(id)
 );
 
 -- =============================================================================
@@ -653,53 +658,249 @@ CREATE TABLE IF NOT EXISTS bcdr.communication_contacts (
 CREATE TABLE IF NOT EXISTS bcdr.bia_risks (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     process_id UUID NOT NULL REFERENCES bcdr.business_processes(id) ON DELETE CASCADE,
-    risk_id UUID NOT NULL REFERENCES controls.risks(id) ON DELETE CASCADE,
+    risk_id TEXT NOT NULL REFERENCES public.risks(id) ON DELETE CASCADE,
     
     relationship_notes TEXT,
     
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    created_by UUID REFERENCES shared.users(id),
+    created_by TEXT REFERENCES public.users(id),
     
     CONSTRAINT unique_bia_risk UNIQUE (process_id, risk_id)
 );
 
 -- =============================================================================
--- EXTEND ASSETS TABLE WITH BC/DR FIELDS
+-- EXISTING INSTALL COMPATIBILITY
 -- =============================================================================
 
--- Add BC/DR columns to assets table if they don't exist
+-- Older releases created tenant and public-entity references as UUIDs against
+-- legacy shared/controls schemas. Current Prisma models live in public and use
+-- text IDs. Convert only those external references; BC/DR-owned IDs stay UUID.
 DO $$
+DECLARE
+    target RECORD;
+    fk RECORD;
+    relation REGCLASS;
+    column_number SMALLINT;
 BEGIN
-    -- RTO in hours
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'controls' AND table_name = 'assets' AND column_name = 'rto_hours') THEN
-        ALTER TABLE controls.assets ADD COLUMN rto_hours INTEGER;
-    END IF;
-    
-    -- RPO in hours
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'controls' AND table_name = 'assets' AND column_name = 'rpo_hours') THEN
-        ALTER TABLE controls.assets ADD COLUMN rpo_hours INTEGER;
-    END IF;
-    
-    -- Criticality tier
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'controls' AND table_name = 'assets' AND column_name = 'bcdr_criticality') THEN
-        ALTER TABLE controls.assets ADD COLUMN bcdr_criticality VARCHAR(50);
-    END IF;
-    
-    -- Recovery strategy reference
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'controls' AND table_name = 'assets' AND column_name = 'recovery_strategy_id') THEN
-        ALTER TABLE controls.assets ADD COLUMN recovery_strategy_id UUID REFERENCES bcdr.recovery_strategies(id) ON DELETE SET NULL;
-    END IF;
-    
-    -- Recovery notes
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'controls' AND table_name = 'assets' AND column_name = 'recovery_notes') THEN
-        ALTER TABLE controls.assets ADD COLUMN recovery_notes TEXT;
-    END IF;
+    FOR target IN
+        SELECT * FROM (VALUES
+            ('business_processes', 'organization_id', 'text'),
+            ('business_processes', 'workspace_id', 'text'),
+            ('business_processes', 'owner_id', 'text'),
+            ('business_processes', 'created_by', 'text'),
+            ('business_processes', 'updated_by', 'text'),
+            ('business_processes', 'deleted_by', 'text'),
+            ('process_dependencies', 'organization_id', 'text'),
+            ('process_assets', 'asset_id', 'text'),
+            ('process_assets', 'created_by', 'text'),
+            ('bcdr_plans', 'organization_id', 'text'),
+            ('bcdr_plans', 'workspace_id', 'text'),
+            ('bcdr_plans', 'owner_id', 'text'),
+            ('bcdr_plans', 'approver_id', 'text'),
+            ('bcdr_plans', 'created_by', 'text'),
+            ('bcdr_plans', 'updated_by', 'text'),
+            ('bcdr_plans', 'deleted_by', 'text'),
+            ('plan_versions', 'created_by', 'text'),
+            ('plan_controls', 'control_id', 'text'),
+            ('plan_controls', 'created_by', 'text'),
+            ('recovery_strategies', 'organization_id', 'text'),
+            ('recovery_strategies', 'created_by', 'text'),
+            ('recovery_strategies', 'updated_by', 'text'),
+            ('dr_tests', 'organization_id', 'text'),
+            ('dr_tests', 'workspace_id', 'text'),
+            ('dr_tests', 'coordinator_id', 'text'),
+            ('dr_tests', 'participant_ids', 'text[]'),
+            ('dr_tests', 'created_by', 'text'),
+            ('dr_tests', 'updated_by', 'text'),
+            ('dr_test_findings', 'remediation_owner_id', 'text'),
+            ('dr_test_findings', 'created_by', 'text'),
+            ('runbooks', 'organization_id', 'text'),
+            ('runbooks', 'owner_id', 'text'),
+            ('runbooks', 'reviewed_by', 'text'),
+            ('runbooks', 'created_by', 'text'),
+            ('runbooks', 'updated_by', 'text'),
+            ('communication_plans', 'organization_id', 'text'),
+            ('communication_plans', 'created_by', 'text'),
+            ('communication_plans', 'updated_by', 'text'),
+            ('communication_contacts', 'created_by', 'text'),
+            ('bia_risks', 'risk_id', 'text'),
+            ('bia_risks', 'created_by', 'text')
+        ) AS columns(table_name, column_name, target_type)
+    LOOP
+        relation := to_regclass(format('bcdr.%I', target.table_name));
+        IF relation IS NULL THEN
+            CONTINUE;
+        END IF;
+
+        SELECT a.attnum
+          INTO column_number
+          FROM pg_attribute a
+         WHERE a.attrelid = relation
+           AND a.attname = target.column_name
+           AND NOT a.attisdropped;
+
+        IF column_number IS NULL THEN
+            CONTINUE;
+        END IF;
+
+        IF (
+            SELECT format_type(a.atttypid, a.atttypmod)
+              FROM pg_attribute a
+             WHERE a.attrelid = relation
+               AND a.attnum = column_number
+        ) <> target.target_type THEN
+            FOR fk IN
+                SELECT c.conname
+                  FROM pg_constraint c
+                 WHERE c.conrelid = relation
+                   AND c.contype = 'f'
+                   AND column_number = ANY(c.conkey)
+            LOOP
+                EXECUTE format(
+                    'ALTER TABLE bcdr.%I DROP CONSTRAINT %I',
+                    target.table_name,
+                    fk.conname
+                );
+            END LOOP;
+
+            IF target.table_name = 'dr_tests'
+               AND target.column_name = 'participant_ids' THEN
+                ALTER TABLE bcdr.dr_tests
+                    ALTER COLUMN participant_ids DROP DEFAULT;
+            END IF;
+
+            EXECUTE format(
+                'ALTER TABLE bcdr.%I ALTER COLUMN %I TYPE %s USING %I::%s',
+                target.table_name,
+                target.column_name,
+                target.target_type,
+                target.column_name,
+                target.target_type
+            );
+
+            IF target.table_name = 'dr_tests'
+               AND target.column_name = 'participant_ids' THEN
+                ALTER TABLE bcdr.dr_tests
+                    ALTER COLUMN participant_ids SET DEFAULT '{}';
+            END IF;
+        END IF;
+    END LOOP;
 END $$;
+
+ALTER TABLE bcdr.business_processes
+    ADD COLUMN IF NOT EXISTS peak_periods TEXT[] DEFAULT '{}',
+    ADD COLUMN IF NOT EXISTS key_stakeholders TEXT;
+
+ALTER TABLE bcdr.bcdr_plans
+    ADD COLUMN IF NOT EXISTS deactivation_criteria TEXT,
+    ADD COLUMN IF NOT EXISTS objectives TEXT,
+    ADD COLUMN IF NOT EXISTS assumptions TEXT;
+
+-- New installs already have validated constraints from CREATE TABLE.
+-- Constraints added to legacy installs are NOT VALID so historical orphans do
+-- not block startup; PostgreSQL still enforces them for new writes.
+DO $$
+DECLARE
+    target RECORD;
+    existing_fk RECORD;
+    relation REGCLASS;
+    column_number SMALLINT;
+    correct_fk_exists BOOLEAN;
+BEGIN
+    FOR target IN
+        SELECT * FROM (VALUES
+            ('business_processes', 'organization_id', 'organizations', 'CASCADE'),
+            ('business_processes', 'workspace_id', 'workspaces', 'SET NULL'),
+            ('business_processes', 'owner_id', 'users', 'SET NULL'),
+            ('business_processes', 'created_by', 'users', 'NO ACTION'),
+            ('business_processes', 'updated_by', 'users', 'NO ACTION'),
+            ('business_processes', 'deleted_by', 'users', 'NO ACTION'),
+            ('process_dependencies', 'organization_id', 'organizations', 'CASCADE'),
+            ('process_assets', 'asset_id', 'assets', 'CASCADE'),
+            ('process_assets', 'created_by', 'users', 'NO ACTION'),
+            ('bcdr_plans', 'organization_id', 'organizations', 'CASCADE'),
+            ('bcdr_plans', 'workspace_id', 'workspaces', 'SET NULL'),
+            ('bcdr_plans', 'owner_id', 'users', 'SET NULL'),
+            ('bcdr_plans', 'approver_id', 'users', 'SET NULL'),
+            ('bcdr_plans', 'created_by', 'users', 'NO ACTION'),
+            ('bcdr_plans', 'updated_by', 'users', 'NO ACTION'),
+            ('bcdr_plans', 'deleted_by', 'users', 'NO ACTION'),
+            ('plan_versions', 'created_by', 'users', 'NO ACTION'),
+            ('plan_controls', 'control_id', 'controls', 'CASCADE'),
+            ('plan_controls', 'created_by', 'users', 'NO ACTION'),
+            ('recovery_strategies', 'organization_id', 'organizations', 'CASCADE'),
+            ('recovery_strategies', 'created_by', 'users', 'NO ACTION'),
+            ('recovery_strategies', 'updated_by', 'users', 'NO ACTION'),
+            ('dr_tests', 'organization_id', 'organizations', 'CASCADE'),
+            ('dr_tests', 'workspace_id', 'workspaces', 'SET NULL'),
+            ('dr_tests', 'coordinator_id', 'users', 'SET NULL'),
+            ('dr_tests', 'created_by', 'users', 'NO ACTION'),
+            ('dr_tests', 'updated_by', 'users', 'NO ACTION'),
+            ('dr_test_findings', 'remediation_owner_id', 'users', 'SET NULL'),
+            ('dr_test_findings', 'created_by', 'users', 'NO ACTION'),
+            ('runbooks', 'organization_id', 'organizations', 'CASCADE'),
+            ('runbooks', 'owner_id', 'users', 'SET NULL'),
+            ('runbooks', 'reviewed_by', 'users', 'NO ACTION'),
+            ('runbooks', 'created_by', 'users', 'NO ACTION'),
+            ('runbooks', 'updated_by', 'users', 'NO ACTION'),
+            ('communication_plans', 'organization_id', 'organizations', 'CASCADE'),
+            ('communication_plans', 'created_by', 'users', 'NO ACTION'),
+            ('communication_plans', 'updated_by', 'users', 'NO ACTION'),
+            ('communication_contacts', 'created_by', 'users', 'NO ACTION'),
+            ('bia_risks', 'risk_id', 'risks', 'CASCADE'),
+            ('bia_risks', 'created_by', 'users', 'NO ACTION')
+        ) AS foreign_keys(table_name, column_name, target_table, delete_action)
+    LOOP
+        relation := to_regclass(format('bcdr.%I', target.table_name));
+        SELECT a.attnum
+          INTO column_number
+          FROM pg_attribute a
+         WHERE a.attrelid = relation
+           AND a.attname = target.column_name
+           AND NOT a.attisdropped;
+
+        correct_fk_exists := false;
+        FOR existing_fk IN
+            SELECT c.conname, target_ns.nspname, target_table.relname
+              FROM pg_constraint c
+              JOIN pg_class target_table ON target_table.oid = c.confrelid
+              JOIN pg_namespace target_ns ON target_ns.oid = target_table.relnamespace
+             WHERE c.conrelid = relation
+               AND c.contype = 'f'
+               AND c.conkey = ARRAY[column_number]::SMALLINT[]
+        LOOP
+            IF existing_fk.nspname = 'public'
+               AND existing_fk.relname = target.target_table THEN
+                correct_fk_exists := true;
+            ELSE
+                EXECUTE format(
+                    'ALTER TABLE bcdr.%I DROP CONSTRAINT %I',
+                    target.table_name,
+                    existing_fk.conname
+                );
+            END IF;
+        END LOOP;
+
+        IF NOT correct_fk_exists THEN
+            EXECUTE format(
+                'ALTER TABLE bcdr.%I ADD CONSTRAINT %I FOREIGN KEY (%I) REFERENCES public.%I(id) ON DELETE %s NOT VALID',
+                target.table_name,
+                format('bcdr_%s_%s_public_fkey', target.table_name, target.column_name),
+                target.column_name,
+                target.target_table,
+                target.delete_action
+            );
+        END IF;
+    END LOOP;
+END $$;
+
+-- Prisma owns these public Asset columns.
+ALTER TABLE public.assets
+    ADD COLUMN IF NOT EXISTS rto_hours INTEGER,
+    ADD COLUMN IF NOT EXISTS rpo_hours INTEGER,
+    ADD COLUMN IF NOT EXISTS bcdr_criticality VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS recovery_strategy_id UUID,
+    ADD COLUMN IF NOT EXISTS recovery_notes TEXT;
 
 -- =============================================================================
 -- INDEXES

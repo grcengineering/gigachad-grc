@@ -34,7 +34,7 @@ export class BCDRIncidentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
-    private readonly notificationsService: NotificationsService,
+    private readonly notificationsService: NotificationsService
   ) {}
 
   /**
@@ -45,7 +45,7 @@ export class BCDRIncidentsService {
     userId: string,
     dto: DeclareIncidentDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     // Generate incident ID
     const incidentId = `INC-${Date.now().toString(36).toUpperCase()}`;
@@ -57,9 +57,9 @@ export class BCDRIncidentsService {
         declared_at, declared_by,
         activated_plans, activated_teams
       ) VALUES (
-        ${organizationId}::uuid, ${incidentId}, ${dto.title},
+        ${organizationId}, ${incidentId}, ${dto.title},
         ${dto.description || null}, ${dto.incidentType}, ${dto.severity},
-        'active', NOW(), ${userId}::uuid,
+        'active', NOW(), ${userId},
         '[]'::jsonb, '[]'::jsonb
       )
       RETURNING *
@@ -73,7 +73,7 @@ export class BCDRIncidentsService {
       userId,
       TimelineEntryType.STATUS_CHANGE,
       `Incident declared: ${dto.title}`,
-      { severity: dto.severity, incidentType: dto.incidentType },
+      { severity: dto.severity, incidentType: dto.incidentType }
     );
 
     // Log audit
@@ -121,7 +121,7 @@ export class BCDRIncidentsService {
         SELECT *,
                (SELECT COUNT(*) FROM bcdr_incident_timeline WHERE incident_id = bcdr_incidents.id) as timeline_count
         FROM bcdr_incidents
-        WHERE organization_id = ${organizationId}::uuid
+        WHERE organization_id = ${organizationId}
           AND (${searchPattern}::text IS NULL OR (title ILIKE ${searchPattern} OR incident_id ILIKE ${searchPattern}))
           AND (${incidentType}::text IS NULL OR incident_type = ${incidentType})
           AND (${status}::text IS NULL OR status = ${status})
@@ -132,7 +132,7 @@ export class BCDRIncidentsService {
       this.prisma.$queryRaw<[CountRecord]>`
         SELECT COUNT(*) as count
         FROM bcdr_incidents
-        WHERE organization_id = ${organizationId}::uuid
+        WHERE organization_id = ${organizationId}
           AND (${searchPattern}::text IS NULL OR (title ILIKE ${searchPattern} OR incident_id ILIKE ${searchPattern}))
           AND (${incidentType}::text IS NULL OR incident_type = ${incidentType})
           AND (${status}::text IS NULL OR status = ${status})
@@ -160,8 +160,8 @@ export class BCDRIncidentsService {
       FROM bcdr_incidents i
       LEFT JOIN public.users u_declared ON i.declared_by::text = u_declared.id
       LEFT JOIN public.users u_closed ON i.closed_by::text = u_closed.id
-      WHERE i.id = ${id}::uuid
-        AND i.organization_id = ${organizationId}::uuid
+      WHERE i.id = ${id}
+        AND i.organization_id = ${organizationId}
     `;
 
     if (!incidents || incidents.length === 0) {
@@ -174,7 +174,7 @@ export class BCDRIncidentsService {
              u.display_name as created_by_name
       FROM bcdr_incident_timeline t
       LEFT JOIN public.users u ON t.created_by::text = u.id
-      WHERE t.incident_id = ${id}::uuid
+      WHERE t.incident_id = ${id}
       ORDER BY t.timestamp DESC
     `;
 
@@ -193,22 +193,20 @@ export class BCDRIncidentsService {
     userId: string,
     dto: UpdateIncidentStatusDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const incident = await this.findOne(id, organizationId);
 
     // Validate status transition
     const validTransitions: Record<string, string[]> = {
-      'active': ['recovering', 'resolved'],
-      'recovering': ['active', 'resolved'],
-      'resolved': ['active', 'recovering', 'closed'],
-      'closed': [], // Cannot transition out of closed
+      active: ['recovering', 'resolved'],
+      recovering: ['active', 'resolved'],
+      resolved: ['active', 'recovering', 'closed'],
+      closed: [], // Cannot transition out of closed
     };
 
     if (!validTransitions[incident.status]?.includes(dto.status)) {
-      throw new BadRequestException(
-        `Cannot transition from ${incident.status} to ${dto.status}`,
-      );
+      throw new BadRequestException(`Cannot transition from ${incident.status} to ${dto.status}`);
     }
 
     // Use parameterized query to prevent SQL injection
@@ -224,7 +222,7 @@ export class BCDRIncidentsService {
         recovery_started_at = CASE WHEN ${isRecovering} THEN NOW() ELSE recovery_started_at END,
         resolved_at = CASE WHEN ${isResolved} THEN NOW() ELSE resolved_at END,
         operational_at = CASE WHEN ${setOperationalAt} THEN NOW() ELSE operational_at END
-      WHERE id = ${id}::uuid
+      WHERE id = ${id}
       RETURNING *
     `;
 
@@ -234,7 +232,7 @@ export class BCDRIncidentsService {
       userId,
       TimelineEntryType.STATUS_CHANGE,
       `Status changed from ${incident.status} to ${dto.status}${dto.notes ? ': ' + dto.notes : ''}`,
-      { previousStatus: incident.status, newStatus: dto.status },
+      { previousStatus: incident.status, newStatus: dto.status }
     );
 
     await this.auditService.log({
@@ -261,7 +259,7 @@ export class BCDRIncidentsService {
     userId: string,
     dto: AddTimelineEntryDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     await this.findOne(id, organizationId);
 
@@ -270,7 +268,7 @@ export class BCDRIncidentsService {
       userId,
       dto.entryType,
       dto.description,
-      dto.metadata,
+      dto.metadata
     );
 
     await this.auditService.log({
@@ -295,14 +293,14 @@ export class BCDRIncidentsService {
     userId: string,
     entryType: string,
     description: string,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ) {
     const result = await this.prisma.$queryRaw<IncidentTimelineRecord[]>`
       INSERT INTO bcdr_incident_timeline (
         incident_id, entry_type, description, created_by, metadata
       ) VALUES (
-        ${incidentId}::uuid, ${entryType}, ${description},
-        ${userId}::uuid, ${metadata ? JSON.stringify(metadata) : null}::jsonb
+        ${incidentId}, ${entryType}, ${description},
+        ${userId}, ${metadata ? JSON.stringify(metadata) : null}::jsonb
       )
       RETURNING *
     `;
@@ -319,7 +317,7 @@ export class BCDRIncidentsService {
     userId: string,
     dto: ActivatePlanDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const incident = await this.findOne(id, organizationId);
 
@@ -341,7 +339,7 @@ export class BCDRIncidentsService {
       UPDATE bcdr_incidents
       SET activated_plans = ${JSON.stringify(currentPlans)}::jsonb,
           updated_at = NOW()
-      WHERE id = ${id}::uuid
+      WHERE id = ${id}
     `;
 
     // Add timeline entry
@@ -350,7 +348,7 @@ export class BCDRIncidentsService {
       userId,
       TimelineEntryType.PLAN_ACTIVATED,
       `Plan activated: ${planName}${dto.notes ? ' - ' + dto.notes : ''}`,
-      { planId: dto.planId, planName },
+      { planId: dto.planId, planName }
     );
 
     await this.auditService.log({
@@ -377,14 +375,14 @@ export class BCDRIncidentsService {
     userId: string,
     dto: ActivateTeamDto,
     _userEmail?: string,
-    _userName?: string,
+    _userName?: string
   ) {
     const incident = await this.findOne(id, organizationId);
 
     // Get team details
     const teams = await this.prisma.$queryRaw<NameRecord[]>`
       SELECT name FROM bcdr_recovery_teams
-      WHERE id = ${dto.teamId}::uuid
+      WHERE id = ${dto.teamId}
     `;
 
     const teamName = teams[0]?.name || dto.teamId;
@@ -399,7 +397,7 @@ export class BCDRIncidentsService {
       UPDATE bcdr_incidents
       SET activated_teams = ${JSON.stringify(currentTeams)}::jsonb,
           updated_at = NOW()
-      WHERE id = ${id}::uuid
+      WHERE id = ${id}
     `;
 
     // Add timeline entry
@@ -408,7 +406,7 @@ export class BCDRIncidentsService {
       userId,
       TimelineEntryType.TEAM_ACTIVATED,
       `Team activated: ${teamName}${dto.notes ? ' - ' + dto.notes : ''}`,
-      { teamId: dto.teamId, teamName },
+      { teamId: dto.teamId, teamName }
     );
 
     return { success: true, activatedTeams: currentTeams };
@@ -423,7 +421,7 @@ export class BCDRIncidentsService {
     userId: string,
     dto: CloseIncidentDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const incident = await this.findOne(id, organizationId);
 
@@ -436,7 +434,7 @@ export class BCDRIncidentsService {
       SET 
         status = 'closed',
         closed_at = NOW(),
-        closed_by = ${userId}::uuid,
+        closed_by = ${userId},
         root_cause = ${dto.rootCause || null},
         lessons_learned = ${dto.lessonsLearned || null},
         improvement_actions = ${dto.improvementActions ? JSON.stringify(dto.improvementActions) : null}::jsonb,
@@ -444,9 +442,9 @@ export class BCDRIncidentsService {
         data_loss_minutes = ${dto.dataLossMinutes || null},
         financial_impact = ${dto.financialImpact || null},
         post_incident_review_date = NOW(),
-        post_incident_review_by = ${userId}::uuid,
+        post_incident_review_by = ${userId},
         updated_at = NOW()
-      WHERE id = ${id}::uuid
+      WHERE id = ${id}
       RETURNING *
     `;
 
@@ -459,7 +457,7 @@ export class BCDRIncidentsService {
       {
         rootCause: dto.rootCause,
         lessonsLearned: dto.lessonsLearned,
-      },
+      }
     );
 
     await this.auditService.log({
@@ -488,7 +486,7 @@ export class BCDRIncidentsService {
     const incidents = await this.prisma.$queryRaw<BCDRIncidentRecord[]>`
       SELECT *
       FROM bcdr_incidents
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = ${organizationId}
         AND status IN ('active', 'recovering')
       ORDER BY 
         CASE severity 
@@ -520,7 +518,7 @@ export class BCDRIncidentsService {
         AVG(EXTRACT(EPOCH FROM (resolved_at - declared_at))/60) 
           FILTER (WHERE resolved_at IS NOT NULL) as avg_resolution_minutes
       FROM bcdr_incidents
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = ${organizationId}
     `;
 
     return stats[0];

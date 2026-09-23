@@ -1,10 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import {
-  CreateExerciseTemplateDto,
-  ExerciseTemplateFilterDto,
-} from './dto/bcdr.dto';
+import { CreateExerciseTemplateDto, ExerciseTemplateFilterDto } from './dto/bcdr.dto';
 import { EXERCISE_TEMPLATE_LIBRARY } from './exercise-template-library';
 
 /**
@@ -19,7 +16,7 @@ export class ExerciseTemplatesService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly auditService: AuditService,
+    private readonly auditService: AuditService
   ) {}
 
   /**
@@ -38,8 +35,8 @@ export class ExerciseTemplatesService {
         FROM bcdr_exercise_templates
         WHERE is_active = true
           AND (
-            (${includeGlobal} = true AND (organization_id = ${organizationId}::uuid OR is_global = true))
-            OR (${includeGlobal} = false AND organization_id = ${organizationId}::uuid)
+            (${includeGlobal} = true AND (organization_id = ${organizationId} OR is_global = true))
+            OR (${includeGlobal} = false AND organization_id = ${organizationId})
           )
           AND (${searchPattern}::text IS NULL OR (title ILIKE ${searchPattern} OR description ILIKE ${searchPattern}))
           AND (${category}::text IS NULL OR category = ${category})
@@ -52,8 +49,8 @@ export class ExerciseTemplatesService {
         FROM bcdr_exercise_templates
         WHERE is_active = true
           AND (
-            (${includeGlobal} = true AND (organization_id = ${organizationId}::uuid OR is_global = true))
-            OR (${includeGlobal} = false AND organization_id = ${organizationId}::uuid)
+            (${includeGlobal} = true AND (organization_id = ${organizationId} OR is_global = true))
+            OR (${includeGlobal} = false AND organization_id = ${organizationId})
           )
           AND (${searchPattern}::text IS NULL OR (title ILIKE ${searchPattern} OR description ILIKE ${searchPattern}))
           AND (${category}::text IS NULL OR category = ${category})
@@ -77,7 +74,7 @@ export class ExerciseTemplatesService {
     const templates = await this.prisma.$queryRaw<any[]>`
       SELECT *
       FROM bcdr_exercise_templates
-      WHERE id = ${id}::uuid
+      WHERE id = ${id}
     `;
 
     if (!templates || templates.length === 0) {
@@ -108,7 +105,7 @@ export class ExerciseTemplatesService {
     organizationId: string,
     userId: string,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const template = await this.findOne(templateId);
 
@@ -124,13 +121,13 @@ export class ExerciseTemplatesService {
         facilitator_notes, estimated_duration_minutes, participant_roles,
         is_global, tags, created_by
       ) VALUES (
-        ${organizationId}::uuid, ${newTemplateId}, ${template.title + ' (Copy)'},
+        ${organizationId}, ${newTemplateId}, ${template.title + ' (Copy)'},
         ${template.description}, ${template.category}, ${template.scenario_type},
         ${template.scenario_narrative}, ${template.discussion_questions}::jsonb,
         ${template.injects}::jsonb, ${template.expected_decisions}::jsonb,
         ${template.facilitator_notes}, ${template.estimated_duration_minutes},
         ${template.participant_roles}::jsonb, false, ${template.tags}::text[],
-        ${userId}::uuid
+        ${userId}
       )
       RETURNING *
     `;
@@ -139,7 +136,7 @@ export class ExerciseTemplatesService {
     await this.prisma.$executeRaw`
       UPDATE bcdr_exercise_templates
       SET usage_count = usage_count + 1
-      WHERE id = ${templateId}::uuid
+      WHERE id = ${templateId}
     `;
 
     // Log audit
@@ -166,7 +163,7 @@ export class ExerciseTemplatesService {
     userId: string,
     dto: CreateExerciseTemplateDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     // Check for duplicate templateId
     const existing = await this.findByTemplateId(dto.templateId);
@@ -182,14 +179,14 @@ export class ExerciseTemplatesService {
         facilitator_notes, estimated_duration_minutes, participant_roles,
         is_global, tags, created_by
       ) VALUES (
-        ${organizationId}::uuid, ${dto.templateId}, ${dto.title},
+        ${organizationId}, ${dto.templateId}, ${dto.title},
         ${dto.description || null}, ${dto.category}, ${dto.scenarioType},
         ${dto.scenarioNarrative}, ${JSON.stringify(dto.discussionQuestions)}::jsonb,
         ${dto.injects ? JSON.stringify(dto.injects) : null}::jsonb,
         ${dto.expectedDecisions ? JSON.stringify(dto.expectedDecisions) : null}::jsonb,
         ${dto.facilitatorNotes || null}, ${dto.estimatedDuration || null},
         ${dto.participantRoles ? JSON.stringify(dto.participantRoles) : null}::jsonb,
-        false, ${dto.tags || []}::text[], ${userId}::uuid
+        false, ${dto.tags || []}::text[], ${userId}
       )
       RETURNING *
     `;
@@ -218,13 +215,13 @@ export class ExerciseTemplatesService {
     userId: string,
     title: string,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     // Get the test
     const tests = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM bcdr.dr_tests
       WHERE id = ${testId}::uuid
-        AND organization_id = ${organizationId}::uuid
+        AND organization_id = ${organizationId}
     `;
 
     if (!tests || tests.length === 0) {
@@ -242,13 +239,13 @@ export class ExerciseTemplatesService {
         estimated_duration_minutes,
         is_global, tags, created_by
       ) VALUES (
-        ${organizationId}::uuid, ${templateId}, ${title},
+        ${organizationId}, ${templateId}, ${title},
         ${'Template created from DR test: ' + test.name},
         'infrastructure', ${test.test_type},
         ${test.scope_description || 'Scenario based on previous test'},
         '[]'::jsonb, ${test.lessons_learned || null},
         ${test.scheduled_duration_hours ? test.scheduled_duration_hours * 60 : null},
-        false, ARRAY['from-test']::text[], ${userId}::uuid
+        false, ARRAY['from-test']::text[], ${userId}
       )
       RETURNING *
     `;
@@ -277,7 +274,7 @@ export class ExerciseTemplatesService {
     userId: string,
     dto: Partial<CreateExerciseTemplateDto>,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const template = await this.findOne(id);
 
@@ -301,7 +298,7 @@ export class ExerciseTemplatesService {
         facilitator_notes = CASE WHEN ${dto.facilitatorNotes !== undefined} THEN ${dto.facilitatorNotes ?? null} ELSE facilitator_notes END,
         estimated_duration_minutes = COALESCE(${dto.estimatedDuration ?? null}, estimated_duration_minutes),
         tags = COALESCE(${dto.tags ?? null}::text[], tags)
-      WHERE id = ${id}::uuid
+      WHERE id = ${id}
       RETURNING *
     `;
 
@@ -328,7 +325,7 @@ export class ExerciseTemplatesService {
     organizationId: string,
     userId: string,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const template = await this.findOne(id);
 
@@ -343,7 +340,7 @@ export class ExerciseTemplatesService {
     await this.prisma.$executeRaw`
       UPDATE bcdr_exercise_templates
       SET is_active = false
-      WHERE id = ${id}::uuid
+      WHERE id = ${id}
     `;
 
     await this.auditService.log({
@@ -371,7 +368,7 @@ export class ExerciseTemplatesService {
 
     for (const template of EXERCISE_TEMPLATE_LIBRARY) {
       const existing = await this.findByTemplateId(template.templateId);
-      
+
       if (existing) {
         skipped++;
         continue;
@@ -386,7 +383,7 @@ export class ExerciseTemplatesService {
             facilitator_notes, estimated_duration_minutes, participant_roles,
             is_global, is_active, tags
           ) VALUES (
-            ${template.id}::uuid, ${template.templateId}, ${template.title},
+            ${template.id}, ${template.templateId}, ${template.title},
             ${template.description}, ${template.category}, ${template.scenarioType},
             ${template.scenarioNarrative},
             ${JSON.stringify(template.discussionQuestions)}::jsonb,
@@ -414,7 +411,7 @@ export class ExerciseTemplatesService {
     const categories = await this.prisma.$queryRaw<any[]>`
       SELECT category, COUNT(*) as count
       FROM bcdr_exercise_templates
-      WHERE (organization_id = ${organizationId}::uuid OR is_global = true)
+      WHERE (organization_id = ${organizationId} OR is_global = true)
         AND is_active = true
       GROUP BY category
       ORDER BY count DESC

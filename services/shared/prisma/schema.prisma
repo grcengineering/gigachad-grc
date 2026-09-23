@@ -2086,25 +2086,30 @@ model UserPermissionOverride {
 // ===========================================
 
 model Asset {
-  id             String           @id @default(uuid())
-  organizationId String           @map("organization_id")
-  workspaceId    String?          @map("workspace_id") // null = org-wide asset
-  externalId     String?          @map("external_id") // ID from source system
-  source         String // jamf, intune, servicenow, manual
-  name           String
-  type           AssetType        @default(server)
-  category       String? // infrastructure, endpoint, cloud, etc.
-  status         AssetStatus      @default(active)
-  criticality    AssetCriticality @default(medium)
-  owner          String?
-  location       String?
-  department     String?
-  metadata       Json? // Source-specific fields
-  lastSyncAt     DateTime?        @map("last_sync_at")
-  createdAt      DateTime         @default(now()) @map("created_at")
-  updatedAt      DateTime         @updatedAt @map("updated_at")
-  deletedAt      DateTime?        @map("deleted_at")
-  deletedBy      String?          @map("deleted_by")
+  id                 String           @id @default(uuid())
+  organizationId     String           @map("organization_id")
+  workspaceId        String?          @map("workspace_id") // null = org-wide asset
+  externalId         String?          @map("external_id") // ID from source system
+  source             String // jamf, intune, servicenow, manual
+  name               String
+  type               AssetType        @default(server)
+  category           String? // infrastructure, endpoint, cloud, etc.
+  status             AssetStatus      @default(active)
+  criticality        AssetCriticality @default(medium)
+  owner              String?
+  location           String?
+  department         String?
+  metadata           Json? // Source-specific fields
+  lastSyncAt         DateTime?        @map("last_sync_at")
+  rtoHours           Int?             @map("rto_hours")
+  rpoHours           Int?             @map("rpo_hours")
+  bcdrCriticality    String?          @map("bcdr_criticality")
+  recoveryStrategyId String?          @map("recovery_strategy_id") @db.Uuid
+  recoveryNotes      String?          @map("recovery_notes")
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+  deletedAt          DateTime?        @map("deleted_at")
+  deletedBy          String?          @map("deleted_by")
 
   // Relations
   riskAssets               RiskAsset[]

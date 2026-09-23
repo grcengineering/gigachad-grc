@@ -96,11 +96,19 @@ export class BusinessProcessesService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly auditService: AuditService,
+    private readonly auditService: AuditService
   ) {}
 
   async findAll(organizationId: string, filters: BusinessProcessFilterDto) {
-    const { search, criticalityTier, department, ownerId, isActive, page = 1, limit = 25 } = filters;
+    const {
+      search,
+      criticalityTier,
+      department,
+      ownerId,
+      isActive,
+      page = 1,
+      limit = 25,
+    } = filters;
     const offset = (page - 1) * limit;
 
     // Use parameterized queries to prevent SQL injection
@@ -115,12 +123,12 @@ export class BusinessProcessesService {
                (SELECT COUNT(*) FROM bcdr.process_assets WHERE process_id = bp.id) as asset_count
         FROM bcdr.business_processes bp
         LEFT JOIN public.users u ON bp.owner_id::text = u.id
-        WHERE bp.organization_id = ${organizationId}::uuid
+        WHERE bp.organization_id = ${organizationId}
           AND bp.deleted_at IS NULL
           AND (${searchPattern}::text IS NULL OR (bp.name ILIKE ${searchPattern} OR bp.process_id ILIKE ${searchPattern}))
           AND (${criticalityTier}::text IS NULL OR bp.criticality_tier = ${criticalityTier})
           AND (${department}::text IS NULL OR bp.department = ${department})
-          AND (${ownerId}::text IS NULL OR bp.owner_id = ${ownerId}::uuid)
+          AND (${ownerId}::text IS NULL OR bp.owner_id = ${ownerId})
           AND (${isActive}::boolean IS NULL OR bp.is_active = ${isActive})
         ORDER BY 
           CASE bp.criticality_tier 
@@ -135,7 +143,7 @@ export class BusinessProcessesService {
       this.prisma.$queryRaw<[CountRecord]>`
         SELECT COUNT(*) as count
         FROM bcdr.business_processes
-        WHERE organization_id = ${organizationId}::uuid
+        WHERE organization_id = ${organizationId}
           AND deleted_at IS NULL
       `,
     ]);
@@ -155,9 +163,9 @@ export class BusinessProcessesService {
              u.display_name as owner_name, 
              u.email as owner_email
       FROM bcdr.business_processes bp
-      LEFT JOIN shared.users u ON bp.owner_id = u.id
+      LEFT JOIN public.users u ON bp.owner_id = u.id
       WHERE bp.id = ${id}::uuid
-        AND bp.organization_id = ${organizationId}::uuid
+        AND bp.organization_id = ${organizationId}
         AND bp.deleted_at IS NULL
     `;
 
@@ -188,16 +196,16 @@ export class BusinessProcessesService {
       SELECT pa.*, 
              a.name, a.type, a.status
       FROM bcdr.process_assets pa
-      JOIN controls.assets a ON pa.asset_id = a.id
+      JOIN public.assets a ON pa.asset_id = a.id
       WHERE pa.process_id = ${id}::uuid
     `;
 
     // Get linked risks
     const risks = await this.prisma.$queryRaw<BIARiskRecord[]>`
       SELECT br.*, 
-             r.risk_id, r.title, r.inherent_risk_level
+             r.risk_id, r.title, r.inherent_risk as inherent_risk_level
       FROM bcdr.bia_risks br
-      JOIN controls.risks r ON br.risk_id = r.id
+      JOIN public.risks r ON br.risk_id = r.id
       WHERE br.process_id = ${id}::uuid
     `;
 
@@ -215,7 +223,7 @@ export class BusinessProcessesService {
     userId: string,
     dto: CreateBusinessProcessDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     // Check for duplicate processId
     const existing = await this.prisma.$queryRaw<IdRecord[]>`
@@ -243,9 +251,9 @@ export class BusinessProcessesService {
         review_frequency_months, next_review_due, tags,
         created_by, updated_by
       ) VALUES (
-        ${organizationId}, ${dto.workspaceId || null}::uuid, ${dto.processId}, ${dto.name}, 
+        ${organizationId}, ${dto.workspaceId || null}, ${dto.processId}, ${dto.name},
         ${dto.description || null}, ${dto.department || null},
-        ${dto.ownerId || null}::uuid, ${dto.criticalityTier}::bcdr.criticality_tier, 
+        ${dto.ownerId || null}, ${dto.criticalityTier}::bcdr.criticality_tier,
         ${dto.businessCriticalityScore || null},
         ${dto.rtoHours || null}, ${dto.rpoHours || null}, ${dto.mtpdHours || null},
         ${dto.financialImpact || null}::bcdr.impact_level, 
@@ -256,7 +264,7 @@ export class BusinessProcessesService {
         ${dto.recoveryCostEstimate || null},
         ${dto.reviewFrequencyMonths || 12}, ${nextReviewDue}, 
         ${dto.tags || []}::text[],
-        ${userId}::uuid, ${userId}::uuid
+        ${userId}, ${userId}
       )
       RETURNING *
     `;
@@ -289,7 +297,7 @@ export class BusinessProcessesService {
     userId: string,
     dto: UpdateBusinessProcessDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     await this.findOne(id, organizationId);
 
@@ -297,20 +305,40 @@ export class BusinessProcessesService {
     // Only these hardcoded column names can be included in the query.
     // This prevents SQL injection even though column names come from code, not user input.
     const ALLOWED_COLUMNS = new Set([
-      'name', 'description', 'department', 'owner_id', 'criticality_tier',
-      'business_criticality_score', 'rto_hours', 'rpo_hours', 'mtpd_hours',
-      'financial_impact', 'operational_impact', 'reputational_impact', 'regulatory_impact',
-      'hourly_revenue_impact', 'daily_revenue_impact', 'recovery_cost_estimate',
-      'is_active', 'review_frequency_months', 'tags', 'updated_by', 'updated_at',
+      'name',
+      'description',
+      'department',
+      'owner_id',
+      'criticality_tier',
+      'business_criticality_score',
+      'rto_hours',
+      'rpo_hours',
+      'mtpd_hours',
+      'financial_impact',
+      'operational_impact',
+      'reputational_impact',
+      'regulatory_impact',
+      'hourly_revenue_impact',
+      'daily_revenue_impact',
+      'recovery_cost_estimate',
+      'is_active',
+      'review_frequency_months',
+      'tags',
+      'updated_by',
+      'updated_at',
     ]);
 
     // Build dynamic update query
-    const updates: string[] = ['updated_by = $2::uuid', 'updated_at = NOW()'];
+    const updates: string[] = ['updated_by = $2', 'updated_at = NOW()'];
     const values: (string | number | boolean | string[] | null)[] = [id, userId];
     let paramIndex = 3;
 
     // Helper to safely add column updates - validates column is in allowed list
-    const addUpdate = (column: string, value: string | number | boolean | string[] | null, typeCast?: string) => {
+    const addUpdate = (
+      column: string,
+      value: string | number | boolean | string[] | null,
+      typeCast?: string
+    ) => {
       if (!ALLOWED_COLUMNS.has(column)) {
         throw new Error(`Invalid column name: ${column}`);
       }
@@ -329,7 +357,7 @@ export class BusinessProcessesService {
       addUpdate('department', dto.department);
     }
     if (dto.ownerId !== undefined) {
-      addUpdate('owner_id', dto.ownerId, '::uuid');
+      addUpdate('owner_id', dto.ownerId);
     }
     if (dto.criticalityTier !== undefined) {
       addUpdate('criticality_tier', dto.criticalityTier, '::bcdr.criticality_tier');
@@ -384,7 +412,7 @@ export class BusinessProcessesService {
     // 3. No user input is interpolated into column names
     const result = await this.prisma.$queryRawUnsafe<BusinessProcessRecord[]>(
       `UPDATE bcdr.business_processes SET ${updates.join(', ')} WHERE id = $1::uuid RETURNING *`,
-      ...values,
+      ...values
     );
 
     const processRecord = result[0];
@@ -410,13 +438,13 @@ export class BusinessProcessesService {
     organizationId: string,
     userId: string,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     const process = await this.findOne(id, organizationId);
 
     await this.prisma.$executeRaw`
       UPDATE bcdr.business_processes 
-      SET deleted_at = NOW(), deleted_by = ${userId}::uuid
+      SET deleted_at = NOW(), deleted_by = ${userId}
       WHERE id = ${id}::uuid
     `;
 
@@ -442,7 +470,7 @@ export class BusinessProcessesService {
       UPDATE bcdr.business_processes 
       SET last_reviewed_at = NOW(),
           next_review_due = NOW() + (review_frequency_months || ' months')::interval,
-          updated_by = ${userId}::uuid,
+          updated_by = ${userId},
           updated_at = NOW()
       WHERE id = ${id}::uuid
       RETURNING *
@@ -456,7 +484,7 @@ export class BusinessProcessesService {
     processId: string,
     organizationId: string,
     userId: string,
-    dto: AddProcessDependencyDto,
+    dto: AddProcessDependencyDto
   ) {
     await this.findOne(processId, organizationId);
     await this.findOne(dto.dependencyProcessId, organizationId);
@@ -492,7 +520,7 @@ export class BusinessProcessesService {
     const processes = await this.prisma.$queryRaw<DependencyGraphNode[]>`
       SELECT id, process_id, name, criticality_tier
       FROM bcdr.business_processes
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = ${organizationId}
         AND deleted_at IS NULL
         AND is_active = true
     `;
@@ -501,7 +529,7 @@ export class BusinessProcessesService {
       SELECT pd.dependent_process_id as source, pd.dependency_process_id as target, pd.dependency_type
       FROM bcdr.process_dependencies pd
       JOIN bcdr.business_processes bp ON pd.dependent_process_id = bp.id
-      WHERE bp.organization_id = ${organizationId}::uuid
+      WHERE bp.organization_id = ${organizationId}
     `;
 
     return {
@@ -520,15 +548,20 @@ export class BusinessProcessesService {
   }
 
   // Asset Links
-  async linkAsset(processId: string, organizationId: string, userId: string, dto: LinkProcessAssetDto) {
+  async linkAsset(
+    processId: string,
+    organizationId: string,
+    userId: string,
+    dto: LinkProcessAssetDto
+  ) {
     await this.findOne(processId, organizationId);
 
     const result = await this.prisma.$queryRaw<ProcessAssetRecord[]>`
       INSERT INTO bcdr.process_assets (
         process_id, asset_id, relationship_type, notes, created_by
       ) VALUES (
-        ${processId}::uuid, ${dto.assetId}::uuid, 
-        ${dto.relationshipType || 'supports'}, ${dto.notes || null}, ${userId}::uuid
+        ${processId}::uuid, ${dto.assetId},
+        ${dto.relationshipType || 'supports'}, ${dto.notes || null}, ${userId}
       )
       ON CONFLICT (process_id, asset_id) DO UPDATE
       SET relationship_type = EXCLUDED.relationship_type, notes = EXCLUDED.notes
@@ -541,7 +574,7 @@ export class BusinessProcessesService {
   async unlinkAsset(processId: string, assetId: string) {
     await this.prisma.$executeRaw`
       DELETE FROM bcdr.process_assets 
-      WHERE process_id = ${processId}::uuid AND asset_id = ${assetId}::uuid
+      WHERE process_id = ${processId}::uuid AND asset_id = ${assetId}
     `;
 
     return { success: true };
@@ -551,7 +584,7 @@ export class BusinessProcessesService {
   async linkRisk(processId: string, riskId: string, userId: string, notes?: string) {
     const result = await this.prisma.$queryRaw<BIARiskRecord[]>`
       INSERT INTO bcdr.bia_risks (process_id, risk_id, relationship_notes, created_by)
-      VALUES (${processId}::uuid, ${riskId}::uuid, ${notes || null}, ${userId}::uuid)
+      VALUES (${processId}::uuid, ${riskId}, ${notes || null}, ${userId})
       ON CONFLICT (process_id, risk_id) DO UPDATE
       SET relationship_notes = EXCLUDED.relationship_notes
       RETURNING *
@@ -563,7 +596,7 @@ export class BusinessProcessesService {
   async unlinkRisk(processId: string, riskId: string) {
     await this.prisma.$executeRaw`
       DELETE FROM bcdr.bia_risks 
-      WHERE process_id = ${processId}::uuid AND risk_id = ${riskId}::uuid
+      WHERE process_id = ${processId}::uuid AND risk_id = ${riskId}
     `;
 
     return { success: true };
@@ -583,7 +616,7 @@ export class BusinessProcessesService {
         AVG(rto_hours) as avg_rto,
         AVG(rpo_hours) as avg_rpo
       FROM bcdr.business_processes
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = ${organizationId}
         AND deleted_at IS NULL
     `;
 
@@ -603,7 +636,7 @@ export class BusinessProcessesService {
     userId: string,
     dto: CreateVendorDependencyDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     // Verify process exists
     const process = await this.findOne(processId, organizationId);
@@ -615,11 +648,11 @@ export class BusinessProcessesService {
         vendor_has_bcp, vendor_bcp_reviewed,
         gap_analysis, mitigation_plan, notes, created_by
       ) VALUES (
-        ${processId}::uuid, ${dto.vendorId}::uuid, ${organizationId}::uuid,
+        ${processId}, ${dto.vendorId}, ${organizationId},
         ${dto.dependencyType}, ${dto.vendorRtoHours || null}, ${dto.vendorRpoHours || null},
         ${dto.vendorHasBCP ?? null}, ${dto.vendorBCPReviewed ? new Date(dto.vendorBCPReviewed) : null},
         ${dto.gapAnalysis || null}, ${dto.mitigationPlan || null},
-        ${dto.notes || null}, ${userId}::uuid
+        ${dto.notes || null}, ${userId}
       )
       RETURNING *
     `;
@@ -647,7 +680,7 @@ export class BusinessProcessesService {
     processId: string,
     dependencyId: string,
     organizationId: string,
-    dto: UpdateVendorDependencyDto,
+    dto: UpdateVendorDependencyDto
   ) {
     // Use parameterized query to prevent SQL injection
     const result = await this.prisma.$queryRaw<VendorDependencyRecord[]>`
@@ -661,9 +694,9 @@ export class BusinessProcessesService {
         gap_analysis = CASE WHEN ${dto.gapAnalysis !== undefined} THEN ${dto.gapAnalysis ?? null} ELSE gap_analysis END,
         mitigation_plan = CASE WHEN ${dto.mitigationPlan !== undefined} THEN ${dto.mitigationPlan ?? null} ELSE mitigation_plan END,
         notes = CASE WHEN ${dto.notes !== undefined} THEN ${dto.notes ?? null} ELSE notes END
-      WHERE id = ${dependencyId}::uuid
-        AND process_id = ${processId}::uuid
-        AND organization_id = ${organizationId}::uuid
+      WHERE id = ${dependencyId}
+        AND process_id = ${processId}
+        AND organization_id = ${organizationId}
       RETURNING *
     `;
 
@@ -679,13 +712,13 @@ export class BusinessProcessesService {
     organizationId: string,
     userId: string,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     await this.prisma.$executeRaw`
       DELETE FROM bcdr_process_vendor_dependencies
-      WHERE process_id = ${processId}::uuid
-        AND vendor_id = ${vendorId}::uuid
-        AND organization_id = ${organizationId}::uuid
+      WHERE process_id = ${processId}
+        AND vendor_id = ${vendorId}
+        AND organization_id = ${organizationId}
     `;
 
     await this.auditService.log({
@@ -726,10 +759,10 @@ export class BusinessProcessesService {
                ELSE false 
              END as has_rpo_gap
       FROM bcdr_process_vendor_dependencies d
-      JOIN tprm.vendors v ON d.vendor_id::text = v.id::text
-      JOIN bcdr.business_processes bp ON d.process_id = bp.id
-      WHERE d.process_id = ${processId}::uuid
-        AND d.organization_id = ${organizationId}::uuid
+      JOIN public.vendors v ON d.vendor_id = v.id
+      JOIN bcdr.business_processes bp ON d.process_id = bp.id::text
+      WHERE d.process_id = ${processId}
+        AND d.organization_id = ${organizationId}
       ORDER BY 
         CASE d.dependency_type 
           WHEN 'critical' THEN 1 
@@ -758,9 +791,9 @@ export class BusinessProcessesService {
         (d.vendor_rto_hours - bp.rto_hours) as rto_gap_hours,
         (d.vendor_rpo_hours - bp.rpo_hours) as rpo_gap_hours
       FROM bcdr_process_vendor_dependencies d
-      JOIN tprm.vendors v ON d.vendor_id::text = v.id::text
-      JOIN bcdr.business_processes bp ON d.process_id = bp.id
-      WHERE d.organization_id = ${organizationId}::uuid
+      JOIN public.vendors v ON d.vendor_id = v.id
+      JOIN bcdr.business_processes bp ON d.process_id = bp.id::text
+      WHERE d.organization_id = ${organizationId}
         AND bp.deleted_at IS NULL
         AND (
           (d.vendor_rto_hours IS NOT NULL AND bp.rto_hours IS NOT NULL AND d.vendor_rto_hours > bp.rto_hours)
@@ -792,35 +825,35 @@ export class BusinessProcessesService {
       description?: string;
       department: string;
       ownerId?: string;
-      
+
       // Step 2: Impact Assessment (plain language mapped to levels)
       financialImpact: string; // 'none', 'minor', 'moderate', 'major', 'severe'
       operationalImpact: string;
       reputationalImpact: string;
       legalImpact: string;
-      
+
       // Step 3: Recovery Requirements
       maxDowntimeHours: number; // maps to RTO
       maxDataLossHours: number; // maps to RPO
-      
+
       // Step 4: Dependencies
       upstreamProcessIds?: string[];
       assetIds?: string[];
-      
+
       // Step 5: Additional info
       peakPeriods?: string[];
       keyStakeholders?: string;
     },
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     // Map impact levels
     const impactMap: Record<string, string> = {
-      'none': 'negligible',
-      'minor': 'minor',
-      'moderate': 'moderate',
-      'major': 'major',
-      'severe': 'catastrophic',
+      none: 'negligible',
+      minor: 'minor',
+      moderate: 'moderate',
+      major: 'major',
+      severe: 'catastrophic',
     };
 
     // Calculate criticality tier based on impacts and recovery requirements
@@ -830,11 +863,11 @@ export class BusinessProcessesService {
       wizardData.reputationalImpact,
       wizardData.legalImpact,
     ];
-    
+
     const hasSevere = impacts.includes('severe');
     const hasMajor = impacts.includes('major');
     const hasModerate = impacts.includes('moderate');
-    
+
     let criticalityTier = 'tier_4_standard';
     if (hasSevere || wizardData.maxDowntimeHours <= 4) {
       criticalityTier = 'tier_1_critical';
@@ -851,25 +884,25 @@ export class BusinessProcessesService {
     const result = await this.prisma.$queryRaw<BusinessProcessRecord[]>`
       INSERT INTO bcdr.business_processes (
         organization_id, process_id, name, description, department, owner_id,
-        criticality_tier, financial_impact_level, operational_impact_level,
-        reputational_impact_level, legal_impact_level,
+        criticality_tier, financial_impact, operational_impact,
+        reputational_impact, regulatory_impact,
         rto_hours, rpo_hours, mtpd_hours,
         peak_periods, key_stakeholders,
         is_active, created_by, next_review_due
       ) VALUES (
-        ${organizationId}::uuid, ${processId}, ${wizardData.name},
+        ${organizationId}, ${processId}, ${wizardData.name},
         ${wizardData.description || null}, ${wizardData.department},
-        ${wizardData.ownerId || userId}::uuid,
-        ${criticalityTier},
-        ${impactMap[wizardData.financialImpact] || 'moderate'},
-        ${impactMap[wizardData.operationalImpact] || 'moderate'},
-        ${impactMap[wizardData.reputationalImpact] || 'moderate'},
-        ${impactMap[wizardData.legalImpact] || 'moderate'},
+        ${wizardData.ownerId || userId},
+        ${criticalityTier}::bcdr.criticality_tier,
+        ${impactMap[wizardData.financialImpact] || 'moderate'}::bcdr.impact_level,
+        ${impactMap[wizardData.operationalImpact] || 'moderate'}::bcdr.impact_level,
+        ${impactMap[wizardData.reputationalImpact] || 'moderate'}::bcdr.impact_level,
+        ${impactMap[wizardData.legalImpact] || 'moderate'}::bcdr.impact_level,
         ${wizardData.maxDowntimeHours}, ${wizardData.maxDataLossHours},
         ${Math.ceil(wizardData.maxDowntimeHours * 1.5)},
         ${wizardData.peakPeriods || []}::text[],
         ${wizardData.keyStakeholders || null},
-        true, ${userId}::uuid, NOW() + INTERVAL '1 year'
+        true, ${userId}, NOW() + INTERVAL '1 year'
       )
       RETURNING *
     `;
@@ -920,4 +953,3 @@ export class BusinessProcessesService {
     return process;
   }
 }
-

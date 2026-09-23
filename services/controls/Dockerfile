@@ -77,6 +77,9 @@ COPY --from=builder /app/shared/node_modules ./node_modules/@gigachad-grc/shared
 # Copy Prisma schema for migrations
 COPY --from=builder /app/shared/prisma ./shared/prisma
 
+# Copy the idempotent post-Prisma BC/DR migration
+COPY database/init/12-bcdr-module.sql ./database/migrations/12-bcdr-module.sql
+
 # Copy entrypoint script
 COPY services/controls/docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh

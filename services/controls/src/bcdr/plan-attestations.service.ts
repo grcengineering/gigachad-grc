@@ -3,11 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../notifications/dto/notification.dto';
-import {
-  RequestAttestationDto,
-  SubmitAttestationDto,
-  AttestationFilterDto,
-} from './dto/bcdr.dto';
+import { RequestAttestationDto, SubmitAttestationDto, AttestationFilterDto } from './dto/bcdr.dto';
 import { addMonths } from 'date-fns';
 
 /**
@@ -31,7 +27,7 @@ export class PlanAttestationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
-    private readonly notificationsService: NotificationsService,
+    private readonly notificationsService: NotificationsService
   ) {}
 
   /**
@@ -53,14 +49,14 @@ export class PlanAttestationsService {
     requesterId: string,
     dto: RequestAttestationDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     // Verify plan exists and get owner
     const plans = await this.prisma.$queryRaw<any[]>`
       SELECT id, title, owner_id
       FROM bcdr.bcdr_plans
       WHERE id = ${planId}::uuid
-        AND organization_id = ${organizationId}::uuid
+        AND organization_id = ${organizationId}
         AND deleted_at IS NULL
     `;
 
@@ -72,9 +68,7 @@ export class PlanAttestationsService {
     const attesterId = plan.owner_id || requesterId;
 
     // Calculate valid until date (default 1 year from now)
-    const validUntil = dto.validUntil
-      ? new Date(dto.validUntil)
-      : addMonths(new Date(), 12);
+    const validUntil = dto.validUntil ? new Date(dto.validUntil) : addMonths(new Date(), 12);
 
     // Create attestation record
     const result = await this.prisma.$queryRaw<any[]>`
@@ -83,9 +77,9 @@ export class PlanAttestationsService {
         attestation_type, status, message,
         valid_until, requested_by, requested_at
       ) VALUES (
-        ${planId}::uuid, ${attesterId}::uuid, ${organizationId}::uuid,
+        ${planId}, ${attesterId}, ${organizationId},
         ${dto.attestationType}, 'pending', ${dto.message || null},
-        ${validUntil}, ${requesterId}::uuid, NOW()
+        ${validUntil}, ${requesterId}, NOW()
       )
       RETURNING *
     `;
@@ -146,14 +140,14 @@ export class PlanAttestationsService {
     userId: string,
     dto: SubmitAttestationDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ) {
     // Get attestation
     const attestations = await this.prisma.$queryRaw<any[]>`
       SELECT a.*, p.title as plan_title, p.organization_id
       FROM bcdr_plan_attestations a
-      JOIN bcdr.bcdr_plans p ON a.plan_id = p.id
-      WHERE a.id = ${attestationId}::uuid
+      JOIN bcdr.bcdr_plans p ON a.plan_id = p.id::text
+      WHERE a.id = ${attestationId}
     `;
 
     if (!attestations || attestations.length === 0) {
@@ -164,16 +158,12 @@ export class PlanAttestationsService {
 
     // Check if already completed
     if (attestation.status !== 'pending') {
-      throw new BadRequestException(
-        `Attestation has already been ${attestation.status}`,
-      );
+      throw new BadRequestException(`Attestation has already been ${attestation.status}`);
     }
 
     // Validate decline reason if declining
     if (dto.status === 'declined' && !dto.declineReason) {
-      throw new BadRequestException(
-        'Decline reason is required when declining an attestation',
-      );
+      throw new BadRequestException('Decline reason is required when declining an attestation');
     }
 
     // Update attestation
@@ -186,7 +176,7 @@ export class PlanAttestationsService {
         comments = ${dto.comments || null},
         decline_reason = ${dto.declineReason || null},
         updated_at = NOW()
-      WHERE id = ${attestationId}::uuid
+      WHERE id = ${attestationId}
       RETURNING *
     `;
 
@@ -202,9 +192,10 @@ export class PlanAttestationsService {
       entityType: 'bcdr_plan_attestation',
       entityId: attestationId,
       entityName: attestation.plan_title,
-      description: dto.status === 'attested'
-        ? `Attested BC/DR plan "${attestation.plan_title}"`
-        : `Declined attestation for BC/DR plan "${attestation.plan_title}"`,
+      description:
+        dto.status === 'attested'
+          ? `Attested BC/DR plan "${attestation.plan_title}"`
+          : `Declined attestation for BC/DR plan "${attestation.plan_title}"`,
       metadata: {
         planId: attestation.plan_id,
         status: dto.status,
@@ -242,8 +233,8 @@ export class PlanAttestationsService {
       FROM bcdr_plan_attestations a
       LEFT JOIN public.users u_attester ON a.attester_id::text = u_attester.id
       LEFT JOIN public.users u_requester ON a.requested_by::text = u_requester.id
-      WHERE a.plan_id = ${planId}::uuid
-        AND a.organization_id = ${organizationId}::uuid
+      WHERE a.plan_id = ${planId}
+        AND a.organization_id = ${organizationId}
       ORDER BY a.requested_at DESC
     `;
 
@@ -264,10 +255,10 @@ export class PlanAttestationsService {
              p.plan_type,
              u_requester.display_name as requester_name
       FROM bcdr_plan_attestations a
-      JOIN bcdr.bcdr_plans p ON a.plan_id = p.id
+      JOIN bcdr.bcdr_plans p ON a.plan_id = p.id::text
       LEFT JOIN public.users u_requester ON a.requested_by::text = u_requester.id
-      WHERE a.attester_id = ${userId}::uuid
-        AND a.organization_id = ${organizationId}::uuid
+      WHERE a.attester_id = ${userId}
+        AND a.organization_id = ${organizationId}
         AND a.status = 'pending'
       ORDER BY a.requested_at DESC
     `;
@@ -292,10 +283,10 @@ export class PlanAttestationsService {
              u_attester.email as attester_email,
              u_requester.display_name as requester_name
       FROM bcdr_plan_attestations a
-      JOIN bcdr.bcdr_plans p ON a.plan_id = p.id
+      JOIN bcdr.bcdr_plans p ON a.plan_id = p.id::text
       LEFT JOIN public.users u_attester ON a.attester_id::text = u_attester.id
       LEFT JOIN public.users u_requester ON a.requested_by::text = u_requester.id
-      WHERE a.id = ${attestationId}::uuid
+      WHERE a.id = ${attestationId}
     `;
 
     if (!attestations || attestations.length === 0) {
@@ -326,11 +317,11 @@ export class PlanAttestationsService {
                u_attester.display_name as attester_name,
                u_requester.display_name as requester_name
         FROM bcdr_plan_attestations a
-        JOIN bcdr.bcdr_plans p ON a.plan_id = p.id
+        JOIN bcdr.bcdr_plans p ON a.plan_id = p.id::text
         LEFT JOIN public.users u_attester ON a.attester_id::text = u_attester.id
         LEFT JOIN public.users u_requester ON a.requested_by::text = u_requester.id
-        WHERE a.organization_id = ${organizationId}::uuid
-          AND (${planId}::uuid IS NULL OR a.plan_id = ${planId}::uuid)
+        WHERE a.organization_id = ${organizationId}
+          AND (${planId}::text IS NULL OR a.plan_id = ${planId})
           AND (${status}::text IS NULL OR a.status = ${status})
         ORDER BY a.requested_at DESC
         LIMIT ${limit} OFFSET ${offset}
@@ -338,8 +329,8 @@ export class PlanAttestationsService {
       this.prisma.$queryRaw<[{ count: bigint }]>`
         SELECT COUNT(*) as count
         FROM bcdr_plan_attestations a
-        WHERE a.organization_id = ${organizationId}::uuid
-          AND (${planId}::uuid IS NULL OR a.plan_id = ${planId}::uuid)
+        WHERE a.organization_id = ${organizationId}
+          AND (${planId}::text IS NULL OR a.plan_id = ${planId})
           AND (${status}::text IS NULL OR a.status = ${status})
       `,
     ]);
@@ -368,7 +359,7 @@ export class PlanAttestationsService {
         COUNT(*) FILTER (WHERE status = 'declined') as declined_count,
         COUNT(*) FILTER (WHERE status = 'pending' AND requested_at < NOW() - INTERVAL '7 days') as overdue_count
       FROM bcdr_plan_attestations
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE organization_id = ${organizationId}
     `;
 
     return stats[0];
