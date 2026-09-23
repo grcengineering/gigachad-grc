@@ -26,7 +26,7 @@ interface AuthenticatedRequest extends Request {
 @ApiTags('Audit Workpapers')
 @ApiBearerAuth()
 @UseGuards(DevAuthGuard, RolesGuard)
-@Controller('workpapers')
+@Controller('api/audit/workpapers')
 export class WorkpapersController {
   constructor(private readonly workpapersService: WorkpapersService) {}
 

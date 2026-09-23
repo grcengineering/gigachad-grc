@@ -32,7 +32,7 @@ interface AuthenticatedRequest extends Request {
 @ApiTags('Remediation Plans')
 @ApiBearerAuth()
 @UseGuards(DevAuthGuard, RolesGuard)
-@Controller('remediation')
+@Controller('api/audit/remediation')
 export class RemediationController {
   constructor(private readonly remediationService: RemediationService) {}
 

@@ -3,7 +3,7 @@ import { TrustConfigService, UpdateTrustConfigDto } from './trust-config.service
 import { CurrentUser, UserContext, Roles, RolesGuard } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
-@Controller('trust-config')
+@Controller('api/trust-config')
 @UseGuards(DevAuthGuard, RolesGuard)
 export class TrustConfigController {
   constructor(private readonly configService: TrustConfigService) {}

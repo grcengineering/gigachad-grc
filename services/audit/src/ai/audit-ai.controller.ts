@@ -27,7 +27,7 @@ interface AuthenticatedRequest extends Request {
 @ApiTags('Audit AI')
 @ApiBearerAuth()
 @UseGuards(DevAuthGuard, RolesGuard)
-@Controller('audit-ai')
+@Controller('api/audit/audit-ai')
 export class AuditAIController {
   constructor(private readonly auditAIService: AuditAIService) {}
 

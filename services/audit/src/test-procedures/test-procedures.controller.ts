@@ -31,7 +31,7 @@ interface AuthenticatedRequest extends Request {
 @ApiTags('Test Procedures')
 @ApiBearerAuth()
 @UseGuards(DevAuthGuard, RolesGuard)
-@Controller('test-procedures')
+@Controller('api/audit/test-procedures')
 export class TestProceduresController {
   constructor(private readonly testProceduresService: TestProceduresService) {}
 

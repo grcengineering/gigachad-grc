@@ -15,7 +15,7 @@ import { UpdateAssessmentDto } from './dto/update-assessment.dto';
 import { CurrentUser, UserContext, Roles, RolesGuard } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
-@Controller('api/assessments')
+@Controller('api/vendor-assessments')
 @UseGuards(DevAuthGuard, RolesGuard)
 export class AssessmentsController {
   constructor(private readonly assessmentsService: AssessmentsService) {}

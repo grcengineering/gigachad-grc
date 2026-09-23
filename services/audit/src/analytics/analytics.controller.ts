@@ -15,7 +15,7 @@ interface AuthenticatedRequest extends Request {
 @ApiTags('Audit Analytics')
 @ApiBearerAuth()
 @UseGuards(DevAuthGuard, RolesGuard)
-@Controller('analytics')
+@Controller('api/audit/analytics')
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 

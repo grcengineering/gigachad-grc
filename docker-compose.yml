@@ -530,8 +530,10 @@ services:
       - 'traefik.http.routers.tprm-vendors.rule=PathPrefix(`/api/vendors`)'
       # SECURITY: Apply rate limiting and security headers middleware
       - 'traefik.http.routers.tprm-vendors.middlewares=api-security@file'
-      - 'traefik.http.routers.tprm-assessments.rule=PathPrefix(`/api/assessments`)'
-      - 'traefik.http.routers.tprm-assessments.middlewares=api-security@file'
+      # Vendor risk assessments are distinct from the frameworks service's
+      # compliance assessments at /api/assessments.
+      - 'traefik.http.routers.tprm-vendor-assessments.rule=PathPrefix(`/api/vendor-assessments`)'
+      - 'traefik.http.routers.tprm-vendor-assessments.middlewares=api-security@file'
       - 'traefik.http.routers.tprm-contracts.rule=PathPrefix(`/api/contracts`)'
       - 'traefik.http.routers.tprm-contracts.middlewares=api-security@file'
       - 'traefik.http.routers.tprm-config.rule=PathPrefix(`/api/tprm-config`)'
@@ -592,6 +594,10 @@ services:
       - 'traefik.http.routers.trust-knowledge-base.middlewares=api-security@file'
       - 'traefik.http.routers.trust-center.rule=PathPrefix(`/api/trust-center`)'
       - 'traefik.http.routers.trust-center.middlewares=api-security@file'
+      - 'traefik.http.routers.trust-answer-templates.rule=PathPrefix(`/api/answer-templates`)'
+      - 'traefik.http.routers.trust-answer-templates.middlewares=api-security@file'
+      - 'traefik.http.routers.trust-config.rule=PathPrefix(`/api/trust-config`)'
+      - 'traefik.http.routers.trust-config.middlewares=api-security@file'
       - 'traefik.http.services.trust.loadbalancer.server.port=3006'
     restart: unless-stopped
 

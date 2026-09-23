@@ -90,7 +90,7 @@ export default function AuditWorkpapers() {
       if (status) params.status = status;
       if (auditFilter) params.audit = auditFilter;
       if (ownerFilter) params.owner = ownerFilter;
-      const res = await api.get('/api/audits/workpapers', { params });
+      const res = await api.get('/api/audit/workpapers', { params });
       return res.data;
     },
   });

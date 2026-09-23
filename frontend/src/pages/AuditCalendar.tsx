@@ -27,6 +27,13 @@ interface CalendarEvent {
   description?: string;
 }
 
+interface AuditPlanEntry {
+  id: string;
+  auditName: string;
+  linkedAuditId?: string | null;
+  framework?: string | null;
+}
+
 const EVENT_VARIANT: Record<EventType, BadgeVariant> = {
   audit_start: 'brand',
   audit_end: 'success',
@@ -60,15 +67,6 @@ const MONTH_LABELS = [
 
 function startOfMonth(year: number, month: number) {
   return new Date(year, month, 1);
-}
-
-function endOfMonth(year: number, month: number) {
-  return new Date(year, month + 1, 0, 23, 59, 59, 999);
-}
-
-function toIsoDate(d: Date) {
-  // Return YYYY-MM-DD in UTC date sense
-  return d.toISOString();
 }
 
 function dateKey(d: Date) {
@@ -113,22 +111,25 @@ export default function AuditCalendar() {
 
   const monthLabel = `${MONTH_LABELS[cursor.month]} ${cursor.year}`;
 
-  const rangeStartIso = useMemo(
-    () => toIsoDate(startOfMonth(cursor.year, cursor.month)),
-    [cursor.year, cursor.month]
-  );
-  const rangeEndIso = useMemo(
-    () => toIsoDate(endOfMonth(cursor.year, cursor.month)),
-    [cursor.year, cursor.month]
-  );
-
   const { data: events, isLoading } = useQuery<CalendarEvent[]>({
-    queryKey: ['audits', 'calendar', rangeStartIso, rangeEndIso],
+    queryKey: ['audits', 'calendar', cursor.year],
     queryFn: async () => {
-      const res = await api.get('/api/audits/calendar', {
-        params: { start: rangeStartIso, end: rangeEndIso },
+      const res = await api.get('/api/audit/planning/calendar', {
+        params: { startYear: cursor.year, endYear: cursor.year },
       });
-      return Array.isArray(res.data) ? res.data : [];
+      const calendar = res.data as Record<string, Record<string, AuditPlanEntry[]>>;
+      return Object.entries(calendar ?? {}).flatMap(([year, quarters]) =>
+        Object.entries(quarters).flatMap(([quarter, entries]) =>
+          entries.map((entry) => ({
+            id: entry.id,
+            date: new Date(Number(year), (Number(quarter) - 1) * 3, 1).toISOString(),
+            type: 'milestone' as const,
+            title: entry.auditName,
+            auditId: entry.linkedAuditId ?? undefined,
+            description: entry.framework ?? undefined,
+          }))
+        )
+      );
     },
     staleTime: 60_000,
   });

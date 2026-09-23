@@ -102,7 +102,7 @@ export default function AnswerTemplates() {
 
   const updateMutation = useMutation({
     mutationFn: async (payload: DraftTemplate) => {
-      const res = await api.put(`/api/answer-templates/${payload.id}`, payload);
+      const res = await api.patch(`/api/answer-templates/${payload.id}`, payload);
       return res.data;
     },
     onSuccess: () => {

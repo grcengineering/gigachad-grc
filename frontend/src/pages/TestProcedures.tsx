@@ -106,7 +106,7 @@ export default function TestProcedures() {
       if (status) params.status = status;
       if (result) params.result = result;
       if (auditFilter) params.audit = auditFilter;
-      const res = await api.get('/api/audits/test-procedures', { params });
+      const res = await api.get('/api/audit/test-procedures', { params });
       return res.data;
     },
   });

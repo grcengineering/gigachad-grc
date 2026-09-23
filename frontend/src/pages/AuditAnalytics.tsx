@@ -20,8 +20,7 @@ interface SeverityBucket {
 
 interface TimelineBucket {
   period: string;
-  planned: number;
-  completed: number;
+  count: number;
 }
 
 interface NameCount {
@@ -33,9 +32,9 @@ interface AnalyticsResponse {
   auditsInFlight?: number;
   findingsOpen?: number;
   completionRate?: number;
-  avgCycleDays?: number;
+  avgRemediationDays?: number;
   findingsBySeverity?: SeverityBucket[];
-  completionTimeline?: TimelineBucket[];
+  auditCreationTrend?: TimelineBucket[];
   byFramework?: NameCount[];
   byAuditType?: NameCount[];
 }
@@ -71,8 +70,27 @@ export default function AuditAnalytics() {
   const { data, isLoading } = useQuery<AnalyticsResponse>({
     queryKey: ['audits', 'analytics'],
     queryFn: async () => {
-      const res = await api.get('/api/audits/analytics');
-      return res.data ?? {};
+      const [dashboard, findings, trends] = await Promise.all([
+        api.get('/api/audit/analytics/dashboard'),
+        api.get('/api/audit/analytics/findings'),
+        api.get('/api/audit/analytics/trends', { params: { period: 'monthly' } }),
+      ]);
+      const dashboardData = dashboard.data ?? {};
+      const findingsData = findings.data ?? {};
+      const trendsData = trends.data ?? {};
+      return {
+        auditsInFlight: dashboardData.activeAudits ?? 0,
+        findingsOpen: dashboardData.openFindings ?? 0,
+        completionRate:
+          dashboardData.totalAudits > 0
+            ? (dashboardData.completedAudits / dashboardData.totalAudits) * 100
+            : 0,
+        avgRemediationDays: findingsData.avgRemediationDays ?? 0,
+        findingsBySeverity: findingsData.bySeverity ?? [],
+        auditCreationTrend: trendsData.audits ?? [],
+        byFramework: [],
+        byAuditType: [],
+      };
     },
     staleTime: 30_000,
   });
@@ -86,9 +104,9 @@ export default function AuditAnalytics() {
     return { sorted, total };
   }, [data?.findingsBySeverity]);
 
-  const timeline = useMemo(() => data?.completionTimeline ?? [], [data?.completionTimeline]);
+  const timeline = useMemo(() => data?.auditCreationTrend ?? [], [data?.auditCreationTrend]);
   const timelineMax = useMemo(() => {
-    return maxValue(timeline.flatMap((b) => [b.planned ?? 0, b.completed ?? 0]));
+    return maxValue(timeline.map((bucket) => bucket.count ?? 0));
   }, [timeline]);
 
   const byFramework = useMemo(() => data?.byFramework ?? [], [data?.byFramework]);
@@ -143,11 +161,11 @@ export default function AuditAnalytics() {
           tone="emerald"
         />
         <StatCard
-          label="Avg Cycle Days"
-          value={data?.avgCycleDays ?? 0}
+          label="Avg Remediation Days"
+          value={data?.avgRemediationDays ?? 0}
           icon={<Clock className="h-5 w-5" />}
           tone="blue"
-          caption="Time to close per audit"
+          caption="Time to resolve findings"
         />
       </div>
 
@@ -203,39 +221,31 @@ export default function AuditAnalytics() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Completion Timeline</CardTitle>
+            <CardTitle>Audit Creation Trend</CardTitle>
           </CardHeader>
           <CardBody density="comfy">
             {timeline.length === 0 ? (
               <EmptyState
                 icon={<Clock className="h-6 w-6" />}
                 title="No timeline data"
-                description="Monthly planned vs completed audits will appear here."
+                description="Monthly audit creation counts will appear here."
                 size="sm"
               />
             ) : (
               <>
                 <div className="flex items-end gap-3 h-48">
                   {timeline.map((bucket) => {
-                    const plannedPct =
-                      timelineMax > 0 ? ((bucket.planned ?? 0) / timelineMax) * 100 : 0;
-                    const completedPct =
-                      timelineMax > 0 ? ((bucket.completed ?? 0) / timelineMax) * 100 : 0;
+                    const height = timelineMax > 0 ? ((bucket.count ?? 0) / timelineMax) * 100 : 0;
                     return (
                       <div
                         key={bucket.period}
                         className="flex-1 flex flex-col items-center gap-1.5"
                       >
-                        <div className="w-full flex-1 flex items-end gap-1">
+                        <div className="w-full flex-1 flex items-end">
                           <div
-                            className="flex-1 bg-blue-500 rounded-t-md transition-all"
-                            style={{ height: `${plannedPct}%` }}
-                            title={`Planned: ${bucket.planned ?? 0}`}
-                          />
-                          <div
-                            className="flex-1 bg-brand-500 rounded-t-md transition-all"
-                            style={{ height: `${completedPct}%` }}
-                            title={`Completed: ${bucket.completed ?? 0}`}
+                            className="w-full bg-blue-500 rounded-t-md transition-all"
+                            style={{ height: `${height}%` }}
+                            title={`Created: ${bucket.count ?? 0}`}
                           />
                         </div>
                         <span className="text-xs text-surface-500 tabular-nums">
@@ -248,11 +258,7 @@ export default function AuditAnalytics() {
                 <div className="mt-4 pt-3 border-t border-surface-200 flex items-center gap-4 text-xs">
                   <div className="flex items-center gap-1.5">
                     <span className="h-2.5 w-2.5 rounded-sm bg-blue-500" />
-                    <span className="text-surface-700">Planned</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-sm bg-brand-500" />
-                    <span className="text-surface-700">Completed</span>
+                    <span className="text-surface-700">Created</span>
                   </div>
                 </div>
               </>

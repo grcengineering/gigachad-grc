@@ -131,7 +131,7 @@ export default function TPRMConfiguration() {
   const { data, isLoading } = useQuery<TPRMConfig>({
     queryKey: ['tprm-config'],
     queryFn: async () => {
-      const res = await api.get('/api/config/tprm');
+      const res = await api.get('/api/tprm-config');
       const payload = res.data?.data ?? res.data;
       return {
         riskTiers: payload?.riskTiers ?? DEFAULT_CONFIG.riskTiers,
@@ -146,7 +146,7 @@ export default function TPRMConfiguration() {
   }, [data]);
 
   const saveMutation = useMutation({
-    mutationFn: (payload: TPRMConfig) => api.put('/api/config/tprm', payload),
+    mutationFn: (payload: TPRMConfig) => api.put('/api/tprm-config', payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tprm-config'] }),
   });
 

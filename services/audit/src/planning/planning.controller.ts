@@ -26,7 +26,7 @@ interface AuthenticatedRequest extends Request {
 @ApiTags('Audit Planning')
 @ApiBearerAuth()
 @UseGuards(DevAuthGuard, RolesGuard)
-@Controller('planning')
+@Controller('api/audit/planning')
 export class PlanningController {
   constructor(private readonly planningService: PlanningService) {}
 

@@ -44,7 +44,8 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    if (error.response?.status === 401) {
+    const isAuditorPortalRequest = error.config?.url?.startsWith('/api/audit-portal');
+    if (error.response?.status === 401 && !isAuditorPortalRequest) {
       // Handle unauthorized
       setApiBearerToken(null);
       window.location.href = '/login';
@@ -407,11 +408,11 @@ export const assessmentsApi = {
 
 export const vendorAssessmentsApi = {
   list: (params?: { vendorId?: string; assessmentType?: string; status?: string }) =>
-    api.get('/api/assessments', { params }),
-  get: (id: string) => api.get(`/api/assessments/${id}`),
-  create: (data: any) => api.post('/api/assessments', data),
-  update: (id: string, data: any) => api.patch(`/api/assessments/${id}`, data),
-  delete: (id: string) => api.delete(`/api/assessments/${id}`),
+    api.get('/api/vendor-assessments', { params }),
+  get: (id: string) => api.get(`/api/vendor-assessments/${id}`),
+  create: (data: any) => api.post('/api/vendor-assessments', data),
+  update: (id: string, data: any) => api.patch(`/api/vendor-assessments/${id}`, data),
+  delete: (id: string) => api.delete(`/api/vendor-assessments/${id}`),
 };
 
 export const mappingsApi = {
