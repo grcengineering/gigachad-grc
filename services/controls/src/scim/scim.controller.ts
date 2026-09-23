@@ -13,10 +13,7 @@ import {
   Headers,
   UnauthorizedException,
   ServiceUnavailableException,
-  Logger,
-  OnModuleInit,
 } from '@nestjs/common';
-import { timingSafeEqual } from 'crypto';
 import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger';
 import { ScimService } from './scim.service';
 import {
@@ -30,7 +27,6 @@ import {
   PatchScimDto,
   ScimQueryDto,
 } from './dto/scim.dto';
-import { ConfigService } from '@nestjs/config';
 
 /**
  * SCIM 2.0 API Controller
@@ -43,89 +39,33 @@ import { ConfigService } from '@nestjs/config';
 @ApiTags('SCIM 2.0')
 @ApiHeader({ name: 'Authorization', description: 'Bearer <SCIM_TOKEN>' })
 @Controller('scim/v2')
-export class ScimController implements OnModuleInit {
-  private readonly logger = new Logger(ScimController.name);
-  private readonly scimTokens: Map<string, string> = new Map();
-  private scimEnabled = false;
+export class ScimController {
+  constructor(private readonly scimService: ScimService) {}
 
-  constructor(
-    private readonly scimService: ScimService,
-    private readonly configService: ConfigService
-  ) {
-    // In production, tokens would be stored in database per-organization
-    // For now, use environment variable - but REQUIRE it to be set
-    const scimToken = this.configService.get<string>('SCIM_TOKEN');
-    const defaultOrgId = this.configService.get('DEFAULT_ORG_ID') || 'org-1';
-
-    if (scimToken && scimToken.trim().length > 0) {
-      this.scimTokens.set(scimToken, defaultOrgId);
-      this.scimEnabled = true;
-    }
-  }
-
-  onModuleInit() {
-    if (!this.scimEnabled) {
-      this.logger.warn(
-        'SCIM_TOKEN environment variable is not set. SCIM endpoints are disabled. ' +
-          'Set SCIM_TOKEN to enable SCIM provisioning.'
-      );
-    } else {
-      this.logger.log('SCIM provisioning is enabled');
-    }
-  }
-
-  private ensureScimEnabled(): void {
-    if (!this.scimEnabled) {
+  private async ensureScimConfigured(): Promise<void> {
+    if (!(await this.scimService.isConfigured())) {
       throw new ServiceUnavailableException(
         'SCIM provisioning is not configured. Please contact your administrator to enable SCIM.'
       );
     }
   }
 
-  private validateToken(authHeader: string): string {
-    this.ensureScimEnabled();
-
+  private async validateToken(authHeader?: string): Promise<string> {
     if (!authHeader?.startsWith('Bearer ')) {
       throw new UnauthorizedException('Missing or invalid Authorization header');
     }
 
-    const token = authHeader.substring(7);
-    const organizationId = this.validateScimTokenTimingSafe(token);
+    const token = authHeader.substring(7).trim();
+    if (!token) {
+      throw new UnauthorizedException('Missing or invalid Authorization header');
+    }
 
+    const organizationId = await this.scimService.authenticateToken(token);
     if (!organizationId) {
       throw new UnauthorizedException('Invalid SCIM token');
     }
 
     return organizationId;
-  }
-
-  /**
-   * Validates a SCIM token using timing-safe comparison.
-   *
-   * SECURITY: Using timingSafeEqual prevents timing attacks where an attacker
-   * could measure response times to progressively guess the correct token.
-   * Regular string comparison (=== or Map.get) can leak timing information
-   * because it returns early on the first mismatched character.
-   *
-   * @param token - The token to validate
-   * @returns The organization ID if valid, null otherwise
-   */
-  private validateScimTokenTimingSafe(token: string): string | null {
-    for (const [storedToken, orgId] of this.scimTokens.entries()) {
-      // Convert both tokens to buffers for timing-safe comparison
-      const tokenBuffer = Buffer.from(token);
-      const storedBuffer = Buffer.from(storedToken);
-
-      // Only compare if lengths match (length comparison is intentionally not timing-safe
-      // as token length is not considered secret information)
-      if (
-        tokenBuffer.length === storedBuffer.length &&
-        timingSafeEqual(tokenBuffer, storedBuffer)
-      ) {
-        return orgId;
-      }
-    }
-    return null;
   }
 
   // ==================== Users ====================
@@ -137,7 +77,7 @@ export class ScimController implements OnModuleInit {
     @Headers('authorization') authHeader: string,
     @Query() query: ScimQueryDto
   ): Promise<ScimListResponse<ScimUserResource>> {
-    const organizationId = this.validateToken(authHeader);
+    const organizationId = await this.validateToken(authHeader);
     return this.scimService.listUsers(organizationId, query);
   }
 
@@ -148,7 +88,7 @@ export class ScimController implements OnModuleInit {
     @Headers('authorization') authHeader: string,
     @Param('id') id: string
   ): Promise<ScimUserResource> {
-    const organizationId = this.validateToken(authHeader);
+    const organizationId = await this.validateToken(authHeader);
     return this.scimService.getUser(organizationId, id);
   }
 
@@ -160,7 +100,7 @@ export class ScimController implements OnModuleInit {
     @Headers('authorization') authHeader: string,
     @Body() dto: CreateScimUserDto
   ): Promise<ScimUserResource> {
-    const organizationId = this.validateToken(authHeader);
+    const organizationId = await this.validateToken(authHeader);
     return this.scimService.createUser(organizationId, dto);
   }
 
@@ -172,7 +112,7 @@ export class ScimController implements OnModuleInit {
     @Param('id') id: string,
     @Body() dto: UpdateScimUserDto
   ): Promise<ScimUserResource> {
-    const organizationId = this.validateToken(authHeader);
+    const organizationId = await this.validateToken(authHeader);
     return this.scimService.updateUser(organizationId, id, dto);
   }
 
@@ -184,7 +124,7 @@ export class ScimController implements OnModuleInit {
     @Param('id') id: string,
     @Body() dto: PatchScimDto
   ): Promise<ScimUserResource> {
-    const organizationId = this.validateToken(authHeader);
+    const organizationId = await this.validateToken(authHeader);
     return this.scimService.patchUser(organizationId, id, dto);
   }
 
@@ -196,7 +136,7 @@ export class ScimController implements OnModuleInit {
     @Headers('authorization') authHeader: string,
     @Param('id') id: string
   ): Promise<void> {
-    const organizationId = this.validateToken(authHeader);
+    const organizationId = await this.validateToken(authHeader);
     return this.scimService.deleteUser(organizationId, id);
   }
 
@@ -209,7 +149,7 @@ export class ScimController implements OnModuleInit {
     @Headers('authorization') authHeader: string,
     @Query() query: ScimQueryDto
   ): Promise<ScimListResponse<ScimGroupResource>> {
-    const organizationId = this.validateToken(authHeader);
+    const organizationId = await this.validateToken(authHeader);
     return this.scimService.listGroups(organizationId, query);
   }
 
@@ -220,7 +160,7 @@ export class ScimController implements OnModuleInit {
     @Headers('authorization') authHeader: string,
     @Param('id') id: string
   ): Promise<ScimGroupResource> {
-    const organizationId = this.validateToken(authHeader);
+    const organizationId = await this.validateToken(authHeader);
     return this.scimService.getGroup(organizationId, id);
   }
 
@@ -232,7 +172,7 @@ export class ScimController implements OnModuleInit {
     @Headers('authorization') authHeader: string,
     @Body() dto: CreateScimGroupDto
   ): Promise<ScimGroupResource> {
-    const organizationId = this.validateToken(authHeader);
+    const organizationId = await this.validateToken(authHeader);
     return this.scimService.createGroup(organizationId, dto);
   }
 
@@ -244,7 +184,7 @@ export class ScimController implements OnModuleInit {
     @Param('id') id: string,
     @Body() dto: UpdateScimGroupDto
   ): Promise<ScimGroupResource> {
-    const organizationId = this.validateToken(authHeader);
+    const organizationId = await this.validateToken(authHeader);
     return this.scimService.updateGroup(organizationId, id, dto);
   }
 
@@ -256,7 +196,7 @@ export class ScimController implements OnModuleInit {
     @Param('id') id: string,
     @Body() dto: PatchScimDto
   ): Promise<ScimGroupResource> {
-    const organizationId = this.validateToken(authHeader);
+    const organizationId = await this.validateToken(authHeader);
     return this.scimService.patchGroup(organizationId, id, dto);
   }
 
@@ -268,7 +208,7 @@ export class ScimController implements OnModuleInit {
     @Headers('authorization') authHeader: string,
     @Param('id') id: string
   ): Promise<void> {
-    const organizationId = this.validateToken(authHeader);
+    const organizationId = await this.validateToken(authHeader);
     return this.scimService.deleteGroup(organizationId, id);
   }
 
@@ -278,7 +218,7 @@ export class ScimController implements OnModuleInit {
   @ApiOperation({ summary: 'Get SCIM service provider configuration' })
   @ApiResponse({ status: 503, description: 'SCIM is not configured' })
   async getServiceProviderConfig() {
-    this.ensureScimEnabled();
+    await this.ensureScimConfigured();
 
     return {
       schemas: ['urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig'],
@@ -305,7 +245,7 @@ export class ScimController implements OnModuleInit {
   @ApiOperation({ summary: 'Get SCIM schemas' })
   @ApiResponse({ status: 503, description: 'SCIM is not configured' })
   async getSchemas() {
-    this.ensureScimEnabled();
+    await this.ensureScimConfigured();
 
     return {
       schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
@@ -329,7 +269,7 @@ export class ScimController implements OnModuleInit {
   @ApiOperation({ summary: 'Get SCIM resource types' })
   @ApiResponse({ status: 503, description: 'SCIM is not configured' })
   async getResourceTypes() {
-    this.ensureScimEnabled();
+    await this.ensureScimConfigured();
 
     return {
       schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],

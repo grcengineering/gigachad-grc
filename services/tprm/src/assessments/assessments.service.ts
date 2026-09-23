@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { PrismaService } from '../common/prisma.service';
 import { AuditService } from '../common/audit.service';
 import { CreateAssessmentDto } from './dto/create-assessment.dto';
 import { UpdateAssessmentDto } from './dto/update-assessment.dto';
 import { calculateNextReviewDate } from '../vendors/vendors.service';
 import { Prisma, VendorAssessment, Vendor, VendorAssessmentStatus } from '@prisma/client';
+import { createEvent, EVENT_BUS, EventBus, EventChannels } from '@gigachad-grc/shared';
 
 // Type for assessment with vendor relation
 type AssessmentWithVendor = VendorAssessment & {
@@ -29,9 +30,12 @@ function toAssessmentStatus(
 
 @Injectable()
 export class AssessmentsService {
+  private readonly logger = new Logger(AssessmentsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
-    private readonly audit: AuditService
+    private readonly audit: AuditService,
+    @Optional() @Inject(EVENT_BUS) private readonly eventBus?: EventBus
   ) {}
 
   async create(createAssessmentDto: CreateAssessmentDto, userId: string) {
@@ -73,6 +77,34 @@ export class AssessmentsService {
         assessmentType: assessment.assessmentType,
       },
     });
+
+    if (this.eventBus) {
+      try {
+        await this.eventBus.publish(
+          EventChannels.VENDORS,
+          createEvent(
+            'vendor.assessment_requested',
+            assessment.organizationId,
+            {
+              vendor: {
+                id: assessmentWithVendor.vendor.id,
+                name: assessmentWithVendor.vendor.name,
+              },
+              assessmentData: assessment,
+            },
+            {
+              userId,
+              entityId: assessment.id,
+              entityType: 'vendor_assessment',
+            }
+          )
+        );
+      } catch (error) {
+        this.logger.warn(
+          `Assessment ${assessment.id} was created but its workflow event could not be published: ${error}`
+        );
+      }
+    }
 
     return assessment;
   }

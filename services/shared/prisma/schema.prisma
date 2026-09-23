@@ -668,6 +668,7 @@ model Organization {
   webhookSubscriptions      WebhookSubscription[]
   jiraConnection            JiraConnection?
   serviceNowConnection      ServiceNowConnection?
+  scimProviderConfig        ScimProviderConfig?
   departments               Department[]
   calendarEvents            CalendarEvent[]
 
@@ -5301,7 +5302,7 @@ model ScimProviderConfig {
   id              String    @id @default(uuid())
   organizationId  String    @unique @map("organization_id")
   provider        String // okta, azure_ad, onelogin, google, generic
-  bearerToken     String    @map("bearer_token") // Hashed token
+  tokenHash       String    @unique @map("bearer_token") // SHA-256 token hash; plaintext is never stored
   enabled         Boolean   @default(true)
   defaultGroupIds Json      @default("[]") @map("default_group_ids")
   defaultRole     String?   @map("default_role")
@@ -5309,6 +5310,9 @@ model ScimProviderConfig {
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([enabled])
   @@map("scim_provider_configs")
 }
 

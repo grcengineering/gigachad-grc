@@ -1,7 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+  Optional,
+} from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import type { Counter } from 'prom-client';
+import * as cronParser from 'cron-parser';
+import { EVENT_BUS, EventBus } from '@gigachad-grc/shared';
 import { MCPClientService } from './mcp-client.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -57,16 +66,19 @@ interface WorkflowStepExecution {
 }
 
 @Injectable()
-export class MCPWorkflowService {
+export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(MCPWorkflowService.name);
   private workflows: Map<string, WorkflowDefinition> = new Map();
   private executions: Map<string, WorkflowExecution> = new Map();
+  private scheduleTimers = new Map<string, NodeJS.Timeout>();
+  private readonly eventChannels = ['grc:risks', 'grc:vendors', 'grc:alerts'];
 
   constructor(
     private mcpClient: MCPClientService,
     private prisma: PrismaService,
     @InjectMetric('mcp_workflow_executions_total')
     private readonly workflowExecutionsCounter: Counter<string>,
+    @Optional() @Inject(EVENT_BUS) private readonly eventBus?: EventBus,
   ) {
     // Register built-in workflows
     this.registerBuiltinWorkflows();
@@ -112,16 +124,6 @@ export class MCPWorkflowService {
           },
           dependsOn: ['collect-aws'],
         },
-        {
-          id: 'store-evidence',
-          name: 'Store Collected Evidence',
-          serverId: 'grc-evidence',
-          toolName: 'store_evidence',
-          arguments: {
-            sources: ['${collect-aws.output}', '${collect-github.output}', '${collect-okta.output}'],
-          },
-          dependsOn: ['collect-github', 'collect-okta'],
-        },
       ],
     });
 
@@ -156,7 +158,7 @@ export class MCPWorkflowService {
           serverId: 'grc-compliance',
           toolName: 'generate_compliance_report',
           arguments: {
-            frameworks: ['SOC2', 'ISO27001'],
+            framework: 'SOC2',
             reportType: 'detailed',
             includeEvidence: true,
           },
@@ -322,6 +324,105 @@ export class MCPWorkflowService {
         },
       ],
     });
+  }
+
+  async onModuleInit(): Promise<void> {
+    if (process.env.NODE_ENV === 'test') return;
+
+    for (const workflow of this.workflows.values()) {
+      if (workflow.trigger.type === 'scheduled' && workflow.trigger.schedule) {
+        this.scheduleWorkflow(workflow);
+      }
+    }
+
+    if (this.eventBus) {
+      for (const channel of this.eventChannels) {
+        await this.eventBus.subscribe<{
+          type?: string;
+          data?: Record<string, unknown>;
+          organizationId?: string;
+          entityId?: string;
+        }>(channel, async (event) => {
+          if (!event?.type) return;
+          await this.triggerEvent(event.type, {
+            ...(event.data || {}),
+            organizationId: event.organizationId,
+            entityId: event.entityId,
+          });
+        });
+      }
+    }
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    for (const timer of this.scheduleTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.scheduleTimers.clear();
+
+    if (this.eventBus) {
+      await Promise.all(
+        this.eventChannels.map((channel) =>
+          this.eventBus!.unsubscribe(channel).catch((error) =>
+            this.logger.warn(`Failed to unsubscribe MCP workflows from ${channel}: ${error}`),
+          ),
+        ),
+      );
+    }
+  }
+
+  async triggerEvent(
+    eventName: string,
+    payload: Record<string, unknown>,
+  ): Promise<WorkflowExecution[]> {
+    const workflows = Array.from(this.workflows.values()).filter(
+      (workflow) =>
+        workflow.trigger.type === 'event' && workflow.trigger.event === eventName,
+    );
+
+    return Promise.all(
+      workflows.map((workflow) =>
+        this.executeWorkflow(workflow.id, undefined, { event: payload }),
+      ),
+    );
+  }
+
+  private scheduleWorkflow(workflow: WorkflowDefinition): void {
+    const schedule = workflow.trigger.schedule;
+    if (!schedule) return;
+
+    try {
+      const nextRun = cronParser.parseExpression(schedule, {
+        currentDate: new Date(),
+      }).next().toDate();
+      const delay = Math.max(0, nextRun.getTime() - Date.now());
+      const timer = setTimeout(async () => {
+        try {
+          await this.executeWorkflow(workflow.id, undefined, {
+            trigger: { type: 'scheduled', scheduledAt: nextRun.toISOString() },
+          });
+        } catch (error) {
+          this.logger.error(
+            `Scheduled MCP workflow ${workflow.id} failed to start: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
+        } finally {
+          this.scheduleWorkflow(workflow);
+        }
+      }, delay);
+      timer.unref();
+      this.scheduleTimers.set(workflow.id, timer);
+      this.logger.log(
+        `Scheduled MCP workflow ${workflow.id} for ${nextRun.toISOString()}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Invalid schedule for MCP workflow ${workflow.id}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
   }
 
   // Register a new workflow
@@ -503,20 +604,31 @@ export class MCPWorkflowService {
     const resolved: Record<string, unknown> = {};
 
     for (const [key, value] of Object.entries(args)) {
-      if (typeof value === 'string' && value.startsWith('${')) {
-        resolved[key] = this.resolveVariable(value, context, stepOutputs);
-      } else if (typeof value === 'object' && value !== null) {
-        resolved[key] = this.resolveArguments(
-          value as Record<string, unknown>,
-          context,
-          stepOutputs,
-        );
-      } else {
-        resolved[key] = value;
-      }
+      resolved[key] = this.resolveValue(value, context, stepOutputs);
     }
 
     return resolved;
+  }
+
+  private resolveValue(
+    value: unknown,
+    context: Record<string, unknown>,
+    stepOutputs: Record<string, unknown>,
+  ): unknown {
+    if (typeof value === 'string' && value.startsWith('${') && value.endsWith('}')) {
+      return this.resolveVariable(value, context, stepOutputs);
+    }
+    if (Array.isArray(value)) {
+      return value.map((item) => this.resolveValue(item, context, stepOutputs));
+    }
+    if (typeof value === 'object' && value !== null) {
+      return this.resolveArguments(
+        value as Record<string, unknown>,
+        context,
+        stepOutputs,
+      );
+    }
+    return value;
   }
 
   private resolveVariable(

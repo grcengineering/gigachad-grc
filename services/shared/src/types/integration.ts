@@ -8,6 +8,7 @@ export type IntegrationType =
   | 'okta'
   | 'jira'
   | 'slack'
+  | 'notion_km'
   | 'custom';
 
 export type IntegrationStatus =

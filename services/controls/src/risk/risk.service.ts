@@ -6,10 +6,18 @@ import {
   Logger,
   Inject,
   forwardRef,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import { CacheService, CacheKeys } from '@gigachad-grc/shared';
+import {
+  CacheService,
+  CacheKeys,
+  createEvent,
+  EVENT_BUS,
+  EventBus,
+  EventChannels,
+} from '@gigachad-grc/shared';
 import { RiskWorkflowTasksService } from './risk-workflow-tasks.service';
 import { RiskLevel as PrismaRiskLevel } from '@prisma/client';
 import {
@@ -55,7 +63,8 @@ export class RiskService {
     private auditService: AuditService,
     private cache: CacheService,
     @Inject(forwardRef(() => RiskWorkflowTasksService))
-    private riskWorkflowTasksService: RiskWorkflowTasksService
+    private riskWorkflowTasksService: RiskWorkflowTasksService,
+    @Optional() @Inject(EVENT_BUS) private readonly eventBus?: EventBus
   ) {}
 
   // ===========================
@@ -489,6 +498,36 @@ export class RiskService {
 
     // Invalidate caches
     await this.invalidateRiskCaches(organizationId);
+
+    if (this.eventBus) {
+      try {
+        await this.eventBus.publish(
+          EventChannels.RISKS,
+          createEvent(
+            'risk.created',
+            organizationId,
+            {
+              riskDescription: risk.description,
+              risk: {
+                id: risk.id,
+                riskId: risk.riskId,
+                title: risk.title,
+                description: risk.description,
+              },
+            },
+            {
+              userId,
+              entityId: risk.id,
+              entityType: 'risk',
+            }
+          )
+        );
+      } catch (error) {
+        this.logger.warn(
+          `Risk ${risk.id} was created but its workflow event could not be published: ${error}`
+        );
+      }
+    }
 
     return this.toResponseDto(risk);
   }

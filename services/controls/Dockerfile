@@ -55,11 +55,39 @@ RUN ls -la node_modules/.prisma/client/ 2>/dev/null | head -5 || echo "Checking 
 # Build the service
 RUN npm run build
 
+# Build each stdio MCP server as an independently installable runtime. The
+# controls process launches these directories directly; they are not npm
+# workspaces and therefore must carry their own production dependencies.
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+
+WORKDIR /app/mcp-servers/grc-evidence
+COPY mcp-servers/grc-evidence/package*.json ./
+RUN npm ci --ignore-scripts
+COPY mcp-servers/grc-evidence/tsconfig.json ./
+COPY mcp-servers/grc-evidence/src ./src
+RUN npm run build && npm prune --omit=dev --ignore-scripts
+
+WORKDIR /app/mcp-servers/grc-compliance
+COPY mcp-servers/grc-compliance/package*.json ./
+RUN npm ci --ignore-scripts
+COPY mcp-servers/grc-compliance/tsconfig.json ./
+COPY mcp-servers/grc-compliance/src ./src
+RUN npm run build && npm prune --omit=dev --ignore-scripts
+
+WORKDIR /app/mcp-servers/grc-ai-assistant
+COPY mcp-servers/grc-ai-assistant/package*.json ./
+RUN npm ci --ignore-scripts
+COPY mcp-servers/grc-ai-assistant/tsconfig.json ./
+COPY mcp-servers/grc-ai-assistant/src ./src
+RUN npm run build && npm prune --omit=dev --ignore-scripts
+
 # Production stage
 FROM node:22-alpine@sha256:e58326d0d441090181ac150dc2078d3e2cf6a0d42e809aebba3ef5880935ffdd AS production
 
-# Patch OS-level CVEs, install OpenSSL for Prisma, remove npm (not needed at runtime)
-RUN apk upgrade --no-cache && apk add --no-cache "openssl>=3.5.8-r0" libcrypto3 libssl3 && \
+# Patch OS-level CVEs, install OpenSSL for Prisma and Chromium for the evidence
+# screenshot tool, then remove npm (the packaged MCP servers execute with node).
+RUN apk upgrade --no-cache && \
+    apk add --no-cache "openssl>=3.5.8-r0" libcrypto3 libssl3 chromium nss freetype harfbuzz ca-certificates && \
     rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 
 WORKDIR /app
@@ -73,6 +101,17 @@ COPY --from=builder /app/controls/package.json ./
 COPY --from=builder /app/shared/dist ./node_modules/@gigachad-grc/shared/dist
 COPY --from=builder /app/shared/package.json ./node_modules/@gigachad-grc/shared/
 COPY --from=builder /app/shared/node_modules ./node_modules/@gigachad-grc/shared/node_modules
+
+# Copy the built MCP servers and their isolated production dependencies.
+COPY --from=builder /app/mcp-servers/grc-evidence/package.json ./mcp-servers/grc-evidence/
+COPY --from=builder /app/mcp-servers/grc-evidence/dist ./mcp-servers/grc-evidence/dist
+COPY --from=builder /app/mcp-servers/grc-evidence/node_modules ./mcp-servers/grc-evidence/node_modules
+COPY --from=builder /app/mcp-servers/grc-compliance/package.json ./mcp-servers/grc-compliance/
+COPY --from=builder /app/mcp-servers/grc-compliance/dist ./mcp-servers/grc-compliance/dist
+COPY --from=builder /app/mcp-servers/grc-compliance/node_modules ./mcp-servers/grc-compliance/node_modules
+COPY --from=builder /app/mcp-servers/grc-ai-assistant/package.json ./mcp-servers/grc-ai-assistant/
+COPY --from=builder /app/mcp-servers/grc-ai-assistant/dist ./mcp-servers/grc-ai-assistant/dist
+COPY --from=builder /app/mcp-servers/grc-ai-assistant/node_modules ./mcp-servers/grc-ai-assistant/node_modules
 
 # Copy Prisma schema for migrations
 COPY --from=builder /app/shared/prisma ./shared/prisma
@@ -96,6 +135,8 @@ EXPOSE 3001
 
 ENV NODE_ENV=production
 ENV PORT=3001
+ENV MCP_SERVERS_ROOT=/app/mcp-servers
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 # Use entrypoint for auto-migration
 ENTRYPOINT ["/docker-entrypoint.sh"]

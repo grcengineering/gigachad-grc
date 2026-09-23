@@ -22,6 +22,8 @@ const mockMembershipFindMany = jest.fn();
 const mockMembershipCreate = jest.fn();
 const mockMembershipCreateMany = jest.fn();
 const mockMembershipDeleteMany = jest.fn();
+const mockScimConfigFindFirst = jest.fn();
+const mockScimConfigCount = jest.fn();
 
 const mockPrisma = {
   user: {
@@ -46,6 +48,10 @@ const mockPrisma = {
     create: mockMembershipCreate,
     createMany: mockMembershipCreateMany,
     deleteMany: mockMembershipDeleteMany,
+  },
+  scimProviderConfig: {
+    findFirst: mockScimConfigFindFirst,
+    count: mockScimConfigCount,
   },
 };
 
@@ -99,6 +105,36 @@ describe('ScimService', () => {
 
   // ==================== User Tests ====================
 
+  describe('tenant token authentication', () => {
+    it('hashes the bearer token and resolves the configured organization UUID', async () => {
+      const organizationId = 'a17a0371-4e0a-4eac-a834-88b8af1bc9e5';
+      mockScimConfigFindFirst.mockResolvedValue({ organizationId });
+
+      await expect(service.authenticateToken('plain-secret-token')).resolves.toBe(
+        organizationId,
+      );
+      expect(mockScimConfigFindFirst).toHaveBeenCalledWith({
+        where: {
+          tokenHash: ScimService.hashToken('plain-secret-token'),
+          enabled: true,
+          organization: { status: 'active' },
+        },
+        select: { organizationId: true },
+      });
+      expect(
+        JSON.stringify(mockScimConfigFindFirst.mock.calls[0][0]),
+      ).not.toContain('plain-secret-token');
+    });
+
+    it('fails closed for an unknown token or when no provider is configured', async () => {
+      mockScimConfigFindFirst.mockResolvedValue(null);
+      mockScimConfigCount.mockResolvedValue(0);
+
+      await expect(service.authenticateToken('unknown')).resolves.toBeNull();
+      await expect(service.isConfigured()).resolves.toBe(false);
+    });
+  });
+
   describe('listUsers', () => {
     it('should return paginated list of users in SCIM format', async () => {
       mockUserFindMany.mockResolvedValue([mockUser]);
@@ -141,7 +177,7 @@ describe('ScimService', () => {
       expect(mockUserFindMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            keycloakId: 'kc-123',
+            scimExternalId: { externalId: 'kc-123' },
           }),
         }),
       );
@@ -525,6 +561,7 @@ describe('ScimService', () => {
       });
       mockMembershipDeleteMany.mockResolvedValue({ count: 0 });
       mockMembershipCreateMany.mockResolvedValue({ count: 2 });
+      mockUserFindMany.mockResolvedValue([{ id: 'user-1' }, { id: 'user-2' }]);
 
       await service.createGroup(mockOrganizationId, {
         ...createDto,
@@ -552,6 +589,7 @@ describe('ScimService', () => {
         members: [],
       });
       mockMembershipCreate.mockResolvedValue({});
+      mockUserFindMany.mockResolvedValue([{ id: 'user-1' }]);
       mockGroupFindUnique.mockResolvedValue({
         ...mockGroup,
         members: [{ userId: 'user-1', user: { id: 'user-1', displayName: 'User 1' } }],

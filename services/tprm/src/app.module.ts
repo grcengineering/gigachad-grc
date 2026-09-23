@@ -10,7 +10,7 @@ import { TprmConfigModule } from './config/tprm-config.module';
 import { RiskAssessmentModule } from './risk-assessment/risk-assessment.module';
 import { SecurityScannerModule } from './security-scanner/security-scanner.module';
 import { AuditService } from './common/audit.service';
-import { StorageModule, CacheModule } from '@gigachad-grc/shared';
+import { StorageModule, CacheModule, EventsModule } from '@gigachad-grc/shared';
 import { AuthModule } from './auth/auth.module';
 
 @Global()
@@ -27,6 +27,7 @@ import { AuthModule } from './auth/auth.module';
       },
     ]),
     StorageModule.forRoot(),
+    EventsModule,
     CacheModule.forRoot({ defaultTtl: 300 }), // 5-minute cache for dashboard widgets
     // RiskAssessmentModule and SecurityScannerModule must be imported BEFORE VendorsModule
     // because their routes (/vendors/:id/risk-assessment/*, /vendors/:id/security-scan/*)

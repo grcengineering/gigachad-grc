@@ -318,7 +318,7 @@ export const CONNECTOR_MAP = {
   ziphq: 'ZipConnector',
   
   // Generic
-  notion: 'NotionKMConnector', airtable: 'AirtableConnector',
+  notion_km: 'NotionKMConnector', airtable: 'AirtableConnector',
   intercom: 'IntercomConnector', custom: 'CustomIntegrationConnector',
   
   // Security Awareness Training
