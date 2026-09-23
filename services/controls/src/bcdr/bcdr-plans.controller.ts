@@ -188,6 +188,10 @@ export class BCDRPlansController {
     @UploadedFile() file: Express.Multer.File,
     @Body('versionNumber') versionNumber?: string,
   ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
     return this.plansService.uploadDocument(
       id,
       user.organizationId,

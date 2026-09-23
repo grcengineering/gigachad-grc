@@ -269,6 +269,7 @@ services:
     environment:
       RUSTFS_ROOT_USER: ${MINIO_ROOT_USER}
       RUSTFS_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      RUSTFS_DEFAULT_BUCKETS: ${S3_BUCKET:-grc-storage}
       RUSTFS_BROWSER: ${MINIO_BROWSER:-on}
       RUSTFS_PROMETHEUS_AUTH_TYPE: public
       RUSTFS_DOMAIN: ${MINIO_DOMAIN:-storage.${APP_DOMAIN}}
@@ -399,11 +400,14 @@ services:
       PORT: 3001
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      STORAGE_TYPE: s3
       S3_ENDPOINT: rustfs
       S3_PORT: 9000
-      S3_USE_SSL: true
+      S3_USE_SSL: 'false'
       S3_ACCESS_KEY: ${MINIO_ROOT_USER}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_BUCKET: ${S3_BUCKET:-grc-storage}
+      S3_REGION: ${S3_REGION:-us-east-1}
       MINIO_ENDPOINT: rustfs
       MINIO_PORT: 9000
       MINIO_USE_SSL: false
@@ -475,8 +479,9 @@ services:
       - ALL
     read_only: true
     tmpfs:
-      - /tmp
+      - /tmp:rw,nosuid,nodev,mode=1777
       - /app/.npm
+      - /app/uploads:rw,nosuid,nodev,uid=1001,gid=1001,mode=0750
     logging:
       driver: 'json-file'
       options:
@@ -513,11 +518,14 @@ services:
       PORT: 3002
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      STORAGE_TYPE: s3
       S3_ENDPOINT: rustfs
       S3_PORT: 9000
-      S3_USE_SSL: true
+      S3_USE_SSL: 'false'
       S3_ACCESS_KEY: ${MINIO_ROOT_USER}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_BUCKET: ${S3_BUCKET:-grc-storage}
+      S3_REGION: ${S3_REGION:-us-east-1}
       MINIO_ENDPOINT: rustfs
       MINIO_PORT: 9000
       MINIO_USE_SSL: false
@@ -558,7 +566,7 @@ services:
       - ALL
     read_only: true
     tmpfs:
-      - /tmp
+      - /tmp:rw,nosuid,nodev,mode=1777
       - /app/.npm
     logging:
       driver: 'json-file'
@@ -596,11 +604,14 @@ services:
       PORT: 3004
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      STORAGE_TYPE: s3
       S3_ENDPOINT: rustfs
       S3_PORT: 9000
-      S3_USE_SSL: true
+      S3_USE_SSL: 'false'
       S3_ACCESS_KEY: ${MINIO_ROOT_USER}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_BUCKET: ${S3_BUCKET:-grc-storage}
+      S3_REGION: ${S3_REGION:-us-east-1}
       MINIO_ENDPOINT: rustfs
       MINIO_PORT: 9000
       MINIO_USE_SSL: false
@@ -641,7 +652,7 @@ services:
       - ALL
     read_only: true
     tmpfs:
-      - /tmp
+      - /tmp:rw,nosuid,nodev,mode=1777
       - /app/.npm
     logging:
       driver: 'json-file'
@@ -679,11 +690,14 @@ services:
       PORT: 3005
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      STORAGE_TYPE: s3
       S3_ENDPOINT: rustfs
       S3_PORT: 9000
-      S3_USE_SSL: true
+      S3_USE_SSL: 'false'
       S3_ACCESS_KEY: ${MINIO_ROOT_USER}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_BUCKET: ${S3_BUCKET:-grc-storage}
+      S3_REGION: ${S3_REGION:-us-east-1}
       MINIO_ENDPOINT: rustfs
       MINIO_PORT: 9000
       MINIO_USE_SSL: false
@@ -732,7 +746,7 @@ services:
       - ALL
     read_only: true
     tmpfs:
-      - /tmp
+      - /tmp:rw,nosuid,nodev,mode=1777
       - /app/.npm
     logging:
       driver: 'json-file'

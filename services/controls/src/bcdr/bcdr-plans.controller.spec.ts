@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import {
+  BCDRPlansController,
   BCDR_PLAN_MAX_BYTES,
   BCDR_PLAN_MIME_ALLOWLIST,
   bcdrPlanFileFilter,
@@ -38,5 +39,20 @@ describe('bcdrPlanFileFilter', () => {
 
   it('exposes a 25 MB max byte ceiling', () => {
     expect(BCDR_PLAN_MAX_BYTES).toBe(25 * 1024 * 1024);
+  });
+});
+
+describe('BCDRPlansController uploads', () => {
+  const plansService = { uploadDocument: jest.fn() };
+  const controller = new BCDRPlansController(plansService as never);
+  const user = { organizationId: 'org-1', userId: 'user-1' } as never;
+
+  beforeEach(() => jest.clearAllMocks());
+
+  it('rejects a missing plan document with HTTP 400', async () => {
+    await expect(
+      controller.uploadDocument('plan-1', user, undefined as unknown as Express.Multer.File)
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(plansService.uploadDocument).not.toHaveBeenCalled();
   });
 });

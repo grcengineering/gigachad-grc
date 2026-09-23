@@ -40,6 +40,13 @@ export class OrganizationsService {
   async updateCurrent(organizationId: string, userId: string, dto: UpdateOrganizationDto) {
     await this.ensureDevelopmentOrganization(organizationId);
 
+    if (
+      dto.settings?.timezone !== undefined &&
+      !this.isValidIanaTimezone(dto.settings.timezone)
+    ) {
+      throw new BadRequestException('timezone must be UTC or a valid IANA timezone');
+    }
+
     const existing = await this.prisma.organization.findUnique({
       where: { id: organizationId },
       select: {
@@ -119,6 +126,15 @@ export class OrganizationsService {
     }
 
     return this.toResponse(updated);
+  }
+
+  private isValidIanaTimezone(timezone: string): boolean {
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: timezone }).format();
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   private toResponse(organization: {

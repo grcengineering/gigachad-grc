@@ -191,6 +191,10 @@ export class EvidenceController {
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: UploadEvidenceDto
   ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
     return this.evidenceService.upload(user.organizationId, user.userId, file, dto);
   }
 
@@ -211,7 +215,7 @@ export class EvidenceController {
   @ApiOperation({ summary: 'Delete evidence' })
   @ApiParam({ name: 'id', description: 'Evidence ID' })
   async delete(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: UserContext) {
-    return this.evidenceService.delete(id, user.organizationId);
+    return this.evidenceService.delete(id, user.organizationId, user.userId);
   }
 
   @Post(':id/review')

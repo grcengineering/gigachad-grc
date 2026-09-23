@@ -118,6 +118,15 @@ describe('OrganizationsService', () => {
     );
   });
 
+  it('rejects timezone-shaped strings that are not real IANA zones', async () => {
+    await expect(
+      service.updateCurrent('org-1', 'user-1', {
+        settings: { timezone: 'America/Definitely_Not_Real' },
+      })
+    ).rejects.toThrow('timezone must be UTC or a valid IANA timezone');
+    expect(prisma.organization.update).not.toHaveBeenCalled();
+  });
+
   it('returns not found for an unknown tenant', async () => {
     prisma.organization.findUnique.mockResolvedValue(null);
 

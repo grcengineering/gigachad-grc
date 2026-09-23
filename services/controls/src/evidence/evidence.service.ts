@@ -230,22 +230,31 @@ export class EvidenceService {
   async delete(
     id: string,
     organizationId: string,
-    userId?: string,
+    userId: string,
     userEmail?: string,
     userName?: string
   ) {
-    const evidence = await this.findOne(id, organizationId);
+    // Commit the tenant-scoped soft delete before irreversibly removing the
+    // blob. If the metadata transaction fails, the stored evidence remains
+    // available and can be retried safely.
+    const evidence = await this.prisma.$transaction(async (tx) => {
+      const existing = await tx.evidence.findFirst({
+        where: { id, organizationId, deletedAt: null },
+      });
 
-    // Delete from storage
-    await this.storage.delete(evidence.storagePath);
+      if (!existing) {
+        throw new NotFoundException(`Evidence with ID ${id} not found`);
+      }
 
-    // Soft delete from database
-    await this.prisma.evidence.update({
-      where: { id },
-      data: {
-        deletedAt: new Date(),
-        deletedBy: userId || 'system',
-      },
+      await tx.evidence.update({
+        where: { id },
+        data: {
+          deletedAt: new Date(),
+          deletedBy: userId,
+        },
+      });
+
+      return existing;
     });
 
     // Audit log
@@ -261,6 +270,9 @@ export class EvidenceService {
       description: `Deleted evidence "${evidence.title}" (${evidence.filename})`,
       changes: { before: evidence },
     });
+
+    // Blob deletion deliberately follows the committed metadata transaction.
+    await this.storage.delete(evidence.storagePath);
 
     return { success: true };
   }

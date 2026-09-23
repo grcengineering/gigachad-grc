@@ -49,8 +49,12 @@ export class WorkspaceService {
       throw new NotFoundException('Organization not found');
     }
 
-    // If disabling, check if there's only one workspace
-    if (!enabled && org.workspaces.length > 1) {
+    const activeWorkspaceCount = org.workspaces.filter(
+      (workspace) => workspace.status === WorkspaceStatus.active
+    ).length;
+
+    // Archived workspaces do not prevent returning to single-workspace mode.
+    if (!enabled && activeWorkspaceCount > 1) {
       throw new BadRequestException(
         'Cannot disable multi-workspace mode when more than one workspace exists. ' +
         'Please archive or delete other workspaces first.'
