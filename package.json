@@ -24,6 +24,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "npm run test --workspaces --if-present",
+    "validate:docs": "node scripts/validate-docs.mjs",
     "validate:production": "./scripts/validate-production.sh",
     "validate:production:strict": "./scripts/validate-production.sh --strict",
     "backup": "./deploy/backup.sh",

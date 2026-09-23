@@ -147,8 +147,8 @@ npm run dev
 - **Frontend**: http://localhost:5173
 - **Controls API**: http://localhost:3001/api/docs (Swagger)
 - **Frameworks API**: http://localhost:3002/api/docs (Swagger)
-- **Keycloak Admin**: http://localhost:8080 (admin/admin)
-- **RustFS Console**: http://localhost:9001 (rustfsadmin/rustfsadminpassword)
+- **Keycloak Admin**: http://localhost:8080 (credentials in `.env`)
+- **RustFS Console**: http://localhost:9001 (credentials in `.env`)
 
 ### Development with Docker (Alternative)
 

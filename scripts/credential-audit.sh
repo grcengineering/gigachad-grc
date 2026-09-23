@@ -43,15 +43,15 @@ else
     echo ""
 fi
 
-# Check docker-compose for default credentials
-echo "3. Checking docker-compose.yml for default credentials..."
-defaults=$(grep -E "grc_secret|redis_secret|admin|minioadmin|rustfsadmin" docker-compose.yml)
+# Check docker-compose for password fallbacks
+echo "3. Checking docker-compose.yml for password fallbacks..."
+defaults=$(grep -E "PASSWORD[^}]*:-|SECRET[^}]*:-" docker-compose.yml || true)
 if [ -n "$defaults" ]; then
-    echo -e "${YELLOW}⚠️  Default credentials found in docker-compose.yml:${NC}"
-    echo "   These are OK as fallbacks, but should be overridden via .env"
+    echo -e "${YELLOW}⚠️  Password/secret fallback found in docker-compose.yml:${NC}"
+    echo "$defaults"
     echo ""
 else
-    echo -e "${GREEN}✓ Using environment variables${NC}"
+    echo -e "${GREEN}✓ Required passwords use environment variables${NC}"
     echo ""
 fi
 
@@ -93,22 +93,18 @@ echo "📋 Summary & Recommendations"
 echo "======================================"
 echo ""
 echo "Current credential locations:"
-echo "  1. docker-compose.yml - Uses env vars with DEV defaults"
-echo "  2. .env.example - Template file (safe)"
-echo "  3. Services use env vars at runtime"
+echo "  1. .env - Per-installation generated values (not committed)"
+echo "  2. .env.example - Placeholder template (not runnable as-is)"
+echo "  3. Services receive selected env vars at runtime"
 echo ""
 echo -e "${GREEN}✅ Recommendations:${NC}"
-echo "  1. Create .env file from .env.example"
-echo "  2. Update all CHANGE_ME_IN_PRODUCTION values"
-echo "  3. Add .env to .gitignore (if not already)"
+echo "  1. Use ./start.sh to generate local credentials"
+echo "  2. Replace every production placeholder with a generated value"
+echo "  3. Confirm .env and .env.prod are ignored"
 echo "  4. Use secrets manager for production (e.g., AWS Secrets Manager)"
 echo "  5. Rotate credentials regularly"
 echo ""
-echo -e "${YELLOW}⚠️  Default Development Credentials:${NC}"
-echo "  PostgreSQL: grc / grc_secret"
-echo "  Redis: redis_secret"
-echo "  Keycloak: admin / admin"
-echo "  RustFS: rustfsadmin / rustfsadminpassword"
-echo ""
-echo "These MUST be changed for production deployment!"
+echo -e "${YELLOW}⚠️  No shared development passwords are documented.${NC}"
+echo "Read KEYCLOAK_ADMIN_PASSWORD, GRAFANA_ADMIN_PASSWORD, and"
+echo "MINIO_ROOT_PASSWORD from the protected generated .env when needed."
 echo ""

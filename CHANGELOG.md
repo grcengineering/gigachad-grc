@@ -591,7 +591,7 @@ These changes are backwards compatible, but we recommend configuring the new sec
 - GitHub FUNDING.yml for sponsorship configuration
 - CI/CD workflow with GitHub Actions (lint, test, build, Docker, security scan)
 - Demo environment scripts (`scripts/start-demo.sh`, `scripts/stop-demo.sh`)
-- Gitpod and GitHub Codespaces configuration for cloud development
+- Cloud-development documentation draft (no Gitpod or GitHub Codespaces configuration shipped)
 - Comprehensive demo documentation (`docs/DEMO.md`)
 
 ### Changed

@@ -2,6 +2,12 @@
 
 Configure Model Context Protocol (MCP) servers to automate GRC workflows, evidence collection, and compliance checks.
 
+> **Deployment status:** The three packages exist under `mcp-servers/`, but the
+> default Docker Compose stack does not build, start, or connect them. The
+> in-app settings store configuration; they do not make an MCP package
+> available by themselves. Build and operate each server separately, configure
+> credentials, and verify its advertised tools before use.
+
 ## Overview
 
 MCP (Model Context Protocol) is an open protocol for connecting AI assistants to external tools and data sources. GigaChad GRC includes three purpose-built MCP servers:

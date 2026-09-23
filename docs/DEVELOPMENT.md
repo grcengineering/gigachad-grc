@@ -75,28 +75,22 @@ npm install
 
 ```bash
 # Start all services
-docker-compose up -d
+docker compose up -d
 
 # Wait for services to be healthy
-docker-compose ps
-
-# Verify all services are running
-./deploy/preflight-check.sh
+docker compose ps
 ```
 
 ### 3. Initialize Database
 
-```bash
-# Run Prisma migrations for each service
-cd services/controls && npx prisma migrate dev && cd ../..
-cd services/frameworks && npx prisma migrate dev && cd ../..
-cd services/policies && npx prisma migrate dev && cd ../..
-cd services/tprm && npx prisma migrate dev && cd ../..
-cd services/trust && npx prisma migrate dev && cd ../..
-cd services/audit && npx prisma migrate dev && cd ../..
+The Docker controls entrypoint initializes the single shared schema at
+`services/shared/prisma/schema.prisma` with `prisma db push`, then applies the
+BC/DR migration. Do not run a separate migration from every service.
 
-# Seed database (optional)
-npm run seed
+For an intentional host-side development schema sync:
+
+```bash
+npm --workspace @gigachad-grc/controls run prisma:push
 ```
 
 ### 4. Start Frontend
@@ -111,12 +105,13 @@ npm run dev
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| Frontend | http://localhost:3000 | - |
-| Traefik Dashboard | http://localhost:8090 | - |
-| Keycloak Admin | http://localhost:8080 | admin / admin |
-| RustFS Console | http://localhost:9001 | rustfsadmin / rustfsadmin |
-| PostgreSQL | localhost:5433 | grc / grc_secret |
-| Redis | localhost:6380 | redis_secret |
+| Application (Docker flow) | https://localhost | Dev Login |
+| Vite frontend (host development only) | http://localhost:3000 | Dev Login when explicitly enabled |
+| Traefik Dashboard | Disabled by default | Requires explicit local flags |
+| Keycloak Admin | https://auth.localhost | Values in `.env` |
+| RustFS Console | http://localhost:9001 | Values in `.env` |
+| PostgreSQL | localhost:5433 | Values in `.env` |
+| Redis | localhost:6380 | Value in `.env` |
 
 ---
 
@@ -219,7 +214,7 @@ gigachad-grc/
 
 ```bash
 # Start infrastructure only
-docker-compose up -d postgres redis keycloak rustfs traefik
+docker compose up -d postgres redis keycloak rustfs traefik
 
 # Start services in watch mode (separate terminals)
 cd services/controls && npm run start:dev
@@ -464,30 +459,26 @@ export class NewFeatureService {
 ### Prisma Commands
 
 ```bash
-cd services/controls
+# Generate clients from the shared schema
+npm run db:generate
 
-# Generate Prisma Client
-npx prisma generate
+# Synchronize a disposable development database
+npm --workspace @gigachad-grc/controls run prisma:push
 
-# Create migration
-npx prisma migrate dev --name add_new_field
-
-# Apply migrations (production)
-npx prisma migrate deploy
-
-# Reset database
-npx prisma migrate reset
-
-# Open Prisma Studio
-npx prisma studio
+# Open Prisma Studio with the shared schema
+npx prisma studio --schema=services/shared/prisma/schema.prisma
 ```
 
 ### Schema Changes
 
-1. Modify `prisma/schema.prisma`
-2. Create migration: `npx prisma migrate dev --name description`
-3. Generate client: `npx prisma generate`
-4. Restart service
+1. Modify `services/shared/prisma/schema.prisma`.
+2. Review the schema diff for destructive changes.
+3. Run `npm run db:generate`.
+4. Synchronize only a disposable development database with the controls workspace command above.
+5. Update the controls-owned migration/startup path before proposing a production change.
+
+The current Docker flow uses `prisma db push`; it does not have a complete
+versioned migration chain suitable for unattended production changes.
 
 ### Common Patterns
 
@@ -803,9 +794,9 @@ kill -9 <PID>
 
 **Docker issues**:
 ```bash
-docker-compose down -v
+docker compose down -v
 docker system prune -a
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 **Prisma issues**:

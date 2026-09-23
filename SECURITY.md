@@ -2,30 +2,20 @@
 
 ## Credential Management
 
-### Default Credentials (MUST BE CHANGED)
+### Generated Local Credentials
 
-The following default credentials are included for development purposes **ONLY**. These MUST be changed before deploying to production:
+`./start.sh` creates unique local passwords in `.env` when that file does not
+exist. Docker Compose requires those values and does not provide shared
+password fallbacks.
 
-1. **PostgreSQL Database**
-   - Username: `grc`
-   - Password: `grc_secret` ← CHANGE THIS
-
-2. **Redis Cache**
-   - Password: `redis_secret` ← CHANGE THIS
-
-3. **Keycloak Admin**
-   - Username: `admin`
-   - Password: `admin` ← CHANGE THIS
-
-4. **RustFS Object Storage** (S3-compatible)
-   - Access Key: `rustfsadmin`
-   - Secret Key: `rustfsadminpassword` ← CHANGE THIS
+Protect `.env`, never commit it, and read administrative credentials from it
+only when required. An existing `.env` is not overwritten automatically.
 
 ### Production Deployment Checklist
 
 Before deploying to production:
 
-- [ ] Change all default passwords in `.env` file
+- [ ] Generate unique production credentials; do not reuse local `.env`
 - [ ] Enable TLS/SSL for all services
 - [ ] Configure Keycloak for production mode
 - [ ] Use proper secrets management (e.g., HashiCorp Vault, AWS Secrets Manager)

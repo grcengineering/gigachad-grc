@@ -1,6 +1,8 @@
 # GigaChad GRC Help Center
 
-Welcome to the GigaChad GRC Help Center. This documentation provides comprehensive guides for using every feature of the platform.
+These guides describe repository features and workflows. Availability depends on the deployed revision, permissions, enabled modules, and external-provider configuration.
+
+> A documented workflow or visible UI entry is not a guarantee of production readiness. AI, email, third-party connectors, FieldGuide, MCP packages, public custom domains, and other provider-backed capabilities require separate configuration and verification. When a guide conflicts with executable routes or the live Swagger schema, use the executable implementation and report the documentation gap.
 
 ## 📚 Documentation Index
 
@@ -77,8 +79,8 @@ Welcome to the GigaChad GRC Help Center. This documentation provides comprehensi
 - [Quiz & Certificates](employee-compliance/quiz-certificates.md) - Training assessments
 
 ### AI & Automation
-- [AI Configuration](ai-mcp/ai-configuration.md) - AI feature settings
-- [MCP Servers](ai-mcp/mcp-servers.md) - Model Context Protocol integration
+- [AI Configuration](ai-mcp/ai-configuration.md) - Provider requirements and explicit mock mode
+- [MCP Servers](ai-mcp/mcp-servers.md) - Separately deployed Model Context Protocol packages
 - [AI Risk Assistant](ai-mcp/risk-assistant.md) - AI-powered risk analysis
 
 ### Reporting
@@ -97,7 +99,7 @@ Welcome to the GigaChad GRC Help Center. This documentation provides comprehensi
 - [Monitoring & Metrics](admin/monitoring.md) - Prometheus/Grafana monitoring
 
 ### Deployment & Operations
-- [Cloud Deployment](deployment/cloud-deployment.md) - Production deployment
+- [Cloud Deployment](deployment/cloud-deployment.md) - Available artifacts and unsupported targets
 - [Module Configuration](deployment/module-configuration.md) - Module settings
 
 ---
@@ -125,6 +127,6 @@ Welcome to the GigaChad GRC Help Center. This documentation provides comprehensi
 
 ## Need More Help?
 
-- **Developer Documentation**: See the [API Reference](/docs/API.md) for technical integration
-- **Architecture Overview**: See [Architecture Guide](/docs/ARCHITECTURE.md) for system design
-- **Troubleshooting**: See [Troubleshooting Guide](/docs/TROUBLESHOOTING.md) for common issues
+- **Developer Documentation**: See the [API Reference](../API.md) for technical integration
+- **Architecture Overview**: See [Architecture Guide](../ARCHITECTURE.md) for system design
+- **Troubleshooting**: See [Troubleshooting Guide](../TROUBLESHOOTING.md) for common issues

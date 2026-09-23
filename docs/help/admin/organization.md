@@ -143,23 +143,13 @@ Export your organization's data:
 
 ## Demo Data
 
-For evaluation and training:
+Demo seed operations are development-only and are not available from the
+current Organization settings UI. Use the API commands in the
+[Demo Data Guide](../getting-started/demo-data.md).
 
-### Load Demo Data
-1. Find **Demo Data** section
-2. Click **Load Demo Data**
-3. Confirm action
-
-Demo data includes:
-- Sample controls and frameworks
-- Example risks
-- Vendor records
-- Evidence examples
-
-### Clear Demo Data
-- Demo data can be cleared in Settings
-- Removes all demo records
-- Your real data is preserved
+Reset is destructive for organization records; it does not distinguish
+"real" records from seeded records. Review the status response and back up
+anything that must be preserved before reset.
 
 ## Notification Settings
 

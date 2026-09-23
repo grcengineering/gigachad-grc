@@ -82,6 +82,9 @@ for /f "delims=" %%a in ('powershell -Command "[Convert]::ToBase64String([Securi
 for /f "delims=" %%a in ('powershell -Command "[Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(24)) -replace '\+','-' -replace '/','_'"') do set POSTGRES_PASSWORD=%%a
 for /f "delims=" %%a in ('powershell -Command "[Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(24)) -replace '\+','-' -replace '/','_'"') do set REDIS_PASSWORD=%%a
 for /f "delims=" %%a in ('powershell -Command "[Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(20)) -replace '\+','-' -replace '/','_'"') do set MINIO_PASSWORD=%%a
+for /f "delims=" %%a in ('powershell -Command "[Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(24)) -replace '\+','-' -replace '/','_'"') do set KEYCLOAK_PASSWORD=%%a
+for /f "delims=" %%a in ('powershell -Command "[Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(32)) -replace '\+','-' -replace '/','_'"') do set GRAFANA_PASSWORD=%%a
+for /f "delims=" %%a in ('powershell -Command "[Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(32)) -replace '\+','-' -replace '/','_'"') do set PHISHING_TRACKING_SECRET=%%a
 
 REM Create .env file
 (
@@ -115,9 +118,16 @@ echo MINIO_PORT=9000
 echo.
 echo # Authentication
 echo KEYCLOAK_ADMIN=admin
-echo KEYCLOAK_ADMIN_PASSWORD=admin
+echo KEYCLOAK_ADMIN_PASSWORD=%KEYCLOAK_PASSWORD%
 echo KEYCLOAK_REALM=gigachad-grc
 echo USE_DEV_AUTH=true
+echo.
+echo # Monitoring
+echo GRAFANA_ADMIN_USER=gfadmin
+echo GRAFANA_ADMIN_PASSWORD=%GRAFANA_PASSWORD%
+echo.
+echo # Phishing simulation
+echo PHISHING_TRACKING_SECRET=%PHISHING_TRACKING_SECRET%
 echo.
 echo # CORS
 echo CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:5174
@@ -131,8 +141,9 @@ echo # Logging
 echo LOG_LEVEL=debug
 echo.
 echo # Frontend
-echo VITE_API_URL=http://localhost:3001
+echo VITE_API_URL=
 echo VITE_ENABLE_DEV_AUTH=true
+echo VITE_ENABLE_DEV_STUBS=false
 echo VITE_ENABLE_AI_MODULE=true
 ) > .env
 
@@ -143,6 +154,12 @@ goto :eof
 call :banner
 call :check_docker
 call :setup_env
+
+if not exist "gateway\certs\dev-localhost.crt" (
+    echo %RED%ERROR: Local HTTPS certificate is missing.%NC%
+    echo Run ./scripts/generate-dev-certs.sh once from Git Bash or WSL, then retry.
+    exit /b 1
+)
 
 echo.
 echo %BLUE%Starting GigaChad GRC...%NC%
@@ -160,13 +177,14 @@ echo %GREEN%                                                               %NC%
 echo %GREEN%===============================================================%NC%
 echo.
 echo Access Points:
-echo    Frontend        http://localhost:3000
+echo    Application     https://localhost
 echo    API Docs        http://localhost:3001/api/docs
-echo    Keycloak        http://localhost:8080 (admin/admin)
-echo    Grafana         http://localhost:3003 (admin/admin)
+echo    Keycloak        https://auth.localhost ^(credentials in .env^)
+echo    Grafana         https://grafana.localhost ^(credentials in .env^)
+echo    RustFS Console  http://localhost:9001 ^(credentials in .env^)
 echo.
 echo How to Login:
-echo    1. Go to http://localhost:3000
+echo    1. Go to https://localhost and accept the local certificate warning
 echo    2. Click the "Dev Login" button
 echo    3. You're in! No password needed.
 echo.
@@ -181,7 +199,7 @@ echo.
 REM Open browser after delay
 echo %YELLOW%Opening browser in 10 seconds...%NC%
 timeout /t 10 /nobreak >nul
-start http://localhost:3000
+start https://localhost
 goto :eof
 
 :stop

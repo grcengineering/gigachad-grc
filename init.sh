@@ -182,6 +182,8 @@ setup_environment() {
     POSTGRES_PASSWORD=$(openssl rand -base64 24 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 24 /dev/urandom | base64 | tr '+/' '-_')
     REDIS_PASSWORD=$(openssl rand -base64 24 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 24 /dev/urandom | base64 | tr '+/' '-_')
     MINIO_PASSWORD=$(openssl rand -base64 20 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 20 /dev/urandom | base64 | tr '+/' '-_')
+    KEYCLOAK_PASSWORD=$(openssl rand -base64 24 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 24 /dev/urandom | base64 | tr '+/' '-_')
+    PHISHING_TRACKING_SECRET=$(openssl rand -base64 32 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 32 /dev/urandom | base64 | tr '+/' '-_')
 
     cat > ".env" << EOF
 # ============================================================================
@@ -215,9 +217,12 @@ MINIO_PORT=9000
 
 # Authentication
 KEYCLOAK_ADMIN=admin
-KEYCLOAK_ADMIN_PASSWORD=admin
+KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_PASSWORD}
 KEYCLOAK_REALM=gigachad-grc
 USE_DEV_AUTH=true
+
+# Phishing simulation
+PHISHING_TRACKING_SECRET=${PHISHING_TRACKING_SECRET}
 
 # CORS
 CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:5174
@@ -277,7 +282,7 @@ start_infrastructure() {
     log_substep "Waiting for Redis to be ready..."
     attempts=0
     while [ $attempts -lt $max_attempts ]; do
-        if docker compose exec -T redis redis-cli -a "${REDIS_PASSWORD:-redis_secret}" ping > /dev/null 2>&1; then
+        if docker compose exec -T redis redis-cli -a "${REDIS_PASSWORD:?REDIS_PASSWORD is required}" ping > /dev/null 2>&1; then
             log_success "Redis is ready"
             break
         fi
@@ -467,9 +472,8 @@ print_success_demo() {
     echo -e "${BOLD}Access Points:${NC}"
     echo -e "   ${CYAN}Frontend${NC}        http://localhost:3000 (or :5173)"
     echo -e "   ${CYAN}API Docs${NC}        http://localhost:3001/api/docs"
-    echo -e "   ${CYAN}Keycloak${NC}        http://localhost:8080 (admin/admin)"
-    echo -e "   ${CYAN}RustFS Console${NC}  http://localhost:9001 (rustfsadmin/...)"
-    echo -e "   ${CYAN}Grafana${NC}         http://localhost:3003 (admin/admin)"
+    echo -e "   ${CYAN}Keycloak${NC}        http://localhost:8080 (credentials in .env)"
+    echo -e "   ${CYAN}RustFS Console${NC}  http://localhost:9001 (credentials in .env)"
     echo ""
     echo -e "${BOLD}Quick Login:${NC}"
     echo -e "   Click the ${CYAN}\"Dev Login\"${NC} button - no password needed!"

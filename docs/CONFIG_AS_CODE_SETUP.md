@@ -2,21 +2,21 @@
 
 ## Database Migration
 
-The Configuration as Code module requires database tables to be created. Run the following migration:
+Configuration as Code models are part of the single shared schema at
+`services/shared/prisma/schema.prisma`. In Docker, the controls entrypoint
+creates/synchronizes them with the rest of the application schema.
+
+For a disposable host-development database:
 
 ```bash
-cd services/shared
-npx prisma migrate dev --name add_config_as_code
+npm run db:generate
+npm --workspace @gigachad-grc/controls run prisma:push
 ```
 
-Or if you prefer to use Prisma's auto-migration:
+Do not create a separate service migration. The current Docker flow uses the
+controls-owned schema synchronization documented in [Database Schema](DATABASE_SCHEMA.md).
 
-```bash
-cd services/shared
-npx prisma db push
-```
-
-This will create the following tables:
+The shared schema includes:
 - `config_files` - Stores configuration files
 - `config_file_versions` - Stores version history
 
@@ -65,9 +65,8 @@ vendors/
 
 If you see errors about missing tables:
 ```bash
-cd services/shared
-npx prisma generate
-npx prisma migrate dev
+npm run db:generate
+npm --workspace @gigachad-grc/controls run prisma:push
 ```
 
 ### Module not appearing

@@ -1,353 +1,103 @@
-# Integration Implementation Status
+# Integration implementation status
 
-**Last Updated:** December 11, 2024
+Status reconciled against base `6275e43e`.
 
-## Summary
+## Read this first
 
-- **Total Integrations:** 217
-- **Fully Implemented:** 80 (37%)
-- **Placeholders:** 137 (63%)
+The Integrations page exposes a large catalog, but catalog visibility is not the same as production support.
 
-## Fully Implemented Integrations (80)
+There are three separate layers:
 
-These integrations have real HTTP API calls and can actually collect data:
+1. `IntegrationType` and `INTEGRATION_TYPES` define API-accepted/cataloged types.
+2. `ConnectorFactory` registers connector implementations.
+3. Each connector implements its own authentication test and sync coverage.
 
-### Cloud Infrastructure (11)
-- AWS
-- Azure
-- GCP
-- Cloudflare
-- DigitalOcean
-- Oracle Cloud
-- IBM Cloud
-- Alibaba Cloud
-- Linode
-- Vultr
-- Heroku
-- Vercel
-- Netlify
-- Render
-- Hetzner
+Those layers are not currently generated from one source and do not have complete parity. Do not quote the catalog size as the number of fully supported connectors.
 
-### Identity & Access (6)
-- Okta
-- Azure AD
-- Google Workspace
-- OneLogin
-- JumpCloud
-- Microsoft Intune
+## Platform integration functions
 
-### DevSecOps (18)
-- GitHub
-- GitLab
-- Bitbucket
-- Docker Hub
-- Jenkins
-- CircleCI
-- TravisCI
-- Azure DevOps
-- JFrog
-- Sonatype Nexus
-- CodeClimate
-- Checkmarx
-- Aqua Security
-- Prisma Cloud
-- Orca Security
-- Sysdig
-- Panther
-- ArmorCode
-- LaunchDarkly
+| Function | Status | Notes |
+| --- | --- | --- |
+| List integration types | Implemented | `GET /api/integrations/types` |
+| Create/update/delete configuration | Implemented | Admin or compliance-manager role |
+| Encrypt sensitive config fields | Implemented | Requires `ENCRYPTION_KEY`; external secrets provider is optional |
+| Test connection | Implemented at platform level | Result quality depends on the selected connector |
+| Manual sync | Implemented at platform level | Calls the connector and stores a generic JSON evidence artifact |
+| Sync job history/status | Implemented in persistence | Manual sync creates a job record |
+| Automatic integration sync by `syncFrequency` | Not established | The field is stored, but this document does not claim a provider-sync scheduler is wired |
+| Generic browser OAuth flow for all catalog cards | Not implemented as a universal flow | Most connectors require tokens, service accounts, or client credentials supplied in configuration |
+| Custom integration visual mode | Implemented | Calls configured HTTP endpoints with SSRF protections |
+| Custom JavaScript execution | Disabled by default | Requires `ENABLE_CUSTOM_CODE_EXECUTION=true`; not recommended for production |
 
-### Security Scanning (5)
-- CrowdStrike
-- Snyk
-- Wiz
-- SonarQube
-- Tenable
-- SentinelOne
+## Connector behavior
 
-### ITSM (5)
-- Jira
-- ServiceNow
-- Zendesk
-- Freshdesk
-- PagerDuty
+For a connector to be considered usable in an environment, all of these must be true:
 
-### CRM & Sales (3)
-- Salesforce
-- HubSpot
+- the type is accepted by the API;
+- the factory returns a connector;
+- **Test Connection** makes a successful upstream request;
+- required provider APIs and scopes are enabled;
+- outbound network access is allowed;
+- a manual sync returns the expected provider data; and
+- the resulting evidence artifact is reviewed for completeness.
 
-### Communication (3)
-- Slack
-- Microsoft Teams
-- Zoom
+A successful platform sync only proves that the connector call completed and an evidence record could be stored. It does not prove that every advertised evidence type was collected.
 
-### Project Management (5)
-- Asana
-- Trello
-- Monday
-- ClickUp
-- Linear
+Many connectors catch individual upstream endpoint failures and return partial results with an `errors` collection. Operators must review that collection and the controls-service logs.
 
-### Monitoring (4)
-- Sentry
-- Datadog
-- New Relic
-- Splunk
+## Known exceptions and gaps
 
-### HR & People (3)
-- BambooHR
-- Workday
-- Rippling
+### AWS generic integration
 
-### Procurement (1)
-- ZipHQ
+The generic integration factory currently registers `AWSConnector`, but that class deliberately throws because its former mock transport was removed. A separate SDK-based `AWSCollector` exists under `services/controls/src/integrations/collectors/`, but it is not wired into the generic `/api/integrations/:id/sync` path.
 
-### Generic (9)
-- Generic Connector
-- Notion
-- Airtable
-- Box
-- Dropbox
-- Confluence
-- Intercom
-- Stripe
+Result: do not claim AWS sync from the Integrations page is available on this base.
 
-## Placeholder Integrations (137)
+### Catalog/factory mismatch
 
-These integrations have stub implementations that:
-- ✅ Validate configuration
-- ✅ Return success on testConnection
-- ❌ Return empty data (total: 0, items: [])
-- ❌ Do not make actual API calls
+The factory contains registrations that are not necessarily accepted by the DTO enum, while some cataloged types can reach the factory's "pending implementation" fallback.
 
-### HR & People Management (16)
-- Gusto
-- ADP
-- Paychex
-- TriNet
-- Namely
-- Personio
-- Factorial
-- CharlieHR
-- Zenefits
-- UKG
-- SAP SuccessFactors
-- Oracle HCM
-- HiBob
-- Lattice
-- Culture Amp
-- Justworks
+Notably, an unknown factory type can return a configuration-validation message from **Test Connection** without proving upstream connectivity. Only an actual provider response establishes a working connection.
 
-### Background Check (6)
-- Checkr
-- Sterling
-- GoodHire
-- HireRight
-- Certn
-- Intelifi
+### Mock behavior
 
-### Finance & Accounting (10)
-- QuickBooks
-- Xero
-- NetSuite
-- FreshBooks
-- Wave
-- SAP
-- Expensify
-- Concur
-- Bill.com
-- Dynamics 365
+Connectors do not have a supported "missing credentials means sample evidence" mode. Missing or invalid provider configuration should be treated as unavailable or failed.
 
-### Finance Tools (3)
-- Brex
-- Ramp
-- Divvy
+Do not interpret empty collections, zero counts, or generic evidence files as demo data or successful compliance evidence.
 
-### Analytics & BI (10)
-- Amplitude
-- Mixpanel
-- Segment
-- Tableau
-- Power BI
-- Looker
-- Domo
-- Metabase
-- Redash
-- Superset
-- Grafana
-- Elasticsearch
-- Snowflake
-- Databricks
-- Fivetran
-- Heap
-- Qlik
+## Evidence collectors are a separate feature
 
-### CRM & Sales (7)
-- Pipedrive
-- Zoho CRM
-- SugarCRM
-- Copper
-- Pega
-- Monday CRM
-- HelpScout
-- Front
-- Close
-- Insightly
+Control evidence collectors live under:
 
-### Project Management (8)
-- Smartsheet
-- Wrike
-- Basecamp
-- Shortcut
-- Height
-- Teamwork
-- Podio
-- Coda
+```text
+/api/controls/:controlId/implementations/:implementationId/collectors
+```
 
-### Communication (10)
-- Discord
-- Webex
-- Mattermost
-- RingCentral
-- GoToMeeting
-- Google Meet
-- Chanty
-- Twist
-- Workplace Meta
-- Flock
-- RocketChat
+They can call an operator-configured HTTP endpoint on a schedule and create evidence linked to a control. They do not turn every catalog card into a provider-specific collector, and they do not synthesize sample evidence when configuration is absent.
 
-### Knowledge Management (7)
-- Guru
-- Tettra
-- Slab
-- Nuclino
-- Bloomfire
-- Helpjuice
-- KnowledgeOwl
-- Document360
+## Minimum acceptance test per provider
 
-### IT Asset Management (12)
-- Snipe-IT
-- Asset Panda
-- Lansweeper
-- ServiceNow ITAM
-- Flexera
-- Snow Software
-- Oomnitza
-- ManageEngine AssetExplorer
-- Atlassian Assets
-- Device42
+Before enabling a connector in production:
 
-### Endpoint & MDM (7)
-- VMware Workspace One
-- Citrix Endpoint
-- BlackBerry UEM
-- ManageEngine MDM
-- Miradore
-- Kandji
-- Mosyle
-- IBM MaaS360
+1. create a least-privilege provider identity;
+2. configure the integration in a non-production organization;
+3. run **Test Connection** and verify the upstream account/tenant identity;
+4. run a manual sync;
+5. inspect `data.errors` and service logs;
+6. compare collected counts with the provider;
+7. open the generated evidence JSON and verify required fields;
+8. test expired/revoked credentials;
+9. test tenant isolation; and
+10. document provider API versions and required scopes.
 
-### Identity & Access (7)
-- AWS Cognito
-- Keycloak
-- FusionAuth
-- Ping Identity
-- ForgeRock
-- CyberArk
-- LastPass
-- 1Password
-- Auth0
-- Duo Security
+## Documentation policy
 
-### Security Awareness (8)
-- KnowBe4
-- Proofpoint SAT
-- Mimecast Awareness
-- Cofense
-- Hoxhunt
-- Curricula
-- Infosec IQ
-- Terranova
+Use these terms consistently:
 
-### Network Security (3)
-- Palo Alto Networks
-- Fortinet
-- Check Point
+- **Cataloged**: appears in metadata/UI.
+- **Registered**: has a factory entry.
+- **Implemented**: contains code that calls an upstream API.
+- **Verified**: passed the acceptance test above for a specific version and environment.
+- **Unavailable**: known not to work through the documented path.
 
-### Application Security (1)
-- Veracode
-
-### GRC Platforms (1)
-- Drata
-
-### Incident Management (1)
-- incident.io
-
-### Other (2)
-- Lacework
-- Qualys
-- Rapid7
-- Sumo Logic
-
-## Implementation Requirements
-
-To make all integrations fully functional, each placeholder needs:
-
-1. **API Client Setup**
-   - HTTP client (axios/fetch)
-   - Authentication handling
-   - Error handling
-   - Rate limiting
-
-2. **testConnection() Method**
-   - Validate credentials
-   - Make actual API call
-   - Return meaningful success/error messages
-
-3. **sync() Method**
-   - Fetch real data from API
-   - Transform to standard format
-   - Return structured data with counts
-
-4. **Evidence Mapping**
-   - Map API responses to evidence types
-   - Create evidence records in database
-   - Handle pagination for large datasets
-
-## Priority Recommendations
-
-### High Priority (Most Commonly Used)
-1. **HR Systems:** Workday, ADP, Gusto, BambooHR (already done)
-2. **Finance:** QuickBooks, Xero, Stripe (Stripe done)
-3. **CRM:** Salesforce (done), HubSpot (done), Zoho CRM
-4. **Security:** CrowdStrike (done), Snyk (done), Tenable (done)
-5. **Cloud:** AWS (done), Azure (done), GCP (done)
-
-### Medium Priority
-- Analytics tools (Tableau, Power BI, Looker)
-- Communication tools (Slack done, Teams done, Discord)
-- Project management (Asana done, Jira done, Monday done)
-
-### Low Priority
-- Niche tools
-- Less common integrations
-- Specialized industry tools
-
-## Next Steps
-
-1. **Phase 1:** Implement top 20 most requested integrations
-2. **Phase 2:** Implement remaining high-priority integrations
-3. **Phase 3:** Implement medium-priority integrations
-4. **Phase 4:** Implement low-priority integrations
-
-Each integration implementation should include:
-- API documentation review
-- Authentication method implementation
-- Core data sync functionality
-- Error handling and retry logic
-- Unit tests
-- Documentation updates
-
+Only **verified** connectors should be described as production-supported by an operator. This repository does not currently publish a verified-provider certification matrix.

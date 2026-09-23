@@ -86,6 +86,9 @@ else
     POSTGRES_PASSWORD=$(openssl rand -base64 24 | tr -d '\n' | tr '+/' '-_')
     REDIS_PASSWORD=$(openssl rand -base64 24 | tr -d '\n' | tr '+/' '-_')
     MINIO_PASSWORD=$(openssl rand -base64 20 | tr -d '\n' | tr '+/' '-_')
+    KEYCLOAK_PASSWORD=$(openssl rand -base64 24 | tr -d '\n' | tr '+/' '-_')
+    GRAFANA_PASSWORD=$(openssl rand -base64 32 | tr -d '\n' | tr '+/' '-_')
+    PHISHING_TRACKING_SECRET=$(openssl rand -base64 32 | tr -d '\n' | tr '+/' '-_')
     INFISICAL_ENCRYPTION_KEY=$(openssl rand -hex 16)
     INFISICAL_AUTH_SECRET=$(openssl rand -base64 32 | tr -d '\n')
 
@@ -132,8 +135,15 @@ KEYCLOAK_URL=http://localhost:8080
 KEYCLOAK_REALM=gigachad-grc
 KEYCLOAK_CLIENT_ID=grc-app
 KEYCLOAK_ADMIN=admin
-KEYCLOAK_ADMIN_PASSWORD=admin
+KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_PASSWORD}
 USE_DEV_AUTH=true
+
+# Monitoring
+GRAFANA_ADMIN_USER=gfadmin
+GRAFANA_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+
+# Phishing simulation
+PHISHING_TRACKING_SECRET=${PHISHING_TRACKING_SECRET}
 
 # CORS
 CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:5174
@@ -154,8 +164,13 @@ INFISICAL_AUTH_SECRET=${INFISICAL_AUTH_SECRET}
 # Logging
 LOG_LEVEL=debug
 
+# Secrets Management
+SECRETS_PROVIDER=env
+
 # Frontend
-VITE_API_URL=http://localhost:3001
+VITE_API_URL=
+VITE_ENABLE_DEV_AUTH=true
+VITE_ENABLE_DEV_STUBS=false
 VITE_ENABLE_AI_MODULE=true
 EOF
 
@@ -170,7 +185,7 @@ echo -e "${BLUE}[INFO]${NC} Checking Docker containers..."
 # Check if Docker is running
 if ! docker info > /dev/null 2>&1; then
     echo -e "${YELLOW}[WARN]${NC} Docker is not running. Please start Docker and run:"
-    echo -e "       docker compose up -d"
+    echo -e "       ./start.sh"
     exit 0
 fi
 
@@ -183,7 +198,8 @@ if [ "$CONTAINERS_RUNNING" -gt 0 ]; then
     if [ "$RESET_MODE" = true ]; then
         echo -e "${BLUE}[INFO]${NC} Recreating containers with new secrets..."
         docker compose down
-        docker compose up -d
+        ./scripts/generate-dev-certs.sh
+        docker compose up -d --build
         echo -e "${GREEN}[SUCCESS]${NC} Containers recreated"
     else
         echo -e "${BLUE}[INFO]${NC} To apply new environment variables, run:"
@@ -191,7 +207,7 @@ if [ "$CONTAINERS_RUNNING" -gt 0 ]; then
     fi
 else
     echo -e "${BLUE}[INFO]${NC} No containers running. Start with:"
-    echo -e "       docker compose up -d"
+    echo -e "       ./start.sh"
 fi
 
 echo ""
@@ -200,9 +216,9 @@ echo -e "${GREEN}║                    Setup Complete!                         
 echo -e "${GREEN}╚═══════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "Next steps:"
-echo -e "  1. Start services:     ${CYAN}docker compose up -d${NC}"
-echo -e "  2. Start frontend:     ${CYAN}cd frontend && npm run dev${NC}"
-echo -e "  3. Access app:         ${CYAN}http://localhost:5173${NC}"
+echo -e "  1. Start services:     ${CYAN}./start.sh${NC}"
+echo -e "  2. Access app:         ${CYAN}https://localhost${NC}"
+echo -e "  3. Use generated credentials from the protected .env file"
 echo ""
 echo -e "Validate production readiness:"
 echo -e "  ${CYAN}npm run validate:production${NC}"

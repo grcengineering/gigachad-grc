@@ -2,6 +2,12 @@
 
 GigaChad GRC includes AI-powered capabilities to help trust analysts complete questionnaires faster and more accurately.
 
+> **Availability:** These workflows require a configured provider and the
+> corresponding UI action on the deployed revision. Trust AI uses its own
+> service path; platform-wide AI configuration does not prove every action is
+> wired. Check service logs and mock indicators, and always review generated
+> content before use.
+
 ## Overview
 
 AI features in the Trust module include:

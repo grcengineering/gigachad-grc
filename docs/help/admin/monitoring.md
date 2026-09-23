@@ -16,14 +16,18 @@ The monitoring stack provides:
 ### Prometheus
 
 Direct access to metrics:
-- **URL**: http://localhost:9090 (or your configured domain)
+- **Local gateway URL**: https://prometheus.localhost
+- **Direct debugging URL**: http://localhost:9090
 - **Purpose**: Query raw metrics, view targets
 
 ### Grafana
 
 Visual dashboards:
-- **URL**: http://localhost:3003 (or your configured domain)
-- **Default Login**: admin/admin (change in production)
+- **Local gateway URL**: https://grafana.localhost
+- **Direct debugging URL**: http://localhost:3003
+- **Login**: `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` from the protected `.env`
+
+The production Compose file does not include this local monitoring stack. Configure and secure external monitoring separately for production.
 
 ## Pre-Built Dashboards
 

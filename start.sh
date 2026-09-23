@@ -74,6 +74,7 @@ setup_env() {
     POSTGRES_PASSWORD=$(openssl rand -base64 24 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 24 /dev/urandom | base64 | tr '+/' '-_')
     REDIS_PASSWORD=$(openssl rand -base64 24 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 24 /dev/urandom | base64 | tr '+/' '-_')
     MINIO_PASSWORD=$(openssl rand -base64 20 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 20 /dev/urandom | base64 | tr '+/' '-_')
+    KEYCLOAK_PASSWORD=$(openssl rand -base64 24 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 24 /dev/urandom | base64 | tr '+/' '-_')
     GRAFANA_PASSWORD=$(openssl rand -base64 32 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 32 /dev/urandom | base64 | tr '+/' '-_')
     PHISHING_TRACKING_SECRET=$(openssl rand -base64 32 2>/dev/null | tr -d '\n' | tr '+/' '-_' || head -c 32 /dev/urandom | base64 | tr '+/' '-_')
 
@@ -112,7 +113,7 @@ GRAFANA_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
 
 # Authentication
 KEYCLOAK_ADMIN=admin
-KEYCLOAK_ADMIN_PASSWORD=admin
+KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_PASSWORD}
 KEYCLOAK_REALM=gigachad-grc
 USE_DEV_AUTH=true
 
@@ -171,8 +172,9 @@ start_services() {
     echo ""
     echo -e "${BOLD}Access Points:${NC}"
     echo -e "   ${CYAN}App${NC}             https://localhost   ${YELLOW}(not :3000 - see note below)${NC}"
-    echo -e "   ${CYAN}Keycloak${NC}        https://auth.localhost (admin/admin)"
-    echo -e "   ${CYAN}Grafana${NC}         https://grafana.localhost (admin/admin)"
+    echo -e "   ${CYAN}Keycloak${NC}        https://auth.localhost ${YELLOW}(credentials in .env)${NC}"
+    echo -e "   ${CYAN}Grafana${NC}         https://grafana.localhost ${YELLOW}(credentials in .env)${NC}"
+    echo -e "   ${CYAN}RustFS Console${NC}  http://localhost:9001 ${YELLOW}(credentials in .env)${NC}"
     echo ""
     echo -e "${BOLD}How to Login:${NC}"
     echo -e "   1. Go to ${CYAN}https://localhost${NC} (click through the self-signed cert warning)"

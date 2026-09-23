@@ -58,7 +58,7 @@ A fully-featured platform with 8 integrated modules:
 - **Risk Heatmap** — Visual risk distribution on dashboard
 - **Configuration Section** — Dedicated configuration area in navigation
 - **Demo Environment** — One-click local demo with `./scripts/start-demo.sh`
-- **Cloud Development** — Gitpod and GitHub Codespaces support
+- **Cloud Development** — documentation was drafted, but no Gitpod or GitHub Codespaces configuration shipped
 
 ---
 

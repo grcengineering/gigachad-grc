@@ -11,22 +11,21 @@ Before running QA tests:
 
 1. **Start Infrastructure:**
    ```bash
-   cp env.development .env
-   docker-compose up -d
+   ./start.sh
    ```
 
 2. **Wait for services to be healthy:**
    ```bash
-   docker-compose ps
+   docker compose ps
    # All services should show "healthy" or "Up"
    ```
 
 3. **Access points:**
-   - Frontend: http://localhost (via Traefik) or http://localhost:5173 (Vite dev)
+   - Application: https://localhost (via Traefik)
    - Controls API: http://localhost:3001/api/docs
-   - Keycloak Admin: http://localhost:8080 (admin/admin)
-   - RustFS Console: http://localhost:9001 (rustfsadmin/[see .env])
-   - Traefik Dashboard: http://localhost:8090
+   - Keycloak Admin: https://auth.localhost (credentials in `.env`)
+   - RustFS Console: http://localhost:9001 (credentials in `.env`)
+   - Traefik Dashboard: disabled unless explicitly enabled
 
 ---
 
@@ -320,19 +319,19 @@ After completing QA testing:
 
 ```bash
 # Start all services
-docker-compose up -d
+docker compose up -d
 
 # Check service health
-docker-compose ps
+docker compose ps
 
 # View logs
-docker-compose logs -f controls
+docker compose logs -f controls
 
 # Run database seed (demo data)
 cd services/controls && npm run seed
 
 # Stop all services
-docker-compose down
+docker compose down
 ```
 
 ---

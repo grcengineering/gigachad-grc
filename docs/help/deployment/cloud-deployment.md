@@ -1,174 +1,82 @@
-# Cloud Deployment Guide
+# Cloud deployment
 
-GigaChad GRC can be deployed to the cloud using Supabase for database/storage and Vercel for hosting. This guide covers the deployment process and configuration options.
+GigaChad GRC is a multi-service container application. A cloud deployment must run the frontend, six API services, PostgreSQL, Redis, Keycloak-compatible authentication, S3-compatible object storage, and ingress/routing.
 
-## Deployment Options
+## Available repository artifacts
 
-### Option 1: Supabase + Vercel (Recommended)
+| Option | Status |
+| --- | --- |
+| Docker Compose on a VM | Configuration-required; use `docker-compose.prod.yml` as a reviewed reference |
+| Kubernetes | Helm chart present under `helm/`; cluster-specific configuration and testing required |
+| Managed PostgreSQL/Redis/S3 | Possible only with operator-maintained Compose/Helm overrides |
+| Supabase + Vercel | Unsupported on this revision |
 
-The recommended cloud deployment uses:
+## Why Supabase + Vercel is not a deployment option
 
-- **Vercel** for frontend hosting and serverless API functions
-- **Supabase** for PostgreSQL database and file storage
-- **Okta** for enterprise SSO authentication
+The repository does not contain:
 
-**Estimated Cost**: ~$45/month (Vercel Pro $20 + Supabase Pro $25)
+- Vercel build/routing configuration for all backend services;
+- serverless API functions replacing the NestJS services;
+- a Supabase storage provider;
+- Supabase RLS policies matching application tenant authorization;
+- a replacement for Redis-backed functions;
+- a replacement authentication flow; or
+- deployment tests for that architecture.
 
-### Option 2: Docker Self-Hosted
+Deploying only the React frontend to Vercel will not provide a working platform.
 
-For organizations requiring on-premise deployment, GigaChad GRC supports Docker Compose deployment. See the [Self-Hosted Deployment Guide](../../DEPLOYMENT.md).
+The file at `docs/deployment/supabase-vercel-migration.md` is retained only as an unsupported architecture note, not an installation guide.
 
----
+## Cloud VM path
 
-## Supabase + Vercel Deployment
+For a single-host evaluation:
 
-### Prerequisites
+1. provision a Linux VM with Docker Engine and Compose v2;
+2. configure DNS for the application, auth, and storage hosts;
+3. copy `env.example.production` to a protected `.env.prod`;
+4. generate every secret;
+5. add required operator overrides;
+6. render and validate Compose;
+7. configure off-host backups and monitoring; and
+8. follow [Production deployment](../../PRODUCTION_DEPLOYMENT.md).
 
-Before deploying, you'll need:
+The production Compose file is not a high-availability design.
 
-1. **Okta Account** - For enterprise SSO authentication
-2. **Supabase Account** - Free tier available at [supabase.com](https://supabase.com)
-3. **Vercel Account** - Free tier available at [vercel.com](https://vercel.com)
-4. **Git Repository** - GitHub, GitLab, or Bitbucket
+## Kubernetes path
 
-### Step 1: Create Supabase Project
+The `helm/` chart requires:
 
-1. Log in to [Supabase](https://supabase.com)
-2. Click "New Project"
-3. Configure:
-   - **Project Name**: `gigachad-grc`
-   - **Database Password**: Use a strong password
-   - **Region**: Choose closest to your users
-4. Save your database password securely
-
-### Step 2: Get Supabase Credentials
-
-After project creation, navigate to **Settings > API**:
-
-- **Project URL**: `https://xxxxx.supabase.co`
-- **anon/public key**: Used for client-side operations
-- **service_role key**: Used for server-side operations (keep secret!)
-
-Navigate to **Settings > Database** for connection strings:
-
-- **Pooled Connection** (port 6543): For application queries
-- **Direct Connection** (port 5432): For database migrations
-
-### Step 3: Configure Okta
-
-1. In Okta Admin Console, go to **Applications > Create App Integration**
-2. Select **OIDC - OpenID Connect** and **Single-Page Application**
-3. Configure redirect URIs:
-   ```
-   https://your-app.vercel.app/login/callback
-   ```
-4. Note your **Client ID** and **Issuer URL**
-
-### Step 4: Deploy to Vercel
-
-1. Import your Git repository in Vercel
-2. Set environment variables (see below)
-3. Deploy!
-
-### Environment Variables
-
-Configure these in Vercel Dashboard (**Settings > Environment Variables**):
-
-| Variable               | Description                        |
-| ---------------------- | ---------------------------------- |
-| `VITE_OKTA_ISSUER`     | Your Okta authorization server URL |
-| `VITE_OKTA_CLIENT_ID`  | Okta application client ID         |
-| `DATABASE_URL`         | Supabase pooled connection string  |
-| `DIRECT_URL`           | Supabase direct connection string  |
-| `SUPABASE_URL`         | Supabase project URL               |
-| `SUPABASE_ANON_KEY`    | Supabase anonymous key             |
-| `SUPABASE_SERVICE_KEY` | Supabase service role key          |
-| `ENCRYPTION_KEY`       | 32-byte hex key for encryption     |
-
-### Step 5: Run Database Migrations
-
-After first deployment:
+- application images in your registry;
+- Kubernetes Secrets or an external secrets operator;
+- an ingress controller and certificate management;
+- persistent volumes or managed PostgreSQL/Redis/S3 services;
+- network policy;
+- backup/restore integration; and
+- chart render, install, and upgrade tests.
 
 ```bash
-npx prisma migrate deploy
+helm lint ./helm
+helm template gigachad-grc ./helm -f my-values.yaml > rendered.yaml
 ```
 
----
+Review the rendered workload and secret references before installation.
 
-## Storage Buckets
+## Managed external services
 
-Create these storage buckets in Supabase:
+Replacing bundled infrastructure is not controlled by a single flag. Update and test:
 
-| Bucket           | Access  | Purpose                      |
-| ---------------- | ------- | ---------------------------- |
-| `evidence`       | Private | Evidence files and documents |
-| `policies`       | Private | Policy document storage      |
-| `integrations`   | Private | Integration configuration    |
-| `questionnaires` | Private | Questionnaire attachments    |
-| `trust-center`   | Public  | Trust center public assets   |
+- database and Redis connection URLs;
+- TLS and CA trust;
+- service health dependencies;
+- S3 endpoint, region, path style, bucket, and credentials;
+- Keycloak issuer, realm, clients, redirect URIs, and proxy path;
+- backup tooling; and
+- private network access.
 
----
+## Provider prerequisites
 
-## Custom Domain Setup
+Cloud hosting does not enable external application features. AI, email, third-party integrations, remote backup, error tracking, and MCP servers each require separate configuration and credentials.
 
-1. In Vercel, go to **Settings > Domains**
-2. Add your custom domain
-3. Configure DNS records as instructed
-4. Update Okta redirect URIs to use custom domain
+## Unsupported hosted-development claims
 
----
-
-## Monitoring & Logs
-
-### Vercel Logs
-
-- Access via Vercel Dashboard > **Deployments > Logs**
-- Real-time function execution logs
-
-### Supabase Logs
-
-- Access via Supabase Dashboard > **Logs**
-- Database query logs and performance metrics
-
----
-
-## Security Best Practices
-
-1. **Enable MFA** on all admin accounts (Vercel, Supabase, Okta)
-2. **Rotate keys** periodically, especially after personnel changes
-3. **Use environment variables** - never commit secrets to Git
-4. **Configure RLS** (Row Level Security) in Supabase
-5. **Monitor access logs** for suspicious activity
-
----
-
-## Scaling Considerations
-
-### Database
-
-- Supabase Pro supports up to 8GB database
-- For larger deployments, consider Supabase Enterprise
-
-### API
-
-- Vercel Functions auto-scale based on traffic
-- Cold starts can be mitigated with Edge Functions
-
-### Storage
-
-- Supabase Storage has no hard limits on Pro plan
-- Consider CDN for frequently accessed files
-
----
-
-## Support
-
-For deployment assistance:
-
-- Technical Documentation: `/docs/deployment/`
-- Community Support: GitHub Discussions
-- Enterprise Support: Contact your account manager
-
----
-
-_Last Updated: December 2025_
+There is no `.gitpod.yml` or repository dev-container configuration. Gitpod and GitHub Codespaces are not documented startup methods on this revision.

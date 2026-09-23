@@ -296,8 +296,8 @@ VITE_ENABLE_DATA_MODULE=true
 2. Rebuild and restart the frontend container:
 
 ```bash
-docker-compose build frontend
-docker-compose up -d frontend
+docker compose build frontend
+docker compose up -d frontend
 ```
 
 ### Build-Time Configuration
