@@ -16,13 +16,13 @@ import {
   TrainingStatus,
   AssignmentStatus,
 } from './dto/training.dto';
-import { sanitizeFilename, validatePathWithinBase, isValidUuid } from '@gigachad-grc/shared';
+import { sanitizeFilename, isValidUuid } from '@gigachad-grc/shared';
 import { DOMParser } from '@xmldom/xmldom';
 import JSZip from 'jszip';
 import PDFDocument from 'pdfkit';
-import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
+import { persistScormPackage, removeScormPackage } from './scorm-storage';
 
 // Static module IDs from frontend catalog
 const VALID_MODULE_IDS = [
@@ -870,13 +870,7 @@ export class TrainingService {
       throw new NotFoundException(`Custom module ${moduleId} not found`);
     }
 
-    // Delete the SCORM files if they exist
-    if (module.scormPath) {
-      const scormDir = path.join(process.cwd(), 'uploads', 'training', module.scormPath);
-      if (fs.existsSync(scormDir)) {
-        fs.rmSync(scormDir, { recursive: true, force: true });
-      }
-    }
+    await removeScormPackage(path.resolve(process.cwd(), 'uploads', 'training'), module.scormPath);
 
     return this.prisma.customTrainingModule.delete({
       where: { id: moduleId },
@@ -1026,62 +1020,17 @@ export class TrainingService {
 
     const folderName = `${moduleId}-${crypto.randomBytes(4).toString('hex')}`;
     const uploadsBasePath = path.resolve(process.cwd(), 'uploads', 'training');
-    const uploadDirValidation = validatePathWithinBase(uploadsBasePath, folderName);
-    if (!uploadDirValidation.isValid) {
-      throw new BadRequestException(`Invalid upload path: ${uploadDirValidation.error}`);
-    }
-    const resolvedUploadDir = path.resolve(uploadDirValidation.resolvedPath);
-    const resolvedBase = path.resolve(uploadsBasePath);
-    if (
-      !resolvedUploadDir.startsWith(resolvedBase + path.sep) &&
-      resolvedUploadDir !== resolvedBase
-    ) {
-      throw new BadRequestException('Path traversal detected in upload directory');
-    }
-
     const safeFilename = sanitizeFilename(file.originalname);
     if (safeFilename.includes('..') || safeFilename.includes('\0')) {
       throw new BadRequestException('Invalid filename');
     }
 
     try {
-      // folderName contains only a UUID and server-generated hexadecimal suffix,
-      // then validatePathWithinBase and the explicit containment check above
-      // prove this path remains under uploadsBasePath.
-      await fs.promises.mkdir(resolvedUploadDir, { recursive: true }); // lgtm[js/path-injection]
-      for (const entry of entries) {
-        const relativePath = entry.name.replace(/\\/g, '/');
-        const destinationValidation = validatePathWithinBase(resolvedUploadDir, relativePath);
-        if (!destinationValidation.isValid) {
-          throw new BadRequestException(`Unsafe SCORM entry: ${relativePath}`);
-        }
-        if (entry.dir) {
-          // Every entry segment is allowlisted above and this destination was
-          // independently verified to remain under resolvedUploadDir.
-          await fs.promises.mkdir(destinationValidation.resolvedPath, { recursive: true }); // lgtm[js/path-injection]
-          continue;
-        }
-        const contents = await entry.async('nodebuffer');
-        await fs.promises.mkdir(
-          path.dirname(destinationValidation.resolvedPath), // lgtm[js/path-injection]
-          {
-            recursive: true,
-          }
-        );
-        // Network-provided bytes are size-bounded, CRC-checked ZIP contents
-        // written only beneath the validated per-module directory.
-        await fs.promises.writeFile(
-          destinationValidation.resolvedPath, // lgtm[js/path-injection]
-          contents, // lgtm[js/http-to-file-access]
-          { mode: 0o640 }
-        );
-      }
-      // resolvedUploadDir passed both shared and explicit containment checks.
-      await fs.promises.writeFile(
-        path.join(resolvedUploadDir, '.scorm-metadata.json'), // lgtm[js/path-injection]
-        JSON.stringify({ version: scormVersion, launchPath, originalFileName: safeFilename }), // lgtm[js/http-to-file-access]
-        { mode: 0o640 }
-      );
+      const resolvedUploadDir = await persistScormPackage(entries, uploadsBasePath, folderName, {
+        version: scormVersion,
+        launchPath,
+        originalFileName: safeFilename,
+      });
 
       const updated = await this.prisma.customTrainingModule.update({
         where: { id: moduleId },
@@ -1101,19 +1050,12 @@ export class TrainingService {
         },
       });
 
-      if (module.scormPath) {
-        const oldPath = validatePathWithinBase(uploadsBasePath, module.scormPath);
-        if (oldPath.isValid && oldPath.resolvedPath !== resolvedUploadDir) {
-          // The persisted path is removed only after a fresh containment check.
-          await fs.promises.rm(oldPath.resolvedPath, { recursive: true, force: true }); // lgtm[js/path-injection]
-        }
-      }
+      await removeScormPackage(uploadsBasePath, module.scormPath, resolvedUploadDir);
 
       this.logger.log(`Validated ${scormVersion} package uploaded for module ${moduleId}`);
       return { ...updated, scorm: { version: scormVersion, launchPath } };
     } catch (error) {
-      // resolvedUploadDir passed both shared and explicit containment checks.
-      await fs.promises.rm(resolvedUploadDir, { recursive: true, force: true }); // lgtm[js/path-injection]
+      await removeScormPackage(uploadsBasePath, folderName);
       throw error;
     }
   }
