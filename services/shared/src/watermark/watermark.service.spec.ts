@@ -1,5 +1,12 @@
-import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { watermarkPdf } from './watermark.service';
+
+const { PDFDocument, StandardFonts } = require('../../vendor/pdf-lib-1.17.1.min.cjs') as {
+  PDFDocument: {
+    create(): Promise<any>;
+    load(input: Uint8Array): Promise<any>;
+  };
+  StandardFonts: { Helvetica: string };
+};
 
 describe('watermarkPdf', () => {
   it('preserves every original page while applying the watermark', async () => {

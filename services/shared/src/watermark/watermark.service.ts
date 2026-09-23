@@ -6,8 +6,20 @@
  */
 
 import PDFKitDocument from 'pdfkit';
-import { PDFDocument as PDFLibDocument, StandardFonts, degrees, rgb, type RGB } from 'pdf-lib';
 import { Writable } from 'stream';
+
+const {
+  PDFDocument: PDFLibDocument,
+  StandardFonts,
+  degrees,
+  rgb,
+} = require('../../vendor/pdf-lib-1.17.1.min.cjs') as {
+  PDFDocument: { load(input: Uint8Array): Promise<any> };
+  StandardFonts: { Helvetica: string };
+  degrees(angle: number): any;
+  rgb(red: number, green: number, blue: number): any;
+};
+type RGB = ReturnType<typeof rgb>;
 
 export interface WatermarkOptions {
   text: string;
