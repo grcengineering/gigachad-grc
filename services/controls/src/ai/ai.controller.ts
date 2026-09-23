@@ -14,13 +14,7 @@ import { Request } from 'express';
 interface AuthenticatedRequest extends Request {
   user: { userId: string; organizationId: string; email?: string };
 }
-import {
-  ApiTags,
-  ApiBearerAuth,
-  ApiOperation,
-  ApiResponse,
-  ApiBody,
-} from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AIService } from './ai.service';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 import { PermissionGuard } from '../auth/permission.guard';
@@ -83,6 +77,7 @@ export class AIController {
       type: 'object',
       properties: {
         available: { type: 'boolean' },
+        enabled: { type: 'boolean' },
         config: {
           type: 'object',
           properties: {
@@ -92,6 +87,7 @@ export class AIController {
         },
         isMockMode: { type: 'boolean' },
         mockModeReason: { type: 'string' },
+        unavailableReason: { type: 'string' },
       },
     },
   })
@@ -103,13 +99,21 @@ export class AIController {
     ]);
 
     return {
-      available: providerStatus.isConfigured || providerStatus.isMockMode,
+      available: config.enabled && providerStatus.isConfigured && !providerStatus.isMockMode,
+      enabled: config.enabled,
       config: {
         provider: providerStatus.provider,
         model: config.model,
       },
       isMockMode: providerStatus.isMockMode,
       mockModeReason: providerStatus.mockModeReason,
+      unavailableReason: !config.enabled
+        ? 'AI features are disabled for this organization.'
+        : providerStatus.isMockMode
+          ? providerStatus.mockModeReason
+          : !providerStatus.isConfigured
+            ? `AI provider ${providerStatus.provider} is not configured.`
+            : undefined,
     };
   }
 
@@ -121,7 +125,8 @@ export class AIController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'AI-powered risk analysis and scoring',
-    description: 'Analyzes a risk description and suggests likelihood, impact scores with rationale',
+    description:
+      'Analyzes a risk description and suggests likelihood, impact scores with rationale',
   })
   @ApiResponse({ status: 200, description: 'Risk scoring result', type: RiskScoringResponseDto })
   @ApiBody({ type: RiskScoringRequestDto })
@@ -141,9 +146,14 @@ export class AIController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Auto-categorize an entity',
-    description: 'Uses AI to suggest categories, tags, and framework mappings for controls, risks, policies, etc.',
+    description:
+      'Uses AI to suggest categories, tags, and framework mappings for controls, risks, policies, etc.',
   })
-  @ApiResponse({ status: 200, description: 'Categorization result', type: CategorizationResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Categorization result',
+    type: CategorizationResponseDto,
+  })
   @ApiBody({ type: CategorizationRequestDto })
   @RequirePermission(Resource.AI, Action.CREATE)
   async categorize(
@@ -161,7 +171,8 @@ export class AIController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Natural language smart search',
-    description: 'Search across controls, risks, policies, evidence, and vendors using natural language',
+    description:
+      'Search across controls, risks, policies, evidence, and vendors using natural language',
   })
   @ApiResponse({ status: 200, description: 'Search results', type: SmartSearchResponseDto })
   @ApiBody({ type: SmartSearchRequestDto })
@@ -203,7 +214,11 @@ export class AIController {
     summary: 'Get control recommendations',
     description: 'AI suggests security controls based on risks, framework requirements, or gaps',
   })
-  @ApiResponse({ status: 200, description: 'Control suggestions', type: ControlSuggestionResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Control suggestions',
+    type: ControlSuggestionResponseDto,
+  })
   @ApiBody({ type: ControlSuggestionRequestDto })
   @RequirePermission(Resource.AI, Action.CREATE)
   async suggestControls(
@@ -236,7 +251,7 @@ export class AIController {
       dto.prompt,
       dto.systemPrompt
     );
-    
+
     return {
       content: result.content,
       model: result.model,

@@ -15,28 +15,30 @@ import {
   type BadgeVariant,
 } from '@/components/ui';
 
-type EventType = 'control_test_due' | 'evidence_expiry' | 'audit_milestone' | 'policy_review';
+type EventType = 'control_review' | 'audit' | 'contract_expiration' | 'policy_review' | 'custom';
 
 interface ComplianceEvent {
   id: string;
-  date: string;
-  type: EventType;
+  startDate: string;
+  eventType: EventType;
   title: string;
   description?: string;
 }
 
 const EVENT_VARIANT: Record<EventType, BadgeVariant> = {
-  control_test_due: 'info',
-  evidence_expiry: 'warning',
-  audit_milestone: 'brand',
+  control_review: 'info',
+  audit: 'brand',
+  contract_expiration: 'warning',
   policy_review: 'success',
+  custom: 'neutral',
 };
 
 const EVENT_LABEL: Record<EventType, string> = {
-  control_test_due: 'Control Test',
-  evidence_expiry: 'Evidence Expiry',
-  audit_milestone: 'Audit Milestone',
+  control_review: 'Control Review',
+  audit: 'Audit',
+  contract_expiration: 'Contract Expiration',
   policy_review: 'Policy Review',
+  custom: 'Custom',
 };
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -121,8 +123,12 @@ export default function ComplianceCalendarPage() {
   const { data: events, isLoading } = useQuery<ComplianceEvent[]>({
     queryKey: ['compliance', 'calendar', rangeStartIso, rangeEndIso],
     queryFn: async () => {
-      const res = await api.get('/api/calendar', {
-        params: { start: rangeStartIso, end: rangeEndIso },
+      const res = await api.get('/api/calendar/events', {
+        params: {
+          startDate: rangeStartIso,
+          endDate: rangeEndIso,
+          includeAutomated: true,
+        },
       });
       return Array.isArray(res.data) ? res.data : (res.data?.events ?? []);
     },
@@ -137,7 +143,7 @@ export default function ComplianceCalendarPage() {
   const eventsByDay = useMemo(() => {
     const map = new Map<string, ComplianceEvent[]>();
     (events ?? []).forEach((e) => {
-      const d = parseEventDate(e.date);
+      const d = parseEventDate(e.startDate);
       const key = dateKey(d);
       const list = map.get(key);
       if (list) list.push(e);
@@ -148,7 +154,9 @@ export default function ComplianceCalendarPage() {
 
   const sorted = useMemo(() => {
     const list = (events ?? []).slice();
-    list.sort((a, b) => parseEventDate(a.date).getTime() - parseEventDate(b.date).getTime());
+    list.sort(
+      (a, b) => parseEventDate(a.startDate).getTime() - parseEventDate(b.startDate).getTime()
+    );
     return list;
   }, [events]);
 
@@ -239,7 +247,7 @@ export default function ComplianceCalendarPage() {
                         {dayEvents.slice(0, 3).map((e) => (
                           <Badge
                             key={e.id}
-                            variant={EVENT_VARIANT[e.type] ?? 'neutral'}
+                            variant={EVENT_VARIANT[e.eventType] ?? 'neutral'}
                             size="sm"
                             capitalize={false}
                             className="block max-w-full truncate"
@@ -299,11 +307,11 @@ export default function ComplianceCalendarPage() {
                 >
                   <div className="min-w-0 flex items-center gap-3">
                     <Badge
-                      variant={EVENT_VARIANT[e.type] ?? 'neutral'}
+                      variant={EVENT_VARIANT[e.eventType] ?? 'neutral'}
                       size="sm"
                       capitalize={false}
                     >
-                      {EVENT_LABEL[e.type] ?? e.type}
+                      {EVENT_LABEL[e.eventType] ?? e.eventType}
                     </Badge>
                     <div className="min-w-0">
                       <p className="text-surface-900 font-medium truncate">{e.title}</p>
@@ -313,7 +321,7 @@ export default function ComplianceCalendarPage() {
                     </div>
                   </div>
                   <span className="text-small text-surface-700 tabular-nums shrink-0">
-                    {formatLongDate(e.date)}
+                    {formatLongDate(e.startDate)}
                   </span>
                 </div>
               ))}

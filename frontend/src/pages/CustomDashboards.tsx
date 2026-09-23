@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Copy, LayoutDashboard, Plus, Trash2, User as UserIcon } from 'lucide-react';
 import api from '@/lib/api';
@@ -27,6 +26,18 @@ interface CustomDashboard {
   ownerId?: string;
   ownerName?: string;
   ownerAvatarUrl?: string;
+}
+
+interface DashboardApiRecord {
+  id: string;
+  name: string;
+  description?: string;
+  widgets?: unknown[];
+  widgetCount?: number;
+  updatedAt?: string;
+  lastEditedAt?: string;
+  userId?: string;
+  creator?: { id: string; displayName?: string; email?: string };
 }
 
 function formatDate(value?: string) {
@@ -58,7 +69,18 @@ export default function CustomDashboards() {
     queryKey: ['dashboards'],
     queryFn: async () => {
       const res = await api.get('/api/dashboards');
-      return Array.isArray(res.data) ? res.data : (res.data?.dashboards ?? []);
+      const records: DashboardApiRecord[] = Array.isArray(res.data)
+        ? res.data
+        : (res.data?.dashboards ?? []);
+      return records.map((record) => ({
+        id: record.id,
+        name: record.name,
+        description: record.description,
+        widgetCount: record.widgetCount ?? record.widgets?.length ?? 0,
+        lastEditedAt: record.lastEditedAt ?? record.updatedAt,
+        ownerId: record.userId ?? record.creator?.id,
+        ownerName: record.creator?.displayName ?? record.creator?.email,
+      }));
     },
   });
 
@@ -162,14 +184,12 @@ export default function CustomDashboards() {
           {list.map((d) => (
             <Card key={d.id} className="flex flex-col">
               <CardBody density="comfy" className="flex-1 flex flex-col gap-3">
-                <Link to={`/dashboards/${d.id}`} className="block group">
-                  <h3 className="text-h3 text-surface-900 group-hover:text-brand-700 transition-colors truncate">
-                    {d.name}
-                  </h3>
+                <div>
+                  <h3 className="text-h3 text-surface-900 truncate">{d.name}</h3>
                   {d.description && (
                     <p className="mt-1 text-small text-surface-600 line-clamp-2">{d.description}</p>
                   )}
-                </Link>
+                </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant="brand" size="sm" capitalize={false}>
@@ -199,12 +219,7 @@ export default function CustomDashboards() {
                   </span>
                 </div>
               </CardBody>
-              <div className="flex items-center gap-1 px-4 py-2 border-t border-surface-200 bg-surface-50/40">
-                <Link to={`/dashboards/${d.id}`} className="flex-1">
-                  <Button variant="ghost" size="sm" fullWidth>
-                    View
-                  </Button>
-                </Link>
+              <div className="flex items-center justify-end gap-1 px-4 py-2 border-t border-surface-200 bg-surface-50/40">
                 <Button
                   variant="ghost"
                   size="sm"

@@ -202,17 +202,6 @@ export default function TrustCenter() {
           >
             Preview
           </Button>
-          {config?.isEnabled && (
-            <a
-              href={`/trust-center/public?organizationId=${organizationId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
-            >
-              <GlobeAltIcon className="w-5 h-5" />
-              View Live Page
-            </a>
-          )}
         </div>
       </div>
 

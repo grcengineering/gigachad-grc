@@ -113,8 +113,6 @@ const navSections: NavSection[] = [
       { name: 'Knowledge Base', href: '/knowledge-base', icon: BookOpenIcon },
       { name: 'Answer Templates', href: '/answer-templates', icon: DocumentDuplicateIcon },
       { name: 'Trust Center', href: '/trust-center', icon: GlobeAltIcon, exact: true },
-      { name: 'Trust Analytics', href: '/trust-analytics', icon: ChartBarIcon },
-      { name: 'Trust Center Settings', href: '/trust-center/settings', icon: CogIcon },
     ],
   },
   {
@@ -173,7 +171,6 @@ const navSections: NavSection[] = [
     items: [
       { name: 'Risk Configuration', href: '/settings/risk', icon: AdjustmentsHorizontalIcon },
       { name: 'TPRM Configuration', href: '/settings/tprm', icon: BuildingOfficeIcon },
-      { name: 'Trust Configuration', href: '/settings/trust', icon: GlobeAltIcon },
       { name: 'Employee Compliance', href: '/settings/employee-compliance', icon: ShieldCheckIcon },
       { name: 'Training Admin', href: '/settings/training', icon: AcademicCapIcon },
       { name: 'Config as Code', href: '/settings/config-as-code', icon: DocumentTextIcon },

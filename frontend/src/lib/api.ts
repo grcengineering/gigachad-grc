@@ -580,13 +580,13 @@ export const trustCenterApi = {
   getConfig: (params?: { organizationId?: string }) =>
     api.get('/api/trust-center/config', { params }),
   updateConfig: (data: any, params?: { organizationId?: string }) =>
-    api.put('/api/trust-center/config', data, { params }),
+    api.patch('/api/trust-center/config', data, { params }),
   getContent: (params?: { organizationId?: string }) =>
     api.get('/api/trust-center/content', { params }),
   createContent: (data: any, params?: { organizationId?: string }) =>
     api.post('/api/trust-center/content', data, { params }),
   updateContent: (id: string, data: any, params?: { organizationId?: string }) =>
-    api.put(`/api/trust-center/content/${id}`, data, { params }),
+    api.patch(`/api/trust-center/content/${id}`, data, { params }),
   deleteContent: (id: string, params?: { organizationId?: string }) =>
     api.delete(`/api/trust-center/content/${id}`, { params }),
   publishContent: (id: string, params?: { organizationId?: string }) =>

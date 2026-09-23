@@ -100,7 +100,7 @@ function toCSV(rows: Record<string, unknown>[]): string {
 }
 
 export default function MappingGaps() {
-  const { data, isLoading } = useQuery<MappingGapsResponse>({
+  const { data, isLoading, isError } = useQuery<MappingGapsResponse>({
     queryKey: ['reports', 'mapping-gaps'],
     queryFn: async () => {
       const res = await api.get('/api/reports/mapping-gaps');
@@ -301,6 +301,22 @@ export default function MappingGaps() {
           ))}
         </div>
         <Skeleton className="h-96" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="space-y-5 animate-fade-in">
+        <PageHeader
+          title="Mapping Gaps"
+          description="Find unmapped requirements, controls without evidence, and stalled approvals."
+        />
+        <EmptyState
+          icon={<AlertTriangle className="h-8 w-8" />}
+          title="Mapping gaps unavailable"
+          description="The backend aggregation could not be loaded. Check your connection and permissions."
+        />
       </div>
     );
   }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { Send, Sparkles, User, Bot } from 'lucide-react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { AlertTriangle, Send, Sparkles, User, Bot } from 'lucide-react';
 import api from '@/lib/api';
 import {
   Button,
@@ -18,57 +18,85 @@ interface ChatMessage {
 }
 
 interface AssistantResponse {
-  message?: { role: 'assistant'; content: string };
-  reply?: string;
-  content?: string;
+  content: string;
+  model: string;
+  tokensUsed: number;
+}
+
+interface AssistantStatus {
+  available: boolean;
+  enabled: boolean;
+  isMockMode: boolean;
+  unavailableReason?: string;
+  config: { provider: string; model: string };
 }
 
 const SUGGESTED_PROMPTS = [
-  'What are my top 5 critical risks?',
-  'Show overdue control tests',
-  "Compare this quarter's compliance score vs last",
-  'Draft a risk treatment for X',
+  'Help me structure a risk assessment for this scenario: ',
+  'Suggest controls for this risk: ',
+  'Draft a risk treatment plan for: ',
+  'Explain how to evaluate residual risk after mitigation.',
 ];
 
 export default function AIRiskAssistant() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
+  const [requestError, setRequestError] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const {
+    data: status,
+    isLoading: statusLoading,
+    isError: statusError,
+  } = useQuery<AssistantStatus>({
+    queryKey: ['ai', 'status'],
+    queryFn: () => api.get<AssistantStatus>('/api/ai/status').then((res) => res.data),
+    retry: false,
+  });
+
+  const assistantAvailable =
+    !!status && status.enabled && status.available && !status.isMockMode && !statusError;
 
   const sendMutation = useMutation({
     mutationFn: async (next: ChatMessage[]) => {
-      const res = await api.post<AssistantResponse>('/api/ai/risk-assistant', {
-        messages: next,
+      const conversation = next
+        .map((message) => `${message.role === 'user' ? 'User' : 'Assistant'}: ${message.content}`)
+        .join('\n\n');
+      const res = await api.post<AssistantResponse>('/api/ai/complete', {
+        prompt: conversation,
+        systemPrompt:
+          'You are a governance, risk, and compliance assistant. Answer only from context the user supplies, clearly identify missing organization data, and give concise, actionable guidance.',
       });
       return res.data;
     },
     onSuccess: (data) => {
-      const reply = data?.message?.content ?? data?.reply ?? data?.content ?? '';
+      const reply = data.content;
       if (reply) {
         setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
       }
+      setRequestError('');
     },
     onError: () => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: 'Something went wrong reaching the assistant. Please try again in a moment.',
-        },
-      ]);
+      setRequestError('The configured AI provider could not complete this request.');
     },
   });
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({
-      top: scrollRef.current.scrollHeight,
-      behavior: 'smooth',
-    });
+    const conversation = scrollRef.current;
+    if (!conversation) return;
+    if (typeof conversation.scrollTo === 'function') {
+      conversation.scrollTo({
+        top: conversation.scrollHeight,
+        behavior: 'smooth',
+      });
+    } else {
+      conversation.scrollTop = conversation.scrollHeight;
+    }
   }, [messages, sendMutation.isPending]);
 
   const handleSend = () => {
     const trimmed = input.trim();
-    if (!trimmed || sendMutation.isPending) return;
+    if (!trimmed || sendMutation.isPending || !assistantAvailable) return;
     const next: ChatMessage[] = [...messages, { role: 'user', content: trimmed }];
     setMessages(next);
     setInput('');
@@ -90,8 +118,31 @@ export default function AIRiskAssistant() {
     <div className="space-y-5 animate-fade-in">
       <PageHeader
         title="AI Risk Assistant"
-        description="Ask questions about your risks, controls, and compliance posture. The assistant has context across your GRC program."
+        description="Use the organization-configured AI provider for GRC analysis and drafting."
       />
+
+      {!statusLoading && !assistantAvailable && (
+        <Card className="border-amber-300 bg-amber-50">
+          <CardBody density="cozy" className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium text-amber-900">
+                {status?.enabled === false
+                  ? 'AI assistant is disabled'
+                  : 'AI assistant unavailable'}
+              </p>
+              <p className="text-small text-amber-800 mt-1">
+                {statusError
+                  ? 'The AI status endpoint could not be reached.'
+                  : status?.isMockMode
+                    ? 'Development mock mode is active. Configure a real provider before using the assistant.'
+                    : status?.unavailableReason ||
+                      `Configure credentials for ${status?.config.provider ?? 'an AI provider'} in organization settings.`}
+              </p>
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <Card className="lg:col-span-1 h-fit">
@@ -107,6 +158,7 @@ export default function AIRiskAssistant() {
                   size="sm"
                   className="justify-start text-left whitespace-normal h-auto py-2"
                   onClick={() => handlePromptClick(prompt)}
+                  disabled={!assistantAvailable}
                   leftIcon={<Sparkles className="h-3.5 w-3.5 shrink-0" />}
                 >
                   <span className="text-small text-surface-800">{prompt}</span>
@@ -128,8 +180,7 @@ export default function AIRiskAssistant() {
                 </div>
                 <h3 className="text-h3 text-surface-900">Start a conversation</h3>
                 <p className="mt-1 max-w-sm text-small text-surface-600">
-                  Pick a suggested prompt or ask anything about your risk posture, controls,
-                  evidence, or compliance frameworks.
+                  Pick a suggested prompt or provide the risk and control context you want analyzed.
                 </p>
               </div>
             )}
@@ -186,6 +237,11 @@ export default function AIRiskAssistant() {
           </div>
 
           <div className="border-t border-surface-200 p-3">
+            {requestError && (
+              <p role="alert" className="text-small text-red-700 mb-2">
+                {requestError}
+              </p>
+            )}
             <div className="flex items-end gap-2">
               <Textarea
                 value={input}
@@ -194,10 +250,11 @@ export default function AIRiskAssistant() {
                 placeholder="Ask the assistant…  (Enter to send, Shift+Enter for newline)"
                 rows={2}
                 className="flex-1 min-h-[48px]"
+                disabled={!assistantAvailable}
               />
               <Button
                 onClick={handleSend}
-                disabled={!input.trim() || sendMutation.isPending}
+                disabled={!input.trim() || sendMutation.isPending || !assistantAvailable}
                 loading={sendMutation.isPending}
                 leftIcon={!sendMutation.isPending ? <Send className="h-4 w-4" /> : undefined}
               >

@@ -3,25 +3,10 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { createStubMiddleware } from './dev-stubs/_helpers';
 import { bcdrHandlers } from './dev-stubs/bcdr';
-import {
-  meHandlers,
-  workspacesHandlers,
-  dashboardsHandlers,
-  mcpHandlers,
-  tprmConfigHandlers,
-  trustConfigHandlers,
-  configAsCodeHandlers,
-  trustCenterHandlers,
-} from './dev-stubs/settings';
+import { meHandlers, workspacesHandlers, tprmConfigHandlers } from './dev-stubs/settings';
 import { peopleHandlers, trainingHandlers, employeeComplianceHandlers } from './dev-stubs/people';
 import { auditDeepHandlers, auditorPortalHandlers } from './dev-stubs/audit-deep';
-import {
-  aiHandlers,
-  answerTemplatesHandlers,
-  reportsHandlers,
-  calendarHandlers,
-  helpHandlers,
-} from './dev-stubs/one-offs';
+import { answerTemplatesHandlers, helpHandlers } from './dev-stubs/one-offs';
 
 export default defineConfig(({ mode }) => {
   const enableDevStubs = loadEnv(mode, process.cwd(), '').VITE_ENABLE_DEV_STUBS === 'true';
@@ -39,12 +24,7 @@ export default defineConfig(({ mode }) => {
           server.middlewares.use(createStubMiddleware('/api/bcdr', bcdrHandlers));
           server.middlewares.use(createStubMiddleware('/api/me', meHandlers));
           server.middlewares.use(createStubMiddleware('/api/workspaces', workspacesHandlers));
-          server.middlewares.use(createStubMiddleware('/api/dashboards', dashboardsHandlers));
-          server.middlewares.use(createStubMiddleware('/api/mcp', mcpHandlers));
           server.middlewares.use(createStubMiddleware('/api/config/tprm', tprmConfigHandlers));
-          server.middlewares.use(createStubMiddleware('/api/trust-config', trustConfigHandlers));
-          server.middlewares.use(createStubMiddleware('/api/config-as-code', configAsCodeHandlers));
-          server.middlewares.use(createStubMiddleware('/api/trust-center', trustCenterHandlers));
           server.middlewares.use(createStubMiddleware('/api/people', peopleHandlers));
           server.middlewares.use(createStubMiddleware('/api/training', trainingHandlers));
           server.middlewares.use(
@@ -76,12 +56,9 @@ export default defineConfig(({ mode }) => {
             ])
           );
           server.middlewares.use(createStubMiddleware('/api/auditor', auditorPortalHandlers));
-          server.middlewares.use(createStubMiddleware('/api/ai', aiHandlers));
           server.middlewares.use(
             createStubMiddleware('/api/answer-templates', answerTemplatesHandlers)
           );
-          server.middlewares.use(createStubMiddleware('/api/reports', reportsHandlers));
-          server.middlewares.use(createStubMiddleware('/api/calendar', calendarHandlers));
           server.middlewares.use(createStubMiddleware('/api/help', helpHandlers));
         },
       },
@@ -100,7 +77,13 @@ export default defineConfig(({ mode }) => {
         '/api/controls': { target: 'http://localhost:3001', changeOrigin: true },
         '/api/evidence': { target: 'http://localhost:3001', changeOrigin: true },
         '/api/implementations': { target: 'http://localhost:3001', changeOrigin: true },
+        '/api/dashboards': { target: 'http://localhost:3001', changeOrigin: true },
         '/api/dashboard': { target: 'http://localhost:3001', changeOrigin: true },
+        '/api/calendar': { target: 'http://localhost:3001', changeOrigin: true },
+        '/api/config-as-code': { target: 'http://localhost:3001', changeOrigin: true },
+        '/api/mcp': { target: 'http://localhost:3001', changeOrigin: true },
+        '/api/reports': { target: 'http://localhost:3001', changeOrigin: true },
+        '/api/ai': { target: 'http://localhost:3001', changeOrigin: true },
         '/api/comments': { target: 'http://localhost:3001', changeOrigin: true },
         '/api/tasks': { target: 'http://localhost:3001', changeOrigin: true },
         '/api/integrations': { target: 'http://localhost:3001', changeOrigin: true },
