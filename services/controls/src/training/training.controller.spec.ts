@@ -24,6 +24,10 @@ describe('trainingFileFilter', () => {
   );
 
   it.each([
+    'video/mp4',
+    'application/pdf',
+    'image/jpeg',
+    'image/png',
     'application/x-msdownload',
     'application/javascript',
     'text/html',

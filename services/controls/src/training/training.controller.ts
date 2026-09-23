@@ -11,9 +11,19 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  Res,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiQuery,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
+import { Roles, RolesGuard } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 import { CurrentUser } from '../auth/decorators/require-permission.decorator';
 import { TrainingService } from './training.service';
@@ -28,24 +38,18 @@ import {
   UpdateCampaignDto,
   CreateCustomModuleDto,
   UpdateCustomModuleDto,
+  SubmitQuizDto,
 } from './dto/training.dto';
 
-// Allowlist for training material uploads (videos, slides, SCORM packages).
-// Anything outside this set is rejected at the interceptor layer before the
-// service handler runs. Exported so it can be exercised directly in tests.
-export const TRAINING_MIME_ALLOWLIST = [
-  'video/mp4',
-  'application/pdf',
-  'image/jpeg',
-  'image/png',
-  'application/zip',
-];
+// This endpoint accepts packaged SCORM content only. Other training material
+// types need dedicated storage and playback handling and are rejected.
+export const TRAINING_MIME_ALLOWLIST = ['application/zip'];
 export const TRAINING_MAX_BYTES = 100 * 1024 * 1024;
 
 export function trainingFileFilter(
   _req: unknown,
   file: { mimetype: string },
-  cb: (err: Error | null, acceptFile: boolean) => void,
+  cb: (err: Error | null, acceptFile: boolean) => void
 ): void {
   if (TRAINING_MIME_ALLOWLIST.includes(file.mimetype)) {
     cb(null, true);
@@ -63,7 +67,7 @@ interface AuthUser {
 
 @ApiTags('Training')
 @ApiBearerAuth()
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 @Controller('api/training')
 export class TrainingController {
   constructor(private readonly trainingService: TrainingService) {}
@@ -80,28 +84,14 @@ export class TrainingController {
 
   @Get('progress/:moduleId')
   @ApiOperation({ summary: 'Get progress for a specific module' })
-  async getModuleProgress(
-    @CurrentUser() user: AuthUser,
-    @Param('moduleId') moduleId: string,
-  ) {
-    return this.trainingService.getModuleProgress(
-      user.organizationId,
-      user.userId,
-      moduleId,
-    );
+  async getModuleProgress(@CurrentUser() user: AuthUser, @Param('moduleId') moduleId: string) {
+    return this.trainingService.getModuleProgress(user.organizationId, user.userId, moduleId);
   }
 
   @Post('progress/start')
   @ApiOperation({ summary: 'Start a training module' })
-  async startModule(
-    @CurrentUser() user: AuthUser,
-    @Body() dto: StartModuleDto,
-  ) {
-    return this.trainingService.startModule(
-      user.organizationId,
-      user.userId,
-      dto,
-    );
+  async startModule(@CurrentUser() user: AuthUser, @Body() dto: StartModuleDto) {
+    return this.trainingService.startModule(user.organizationId, user.userId, dto);
   }
 
   @Put('progress/:moduleId')
@@ -109,27 +99,15 @@ export class TrainingController {
   async updateProgress(
     @CurrentUser() user: AuthUser,
     @Param('moduleId') moduleId: string,
-    @Body() dto: UpdateProgressDto,
+    @Body() dto: UpdateProgressDto
   ) {
-    return this.trainingService.updateProgress(
-      user.organizationId,
-      user.userId,
-      moduleId,
-      dto,
-    );
+    return this.trainingService.updateProgress(user.organizationId, user.userId, moduleId, dto);
   }
 
   @Post('progress/complete')
   @ApiOperation({ summary: 'Mark a training module as complete' })
-  async completeModule(
-    @CurrentUser() user: AuthUser,
-    @Body() dto: CompleteModuleDto,
-  ) {
-    return this.trainingService.completeModule(
-      user.organizationId,
-      user.userId,
-      dto,
-    );
+  async completeModule(@CurrentUser() user: AuthUser, @Body() dto: CompleteModuleDto) {
+    return this.trainingService.completeModule(user.organizationId, user.userId, dto);
   }
 
   @Get('stats')
@@ -139,6 +117,7 @@ export class TrainingController {
   }
 
   @Get('stats/org')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Get organization-wide training statistics' })
   async getOrgStats(@CurrentUser() user: AuthUser) {
     return this.trainingService.getOrgStats(user.organizationId);
@@ -149,12 +128,10 @@ export class TrainingController {
   // ==========================================
 
   @Get('assignments')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Get all assignments (admin) or current user assignments' })
   @ApiQuery({ name: 'userId', required: false })
-  async getAssignments(
-    @CurrentUser() user: AuthUser,
-    @Query('userId') userId?: string,
-  ) {
+  async getAssignments(@CurrentUser() user: AuthUser, @Query('userId') userId?: string) {
     // If not admin, only show own assignments
     const targetUserId = user.role === 'admin' ? userId : user.userId;
     return this.trainingService.getAssignments(user.organizationId, targetUserId);
@@ -167,126 +144,102 @@ export class TrainingController {
   }
 
   @Post('assignments')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Create a training assignment' })
-  async createAssignment(
-    @CurrentUser() user: AuthUser,
-    @Body() dto: CreateAssignmentDto,
-  ) {
-    return this.trainingService.createAssignment(
-      user.organizationId,
-      user.userId,
-      dto,
-    );
+  async createAssignment(@CurrentUser() user: AuthUser, @Body() dto: CreateAssignmentDto) {
+    return this.trainingService.createAssignment(user.organizationId, user.userId, dto);
   }
 
   @Post('assignments/bulk')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Bulk assign training to multiple users' })
-  async bulkAssign(
-    @CurrentUser() user: AuthUser,
-    @Body() dto: BulkAssignDto,
-  ) {
-    return this.trainingService.bulkAssign(
-      user.organizationId,
-      user.userId,
-      dto,
-    );
+  async bulkAssign(@CurrentUser() user: AuthUser, @Body() dto: BulkAssignDto) {
+    return this.trainingService.bulkAssign(user.organizationId, user.userId, dto);
   }
 
   @Put('assignments/:id')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Update a training assignment' })
   async updateAssignment(
     @CurrentUser() user: AuthUser,
     @Param('id') assignmentId: string,
-    @Body() dto: UpdateAssignmentDto,
+    @Body() dto: UpdateAssignmentDto
   ) {
-    return this.trainingService.updateAssignment(
-      user.organizationId,
-      assignmentId,
-      dto,
-    );
+    return this.trainingService.updateAssignment(user.organizationId, assignmentId, dto);
   }
 
   @Delete('assignments/:id')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Delete a training assignment' })
-  async deleteAssignment(
-    @CurrentUser() user: AuthUser,
-    @Param('id') assignmentId: string,
-  ) {
-    return this.trainingService.deleteAssignment(
-      user.organizationId,
-      assignmentId,
-    );
+  async deleteAssignment(@CurrentUser() user: AuthUser, @Param('id') assignmentId: string) {
+    return this.trainingService.deleteAssignment(user.organizationId, assignmentId);
   }
 
   // ==========================================
   // Campaign Endpoints
   // ==========================================
 
+  @Get('my')
+  @ApiOperation({ summary: 'Get the current user training dashboard' })
+  async getMyTraining(@CurrentUser() user: AuthUser) {
+    return this.trainingService.getMyTraining(user.organizationId, user.userId);
+  }
+
+  @Get('admin/campaigns')
+  @Roles('admin', 'compliance_manager')
+  @ApiOperation({ summary: 'Get training campaigns with assignment summaries' })
+  async getAdminCampaigns(
+    @CurrentUser() user: AuthUser,
+    @Query('search') search?: string,
+    @Query('status') status?: string
+  ) {
+    return this.trainingService.getAdminCampaigns(user.organizationId, { search, status });
+  }
+
   @Get('campaigns')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Get all training campaigns' })
   async getCampaigns(@CurrentUser() user: AuthUser) {
     return this.trainingService.getCampaigns(user.organizationId);
   }
 
   @Get('campaigns/:id')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Get a specific training campaign' })
-  async getCampaign(
-    @CurrentUser() user: AuthUser,
-    @Param('id') campaignId: string,
-  ) {
+  async getCampaign(@CurrentUser() user: AuthUser, @Param('id') campaignId: string) {
     return this.trainingService.getCampaign(user.organizationId, campaignId);
   }
 
   @Post('campaigns')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Create a training campaign' })
-  async createCampaign(
-    @CurrentUser() user: AuthUser,
-    @Body() dto: CreateCampaignDto,
-  ) {
-    return this.trainingService.createCampaign(
-      user.organizationId,
-      user.userId,
-      dto,
-    );
+  async createCampaign(@CurrentUser() user: AuthUser, @Body() dto: CreateCampaignDto) {
+    return this.trainingService.createCampaign(user.organizationId, user.userId, dto);
   }
 
   @Put('campaigns/:id')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Update a training campaign' })
   async updateCampaign(
     @CurrentUser() user: AuthUser,
     @Param('id') campaignId: string,
-    @Body() dto: UpdateCampaignDto,
+    @Body() dto: UpdateCampaignDto
   ) {
-    return this.trainingService.updateCampaign(
-      user.organizationId,
-      campaignId,
-      dto,
-    );
+    return this.trainingService.updateCampaign(user.organizationId, campaignId, dto);
   }
 
   @Delete('campaigns/:id')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Delete a training campaign' })
-  async deleteCampaign(
-    @CurrentUser() user: AuthUser,
-    @Param('id') campaignId: string,
-  ) {
-    return this.trainingService.deleteCampaign(
-      user.organizationId,
-      campaignId,
-    );
+  async deleteCampaign(@CurrentUser() user: AuthUser, @Param('id') campaignId: string) {
+    return this.trainingService.deleteCampaign(user.organizationId, campaignId);
   }
 
   @Post('campaigns/:id/launch')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Launch a campaign - create assignments for target users' })
-  async launchCampaign(
-    @CurrentUser() user: AuthUser,
-    @Param('id') campaignId: string,
-  ) {
-    return this.trainingService.launchCampaign(
-      user.organizationId,
-      campaignId,
-      user.userId,
-    );
+  async launchCampaign(@CurrentUser() user: AuthUser, @Param('id') campaignId: string) {
+    return this.trainingService.launchCampaign(user.organizationId, campaignId, user.userId);
   }
 
   // ==========================================
@@ -307,53 +260,37 @@ export class TrainingController {
 
   @Get('modules/custom/:id')
   @ApiOperation({ summary: 'Get a specific custom training module' })
-  async getCustomModule(
-    @CurrentUser() user: AuthUser,
-    @Param('id') moduleId: string,
-  ) {
+  async getCustomModule(@CurrentUser() user: AuthUser, @Param('id') moduleId: string) {
     return this.trainingService.getCustomModule(user.organizationId, moduleId);
   }
 
   @Post('modules/custom')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Create a custom training module' })
-  async createCustomModule(
-    @CurrentUser() user: AuthUser,
-    @Body() dto: CreateCustomModuleDto,
-  ) {
-    return this.trainingService.createCustomModule(
-      user.organizationId,
-      user.userId,
-      dto,
-    );
+  async createCustomModule(@CurrentUser() user: AuthUser, @Body() dto: CreateCustomModuleDto) {
+    return this.trainingService.createCustomModule(user.organizationId, user.userId, dto);
   }
 
   @Put('modules/custom/:id')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Update a custom training module' })
   async updateCustomModule(
     @CurrentUser() user: AuthUser,
     @Param('id') moduleId: string,
-    @Body() dto: UpdateCustomModuleDto,
+    @Body() dto: UpdateCustomModuleDto
   ) {
-    return this.trainingService.updateCustomModule(
-      user.organizationId,
-      moduleId,
-      dto,
-    );
+    return this.trainingService.updateCustomModule(user.organizationId, moduleId, dto);
   }
 
   @Delete('modules/custom/:id')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Delete a custom training module' })
-  async deleteCustomModule(
-    @CurrentUser() user: AuthUser,
-    @Param('id') moduleId: string,
-  ) {
-    return this.trainingService.deleteCustomModule(
-      user.organizationId,
-      moduleId,
-    );
+  async deleteCustomModule(@CurrentUser() user: AuthUser, @Param('id') moduleId: string) {
+    return this.trainingService.deleteCustomModule(user.organizationId, moduleId);
   }
 
   @Post('modules/custom/:id/upload')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Upload SCORM package for a custom module' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -371,22 +308,21 @@ export class TrainingController {
     FileInterceptor('file', {
       limits: { fileSize: TRAINING_MAX_BYTES },
       fileFilter: trainingFileFilter,
-    }),
+    })
   )
   async uploadScormPackage(
     @CurrentUser() user: AuthUser,
     @Param('id') moduleId: string,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: Express.Multer.File
   ) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
 
-    return this.trainingService.uploadScormPackage(
-      user.organizationId,
-      moduleId,
-      { buffer: file.buffer, originalname: file.originalname },
-    );
+    return this.trainingService.uploadScormPackage(user.organizationId, moduleId, {
+      buffer: file.buffer,
+      originalname: file.originalname,
+    });
   }
 
   // ==========================================
@@ -394,12 +330,10 @@ export class TrainingController {
   // ==========================================
 
   @Get('users/by-role')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Get users by role for campaign targeting' })
   @ApiQuery({ name: 'roles', required: true, type: [String] })
-  async getUsersByRole(
-    @CurrentUser() user: AuthUser,
-    @Query('roles') roles: string | string[],
-  ) {
+  async getUsersByRole(@CurrentUser() user: AuthUser, @Query('roles') roles: string | string[]) {
     const roleArray = Array.isArray(roles) ? roles : [roles];
     return this.trainingService.getUsersByRole(user.organizationId, roleArray);
   }
@@ -410,11 +344,13 @@ export class TrainingController {
 
   @Get('modules/:moduleId/quiz')
   @ApiOperation({ summary: 'Get quiz questions for a module' })
-  @ApiQuery({ name: 'count', required: false, type: Number, description: 'Number of questions (default: 10)' })
-  async getQuizQuestions(
-    @Param('moduleId') moduleId: string,
-    @Query('count') count?: string,
-  ) {
+  @ApiQuery({
+    name: 'count',
+    required: false,
+    type: Number,
+    description: 'Number of questions (default: 10)',
+  })
+  async getQuizQuestions(@Param('moduleId') moduleId: string, @Query('count') count?: string) {
     const questionCount = count ? parseInt(count, 10) : 10;
     return this.trainingService.getQuizQuestions(moduleId, questionCount);
   }
@@ -424,13 +360,13 @@ export class TrainingController {
   async submitQuiz(
     @CurrentUser() user: AuthUser,
     @Param('moduleId') moduleId: string,
-    @Body() body: { answers: { questionId: string; selectedOption: number }[] },
+    @Body() body: SubmitQuizDto
   ) {
     return this.trainingService.submitQuiz(
       user.organizationId,
       user.userId,
       moduleId,
-      body.answers,
+      body.answers
     );
   }
 
@@ -440,24 +376,14 @@ export class TrainingController {
 
   @Get('modules/:moduleId/certificate')
   @ApiOperation({ summary: 'Generate/get certificate for a completed module' })
-  async getCertificate(
-    @CurrentUser() user: AuthUser,
-    @Param('moduleId') moduleId: string,
-  ) {
-    return this.trainingService.generateCertificate(
-      user.organizationId,
-      user.userId,
-      moduleId,
-    );
+  async getCertificate(@CurrentUser() user: AuthUser, @Param('moduleId') moduleId: string) {
+    return this.trainingService.generateCertificate(user.organizationId, user.userId, moduleId);
   }
 
   @Get('certificates')
   @ApiOperation({ summary: 'Get all certificates for the current user' })
   async getMyCertificates(@CurrentUser() user: AuthUser) {
-    return this.trainingService.getUserCertificates(
-      user.organizationId,
-      user.userId,
-    );
+    return this.trainingService.getUserCertificates(user.organizationId, user.userId);
   }
 
   @Get('certificates/:certificateId/verify')
@@ -467,12 +393,23 @@ export class TrainingController {
   }
 
   @Get('certificates/:certificateId/pdf')
-  @ApiOperation({ summary: 'Get certificate PDF data' })
-  async getCertificatePDF(@Param('certificateId') certificateId: string) {
-    return this.trainingService.getCertificatePDFData(certificateId);
+  @ApiOperation({ summary: 'Download a completed training certificate as PDF' })
+  async getCertificatePDF(
+    @CurrentUser() user: AuthUser,
+    @Param('certificateId') certificateId: string,
+    @Res() response: Response
+  ): Promise<void> {
+    const pdf = await this.trainingService.getCertificatePDF(
+      user.organizationId,
+      user.userId,
+      certificateId
+    );
+    response.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${certificateId}.pdf"`,
+      'Content-Length': pdf.length.toString(),
+      'Cache-Control': 'private, no-store',
+    });
+    response.send(pdf);
   }
 }
-
-
-
-

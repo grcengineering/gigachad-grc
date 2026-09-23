@@ -17,6 +17,9 @@ import {
   AssignmentStatus,
 } from './dto/training.dto';
 import { sanitizeFilename, validatePathWithinBase, isValidUuid } from '@gigachad-grc/shared';
+import { DOMParser } from '@xmldom/xmldom';
+import JSZip from 'jszip';
+import PDFDocument from 'pdfkit';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
@@ -31,6 +34,8 @@ const VALID_MODULE_IDS = [
   'secure-coding',
   'combined-training',
 ];
+const MAX_SCORM_ENTRIES = 5000;
+const MAX_SCORM_EXPANDED_BYTES = 500 * 1024 * 1024;
 
 @Injectable()
 export class TrainingService {
@@ -56,9 +61,7 @@ export class TrainingService {
   }
 
   async startModule(organizationId: string, userId: string, dto: StartModuleDto) {
-    if (!VALID_MODULE_IDS.includes(dto.moduleId)) {
-      throw new BadRequestException(`Invalid module ID: ${dto.moduleId}`);
-    }
+    await this.assertModuleIds(organizationId, [dto.moduleId]);
 
     // Check if progress already exists
     const existing = await this.prisma.trainingProgress.findFirst({
@@ -144,9 +147,7 @@ export class TrainingService {
   }
 
   async completeModule(organizationId: string, userId: string, dto: CompleteModuleDto) {
-    if (!VALID_MODULE_IDS.includes(dto.moduleId)) {
-      throw new BadRequestException(`Invalid module ID: ${dto.moduleId}`);
-    }
+    await this.assertModuleIds(organizationId, [dto.moduleId]);
 
     const progress = await this.prisma.trainingProgress.findFirst({
       where: { userId, moduleId: dto.moduleId },
@@ -245,6 +246,169 @@ export class TrainingService {
     };
   }
 
+  async getMyTraining(organizationId: string, userId: string) {
+    await this.updateOverdueAssignments(organizationId);
+
+    const [assignments, progress, certificates] = await Promise.all([
+      this.prisma.trainingAssignment.findMany({
+        where: { organizationId, userId },
+        orderBy: [{ dueDate: 'asc' }, { assignedAt: 'desc' }],
+      }),
+      this.prisma.trainingProgress.findMany({
+        where: { organizationId, userId },
+      }),
+      this.getUserCertificates(organizationId, userId),
+    ]);
+
+    const progressByModule = new Map(progress.map((item) => [item.moduleId, item]));
+    const courses = assignments.map((assignment) => {
+      const moduleProgress = progressByModule.get(assignment.moduleId);
+      const status =
+        assignment.status === AssignmentStatus.pending ? 'not_started' : assignment.status;
+      return {
+        id: assignment.id,
+        courseId: assignment.moduleId,
+        title: this.getModuleName(assignment.moduleId),
+        status:
+          moduleProgress?.status === TrainingStatus.completed ? TrainingStatus.completed : status,
+        progress:
+          moduleProgress?.status === TrainingStatus.completed
+            ? 100
+            : (moduleProgress?.slideProgress ?? 0),
+        dueDate: assignment.dueDate,
+      };
+    });
+
+    const completed = courses.filter((course) => course.status === TrainingStatus.completed).length;
+    const inProgress = courses.filter(
+      (course) => course.status === TrainingStatus.in_progress
+    ).length;
+    const overdue = courses.filter((course) => course.status === AssignmentStatus.overdue).length;
+
+    return {
+      summary: {
+        assigned: courses.length,
+        inProgress,
+        completed,
+        overdue,
+        completionPct: courses.length > 0 ? Math.round((completed / courses.length) * 100) : 0,
+      },
+      courses,
+      certificates: certificates.map((certificate) => ({
+        id: certificate.id,
+        name: 'Certificate of Completion',
+        courseName: certificate.moduleName,
+        issuedAt: certificate.issuedAt,
+        expiresAt: certificate.expiresAt,
+        pdfUrl: `/api/training/certificates/${certificate.id}/pdf`,
+      })),
+    };
+  }
+
+  async getAdminCampaigns(organizationId: string, filters: { search?: string; status?: string }) {
+    await this.updateOverdueAssignments(organizationId);
+    const [campaigns, assignments] = await Promise.all([
+      this.prisma.trainingCampaign.findMany({
+        where: { organizationId },
+        orderBy: { startDate: 'desc' },
+      }),
+      this.prisma.trainingAssignment.findMany({
+        where: { organizationId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              displayName: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    const now = new Date();
+    const normalized = campaigns.map((campaign) => {
+      const moduleIds = campaign.moduleIds as string[];
+      const targetGroups = campaign.targetGroups as string[];
+      const related = assignments.filter(
+        (assignment) =>
+          moduleIds.includes(assignment.moduleId) && assignment.assignedAt >= campaign.createdAt
+      );
+      const completed = related.filter(
+        (assignment) => assignment.status === AssignmentStatus.completed
+      ).length;
+      const overdueAssignments = related.filter(
+        (assignment) => assignment.status === AssignmentStatus.overdue
+      );
+      const status = !campaign.isActive
+        ? campaign.endDate && campaign.endDate < now
+          ? 'archived'
+          : 'draft'
+        : campaign.startDate > now
+          ? 'scheduled'
+          : campaign.endDate && campaign.endDate < now
+            ? 'completed'
+            : 'active';
+
+      return {
+        id: campaign.id,
+        name: campaign.name,
+        description: campaign.description,
+        status,
+        audience: targetGroups.join(', '),
+        audienceLabel: targetGroups.includes('all') ? 'All employees' : targetGroups.join(', '),
+        assigned: related.length,
+        completed,
+        completionPct: related.length > 0 ? Math.round((completed / related.length) * 100) : 0,
+        overdue: overdueAssignments.length,
+        dueDate: campaign.endDate,
+        startDate: campaign.startDate,
+        moduleIds,
+        targetGroups,
+        isActive: campaign.isActive,
+        assignments: related.map((assignment) => ({
+          id: assignment.id,
+          userId: assignment.user.id,
+          name: assignment.user.displayName,
+          email: assignment.user.email,
+          moduleId: assignment.moduleId,
+          moduleName: this.getModuleName(assignment.moduleId),
+          status: assignment.status,
+          dueDate: assignment.dueDate,
+        })),
+        overdueUsers: overdueAssignments.map((assignment) => ({
+          id: assignment.user.id,
+          name: assignment.user.displayName,
+          email: assignment.user.email,
+          dueDate: assignment.dueDate,
+        })),
+      };
+    });
+
+    const search = filters.search?.trim().toLowerCase();
+    const visible = normalized.filter(
+      (campaign) =>
+        (!search ||
+          campaign.name.toLowerCase().includes(search) ||
+          campaign.description?.toLowerCase().includes(search)) &&
+        (!filters.status || campaign.status === filters.status)
+    );
+    const totalAssignments = normalized.reduce((sum, item) => sum + item.assigned, 0);
+    const totalCompleted = normalized.reduce((sum, item) => sum + item.completed, 0);
+
+    return {
+      campaigns: visible,
+      total: visible.length,
+      summary: {
+        activeCampaigns: normalized.filter((item) => item.status === 'active').length,
+        totalAssignments,
+        completionPct:
+          totalAssignments > 0 ? Math.round((totalCompleted / totalAssignments) * 100) : 0,
+        overdueCount: normalized.reduce((sum, item) => sum + item.overdue, 0),
+      },
+    };
+  }
+
   // ==========================================
   // Assignment Management
   // ==========================================
@@ -283,13 +447,12 @@ export class TrainingService {
   }
 
   async createAssignment(organizationId: string, assignedBy: string, dto: CreateAssignmentDto) {
-    if (!VALID_MODULE_IDS.includes(dto.moduleId)) {
-      throw new BadRequestException(`Invalid module ID: ${dto.moduleId}`);
-    }
+    await this.assertModuleIds(organizationId, [dto.moduleId]);
+    await this.assertUsersBelongToOrganization(organizationId, [dto.userId]);
 
     // Check for existing assignment
     const existing = await this.prisma.trainingAssignment.findFirst({
-      where: { userId: dto.userId, moduleId: dto.moduleId },
+      where: { organizationId, userId: dto.userId, moduleId: dto.moduleId },
     });
 
     if (existing) {
@@ -320,17 +483,15 @@ export class TrainingService {
   }
 
   async bulkAssign(organizationId: string, assignedBy: string, dto: BulkAssignDto) {
+    await this.assertModuleIds(organizationId, dto.moduleIds);
+    await this.assertUsersBelongToOrganization(organizationId, dto.userIds);
     const assignments = [];
 
     for (const userId of dto.userIds) {
       for (const moduleId of dto.moduleIds) {
-        if (!VALID_MODULE_IDS.includes(moduleId)) {
-          continue;
-        }
-
         // Check for existing assignment
         const existing = await this.prisma.trainingAssignment.findFirst({
-          where: { userId, moduleId },
+          where: { organizationId, userId, moduleId },
         });
 
         if (!existing) {
@@ -454,12 +615,8 @@ export class TrainingService {
   }
 
   async createCampaign(organizationId: string, createdBy: string, dto: CreateCampaignDto) {
-    // Validate module IDs
-    for (const moduleId of dto.moduleIds) {
-      if (!VALID_MODULE_IDS.includes(moduleId)) {
-        throw new BadRequestException(`Invalid module ID: ${moduleId}`);
-      }
-    }
+    await this.assertModuleIds(organizationId, dto.moduleIds);
+    this.assertTargetGroups(dto.targetGroups);
 
     return this.prisma.trainingCampaign.create({
       data: {
@@ -495,13 +652,11 @@ export class TrainingService {
       throw new NotFoundException(`Campaign ${campaignId} not found`);
     }
 
-    // Validate module IDs if provided
     if (dto.moduleIds) {
-      for (const moduleId of dto.moduleIds) {
-        if (!VALID_MODULE_IDS.includes(moduleId)) {
-          throw new BadRequestException(`Invalid module ID: ${moduleId}`);
-        }
-      }
+      await this.assertModuleIds(organizationId, dto.moduleIds);
+    }
+    if (dto.targetGroups) {
+      this.assertTargetGroups(dto.targetGroups);
     }
 
     const updateData: {
@@ -509,6 +664,7 @@ export class TrainingService {
       description?: string | null;
       moduleIds?: string[];
       targetGroups?: string[];
+      startDate?: Date;
       endDate?: Date | null;
       isActive?: boolean;
     } = {};
@@ -516,6 +672,7 @@ export class TrainingService {
     if (dto.description !== undefined) updateData.description = dto.description;
     if (dto.moduleIds) updateData.moduleIds = dto.moduleIds;
     if (dto.targetGroups) updateData.targetGroups = dto.targetGroups;
+    if (dto.startDate) updateData.startDate = new Date(dto.startDate);
     if (dto.endDate !== undefined) updateData.endDate = dto.endDate ? new Date(dto.endDate) : null;
     if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
 
@@ -747,21 +904,129 @@ export class TrainingService {
       throw new BadRequestException('Invalid module ID format');
     }
 
-    // Generate unique folder name using validated UUID
+    if (path.extname(file.originalname).toLowerCase() !== '.zip') {
+      throw new BadRequestException('SCORM packages must be uploaded as a .zip file');
+    }
+
+    let zip: JSZip;
+    try {
+      zip = await JSZip.loadAsync(file.buffer, {
+        checkCRC32: true,
+        createFolders: true,
+      });
+    } catch {
+      throw new BadRequestException('The uploaded file is not a valid ZIP archive');
+    }
+
+    const entries = Object.values(zip.files);
+    if (entries.length === 0 || entries.length > MAX_SCORM_ENTRIES) {
+      throw new BadRequestException(
+        `SCORM package must contain between 1 and ${MAX_SCORM_ENTRIES} entries`
+      );
+    }
+
+    let expandedBytes = 0;
+    for (const entry of entries) {
+      const details = entry as JSZip.JSZipObject & {
+        unsafeOriginalName?: string;
+        _data?: { uncompressedSize?: number };
+      };
+      const originalName = details.unsafeOriginalName || entry.name;
+      const normalizedName = originalName.replace(/\\/g, '/');
+      if (
+        normalizedName.startsWith('/') ||
+        normalizedName.includes('\0') ||
+        normalizedName.split('/').includes('..')
+      ) {
+        throw new BadRequestException(`Unsafe path in SCORM package: ${originalName}`);
+      }
+      const unixMode =
+        typeof entry.unixPermissions === 'number'
+          ? entry.unixPermissions
+          : parseInt(entry.unixPermissions || '0', 10);
+      if ((unixMode & 0o170000) === 0o120000) {
+        throw new BadRequestException('SCORM packages may not contain symbolic links');
+      }
+      expandedBytes += details._data?.uncompressedSize || 0;
+      if (expandedBytes > MAX_SCORM_EXPANDED_BYTES) {
+        throw new BadRequestException('SCORM package expands beyond the 500 MB safety limit');
+      }
+    }
+
+    const manifestEntry = zip.file('imsmanifest.xml');
+    if (!manifestEntry) {
+      throw new BadRequestException(
+        'Unsupported SCORM package: imsmanifest.xml is missing at the archive root'
+      );
+    }
+    const manifest = await manifestEntry.async('string');
+    const xmlErrors: string[] = [];
+    const document = new DOMParser({
+      errorHandler: {
+        warning: () => undefined,
+        error: (message) => xmlErrors.push(message),
+        fatalError: (message) => xmlErrors.push(message),
+      },
+    }).parseFromString(manifest, 'application/xml');
+    if (xmlErrors.length > 0 || document.documentElement?.localName?.toLowerCase() !== 'manifest') {
+      throw new BadRequestException('Unsupported SCORM package: imsmanifest.xml is invalid');
+    }
+
+    const versionNode =
+      document.getElementsByTagName('schemaversion').item(0) ||
+      document.getElementsByTagNameNS('*', 'schemaversion').item(0);
+    const schemaVersion = versionNode?.textContent?.trim() || '';
+    const manifestNamespaces = Array.from({ length: document.documentElement.attributes.length })
+      .map((_, index) => document.documentElement.attributes.item(index)?.value || '')
+      .join(' ');
+    const scormVersion = /1\.2/i.test(schemaVersion)
+      ? 'SCORM 1.2'
+      : /2004/i.test(schemaVersion) || /adlcp_v1p3/i.test(manifestNamespaces)
+        ? 'SCORM 2004'
+        : null;
+    if (!scormVersion) {
+      throw new BadRequestException(
+        `Unsupported SCORM version${schemaVersion ? `: ${schemaVersion}` : ''}. Only SCORM 1.2 and SCORM 2004 are supported`
+      );
+    }
+
+    const resources = [
+      ...Array.from(document.getElementsByTagName('resource')),
+      ...Array.from(document.getElementsByTagNameNS('*', 'resource')),
+    ];
+    const launchHref = resources
+      .map((resource) => resource.getAttribute('href'))
+      .find((href): href is string => Boolean(href));
+    if (!launchHref) {
+      throw new BadRequestException(
+        'Unsupported SCORM package: no launchable resource was declared'
+      );
+    }
+    let decodedLaunchHref: string;
+    try {
+      decodedLaunchHref = decodeURIComponent(launchHref.split(/[?#]/, 1)[0]);
+    } catch {
+      throw new BadRequestException('Unsupported SCORM package: launch resource path is invalid');
+    }
+    const launchPath = path.posix.normalize(decodedLaunchHref.replace(/\\/g, '/'));
+    if (
+      launchPath.startsWith('/') ||
+      launchPath === '..' ||
+      launchPath.startsWith('../') ||
+      !zip.file(launchPath)
+    ) {
+      throw new BadRequestException(
+        'Unsupported SCORM package: the manifest launch resource is missing or unsafe'
+      );
+    }
+
     const folderName = `${moduleId}-${crypto.randomBytes(4).toString('hex')}`;
-
-    // SECURITY: Define allowed base directory for uploads
     const uploadsBasePath = path.resolve(process.cwd(), 'uploads', 'training');
-
-    // SECURITY: Validate the upload directory path is within allowed base
     const uploadDirValidation = validatePathWithinBase(uploadsBasePath, folderName);
     if (!uploadDirValidation.isValid) {
       throw new BadRequestException(`Invalid upload path: ${uploadDirValidation.error}`);
     }
-    const uploadDir = uploadDirValidation.resolvedPath;
-
-    // SECURITY: Additional explicit path traversal check for CodeQL compliance
-    const resolvedUploadDir = path.resolve(uploadDir);
+    const resolvedUploadDir = path.resolve(uploadDirValidation.resolvedPath);
     const resolvedBase = path.resolve(uploadsBasePath);
     if (
       !resolvedUploadDir.startsWith(resolvedBase + path.sep) &&
@@ -770,63 +1035,68 @@ export class TrainingService {
       throw new BadRequestException('Path traversal detected in upload directory');
     }
 
-    // Create upload directory
-    // codeql[js/path-injection] suppressed: Path validated by isValidUuid(), validatePathWithinBase(), and explicit traversal check above
-    fs.mkdirSync(resolvedUploadDir, { recursive: true });
-
-    // SECURITY: Sanitize filename to prevent path traversal attacks
     const safeFilename = sanitizeFilename(file.originalname);
-
-    // SECURITY: Block path traversal patterns in filename
     if (safeFilename.includes('..') || safeFilename.includes('\0')) {
       throw new BadRequestException('Invalid filename');
     }
 
-    // SECURITY: Validate the final zip path is within upload directory
-    const zipPathValidation = validatePathWithinBase(resolvedUploadDir, safeFilename);
-    if (!zipPathValidation.isValid) {
-      throw new BadRequestException(`Invalid file path: ${zipPathValidation.error}`);
-    }
-    const zipPath = zipPathValidation.resolvedPath;
+    try {
+      await fs.promises.mkdir(resolvedUploadDir, { recursive: true });
+      for (const entry of entries) {
+        const relativePath = entry.name.replace(/\\/g, '/');
+        const destinationValidation = validatePathWithinBase(resolvedUploadDir, relativePath);
+        if (!destinationValidation.isValid) {
+          throw new BadRequestException(`Unsafe SCORM entry: ${relativePath}`);
+        }
+        if (entry.dir) {
+          await fs.promises.mkdir(destinationValidation.resolvedPath, { recursive: true });
+          continue;
+        }
+        const contents = await entry.async('nodebuffer');
+        await fs.promises.mkdir(path.dirname(destinationValidation.resolvedPath), {
+          recursive: true,
+        });
+        await fs.promises.writeFile(destinationValidation.resolvedPath, contents, {
+          mode: 0o640,
+        });
+      }
+      await fs.promises.writeFile(
+        path.join(resolvedUploadDir, '.scorm-metadata.json'),
+        JSON.stringify({ version: scormVersion, launchPath, originalFileName: safeFilename }),
+        { mode: 0o640 }
+      );
 
-    // SECURITY: Additional explicit path traversal check for CodeQL compliance
-    const resolvedZipPath = path.resolve(zipPath);
-    if (
-      !resolvedZipPath.startsWith(resolvedUploadDir + path.sep) &&
-      resolvedZipPath !== resolvedUploadDir
-    ) {
-      throw new BadRequestException('Path traversal detected in file path');
-    }
-
-    // codeql[js/path-injection] suppressed: Path validated by sanitizeFilename(), validatePathWithinBase(), and explicit traversal check above
-    // codeql[js/http-to-file-access] suppressed: File data from validated multipart upload, path validated
-    fs.writeFileSync(resolvedZipPath, file.buffer);
-
-    // For now, just store the zip - extraction would require a zip library
-    // In production, you'd extract the SCORM package and parse imsmanifest.xml
-
-    // Update the module with the SCORM path
-    const updated = await this.prisma.customTrainingModule.update({
-      where: { id: moduleId },
-      data: {
-        scormPath: folderName,
-        originalFileName: safeFilename,
-      },
-      include: {
-        creator: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
+      const updated = await this.prisma.customTrainingModule.update({
+        where: { id: moduleId },
+        data: {
+          scormPath: folderName,
+          originalFileName: safeFilename,
+        },
+        include: {
+          creator: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    this.logger.log(`SCORM package uploaded for module ${moduleId}: ${file.originalname}`);
+      if (module.scormPath) {
+        const oldPath = validatePathWithinBase(uploadsBasePath, module.scormPath);
+        if (oldPath.isValid && oldPath.resolvedPath !== resolvedUploadDir) {
+          await fs.promises.rm(oldPath.resolvedPath, { recursive: true, force: true });
+        }
+      }
 
-    return updated;
+      this.logger.log(`Validated ${scormVersion} package uploaded for module ${moduleId}`);
+      return { ...updated, scorm: { version: scormVersion, launchPath } };
+    } catch (error) {
+      await fs.promises.rm(resolvedUploadDir, { recursive: true, force: true });
+      throw error;
+    }
   }
 
   /**
@@ -894,6 +1164,55 @@ export class TrainingService {
       'combined-training': 'general',
     };
     return categories[moduleId] || 'general';
+  }
+
+  private async assertModuleIds(organizationId: string, moduleIds: string[]): Promise<void> {
+    const uniqueIds = [...new Set(moduleIds)];
+    if (uniqueIds.length === 0) {
+      throw new BadRequestException('At least one training module is required');
+    }
+    const customIds = uniqueIds.filter((moduleId) => !VALID_MODULE_IDS.includes(moduleId));
+    if (customIds.length === 0) return;
+
+    const existing = await this.prisma.customTrainingModule.findMany({
+      where: {
+        organizationId,
+        id: { in: customIds },
+        isActive: true,
+      },
+      select: { id: true },
+    });
+    const existingIds = new Set(existing.map((item) => item.id));
+    const invalid = customIds.find((moduleId) => !existingIds.has(moduleId));
+    if (invalid) {
+      throw new BadRequestException(`Invalid or inactive module ID: ${invalid}`);
+    }
+  }
+
+  private async assertUsersBelongToOrganization(
+    organizationId: string,
+    userIds: string[]
+  ): Promise<void> {
+    const uniqueIds = [...new Set(userIds)];
+    if (uniqueIds.length === 0) {
+      throw new BadRequestException('At least one user is required');
+    }
+    const count = await this.prisma.user.count({
+      where: { organizationId, id: { in: uniqueIds }, status: 'active' },
+    });
+    if (count !== uniqueIds.length) {
+      throw new BadRequestException('One or more target users are invalid or inactive');
+    }
+  }
+
+  private assertTargetGroups(targetGroups: string[]): void {
+    const validGroups = new Set<string>(['all', ...Object.values(UserRole)]);
+    if (
+      targetGroups.length === 0 ||
+      targetGroups.some((targetGroup) => !validGroups.has(targetGroup))
+    ) {
+      throw new BadRequestException('Target groups must contain "all" or valid user roles');
+    }
   }
 
   /**
@@ -973,12 +1292,17 @@ export class TrainingService {
     if (!VALID_MODULE_IDS.includes(moduleId)) {
       throw new BadRequestException(`Invalid module ID: ${moduleId}`);
     }
+    if (!Number.isInteger(count) || count < 1 || count > 25) {
+      throw new BadRequestException('Quiz question count must be an integer between 1 and 25');
+    }
 
     const questionBank = this.getQuestionBank(moduleId);
-
-    // Shuffle and select random questions
-    const shuffled = questionBank.sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, Math.min(count, shuffled.length));
+    const shuffled = [...questionBank].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, Math.min(count, shuffled.length)).map((question) => ({
+      id: question.id,
+      question: question.question,
+      options: question.options,
+    }));
   }
 
   /**
@@ -990,15 +1314,34 @@ export class TrainingService {
     moduleId: string,
     answers: { questionId: string; selectedOption: number }[]
   ): Promise<QuizResult> {
+    if (!VALID_MODULE_IDS.includes(moduleId)) {
+      throw new BadRequestException(`Invalid module ID: ${moduleId}`);
+    }
     const questionBank = this.getQuestionBank(moduleId);
     const questionMap = new Map(questionBank.map((q) => [q.id, q]));
+    const seen = new Set<string>();
 
     let correctCount = 0;
     const results: QuizAnswerResult[] = [];
 
     for (const answer of answers) {
       const question = questionMap.get(answer.questionId);
-      if (!question) continue;
+      if (!question) {
+        throw new BadRequestException(`Unknown quiz question: ${answer.questionId}`);
+      }
+      if (seen.has(answer.questionId)) {
+        throw new BadRequestException(`Duplicate quiz answer: ${answer.questionId}`);
+      }
+      if (
+        !Number.isInteger(answer.selectedOption) ||
+        answer.selectedOption < 0 ||
+        answer.selectedOption >= question.options.length
+      ) {
+        throw new BadRequestException(
+          `Selected option is out of range for question ${answer.questionId}`
+        );
+      }
+      seen.add(answer.questionId);
 
       const isCorrect = answer.selectedOption === question.correctOption;
       if (isCorrect) correctCount++;
@@ -1006,7 +1349,6 @@ export class TrainingService {
       results.push({
         questionId: answer.questionId,
         selectedOption: answer.selectedOption,
-        correctOption: question.correctOption,
         isCorrect,
         explanation: question.explanation,
       });
@@ -1041,8 +1383,8 @@ export class TrainingService {
   /**
    * Get question bank for a module
    */
-  private getQuestionBank(moduleId: string): QuizQuestion[] {
-    const questionBanks: Record<string, QuizQuestion[]> = {
+  private getQuestionBank(moduleId: string): PrivateQuizQuestion[] {
+    const questionBanks: Record<string, PrivateQuizQuestion[]> = {
       'phishing-smishing-vishing': [
         {
           id: 'ph-1',
@@ -1268,7 +1610,11 @@ export class TrainingService {
       ],
     };
 
-    return questionBanks[moduleId] || questionBanks['general-cybersecurity'];
+    const bank = questionBanks[moduleId];
+    if (!bank) {
+      throw new BadRequestException(`Module ${moduleId} does not provide a quiz`);
+    }
+    return bank;
   }
 
   // ==========================================
@@ -1313,6 +1659,23 @@ export class TrainingService {
       throw new NotFoundException('User or organization not found');
     }
 
+    const settings =
+      ((
+        await this.prisma.organization.findUnique({
+          where: { id: organizationId },
+          select: { settings: true },
+        })
+      )?.settings as Record<string, unknown>) || {};
+    const certificates = (settings.trainingCertificates as Certificate[]) || [];
+    const existing = certificates.find(
+      (certificate) =>
+        certificate.moduleId === moduleId &&
+        (certificate.userId === userId || certificate.recipientEmail === user.email)
+    );
+    if (existing) {
+      return existing;
+    }
+
     // Generate certificate ID
     const certificateId = `CERT-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
 
@@ -1328,6 +1691,7 @@ export class TrainingService {
 
     const certificate: Certificate = {
       id: certificateId,
+      userId,
       recipientName: user.displayName || `${user.firstName} ${user.lastName}`,
       recipientEmail: user.email,
       moduleName: moduleNames[moduleId] || moduleId,
@@ -1337,19 +1701,9 @@ export class TrainingService {
       score: progress.score,
       issuedAt: new Date(),
       expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year validity
-      verificationUrl: `https://app.gigachad-grc.com/verify/${certificateId}`,
+      verificationUrl: `${process.env.PUBLIC_APP_URL || ''}/api/training/certificates/${certificateId}/verify`,
     };
 
-    // Store certificate (in production, save to database)
-    const settings =
-      ((
-        await this.prisma.organization.findUnique({
-          where: { id: organizationId },
-          select: { settings: true },
-        })
-      )?.settings as Record<string, unknown>) || {};
-
-    const certificates = (settings.trainingCertificates as Certificate[]) || [];
     certificates.push(certificate);
 
     await this.prisma.organization.update({
@@ -1385,7 +1739,9 @@ export class TrainingService {
       select: { email: true },
     });
 
-    return certificates.filter((c) => c.recipientEmail === user?.email);
+    return certificates.filter(
+      (certificate) => certificate.userId === userId || certificate.recipientEmail === user?.email
+    );
   }
 
   /**
@@ -1410,7 +1766,11 @@ export class TrainingService {
         const isExpired = new Date(certificate.expiresAt) < new Date();
         return {
           valid: !isExpired,
-          certificate,
+          certificate: {
+            ...certificate,
+            recipientEmail: undefined,
+            userId: undefined,
+          },
           message: isExpired ? 'Certificate has expired' : 'Certificate is valid',
         };
       }
@@ -1422,98 +1782,98 @@ export class TrainingService {
     };
   }
 
-  /**
-   * Generate certificate PDF content
-   */
-  async getCertificatePDFData(certificateId: string): Promise<{
-    certificate: Certificate;
-    htmlContent: string;
-  }> {
-    const result = await this.verifyCertificate(certificateId);
-
-    if (!result.valid || !result.certificate) {
-      throw new NotFoundException('Certificate not found or invalid');
+  async getCertificatePDF(
+    organizationId: string,
+    userId: string,
+    certificateId: string
+  ): Promise<Buffer> {
+    const certificates = await this.getUserCertificates(organizationId, userId);
+    const certificate = certificates.find((item) => item.id === certificateId);
+    if (!certificate) {
+      throw new NotFoundException('Certificate not found');
     }
 
-    const cert = result.certificate;
+    return new Promise<Buffer>((resolve, reject) => {
+      const document = new PDFDocument({
+        size: 'LETTER',
+        layout: 'landscape',
+        margins: { top: 54, bottom: 54, left: 54, right: 54 },
+        info: {
+          Title: `Certificate of Completion - ${certificate.moduleName}`,
+          Author: certificate.organizationName,
+          Subject: certificate.id,
+        },
+      });
+      const chunks: Buffer[] = [];
+      document.on('data', (chunk: Buffer) => chunks.push(chunk));
+      document.on('end', () => resolve(Buffer.concat(chunks)));
+      document.on('error', reject);
 
-    const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    body {
-      font-family: 'Georgia', serif;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-      color: #fff;
-      padding: 40px;
-      text-align: center;
-    }
-    .certificate {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 60px;
-      border: 3px solid #c9a227;
-      background: rgba(255,255,255,0.05);
-    }
-    .header {
-      font-size: 32px;
-      color: #c9a227;
-      margin-bottom: 10px;
-    }
-    .subtitle {
-      font-size: 18px;
-      color: #888;
-      margin-bottom: 40px;
-    }
-    .recipient {
-      font-size: 36px;
-      font-weight: bold;
-      margin: 30px 0;
-      color: #fff;
-    }
-    .course {
-      font-size: 24px;
-      color: #c9a227;
-      margin: 20px 0;
-    }
-    .details {
-      font-size: 14px;
-      color: #888;
-      margin-top: 40px;
-    }
-    .id {
-      font-size: 12px;
-      color: #666;
-      margin-top: 20px;
-    }
-  </style>
-</head>
-<body>
-  <div class="certificate">
-    <div class="header">Certificate of Completion</div>
-    <div class="subtitle">${cert.organizationName}</div>
-    
-    <p>This is to certify that</p>
-    <div class="recipient">${cert.recipientName}</div>
-    
-    <p>has successfully completed the training course</p>
-    <div class="course">${cert.moduleName}</div>
-    
-    ${cert.score ? `<p>with a score of <strong>${cert.score}%</strong></p>` : ''}
-    
-    <div class="details">
-      <p>Completed on: ${new Date(cert.completedAt).toLocaleDateString()}</p>
-      <p>Valid until: ${new Date(cert.expiresAt).toLocaleDateString()}</p>
-    </div>
-    
-    <div class="id">Certificate ID: ${cert.id}</div>
-    <div class="id">Verify at: ${cert.verificationUrl}</div>
-  </div>
-</body>
-</html>`;
+      const width = document.page.width;
+      const height = document.page.height;
+      document
+        .lineWidth(4)
+        .strokeColor('#B08D2F')
+        .rect(28, 28, width - 56, height - 56)
+        .stroke();
+      document
+        .lineWidth(1)
+        .strokeColor('#334155')
+        .rect(38, 38, width - 76, height - 76)
+        .stroke();
+      document
+        .fillColor('#0F172A')
+        .font('Helvetica-Bold')
+        .fontSize(30)
+        .text('Certificate of Completion', 60, 82, { align: 'center' });
+      document
+        .fillColor('#475569')
+        .font('Helvetica')
+        .fontSize(14)
+        .text(certificate.organizationName, { align: 'center' })
+        .moveDown(2)
+        .fontSize(13)
+        .text('This certifies that', { align: 'center' })
+        .moveDown(0.8)
+        .fillColor('#0F172A')
+        .font('Helvetica-Bold')
+        .fontSize(28)
+        .text(certificate.recipientName, { align: 'center' })
+        .moveDown(0.8)
+        .fillColor('#475569')
+        .font('Helvetica')
+        .fontSize(13)
+        .text('successfully completed', { align: 'center' })
+        .moveDown(0.8)
+        .fillColor('#8A6B1F')
+        .font('Helvetica-Bold')
+        .fontSize(22)
+        .text(certificate.moduleName, { align: 'center' });
 
-    return { certificate: cert, htmlContent };
+      const details = [
+        `Completed: ${new Date(certificate.completedAt).toLocaleDateString('en-US')}`,
+        certificate.score !== null && certificate.score !== undefined
+          ? `Score: ${certificate.score}%`
+          : null,
+        `Valid until: ${new Date(certificate.expiresAt).toLocaleDateString('en-US')}`,
+      ]
+        .filter(Boolean)
+        .join('   •   ');
+      document
+        .moveDown(1.5)
+        .fillColor('#334155')
+        .font('Helvetica')
+        .fontSize(11)
+        .text(details, { align: 'center' })
+        .moveDown(2)
+        .fontSize(9)
+        .fillColor('#64748B')
+        .text(`Certificate ID: ${certificate.id}`, { align: 'center' });
+      if (certificate.verificationUrl) {
+        document.text(`Verify: ${certificate.verificationUrl}`, { align: 'center' });
+      }
+      document.end();
+    });
   }
 }
 
@@ -1525,6 +1885,9 @@ export interface QuizQuestion {
   id: string;
   question: string;
   options: string[];
+}
+
+interface PrivateQuizQuestion extends QuizQuestion {
   correctOption: number;
   explanation: string;
 }
@@ -1532,7 +1895,6 @@ export interface QuizQuestion {
 interface QuizAnswerResult {
   questionId: string;
   selectedOption: number;
-  correctOption: number;
   isCorrect: boolean;
   explanation: string;
 }
@@ -1550,6 +1912,7 @@ export interface QuizResult {
 
 export interface Certificate {
   id: string;
+  userId?: string;
   recipientName: string;
   recipientEmail: string;
   moduleName: string;

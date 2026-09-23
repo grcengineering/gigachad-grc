@@ -18,12 +18,16 @@ export const meHandlers: StubHandler[] = [
       role: 'admin',
       timezone: 'America/New_York',
       avatarUrl: null,
-      mfaEnabled: false,
-      apiKeys: [],
-      notifications: {
-        email: { risk_assigned: true, evidence_review: true, audit_request: true },
-        inApp: { risk_assigned: true, evidence_review: true, audit_request: true },
+      twoFactorEnabled: null,
+      identity: {
+        accountConsoleAvailable: false,
+        passwordApiAvailable: false,
+        totpApiAvailable: false,
+        sessionsApiAvailable: false,
+        accountUrl: null,
       },
+      apiKeys: [],
+      notifications: [],
     }),
   },
   {
@@ -31,12 +35,27 @@ export const meHandlers: StubHandler[] = [
     path: '/',
     body: (_p, payload) => ({ id: 'stub-me', ...(payload as object), updatedAt: now() }),
   },
-  { method: 'POST', path: '/password', body: () => ({ success: true }) },
-  { method: 'GET', path: '/2fa', body: () => ({ enabled: false, secret: null, qrCodeUrl: null }) },
   {
     method: 'POST',
-    path: '/2fa',
-    body: (_p, payload) => ({ success: true, ...(payload as object) }),
+    path: '/password',
+    body: () => ({
+      __status: 503,
+      body: { message: 'Identity provider password management is unavailable in UI stubs' },
+    }),
+  },
+  { method: 'GET', path: '/totp', body: () => ({ enabled: null, status: 'unavailable' }) },
+  {
+    method: 'POST',
+    path: '/totp/setup',
+    body: () => ({
+      __status: 503,
+      body: { message: 'Identity provider TOTP setup is unavailable in UI stubs' },
+    }),
+  },
+  {
+    method: 'GET',
+    path: '/sessions',
+    body: () => ({ status: 'unavailable', sessions: [], manageUrl: null }),
   },
   { method: 'GET', path: '/api-keys', body: () => [] },
   {
@@ -45,7 +64,7 @@ export const meHandlers: StubHandler[] = [
     body: (_p, payload) => ({
       id: stubId(),
       ...(payload as object),
-      secret: stubToken('gck'),
+      key: stubToken('gck'),
       createdAt: now(),
       lastUsedAt: null,
     }),

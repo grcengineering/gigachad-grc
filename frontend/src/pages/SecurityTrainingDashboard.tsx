@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   GraduationCap,
@@ -149,7 +149,9 @@ function statusLabel(status?: string): string {
 }
 
 export default function SecurityTrainingDashboard() {
-  const { data, isLoading } = useQuery<MyTrainingResponse>({
+  const [downloadingCertificate, setDownloadingCertificate] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState(false);
+  const { data, isLoading, isError, refetch } = useQuery<MyTrainingResponse>({
     queryKey: ['training', 'my'],
     queryFn: async () => {
       const res = await api.get('/api/training/my');
@@ -223,6 +225,50 @@ export default function SecurityTrainingDashboard() {
       </div>
     );
   }
+
+  if (isError) {
+    return (
+      <div className="space-y-5 animate-fade-in">
+        <PageHeader
+          title="My Training"
+          description="Your assigned security training, progress, and certificates."
+        />
+        <Card>
+          <CardBody>
+            <EmptyState
+              icon={<AlertTriangle className="h-8 w-8" />}
+              title="Training unavailable"
+              description="Your assignments could not be loaded from the training service."
+              action={
+                <Button variant="outline" onClick={() => refetch()}>
+                  Try again
+                </Button>
+              }
+            />
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
+
+  const downloadCertificate = async (certificate: EarnedCertificate) => {
+    if (!certificate.pdfUrl) return;
+    setDownloadError(false);
+    setDownloadingCertificate(certificate.id);
+    try {
+      const response = await api.get<Blob>(certificate.pdfUrl, { responseType: 'blob' });
+      const objectUrl = URL.createObjectURL(response.data);
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = `${certificate.name || certificate.courseName || 'certificate'}.pdf`;
+      anchor.click();
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      setDownloadError(true);
+    } finally {
+      setDownloadingCertificate(null);
+    }
+  };
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -385,12 +431,8 @@ export default function SecurityTrainingDashboard() {
                             </Button>
                           </a>
                         ) : (
-                          <Button
-                            size="sm"
-                            variant={isOverdue ? 'danger' : 'primary'}
-                            leftIcon={<Play className="h-3.5 w-3.5" />}
-                          >
-                            {ctaLabel}
+                          <Button size="sm" variant="outline" disabled>
+                            Content unavailable
                           </Button>
                         )}
                       </div>
@@ -421,6 +463,11 @@ export default function SecurityTrainingDashboard() {
             )}
           </CardHeader>
           <CardBody density="comfy">
+            {downloadError && (
+              <p className="text-small text-red-700 mb-3">
+                Certificate download failed. Try again.
+              </p>
+            )}
             {earnedCerts.length === 0 ? (
               <EmptyState
                 icon={<Award className="h-6 w-6" />}
@@ -447,15 +494,15 @@ export default function SecurityTrainingDashboard() {
                       </p>
                     </div>
                     {cert.pdfUrl ? (
-                      <a href={cert.pdfUrl} target="_blank" rel="noreferrer" download>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          leftIcon={<Download className="h-3.5 w-3.5" />}
-                        >
-                          PDF
-                        </Button>
-                      </a>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        leftIcon={<Download className="h-3.5 w-3.5" />}
+                        loading={downloadingCertificate === cert.id}
+                        onClick={() => downloadCertificate(cert)}
+                      >
+                        PDF
+                      </Button>
                     ) : (
                       <Button
                         size="sm"

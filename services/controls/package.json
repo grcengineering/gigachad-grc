@@ -48,6 +48,7 @@
     "exceljs": "^4.4.0",
     "helmet": "^7.1.0",
     "js-yaml": "^4.3.2",
+    "jszip": "3.10.1",
     "libphonenumber-js": "^1.13.11",
     "nodemailer": "9.1.1",
     "pdfkit": "^0.18.0",

@@ -6,7 +6,7 @@ import { bcdrHandlers } from './dev-stubs/bcdr';
 import { meHandlers, workspacesHandlers, tprmConfigHandlers } from './dev-stubs/settings';
 import { peopleHandlers, trainingHandlers, employeeComplianceHandlers } from './dev-stubs/people';
 import { auditDeepHandlers, auditorPortalHandlers } from './dev-stubs/audit-deep';
-import { answerTemplatesHandlers, helpHandlers } from './dev-stubs/one-offs';
+import { answerTemplatesHandlers } from './dev-stubs/one-offs';
 
 export default defineConfig(({ mode }) => {
   const enableDevStubs = loadEnv(mode, process.cwd(), '').VITE_ENABLE_DEV_STUBS === 'true';
@@ -59,7 +59,6 @@ export default defineConfig(({ mode }) => {
           server.middlewares.use(
             createStubMiddleware('/api/answer-templates', answerTemplatesHandlers)
           );
-          server.middlewares.use(createStubMiddleware('/api/help', helpHandlers));
         },
       },
     ],

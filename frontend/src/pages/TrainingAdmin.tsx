@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Plus,
   Search,
@@ -9,7 +9,6 @@ import {
   AlertTriangle,
   GraduationCap,
   Building2,
-  ExternalLink,
 } from 'lucide-react';
 import api from '@/lib/api';
 import { cn } from '@/lib/cn';
@@ -24,8 +23,10 @@ import {
   EmptyState,
   FilterBar,
   Input,
+  Label,
   PageHeader,
   Select,
+  Skeleton,
   StatCard,
   type ActiveFilter,
   type BadgeVariant,
@@ -62,6 +63,17 @@ interface AdminCampaign {
   overdue?: number;
   dueDate?: string;
   startDate?: string;
+  moduleIds?: string[];
+  targetGroups?: string[];
+  isActive?: boolean;
+  assignments?: Array<{
+    id: string;
+    name: string;
+    email: string;
+    moduleName: string;
+    status: string;
+    dueDate?: string;
+  }>;
   departmentBreakdown?: DepartmentBreakdown[];
   overdueUsers?: OverdueUser[];
 }
@@ -75,6 +87,12 @@ interface CampaignListResponse {
     completionPct?: number;
     overdueCount?: number;
   };
+}
+
+interface TrainingModuleOption {
+  id: string;
+  name: string;
+  isBuiltIn: boolean;
 }
 
 const STATUS_OPTS: { value: CampaignStatus | ''; label: string }[] = [
@@ -124,10 +142,11 @@ export default function TrainingAdmin() {
   const [status, setStatus] = useState<CampaignStatus | ''>('');
   const [selectedCampaign, setSelectedCampaign] = useState<AdminCampaign | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState<AdminCampaign | null>(null);
 
   const debouncedSearch = useDebounce(search, 300);
 
-  const { data, isLoading } = useQuery<CampaignListResponse>({
+  const { data, isLoading, isError, refetch } = useQuery<CampaignListResponse>({
     queryKey: ['training', 'admin', 'campaigns', debouncedSearch, status],
     queryFn: async () => {
       const params: Record<string, string> = {};
@@ -332,64 +351,75 @@ export default function TrainingAdmin() {
         />
       </FilterBar>
 
-      <DataTable
-        data={campaigns}
-        columns={columns}
-        loading={isLoading}
-        getRowId={(c) => c.id}
-        onRowClick={(c) => setSelectedCampaign(c)}
-        emptyState={
-          <EmptyState
-            icon={<GraduationCap className="h-8 w-8" />}
-            title="No campaigns found"
-            description={
-              activeFilters.length
-                ? 'Try clearing your filters to see all campaigns.'
-                : 'Create your first training campaign to start assigning courses.'
-            }
-            action={
-              activeFilters.length ? (
-                <Button variant="outline" size="sm" onClick={clearAll}>
-                  Clear filters
+      {isError ? (
+        <Card>
+          <CardBody>
+            <EmptyState
+              icon={<AlertTriangle className="h-8 w-8" />}
+              title="Campaigns unavailable"
+              description="The training API could not load campaign data."
+              action={
+                <Button variant="outline" size="sm" onClick={() => refetch()}>
+                  Try again
                 </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  leftIcon={<Plus className="h-4 w-4" />}
-                  onClick={() => setCreateOpen(true)}
-                >
-                  Create campaign
-                </Button>
-              )
-            }
-          />
-        }
-      />
+              }
+            />
+          </CardBody>
+        </Card>
+      ) : (
+        <DataTable
+          data={campaigns}
+          columns={columns}
+          loading={isLoading}
+          getRowId={(c) => c.id}
+          onRowClick={(c) => setSelectedCampaign(c)}
+          emptyState={
+            <EmptyState
+              icon={<GraduationCap className="h-8 w-8" />}
+              title="No campaigns found"
+              description={
+                activeFilters.length
+                  ? 'Try clearing your filters to see all campaigns.'
+                  : 'Create your first training campaign to start assigning courses.'
+              }
+              action={
+                activeFilters.length ? (
+                  <Button variant="outline" size="sm" onClick={clearAll}>
+                    Clear filters
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    leftIcon={<Plus className="h-4 w-4" />}
+                    onClick={() => setCreateOpen(true)}
+                  >
+                    Create campaign
+                  </Button>
+                )
+              }
+            />
+          }
+        />
+      )}
 
       {/* Campaign detail dialog */}
-      <CampaignDetailDialog campaign={selectedCampaign} onClose={() => setSelectedCampaign(null)} />
+      <CampaignDetailDialog
+        campaign={selectedCampaign}
+        onClose={() => setSelectedCampaign(null)}
+        onEdit={(campaign) => {
+          setSelectedCampaign(null);
+          setEditingCampaign(campaign);
+        }}
+      />
 
-      {/* Create campaign placeholder */}
-      <Dialog
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        title="Create campaign"
-        description="A guided campaign builder lives in the awareness-training module."
-        size="md"
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setCreateOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={() => setCreateOpen(false)}>Got it</Button>
-          </>
-        }
-      >
-        <p className="text-small text-surface-700">
-          Use the awareness-training workflow to build and launch a new training campaign. Once
-          launched, campaigns will appear in this list.
-        </p>
-      </Dialog>
+      <CampaignFormDialog
+        open={createOpen || !!editingCampaign}
+        campaign={editingCampaign}
+        onClose={() => {
+          setCreateOpen(false);
+          setEditingCampaign(null);
+        }}
+      />
     </div>
   );
 }
@@ -397,13 +427,16 @@ export default function TrainingAdmin() {
 function CampaignDetailDialog({
   campaign,
   onClose,
+  onEdit,
 }: {
   campaign: AdminCampaign | null;
   onClose: () => void;
+  onEdit: (campaign: AdminCampaign) => void;
 }) {
   const open = !!campaign;
   const departments = campaign?.departmentBreakdown ?? [];
   const overdueUsers = campaign?.overdueUsers ?? [];
+  const assignments = campaign?.assignments ?? [];
 
   return (
     <Dialog
@@ -417,10 +450,9 @@ function CampaignDetailDialog({
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          <Button variant="outline" leftIcon={<ExternalLink className="h-3.5 w-3.5" />}>
-            View assignments
+          <Button onClick={() => campaign && onEdit(campaign)} disabled={!campaign}>
+            Edit
           </Button>
-          <Button>Edit</Button>
         </>
       }
     >
@@ -561,8 +593,275 @@ function CampaignDetailDialog({
               </CardBody>
             </Card>
           </div>
+
+          <Card>
+            <CardBody density="cozy">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-h3 text-surface-900">Assignments</h4>
+                <Badge variant="info" size="sm" capitalize={false}>
+                  {assignments.length}
+                </Badge>
+              </div>
+              {assignments.length === 0 ? (
+                <EmptyState
+                  icon={<Users className="h-6 w-6" />}
+                  title="No assignments yet"
+                  description="Save the campaign as active and launch it to create assignments."
+                  size="sm"
+                />
+              ) : (
+                <ul className="divide-y divide-surface-200 max-h-72 overflow-y-auto">
+                  {assignments.map((assignment) => (
+                    <li
+                      key={assignment.id}
+                      className="flex items-center justify-between gap-3 py-2.5"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-small font-medium text-surface-900 truncate">
+                          {assignment.name}
+                        </p>
+                        <p className="text-xs text-surface-500 truncate">
+                          {assignment.email} · {assignment.moduleName}
+                        </p>
+                      </div>
+                      <Badge
+                        variant={
+                          assignment.status === 'completed'
+                            ? 'success'
+                            : assignment.status === 'overdue'
+                              ? 'danger'
+                              : 'warning'
+                        }
+                        size="sm"
+                        dot
+                      >
+                        {assignment.status.replace(/_/g, ' ')}
+                      </Badge>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardBody>
+          </Card>
         </div>
       )}
+    </Dialog>
+  );
+}
+
+function toDateInput(value?: string): string {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10);
+}
+
+function CampaignFormDialog({
+  open,
+  campaign,
+  onClose,
+}: {
+  open: boolean;
+  campaign: AdminCampaign | null;
+  onClose: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [moduleIds, setModuleIds] = useState<string[]>([]);
+  const [targetGroup, setTargetGroup] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [lifecycle, setLifecycle] = useState<'draft' | 'active'>('draft');
+
+  useEffect(() => {
+    if (!open) return;
+    setName(campaign?.name ?? '');
+    setDescription(campaign?.description ?? '');
+    setModuleIds(campaign?.moduleIds ?? []);
+    setTargetGroup(campaign?.targetGroups?.[0] ?? 'all');
+    setStartDate(toDateInput(campaign?.startDate) || new Date().toISOString().slice(0, 10));
+    setEndDate(toDateInput(campaign?.dueDate));
+    setLifecycle(campaign?.isActive ? 'active' : 'draft');
+  }, [campaign, open]);
+
+  const modules = useQuery<TrainingModuleOption[]>({
+    queryKey: ['training', 'modules'],
+    enabled: open,
+    queryFn: async () => {
+      const response = await api.get('/api/training/modules');
+      return [...(response.data?.builtIn ?? []), ...(response.data?.custom ?? [])];
+    },
+  });
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        name: name.trim(),
+        description: description.trim() || undefined,
+        moduleIds,
+        targetGroups: [targetGroup],
+        startDate: new Date(`${startDate}T00:00:00`).toISOString(),
+        endDate: endDate ? new Date(`${endDate}T23:59:59`).toISOString() : null,
+        isActive: lifecycle === 'active',
+      };
+      const response = campaign
+        ? await api.put(`/api/training/campaigns/${campaign.id}`, payload)
+        : await api.post('/api/training/campaigns', payload);
+      const campaignId = campaign?.id ?? response.data.id;
+      if (lifecycle === 'active') {
+        await api.post(`/api/training/campaigns/${campaignId}/launch`);
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['training'] });
+      onClose();
+    },
+  });
+
+  const toggleModule = (moduleId: string) => {
+    setModuleIds((current) =>
+      current.includes(moduleId) ? current.filter((id) => id !== moduleId) : [...current, moduleId]
+    );
+  };
+  const invalidDates = Boolean(endDate && startDate && endDate < startDate);
+  const canSave = Boolean(name.trim() && moduleIds.length > 0 && startDate && !invalidDates);
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title={campaign ? 'Edit campaign' : 'Create campaign'}
+      description="Choose training content, an audience, dates, and whether to create assignments now."
+      size="lg"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={() => save.mutate()} loading={save.isPending} disabled={!canSave}>
+            {lifecycle === 'active' ? 'Save and assign' : 'Save draft'}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="training-campaign-name" required>
+            Campaign name
+          </Label>
+          <Input
+            id="training-campaign-name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            placeholder="Annual security awareness"
+          />
+        </div>
+        <div>
+          <Label htmlFor="training-campaign-description">Description</Label>
+          <Input
+            id="training-campaign-description"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder="Required annual refresher"
+          />
+        </div>
+
+        <div>
+          <Label required>Training modules</Label>
+          {modules.isLoading ? (
+            <Skeleton className="h-24" />
+          ) : modules.isError ? (
+            <p className="text-small text-red-700">Training modules could not be loaded.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {(modules.data ?? []).map((trainingModule) => {
+                const selected = moduleIds.includes(trainingModule.id);
+                return (
+                  <button
+                    key={trainingModule.id}
+                    type="button"
+                    aria-pressed={selected}
+                    className={cn(
+                      'rounded-md border p-3 text-left transition-colors',
+                      selected
+                        ? 'border-brand-500 bg-brand-50'
+                        : 'border-surface-200 bg-white hover:border-surface-300'
+                    )}
+                    onClick={() => toggleModule(trainingModule.id)}
+                  >
+                    <span className="text-small font-medium text-surface-900">
+                      {trainingModule.name}
+                    </span>
+                    <span className="block text-xs text-surface-500 mt-0.5">
+                      {trainingModule.isBuiltIn ? 'Built-in' : 'Custom'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="training-target" required>
+              Audience
+            </Label>
+            <Select
+              value={targetGroup}
+              onChange={setTargetGroup}
+              options={[
+                { value: 'all', label: 'All employees' },
+                { value: 'admin', label: 'Administrators' },
+                { value: 'compliance_manager', label: 'Compliance managers' },
+                { value: 'auditor', label: 'Auditors' },
+                { value: 'viewer', label: 'Viewers' },
+              ]}
+            />
+          </div>
+          <div>
+            <Label htmlFor="training-lifecycle" required>
+              Status
+            </Label>
+            <Select
+              value={lifecycle}
+              onChange={(value) => setLifecycle(value as 'draft' | 'active')}
+              options={[
+                { value: 'draft', label: 'Draft — no assignments' },
+                { value: 'active', label: 'Active — create assignments' },
+              ]}
+            />
+          </div>
+          <div>
+            <Label htmlFor="training-start" required>
+              Start date
+            </Label>
+            <Input
+              id="training-start"
+              type="date"
+              value={startDate}
+              onChange={(event) => setStartDate(event.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="training-end">Due date</Label>
+            <Input
+              id="training-end"
+              type="date"
+              value={endDate}
+              onChange={(event) => setEndDate(event.target.value)}
+            />
+          </div>
+        </div>
+        {invalidDates && (
+          <p className="text-small text-red-700">Due date must be on or after the start date.</p>
+        )}
+        {save.isError && (
+          <p className="text-small text-red-700">
+            The campaign could not be saved. Check the selected audience and dates.
+          </p>
+        )}
+      </div>
     </Dialog>
   );
 }

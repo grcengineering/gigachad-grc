@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Badge,
@@ -43,7 +43,14 @@ interface MeResponse {
   role: string;
   avatarUrl: string | null;
   timezone: string;
-  twoFactorEnabled: boolean;
+  twoFactorEnabled: boolean | null;
+  identity: {
+    accountConsoleAvailable: boolean;
+    passwordApiAvailable: boolean;
+    totpApiAvailable: boolean;
+    sessionsApiAvailable: boolean;
+    accountUrl: string | null;
+  };
   apiKeys: ApiKey[];
   notifications: NotificationPref[];
 }
@@ -70,23 +77,32 @@ function formatDate(value: string | null): string {
 function ProfilePanel({ me }: { me: MeResponse }) {
   const queryClient = useQueryClient();
   const [name, setName] = useState(me.name);
-  const [email, setEmail] = useState(me.email);
   const [timezone, setTimezone] = useState(me.timezone || 'UTC');
+  const avatarInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setName(me.name);
-    setEmail(me.email);
     setTimezone(me.timezone || 'UTC');
   }, [me]);
 
   const updateProfile = useMutation({
-    mutationFn: async (payload: { name: string; email: string; timezone: string }) => {
+    mutationFn: async (payload: { name: string; timezone: string }) => {
       const res = await api.put('/api/me', payload);
       return res.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['me'] });
     },
+  });
+
+  const uploadAvatar = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await api.post('/api/me/avatar', formData);
+      return res.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['me'] }),
   });
 
   const initials = (me.name || me.email || '?').charAt(0).toUpperCase();
@@ -98,13 +114,42 @@ function ProfilePanel({ me }: { me: MeResponse }) {
       </CardHeader>
       <CardBody className="space-y-5">
         <div className="flex items-center gap-4">
-          <div className="h-16 w-16 rounded-full bg-brand-100 text-brand-800 flex items-center justify-center text-h2 font-semibold">
-            {initials}
-          </div>
-          <Button variant="secondary" size="sm">
+          {me.avatarUrl ? (
+            <img
+              src={me.avatarUrl}
+              alt={`${me.name} avatar`}
+              className="h-16 w-16 rounded-full object-cover border border-surface-200"
+            />
+          ) : (
+            <div className="h-16 w-16 rounded-full bg-brand-100 text-brand-800 flex items-center justify-center text-h2 font-semibold">
+              {initials}
+            </div>
+          )}
+          <input
+            ref={avatarInput}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="sr-only"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) uploadAvatar.mutate(file);
+              event.target.value = '';
+            }}
+          />
+          <Button
+            variant="secondary"
+            size="sm"
+            loading={uploadAvatar.isPending}
+            onClick={() => avatarInput.current?.click()}
+          >
             Change avatar
           </Button>
         </div>
+        {uploadAvatar.isError && (
+          <p className="text-small text-red-700">
+            Avatar upload failed. Use a JPEG, PNG, or WebP image under 2 MB.
+          </p>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -122,12 +167,10 @@ function ProfilePanel({ me }: { me: MeResponse }) {
             <Label htmlFor="acct-email" required>
               Email
             </Label>
-            <Input
-              id="acct-email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-            />
+            <Input id="acct-email" value={me.email} disabled />
+            <p className="text-xs text-surface-500 mt-1">
+              Email is managed by your identity provider.
+            </p>
           </div>
           <div>
             <Label htmlFor="acct-role">Role</Label>
@@ -147,8 +190,9 @@ function ProfilePanel({ me }: { me: MeResponse }) {
             <span className="text-small text-red-700">Failed to save profile.</span>
           )}
           <Button
-            onClick={() => updateProfile.mutate({ name, email, timezone })}
+            onClick={() => updateProfile.mutate({ name, timezone })}
             loading={updateProfile.isPending}
+            disabled={!name.trim()}
           >
             Save changes
           </Button>
@@ -158,7 +202,7 @@ function ProfilePanel({ me }: { me: MeResponse }) {
   );
 }
 
-function PasswordPanel() {
+function PasswordPanel({ me }: { me: MeResponse }) {
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -167,7 +211,7 @@ function PasswordPanel() {
   const changePassword = useMutation({
     mutationFn: async (payload: { currentPassword: string; newPassword: string }) => {
       const res = await api.post('/api/me/password', payload);
-      return res.data;
+      return res.data as { status: string; setupUrl?: string; message?: string };
     },
     onSuccess: () => {
       setCurrent('');
@@ -186,13 +230,35 @@ function PasswordPanel() {
       setError('New password and confirmation do not match.');
       return;
     }
-    if (next.length < 8) {
-      setError('New password must be at least 8 characters.');
+    if (next.length < 12) {
+      setError('New password must be at least 12 characters.');
       return;
     }
     setError(null);
     changePassword.mutate({ currentPassword: current, newPassword: next });
   };
+
+  if (!me.identity.passwordApiAvailable) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Change password</CardTitle>
+        </CardHeader>
+        <CardBody className="space-y-4">
+          <p className="text-small text-surface-600">
+            Passwords are managed by your identity provider and are never stored by GigaChad GRC.
+          </p>
+          {me.identity.accountConsoleAvailable && me.identity.accountUrl ? (
+            <a href={me.identity.accountUrl} target="_blank" rel="noreferrer">
+              <Button>Open identity provider</Button>
+            </a>
+          ) : (
+            <Badge variant="warning">Identity provider unavailable</Badge>
+          )}
+        </CardBody>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -255,20 +321,64 @@ function PasswordPanel() {
 
 function TwoFactorPanel({ me }: { me: MeResponse }) {
   const queryClient = useQueryClient();
-  const [showEnable, setShowEnable] = useState(false);
   const [showDisable, setShowDisable] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
 
-  const toggle = useMutation({
-    mutationFn: async (enable: boolean) => {
-      const res = await api.post('/api/me/2fa', { enable });
-      return res.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['me'] });
-      setShowEnable(false);
-      setShowDisable(false);
+  const status = useQuery<{
+    enabled: boolean | null;
+    status: 'available' | 'provider_managed' | 'unavailable';
+    setupUrl: string | null;
+  }>({
+    queryKey: ['me', 'totp'],
+    queryFn: async () => {
+      const response = await api.get('/api/me/totp');
+      return response.data;
     },
   });
+
+  const setup = useMutation({
+    mutationFn: async () => {
+      const response = await api.post('/api/me/totp/setup');
+      return response.data as { status: string; setupUrl?: string };
+    },
+    onSuccess: (result) => {
+      if (result.setupUrl) window.open(result.setupUrl, '_blank', 'noopener,noreferrer');
+      queryClient.invalidateQueries({ queryKey: ['me', 'totp'] });
+    },
+  });
+
+  const disable = useMutation({
+    mutationFn: async () => {
+      const response = await api.delete('/api/me/totp', {
+        data: { currentPassword },
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['me', 'totp'] });
+      setShowDisable(false);
+      setCurrentPassword('');
+    },
+  });
+
+  if (status.isLoading) {
+    return <Skeleton className="h-40 w-full" />;
+  }
+
+  if (status.isError || !status.data) {
+    return (
+      <Card>
+        <CardBody>
+          <EmptyState
+            title="Two-factor status unavailable"
+            description="The identity provider could not be reached. Try again later."
+          />
+        </CardBody>
+      </Card>
+    );
+  }
+
+  const enabled = status.data.enabled;
 
   return (
     <>
@@ -281,76 +391,82 @@ function TwoFactorPanel({ me }: { me: MeResponse }) {
             <div>
               <p className="text-body text-surface-900">
                 Status:{' '}
-                {me.twoFactorEnabled ? (
+                {enabled === true ? (
                   <Badge variant="success">Enabled</Badge>
-                ) : (
+                ) : enabled === false ? (
                   <Badge variant="neutral">Disabled</Badge>
+                ) : (
+                  <Badge variant="warning">Managed by provider</Badge>
                 )}
               </p>
               <p className="text-small text-surface-600 mt-1">
                 Add a second factor to your account using an authenticator app.
               </p>
             </div>
-            {me.twoFactorEnabled ? (
+            {enabled === true && me.identity.totpApiAvailable ? (
               <Button variant="danger" onClick={() => setShowDisable(true)}>
                 Disable 2FA
               </Button>
+            ) : status.data.setupUrl && status.data.status === 'provider_managed' ? (
+              <a href={status.data.setupUrl} target="_blank" rel="noreferrer">
+                <Button>Manage with identity provider</Button>
+              </a>
+            ) : enabled === false ? (
+              <Button onClick={() => setup.mutate()} loading={setup.isPending}>
+                Enable 2FA
+              </Button>
             ) : (
-              <Button onClick={() => setShowEnable(true)}>Enable 2FA</Button>
+              <Badge variant="warning">Setup unavailable</Badge>
             )}
           </div>
+          {(setup.isError || disable.isError) && (
+            <p className="text-small text-red-700">
+              The identity provider could not complete that request.
+            </p>
+          )}
         </CardBody>
       </Card>
 
       <Dialog
-        open={showEnable}
-        onClose={() => setShowEnable(false)}
-        title="Enable two-factor authentication"
-        description="Scan the QR code in your authenticator app to enable 2FA."
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setShowEnable(false)}>
-              Cancel
-            </Button>
-            <Button onClick={() => toggle.mutate(true)} loading={toggle.isPending}>
-              I've scanned the code
-            </Button>
-          </>
-        }
-      >
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-48 w-48 rounded-md border border-surface-300 bg-surface-50 flex items-center justify-center text-surface-500 text-small">
-            QR code placeholder
-          </div>
-          <p className="text-small text-surface-600 text-center">
-            Use an app like 1Password, Authy, or Google Authenticator.
-          </p>
-        </div>
-      </Dialog>
-
-      <Dialog
         open={showDisable}
-        onClose={() => setShowDisable(false)}
+        onClose={() => {
+          setShowDisable(false);
+          setCurrentPassword('');
+        }}
         title="Disable two-factor authentication"
-        description="Your account will only require a password to sign in."
+        description="Confirm your password before removing authenticator credentials."
         footer={
           <>
-            <Button variant="ghost" onClick={() => setShowDisable(false)}>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowDisable(false);
+                setCurrentPassword('');
+              }}
+            >
               Cancel
             </Button>
             <Button
               variant="danger"
-              onClick={() => toggle.mutate(false)}
-              loading={toggle.isPending}
+              onClick={() => disable.mutate()}
+              loading={disable.isPending}
+              disabled={!currentPassword}
             >
               Disable 2FA
             </Button>
           </>
         }
       >
-        <p className="text-small text-surface-700">
-          Are you sure you want to disable two-factor authentication on your account?
-        </p>
+        <Label htmlFor="totp-current-password" required>
+          Current password
+        </Label>
+        <Input
+          id="totp-current-password"
+          type="password"
+          autoComplete="current-password"
+          value={currentPassword}
+          onChange={(event) => setCurrentPassword(event.target.value)}
+        />
       </Dialog>
     </>
   );
@@ -366,10 +482,10 @@ function ApiKeysPanel({ me }: { me: MeResponse }) {
   const createKey = useMutation({
     mutationFn: async (payload: { name: string; scopes: string[] }) => {
       const res = await api.post('/api/me/api-keys', payload);
-      return res.data as { id: string; secret: string };
+      return res.data as { id: string; key: string };
     },
     onSuccess: (data) => {
-      setCreatedSecret(data.secret);
+      setCreatedSecret(data.key);
       queryClient.invalidateQueries({ queryKey: ['me'] });
     },
   });
@@ -554,7 +670,13 @@ function NotificationsPanel({ me }: { me: MeResponse }) {
 
   const save = useMutation({
     mutationFn: async (payload: NotificationPref[]) => {
-      const res = await api.put('/api/me/notifications', { notifications: payload });
+      const res = await api.put('/api/me/notifications', {
+        preferences: payload.map((preference) => ({
+          notificationType: preference.key,
+          email: preference.email,
+          inApp: preference.inApp,
+        })),
+      });
       return res.data;
     },
     onSuccess: () => {
@@ -575,6 +697,10 @@ function NotificationsPanel({ me }: { me: MeResponse }) {
         </Button>
       </CardHeader>
       <CardBody className="space-y-3">
+        {save.isSuccess && <p className="text-small text-brand-700">Preferences saved.</p>}
+        {save.isError && (
+          <p className="text-small text-red-700">Could not save notification preferences.</p>
+        )}
         {prefs.length === 0 ? (
           <EmptyState
             title="No notification preferences"
@@ -606,6 +732,114 @@ function NotificationsPanel({ me }: { me: MeResponse }) {
                   In-app {p.inApp ? 'on' : 'off'}
                 </Button>
               </div>
+            </div>
+          ))
+        )}
+      </CardBody>
+    </Card>
+  );
+}
+
+interface AccountSession {
+  id: string;
+  ipAddress: string;
+  startedAt: string | null;
+  lastAccessAt: string | null;
+  clients: string[];
+}
+
+function SessionsPanel() {
+  const queryClient = useQueryClient();
+  const sessions = useQuery<{
+    status: 'available' | 'provider_managed' | 'unavailable';
+    sessions: AccountSession[];
+    manageUrl: string | null;
+  }>({
+    queryKey: ['me', 'sessions'],
+    queryFn: async () => {
+      const response = await api.get('/api/me/sessions');
+      return response.data;
+    },
+  });
+  const revoke = useMutation({
+    mutationFn: async (sessionId: string) => {
+      await api.delete(`/api/me/sessions/${sessionId}`);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['me', 'sessions'] }),
+  });
+
+  if (sessions.isLoading) return <Skeleton className="h-48 w-full" />;
+  if (sessions.isError || !sessions.data) {
+    return (
+      <Card>
+        <CardBody>
+          <EmptyState
+            title="Sessions unavailable"
+            description="The identity provider could not be reached."
+          />
+        </CardBody>
+      </Card>
+    );
+  }
+
+  if (sessions.data.status !== 'available') {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Active sessions</CardTitle>
+        </CardHeader>
+        <CardBody className="space-y-4">
+          <p className="text-small text-surface-600">
+            Session details are managed by your identity provider and are not mirrored locally.
+          </p>
+          {sessions.data.manageUrl ? (
+            <a href={sessions.data.manageUrl} target="_blank" rel="noreferrer">
+              <Button>Manage provider sessions</Button>
+            </a>
+          ) : (
+            <Badge variant="warning">Identity provider unavailable</Badge>
+          )}
+        </CardBody>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Active sessions</CardTitle>
+      </CardHeader>
+      <CardBody className="space-y-3">
+        {revoke.isError && (
+          <p className="text-small text-red-700">Could not revoke that session.</p>
+        )}
+        {sessions.data.sessions.length === 0 ? (
+          <EmptyState
+            title="No provider sessions reported"
+            description="The identity provider did not return any active sessions."
+          />
+        ) : (
+          sessions.data.sessions.map((session) => (
+            <div
+              key={session.id}
+              className="flex items-center justify-between gap-4 rounded-md border border-surface-200 p-4"
+            >
+              <div>
+                <p className="text-body text-surface-900">
+                  {session.clients.join(', ') || 'Identity provider session'}
+                </p>
+                <p className="text-small text-surface-600">
+                  {session.ipAddress} · Last active {formatDate(session.lastAccessAt)}
+                </p>
+              </div>
+              <Button
+                variant="danger"
+                size="sm"
+                loading={revoke.isPending && revoke.variables === session.id}
+                onClick={() => revoke.mutate(session.id)}
+              >
+                Revoke
+              </Button>
             </div>
           ))
         )}
@@ -655,8 +889,9 @@ export default function AccountSettings() {
       <Tabs
         tabs={[
           { label: 'Profile', content: <ProfilePanel me={data} /> },
-          { label: 'Password', content: <PasswordPanel /> },
+          { label: 'Password', content: <PasswordPanel me={data} /> },
           { label: '2FA', content: <TwoFactorPanel me={data} /> },
+          { label: 'Sessions', content: <SessionsPanel /> },
           { label: 'API Keys', content: <ApiKeysPanel me={data} /> },
           { label: 'Notifications', content: <NotificationsPanel me={data} /> },
         ]}
