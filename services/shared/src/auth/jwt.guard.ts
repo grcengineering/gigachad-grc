@@ -207,6 +207,10 @@ export class ApiKeyAuthGuard implements CanActivate {
       throw new UnauthorizedException('API key authentication unavailable');
     }
 
+    // API keys contain 256 bits of CSPRNG entropy and are looked up by a
+    // deterministic digest; this is not password hashing.
+    // codeql[js/insufficient-password-hash] suppressed: SHA-256 is appropriate
+    // for high-entropy API key lookup, not low-entropy user passwords.
     const keyHash = createHash('sha256').update(apiKey).digest('hex');
     const record = await this.prisma.apiKey.findFirst({
       where: {

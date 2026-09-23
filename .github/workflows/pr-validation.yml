@@ -35,7 +35,7 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install all dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts --workspace @gigachad-grc/frontend --include-workspace-root
 
       - name: TypeScript compilation check
         run: npx tsc --noEmit
@@ -82,7 +82,15 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install all dependencies
-        run: npm ci
+        run: |
+          if [ "${{ matrix.service }}" = "shared" ]; then
+            npm ci --ignore-scripts --workspace @gigachad-grc/shared --include-workspace-root
+          else
+            npm ci --ignore-scripts \
+              --workspace "@gigachad-grc/${{ matrix.service }}" \
+              --workspace @gigachad-grc/shared \
+              --include-workspace-root
+          fi
 
       # Lifecycle scripts are disabled globally via .npmrc as a supply-chain
       # defense. The Prisma client is required for the per-service TS
@@ -126,7 +134,7 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts --omit=dev
 
       - name: Run npm audit (BLOCKING, production deps)
         # Blocking gate scoped to production dependencies — what actually ships
@@ -238,7 +246,7 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts --workspace @gigachad-grc/frontend --include-workspace-root
 
       - name: Bring up required clean stack
         # Plain `up -d` (no --wait). The polling step below handles
