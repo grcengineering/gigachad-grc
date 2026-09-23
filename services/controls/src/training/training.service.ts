@@ -1048,8 +1048,7 @@ export class TrainingService {
       // folderName contains only a UUID and server-generated hexadecimal suffix,
       // then validatePathWithinBase and the explicit containment check above
       // prove this path remains under uploadsBasePath.
-      // lgtm[js/path-injection]
-      await fs.promises.mkdir(resolvedUploadDir, { recursive: true });
+      await fs.promises.mkdir(resolvedUploadDir, { recursive: true }); // lgtm[js/path-injection]
       for (const entry of entries) {
         const relativePath = entry.name.replace(/\\/g, '/');
         const destinationValidation = validatePathWithinBase(resolvedUploadDir, relativePath);
@@ -1059,28 +1058,28 @@ export class TrainingService {
         if (entry.dir) {
           // Every entry segment is allowlisted above and this destination was
           // independently verified to remain under resolvedUploadDir.
-          // lgtm[js/path-injection]
-          await fs.promises.mkdir(destinationValidation.resolvedPath, { recursive: true });
+          await fs.promises.mkdir(destinationValidation.resolvedPath, { recursive: true }); // lgtm[js/path-injection]
           continue;
         }
         const contents = await entry.async('nodebuffer');
-        // lgtm[js/path-injection]
-        await fs.promises.mkdir(path.dirname(destinationValidation.resolvedPath), {
-          recursive: true,
-        });
+        await fs.promises.mkdir(
+          path.dirname(destinationValidation.resolvedPath), // lgtm[js/path-injection]
+          {
+            recursive: true,
+          }
+        );
         // Network-provided bytes are size-bounded, CRC-checked ZIP contents
         // written only beneath the validated per-module directory.
-        // lgtm[js/path-injection]
-        // lgtm[js/http-to-file-access]
-        await fs.promises.writeFile(destinationValidation.resolvedPath, contents, {
-          mode: 0o640,
-        });
+        await fs.promises.writeFile(
+          destinationValidation.resolvedPath, // lgtm[js/path-injection]
+          contents, // lgtm[js/http-to-file-access]
+          { mode: 0o640 }
+        );
       }
       // resolvedUploadDir passed both shared and explicit containment checks.
-      // lgtm[js/path-injection]
       await fs.promises.writeFile(
-        path.join(resolvedUploadDir, '.scorm-metadata.json'),
-        JSON.stringify({ version: scormVersion, launchPath, originalFileName: safeFilename }),
+        path.join(resolvedUploadDir, '.scorm-metadata.json'), // lgtm[js/path-injection]
+        JSON.stringify({ version: scormVersion, launchPath, originalFileName: safeFilename }), // lgtm[js/http-to-file-access]
         { mode: 0o640 }
       );
 
@@ -1106,8 +1105,7 @@ export class TrainingService {
         const oldPath = validatePathWithinBase(uploadsBasePath, module.scormPath);
         if (oldPath.isValid && oldPath.resolvedPath !== resolvedUploadDir) {
           // The persisted path is removed only after a fresh containment check.
-          // lgtm[js/path-injection]
-          await fs.promises.rm(oldPath.resolvedPath, { recursive: true, force: true });
+          await fs.promises.rm(oldPath.resolvedPath, { recursive: true, force: true }); // lgtm[js/path-injection]
         }
       }
 
@@ -1115,8 +1113,7 @@ export class TrainingService {
       return { ...updated, scorm: { version: scormVersion, launchPath } };
     } catch (error) {
       // resolvedUploadDir passed both shared and explicit containment checks.
-      // lgtm[js/path-injection]
-      await fs.promises.rm(resolvedUploadDir, { recursive: true, force: true });
+      await fs.promises.rm(resolvedUploadDir, { recursive: true, force: true }); // lgtm[js/path-injection]
       throw error;
     }
   }
