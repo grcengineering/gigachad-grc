@@ -4,6 +4,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { ArrowLeftIcon, PencilIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { knowledgeBaseApi } from '@/lib/api';
 import { Button, Badge, Dialog, Input, Select, Textarea } from '@/components/ui';
+import toast from 'react-hot-toast';
 
 interface KnowledgeEntry {
   id: string;
@@ -110,7 +111,7 @@ export default function KnowledgeBaseDetail() {
 
   const handleSave = async () => {
     if (!formData.title || !formData.answer || !formData.category) {
-      alert('Please fill in all required fields');
+      toast.error('Please fill in all required fields');
       return;
     }
     if (id === 'new') {

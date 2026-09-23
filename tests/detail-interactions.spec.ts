@@ -12,7 +12,7 @@ import {
 test.describe('ControlDetail', () => {
   test('back link returns to /controls', async ({ page, request }) => {
     const id = await firstControlId(request);
-    test.skip(!id, 'No seed control data');
+    expect(id, 'Control fixture must exist').not.toBe('');
     const errs = trackPageErrors(page);
 
     await page.goto(`/controls/${id}`);
@@ -24,7 +24,7 @@ test.describe('ControlDetail', () => {
 
   test('Edit button toggles edit mode when present', async ({ page, request }) => {
     const id = await firstControlId(request);
-    test.skip(!id, 'No seed control data');
+    expect(id, 'Control fixture must exist').not.toBe('');
     const errs = trackPageErrors(page);
 
     await page.goto(`/controls/${id}`);
@@ -42,7 +42,7 @@ test.describe('ControlDetail', () => {
 
   test('status select changes update via API', async ({ page, request }) => {
     const id = await firstControlId(request);
-    test.skip(!id, 'No seed control data');
+    expect(id, 'Control fixture must exist').not.toBe('');
     const errs = trackPageErrors(page);
 
     await page.goto(`/controls/${id}`);
@@ -65,7 +65,7 @@ test.describe('ControlDetail', () => {
 test.describe('EvidenceDetail', () => {
   test('navigates back and renders linked-control links', async ({ page, request }) => {
     const id = await firstEvidenceId(request);
-    test.skip(!id, 'No seed evidence data');
+    expect(id, 'Evidence fixture must exist').not.toBe('');
     const errs = trackPageErrors(page);
 
     await page.goto(`/evidence/${id}`);
@@ -79,7 +79,7 @@ test.describe('EvidenceDetail', () => {
 test.describe('FrameworkDetail', () => {
   test('expandable requirement tree works', async ({ page, request }) => {
     const id = await firstFrameworkId(request);
-    test.skip(!id, 'No seed framework data');
+    expect(id, 'Framework fixture must exist').not.toBe('');
     const errs = trackPageErrors(page);
 
     await page.goto(`/frameworks/${id}`);
@@ -102,7 +102,7 @@ test.describe('FrameworkDetail', () => {
 test.describe('PolicyDetail', () => {
   test('renders status badge and key meta', async ({ page, request }) => {
     const id = await firstPolicyId(request);
-    test.skip(!id, 'No seed policy data');
+    expect(id, 'Policy fixture must exist').not.toBe('');
     const errs = trackPageErrors(page);
 
     await page.goto(`/policies/${id}`);
@@ -114,7 +114,7 @@ test.describe('PolicyDetail', () => {
 test.describe('RiskDetail', () => {
   test('tabs (Overview, Treatment, Workflow, etc.) are clickable', async ({ page, request }) => {
     const id = await firstRiskId(request);
-    test.skip(!id, 'No seed risk data');
+    expect(id, 'Risk fixture must exist').not.toBe('');
     const errs = trackPageErrors(page);
 
     await page.goto(`/risks/${id}`);
@@ -135,7 +135,7 @@ test.describe('RiskDetail', () => {
 test.describe('Comments / Tasks panels', () => {
   test('ControlDetail has Comments and Tasks sections', async ({ page, request }) => {
     const id = await firstControlId(request);
-    test.skip(!id, 'No seed control data');
+    expect(id, 'Control fixture must exist').not.toBe('');
     const errs = trackPageErrors(page);
 
     await page.goto(`/controls/${id}`);

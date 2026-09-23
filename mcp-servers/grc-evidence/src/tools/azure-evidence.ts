@@ -1,5 +1,6 @@
 import { DefaultAzureCredential, TokenCredential } from '@azure/identity';
 import { ResourceManagementClient } from '@azure/arm-resources';
+import { useExplicitDemoFallback } from '../demo-mode.js';
 
 interface AzureEvidenceParams {
   subscriptionId: string;
@@ -123,7 +124,10 @@ export async function collectAzureEvidence(params: AzureEvidenceParams): Promise
 
     console.warn(`Azure evidence collection failed: ${errorMessage}`);
 
-    return {
+    const reason = isAuthError
+      ? 'Azure credentials not configured. Set AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, and AZURE_TENANT_ID, or use managed identity.'
+      : `Azure evidence collection failed: ${errorMessage}`;
+    return useExplicitDemoFallback(reason, () => ({
       service: 'azure',
       collectedAt: new Date().toISOString(),
       subscriptionId,
@@ -134,13 +138,11 @@ export async function collectAzureEvidence(params: AzureEvidenceParams): Promise
         nonCompliantResources: 0,
       },
       isMockMode: true,
-      mockModeReason: isAuthError
-        ? 'Azure credentials not configured. Set AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, and AZURE_TENANT_ID environment variables, or run on Azure with managed identity.'
-        : `Azure evidence collection failed: ${errorMessage}`,
+      mockModeReason: reason,
       requiredCredentials: isAuthError
         ? ['AZURE_CLIENT_ID', 'AZURE_CLIENT_SECRET', 'AZURE_TENANT_ID']
         : undefined,
-    };
+    }));
   }
 }
 
@@ -261,12 +263,10 @@ async function collectSecurityCenterEvidence(
         collectedAt: new Date().toISOString(),
         count: 0,
         findings: {
-          secureScore: { current: 0, max: 100, percentage: 0 },
-          recommendations: [],
-          alerts: [],
+          error: errorMessage,
+          status: 'failed',
         },
-        isMockMode: true,
-        mockModeReason: isModuleError
+        error: isModuleError
           ? 'Install @azure/arm-security SDK: npm install @azure/arm-security'
           : `Security Center collection failed: ${errorMessage}`,
       },

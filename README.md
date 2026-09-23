@@ -47,26 +47,26 @@ The first build can take several minutes. Check progress with:
 
 Use the gateway URL for the application:
 
-| Service | URL | Authentication |
-| --- | --- | --- |
-| Application | `https://localhost` | Click **Dev Login** |
-| Keycloak | `https://auth.localhost` | `KEYCLOAK_ADMIN` / `KEYCLOAK_ADMIN_PASSWORD` from `.env` |
-| Grafana | `https://grafana.localhost` | `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` from `.env` |
-| Prometheus | `https://prometheus.localhost` | None in the local stack |
-| RustFS console | `http://localhost:9001` | `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` from `.env` |
+| Service        | URL                            | Authentication                                              |
+| -------------- | ------------------------------ | ----------------------------------------------------------- |
+| Application    | `https://localhost`            | Click **Dev Login**                                         |
+| Keycloak       | `https://auth.localhost`       | `KEYCLOAK_ADMIN` / `KEYCLOAK_ADMIN_PASSWORD` from `.env`    |
+| Grafana        | `https://grafana.localhost`    | `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` from `.env` |
+| Prometheus     | `https://prometheus.localhost` | None in the local stack                                     |
+| RustFS console | `http://localhost:9001`        | `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` from `.env`       |
 
 The self-signed certificate causes a browser warning on first use. Direct ports such as `http://localhost:3000` and `http://localhost:8080` are loopback-only debugging endpoints. Port 3000 serves the frontend shell without gateway API routing, so it is not the application URL.
 
 Per-service Swagger documentation is available on direct local ports:
 
-| Service | Swagger URL |
-| --- | --- |
-| Controls | `http://localhost:3001/api/docs` |
+| Service    | Swagger URL                      |
+| ---------- | -------------------------------- |
+| Controls   | `http://localhost:3001/api/docs` |
 | Frameworks | `http://localhost:3002/api/docs` |
-| Policies | `http://localhost:3004/api/docs` |
-| TPRM | `http://localhost:3005/api/docs` |
-| Trust | `http://localhost:3006/api/docs` |
-| Audit | `http://localhost:3007/api/docs` |
+| Policies   | `http://localhost:3004/api/docs` |
+| TPRM       | `http://localhost:3005/api/docs` |
+| Trust      | `http://localhost:3006/api/docs` |
+| Audit      | `http://localhost:3007/api/docs` |
 
 The Traefik dashboard is disabled by default. It is not available at port 8090 unless the relevant local environment flags are explicitly enabled.
 
@@ -121,11 +121,15 @@ services/shared/prisma/schema.prisma
 The Docker startup flow is:
 
 1. PostgreSQL first-boot scripts create supporting databases, extensions, and schemas.
-2. The controls container entrypoint runs `prisma db push` against the shared Prisma schema.
+2. The controls container entrypoint runs the committed Prisma baseline and forward-only
+   migrations through `deploy/prisma-migrate-safe.sh`.
 3. The same entrypoint applies the idempotent BC/DR SQL migration.
 4. Other services start against that shared database.
 
-Do not run independent per-service migrations or the numbered `database/init/*.sql` files as an application migration chain. The historical SQL files are not all mounted by the current Compose files. See [Database schema](docs/DATABASE_SCHEMA.md) and [Upgrade guide](docs/UPGRADE.md).
+Do not run independent per-service migrations or the numbered `database/init/*.sql` files as an
+application migration chain. See [Database schema](docs/DATABASE_SCHEMA.md),
+[Database hardening rollout](docs/DATABASE_HARDENING_ROLLOUT.md), and
+[Upgrade guide](docs/UPGRADE.md).
 
 ## Feature and integration availability
 
@@ -138,7 +142,8 @@ Configuration-required capabilities include:
 - OpenAI or Anthropic for real AI output;
 - credentials, scopes, enabled upstream APIs, and network egress for connectors;
 - external backup storage for off-host disaster recovery;
-- MCP servers, which are separate packages and are not started by the default Compose stack; and
+- MCP server credentials and any upstream tools they call. The default Controls image packages
+  and launches the three repository MCP servers; and
 - custom integration code execution, which is disabled unless `ENABLE_CUSTOM_CODE_EXECUTION=true`.
 
 The integration catalog is larger than the set verified end-to-end. A catalog card or factory registration is not a support guarantee. Review [Integration implementation status](docs/INTEGRATION_IMPLEMENTATION_STATUS.md) before relying on a connector.

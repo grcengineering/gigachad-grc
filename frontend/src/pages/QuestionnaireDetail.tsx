@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon, DocumentArrowUpIcon } from '@heroicons/react/24/outline';
 import { Badge, Button, Dialog, Input, Select, Textarea } from '@/components/ui';
 import { authenticatedFetch } from '@/lib/api';
+import toast from 'react-hot-toast';
 
 interface Questionnaire {
   id: string;
@@ -142,10 +143,10 @@ export default function QuestionnaireDetail() {
         questionsText: questions.join('\n'),
       });
 
-      alert(`Successfully parsed ${questions.length} questions from ${file.name}`);
+      toast.success(`Parsed ${questions.length} questions from ${file.name}`);
     } catch (error) {
       console.error('Error parsing file:', error);
-      alert('Failed to parse file. Please check the format or paste questions manually.');
+      toast.error('Failed to parse file. Check the format or paste questions manually.');
     } finally {
       setParsing(false);
     }
@@ -198,11 +199,11 @@ export default function QuestionnaireDetail() {
         });
       }
 
-      alert(`Successfully created questionnaire with ${questionLines.length} questions!`);
+      toast.success(`Created questionnaire with ${questionLines.length} questions`);
       navigate(`/questionnaires/${newQuestionnaire.id}`);
     } catch (error) {
       console.error('Error creating questionnaire:', error);
-      alert('Failed to create questionnaire. Please try again.');
+      toast.error('Failed to create questionnaire');
     } finally {
       setSubmitting(false);
     }
@@ -554,7 +555,7 @@ export default function QuestionnaireDetail() {
                   fetchQuestionnaire();
                 } catch (error) {
                   console.error('Error updating questionnaire:', error);
-                  alert('Failed to update questionnaire');
+                  toast.error('Failed to update questionnaire');
                 }
               }}
             >
@@ -656,7 +657,7 @@ export default function QuestionnaireDetail() {
                   navigate('/questionnaires');
                 } catch (error) {
                   console.error('Error deleting questionnaire:', error);
-                  alert('Failed to delete questionnaire');
+                  toast.error('Failed to delete questionnaire');
                 }
               }}
             >

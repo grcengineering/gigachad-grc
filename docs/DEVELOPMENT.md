@@ -20,22 +20,22 @@
 
 ### Required Software
 
-| Software | Version | Purpose |
-|----------|---------|---------|
-| Node.js | 20.x LTS | Runtime for services and frontend |
-| npm | 10.x | Package management |
-| Docker | 24.x+ | Container runtime |
-| Docker Compose | 2.x | Container orchestration |
-| Git | 2.x | Version control |
+| Software       | Version  | Purpose                           |
+| -------------- | -------- | --------------------------------- |
+| Node.js        | 20.x LTS | Runtime for services and frontend |
+| npm            | 10.x     | Package management                |
+| Docker         | 24.x+    | Container runtime                 |
+| Docker Compose | 2.x      | Container orchestration           |
+| Git            | 2.x      | Version control                   |
 
 ### Optional but Recommended
 
-| Software | Purpose |
-|----------|---------|
-| VS Code | IDE with recommended extensions |
-| Postman/Insomnia | API testing |
-| TablePlus/DBeaver | Database GUI |
-| Redis Commander | Redis GUI |
+| Software          | Purpose                         |
+| ----------------- | ------------------------------- |
+| VS Code           | IDE with recommended extensions |
+| Postman/Insomnia  | API testing                     |
+| TablePlus/DBeaver | Database GUI                    |
+| Redis Commander   | Redis GUI                       |
 
 ### VS Code Extensions
 
@@ -84,8 +84,8 @@ docker compose ps
 ### 3. Initialize Database
 
 The Docker controls entrypoint initializes the single shared schema at
-`services/shared/prisma/schema.prisma` with `prisma db push`, then applies the
-BC/DR migration. Do not run a separate migration from every service.
+`services/shared/prisma/schema.prisma` using the committed migration chain, then
+applies the BC/DR migration. Do not run a separate migration from every service.
 
 For an intentional host-side development schema sync:
 
@@ -103,15 +103,15 @@ npm run dev
 
 ### 5. Access Application
 
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| Application (Docker flow) | https://localhost | Dev Login |
-| Vite frontend (host development only) | http://localhost:3000 | Dev Login when explicitly enabled |
-| Traefik Dashboard | Disabled by default | Requires explicit local flags |
-| Keycloak Admin | https://auth.localhost | Values in `.env` |
-| RustFS Console | http://localhost:9001 | Values in `.env` |
-| PostgreSQL | localhost:5433 | Values in `.env` |
-| Redis | localhost:6380 | Value in `.env` |
+| Service                               | URL                    | Credentials                       |
+| ------------------------------------- | ---------------------- | --------------------------------- |
+| Application (Docker flow)             | https://localhost      | Dev Login                         |
+| Vite frontend (host development only) | http://localhost:3000  | Dev Login when explicitly enabled |
+| Traefik Dashboard                     | Disabled by default    | Requires explicit local flags     |
+| Keycloak Admin                        | https://auth.localhost | Values in `.env`                  |
+| RustFS Console                        | http://localhost:9001  | Values in `.env`                  |
+| PostgreSQL                            | localhost:5433         | Values in `.env`                  |
+| Redis                                 | localhost:6380         | Value in `.env`                   |
 
 ---
 
@@ -333,7 +333,7 @@ interface MyComponentProps {
 <Card>
   <Card.Header>Title</Card.Header>
   <Card.Body>Content</Card.Body>
-</Card>
+</Card>;
 ```
 
 ---
@@ -433,11 +433,11 @@ export class NewFeatureService {
     const feature = await this.prisma.newFeature.findFirst({
       where: { id, deletedAt: null },
     });
-    
+
     if (!feature) {
       throw new NotFoundException(`Feature ${id} not found`);
     }
-    
+
     return feature;
   }
 
@@ -475,10 +475,11 @@ npx prisma studio --schema=services/shared/prisma/schema.prisma
 2. Review the schema diff for destructive changes.
 3. Run `npm run db:generate`.
 4. Synchronize only a disposable development database with the controls workspace command above.
-5. Update the controls-owned migration/startup path before proposing a production change.
+5. Create and verify a forward-only migration under `services/shared/prisma/migrations/`.
+6. Run `scripts/verify-database-hardening.sh` before proposing a production change.
 
-The current Docker flow uses `prisma db push`; it does not have a complete
-versioned migration chain suitable for unattended production changes.
+The Docker flow uses the controls-owned committed migration chain. `prisma db push`
+remains a disposable local-development convenience only.
 
 ### Common Patterns
 
@@ -488,7 +489,7 @@ model Control {
   id        String    @id @default(uuid())
   deletedAt DateTime?
   deletedBy String?
-  
+
   @@index([deletedAt])
 }
 
@@ -559,10 +560,7 @@ describe('ControlsService', () => {
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
-      providers: [
-        ControlsService,
-        { provide: PrismaService, useValue: mockPrismaService },
-      ],
+      providers: [ControlsService, { provide: PrismaService, useValue: mockPrismaService }],
     }).compile();
 
     service = module.get<ControlsService>(ControlsService);
@@ -697,14 +695,14 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 
 ### Naming Conventions
 
-| Item | Convention | Example |
-|------|------------|---------|
-| Components | PascalCase | `ControlCard.tsx` |
-| Hooks | camelCase with use | `useControls.ts` |
-| Utils | camelCase | `formatDate.ts` |
-| Constants | UPPER_SNAKE_CASE | `MAX_FILE_SIZE` |
-| Types/Interfaces | PascalCase | `ControlData` |
-| Database tables | snake_case | `audit_logs` |
+| Item             | Convention         | Example           |
+| ---------------- | ------------------ | ----------------- |
+| Components       | PascalCase         | `ControlCard.tsx` |
+| Hooks            | camelCase with use | `useControls.ts`  |
+| Utils            | camelCase          | `formatDate.ts`   |
+| Constants        | UPPER_SNAKE_CASE   | `MAX_FILE_SIZE`   |
+| Types/Interfaces | PascalCase         | `ControlData`     |
+| Database tables  | snake_case         | `audit_logs`      |
 
 ---
 
@@ -734,6 +732,7 @@ type(scope): description
 ```
 
 Types:
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation
@@ -743,6 +742,7 @@ Types:
 - `chore`: Maintenance
 
 Examples:
+
 ```
 feat(controls): add bulk import functionality
 fix(evidence): resolve file upload timeout
@@ -787,12 +787,14 @@ npx husky add .husky/pre-commit "npx lint-staged"
 ### Common Issues
 
 **Port already in use**:
+
 ```bash
 lsof -i :3000
 kill -9 <PID>
 ```
 
 **Docker issues**:
+
 ```bash
 docker compose down -v
 docker system prune -a
@@ -800,12 +802,14 @@ docker compose up -d --build
 ```
 
 **Prisma issues**:
+
 ```bash
 rm -rf node_modules/.prisma
 npx prisma generate
 ```
 
 **Node modules issues**:
+
 ```bash
 rm -rf node_modules package-lock.json
 npm install
@@ -822,8 +826,3 @@ npm install
   - Actual behavior
   - Environment details
   - Error logs
-
-
-
-
-

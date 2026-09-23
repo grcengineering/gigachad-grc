@@ -18,6 +18,9 @@ COPY services/audit/package.json ./services/audit/package.json
 RUN npm ci --ignore-scripts --workspace @gigachad-grc/frontend --include-workspace-root
 
 COPY frontend/ ./frontend/
+# Help Center content is compiled from the repository documentation. Keep it
+# in the same relative location used by helpContent.ts during local builds.
+COPY docs/help/ ./docs/help/
 WORKDIR /app/frontend
 
 # Vite inlines VITE_-prefixed vars into the bundle at build time, so this

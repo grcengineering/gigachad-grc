@@ -1,4 +1,5 @@
 import { aiClient } from './ai-client.js';
+import { useExplicitDemoFallback } from '../demo-mode.js';
 
 interface VendorRiskAssessorParams {
   vendor: {
@@ -54,12 +55,15 @@ interface MonitoringRequirement {
   responsible: string;
 }
 
-export async function assessVendorRisk(params: VendorRiskAssessorParams): Promise<VendorRiskAssessmentResult> {
+export async function assessVendorRisk(
+  params: VendorRiskAssessorParams
+): Promise<VendorRiskAssessmentResult> {
   const { vendor, assessmentData, riskAppetite = 'medium' } = params;
 
   if (!aiClient.isConfigured()) {
-    console.warn(`[VendorRiskAssessor] AI not configured - using mock assessment for vendor: ${vendor.name}`);
-    return generateMockAssessment(vendor, assessmentData, riskAppetite, 'AI service not configured - set OPENAI_API_KEY or ANTHROPIC_API_KEY');
+    return useExplicitDemoFallback('AI service is not configured', () =>
+      generateMockAssessment(vendor, assessmentData, riskAppetite, 'Explicit MCP demo mode')
+    );
   }
 
   const systemPrompt = `You are a third-party risk management expert. Assess the risk of engaging with the specified vendor.
@@ -84,8 +88,12 @@ Provide comprehensive risk assessment with actionable recommendations.`;
       isMockMode: false,
     };
   } catch (error) {
-    console.warn(`[VendorRiskAssessor] AI call failed - using mock assessment: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    return generateMockAssessment(vendor, assessmentData, riskAppetite, `AI service call failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    const reason = `AI vendor assessment failed: ${
+      error instanceof Error ? error.message : String(error)
+    }`;
+    return useExplicitDemoFallback(reason, () =>
+      generateMockAssessment(vendor, assessmentData, riskAppetite, reason)
+    );
   }
 }
 
@@ -96,13 +104,13 @@ function generateMockAssessment(
   mockReason: string = 'AI service not available'
 ): VendorRiskAssessmentResult {
   // Calculate risk factors
-  const hasSecurityCerts = assessmentData?.certifications?.some(c => 
+  const hasSecurityCerts = assessmentData?.certifications?.some((c) =>
     ['SOC 2', 'ISO 27001', 'SOC2', 'ISO27001'].includes(c)
   );
   const hasDataAccess = (vendor.dataAccess?.length || 0) > 0;
   const hasPreviousIncidents = (assessmentData?.previousIncidents?.length || 0) > 0;
-  const isCriticalService = ['cloud', 'infrastructure', 'payment', 'identity'].some(
-    s => vendor.services?.some(vs => vs.toLowerCase().includes(s))
+  const isCriticalService = ['cloud', 'infrastructure', 'payment', 'identity'].some((s) =>
+    vendor.services?.some((vs) => vs.toLowerCase().includes(s))
   );
 
   // Calculate risk score (0-100, higher = more risk)
@@ -141,7 +149,7 @@ function generateMockAssessment(
     {
       category: 'Security Posture',
       score: hasSecurityCerts ? 25 : 70,
-      findings: hasSecurityCerts 
+      findings: hasSecurityCerts
         ? [`[DEMO] Vendor holds: ${assessmentData?.certifications?.join(', ')}`]
         : ['[DEMO] No recognized security certifications'],
       concerns: hasSecurityCerts ? [] : ['[DEMO] Lack of third-party security validation'],
@@ -149,7 +157,9 @@ function generateMockAssessment(
     {
       category: 'Data Handling',
       score: hasDataAccess ? 60 : 20,
-      findings: vendor.dataAccess?.map(d => `[DEMO] Access to: ${d}`) || ['[DEMO] No data access required'],
+      findings: vendor.dataAccess?.map((d) => `[DEMO] Access to: ${d}`) || [
+        '[DEMO] No data access required',
+      ],
       concerns: hasDataAccess ? ['[DEMO] Vendor will have access to sensitive data'] : [],
     },
     {
@@ -161,8 +171,8 @@ function generateMockAssessment(
     {
       category: 'Historical Performance',
       score: hasPreviousIncidents ? 80 : 20,
-      findings: hasPreviousIncidents 
-        ? (assessmentData?.previousIncidents || []).map(i => `[DEMO] ${i}`)
+      findings: hasPreviousIncidents
+        ? (assessmentData?.previousIncidents || []).map((i) => `[DEMO] ${i}`)
         : ['[DEMO] No known security incidents'],
       concerns: hasPreviousIncidents ? ['[DEMO] Previous security incidents on record'] : [],
     },
@@ -225,7 +235,8 @@ function generateMockAssessment(
       },
       {
         activity: 'Security questionnaire review',
-        frequency: riskTier === 'critical' ? 'Quarterly' : riskTier === 'high' ? 'Semi-annual' : 'Annual',
+        frequency:
+          riskTier === 'critical' ? 'Quarterly' : riskTier === 'high' ? 'Semi-annual' : 'Annual',
         responsible: 'Security Team',
       },
       {
@@ -244,7 +255,3 @@ function generateMockAssessment(
     mockModeReason: mockReason,
   };
 }
-
-
-
-

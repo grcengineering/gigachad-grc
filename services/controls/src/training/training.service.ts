@@ -962,10 +962,10 @@ export class TrainingService {
     const manifest = await manifestEntry.async('string');
     const xmlErrors: string[] = [];
     const document = new DOMParser({
-      errorHandler: {
-        warning: () => undefined,
-        error: (message) => xmlErrors.push(message),
-        fatalError: (message) => xmlErrors.push(message),
+      errorHandler: (level, message) => {
+        if (level !== 'warning') {
+          xmlErrors.push(message);
+        }
       },
     }).parseFromString(manifest, 'application/xml');
     if (xmlErrors.length > 0 || document.documentElement?.localName?.toLowerCase() !== 'manifest') {

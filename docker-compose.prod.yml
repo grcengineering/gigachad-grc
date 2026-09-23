@@ -1040,6 +1040,11 @@ services:
     container_name: grc-frontend
     depends_on:
       - controls
+      - frameworks
+      - policies
+      - tprm
+      - trust
+      - audit
     networks:
       - grc-network
       - grc-dmz

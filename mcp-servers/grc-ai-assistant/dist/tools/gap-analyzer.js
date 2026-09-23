@@ -1,8 +1,13 @@
 import { aiClient } from './ai-client.js';
+import { useExplicitDemoFallback } from '../demo-mode.js';
 // Framework requirement mappings
 const frameworkRequirements = {
-    'SOC2': [
-        { id: 'CC1.1', title: 'Demonstrates commitment to integrity and ethical values', critical: true },
+    SOC2: [
+        {
+            id: 'CC1.1',
+            title: 'Demonstrates commitment to integrity and ethical values',
+            critical: true,
+        },
         { id: 'CC1.4', title: 'Demonstrates commitment to competence', critical: false },
         { id: 'CC2.1', title: 'Obtains or generates relevant information', critical: false },
         { id: 'CC3.1', title: 'Specifies suitable objectives', critical: false },
@@ -16,7 +21,7 @@ const frameworkRequirements = {
         { id: 'CC8.1', title: 'Manages changes', critical: true },
         { id: 'CC9.2', title: 'Assesses and manages vendors', critical: false },
     ],
-    'ISO27001': [
+    ISO27001: [
         { id: 'A.5.1', title: 'Policies for information security', critical: true },
         { id: 'A.5.15', title: 'Access control', critical: true },
         { id: 'A.5.17', title: 'Authentication information', critical: true },
@@ -29,7 +34,7 @@ const frameworkRequirements = {
         { id: 'A.8.24', title: 'Use of cryptography', critical: true },
         { id: 'A.8.32', title: 'Change management', critical: true },
     ],
-    'HIPAA': [
+    HIPAA: [
         { id: '164.308(a)(1)', title: 'Security Management Process', critical: true },
         { id: '164.308(a)(3)', title: 'Workforce Security', critical: true },
         { id: '164.308(a)(5)', title: 'Security Awareness and Training', critical: false },
@@ -42,7 +47,7 @@ const frameworkRequirements = {
 export async function analyzeComplianceGap(params) {
     const { currentControls, targetFramework, includeRoadmap = true } = params;
     if (!aiClient.isConfigured()) {
-        return generateMockGapAnalysis(currentControls, targetFramework, includeRoadmap);
+        return useExplicitDemoFallback('AI service is not configured', () => generateMockGapAnalysis(currentControls, targetFramework, includeRoadmap));
     }
     const systemPrompt = `You are a compliance gap analysis expert. Analyze the gap between current controls and ${targetFramework} requirements.
 
@@ -56,26 +61,29 @@ Return comprehensive gap analysis with actionable roadmap.`;
     try {
         const result = await aiClient.completeJSON([
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: `Analyze gaps for ${targetFramework}. Current controls: ${JSON.stringify(currentControls)}` },
+            {
+                role: 'user',
+                content: `Analyze gaps for ${targetFramework}. Current controls: ${JSON.stringify(currentControls)}`,
+            },
         ]);
         return {
             analyzedAt: new Date().toISOString(),
             ...result,
         };
     }
-    catch {
-        return generateMockGapAnalysis(currentControls, targetFramework, includeRoadmap);
+    catch (error) {
+        return useExplicitDemoFallback(`AI gap analysis failed: ${error instanceof Error ? error.message : String(error)}`, () => generateMockGapAnalysis(currentControls, targetFramework, includeRoadmap));
     }
 }
 function generateMockGapAnalysis(currentControls, targetFramework, includeRoadmap) {
     const requirements = frameworkRequirements[targetFramework] || frameworkRequirements['SOC2'];
-    const controlTitles = currentControls.map(c => c.title.toLowerCase());
-    const implementedControls = currentControls.filter(c => c.status === 'implemented');
+    const controlTitles = currentControls.map((c) => c.title.toLowerCase());
+    const implementedControls = currentControls.filter((c) => c.status === 'implemented');
     const gaps = [];
     const coveredRequirements = [];
     for (const req of requirements) {
-        const matchingControls = currentControls.filter(c => c.title.toLowerCase().includes(req.title.toLowerCase().split(' ')[0]) ||
-            controlTitles.some(t => t.includes(req.id.toLowerCase())));
+        const matchingControls = currentControls.filter((c) => c.title.toLowerCase().includes(req.title.toLowerCase().split(' ')[0]) ||
+            controlTitles.some((t) => t.includes(req.id.toLowerCase())));
         if (matchingControls.length === 0) {
             gaps.push({
                 requirement: req.id,
@@ -94,12 +102,12 @@ function generateMockGapAnalysis(currentControls, targetFramework, includeRoadma
             });
         }
         else {
-            const implemented = matchingControls.filter(c => c.status === 'implemented');
+            const implemented = matchingControls.filter((c) => c.status === 'implemented');
             if (implemented.length === matchingControls.length) {
                 coveredRequirements.push({
                     requirement: req.id,
                     requirementTitle: req.title,
-                    coveringControls: matchingControls.map(c => c.id),
+                    coveringControls: matchingControls.map((c) => c.id),
                     coverageLevel: 'full',
                 });
             }
@@ -128,15 +136,20 @@ function generateMockGapAnalysis(currentControls, targetFramework, includeRoadma
         currentState: {
             totalControls: currentControls.length,
             implementedControls: implementedControls.length,
-            partialControls: currentControls.filter(c => c.status === 'partial').length,
-            notImplementedControls: currentControls.filter(c => c.status === 'not_implemented').length,
+            partialControls: currentControls.filter((c) => c.status === 'partial').length,
+            notImplementedControls: currentControls.filter((c) => c.status === 'not_implemented').length,
             coveragePercentage,
         },
         gaps,
         coveredRequirements,
         prioritizedActions: [
-            ...gaps.filter(g => g.severity === 'critical').map(g => `CRITICAL: Address ${g.requirement} - ${g.requirementTitle}`),
-            ...gaps.filter(g => g.severity === 'high').slice(0, 3).map(g => `HIGH: Implement ${g.requirement} - ${g.requirementTitle}`),
+            ...gaps
+                .filter((g) => g.severity === 'critical')
+                .map((g) => `CRITICAL: Address ${g.requirement} - ${g.requirementTitle}`),
+            ...gaps
+                .filter((g) => g.severity === 'high')
+                .slice(0, 3)
+                .map((g) => `HIGH: Implement ${g.requirement} - ${g.requirementTitle}`),
         ],
         estimatedEffort: {
             totalWeeks: gaps.length * 2,
@@ -153,7 +166,7 @@ function generateMockGapAnalysis(currentControls, targetFramework, includeRoadma
                     duration: '4-6 weeks',
                     objectives: ['Address critical compliance gaps', 'Establish baseline controls'],
                     deliverables: ['Critical controls implemented', 'Initial documentation'],
-                    requirements: gaps.filter(g => g.severity === 'critical').map(g => g.requirement),
+                    requirements: gaps.filter((g) => g.severity === 'critical').map((g) => g.requirement),
                 },
                 {
                     phase: 2,
@@ -161,7 +174,7 @@ function generateMockGapAnalysis(currentControls, targetFramework, includeRoadma
                     duration: '6-8 weeks',
                     objectives: ['Implement high-priority controls', 'Develop procedures'],
                     deliverables: ['High-priority controls', 'Procedure documentation'],
-                    requirements: gaps.filter(g => g.severity === 'high').map(g => g.requirement),
+                    requirements: gaps.filter((g) => g.severity === 'high').map((g) => g.requirement),
                 },
                 {
                     phase: 3,
@@ -169,13 +182,27 @@ function generateMockGapAnalysis(currentControls, targetFramework, includeRoadma
                     duration: '4-6 weeks',
                     objectives: ['Complete remaining controls', 'Finalize documentation'],
                     deliverables: ['Full control implementation', 'Audit-ready documentation'],
-                    requirements: gaps.filter(g => g.severity === 'medium' || g.severity === 'low').map(g => g.requirement),
+                    requirements: gaps
+                        .filter((g) => g.severity === 'medium' || g.severity === 'low')
+                        .map((g) => g.requirement),
                 },
             ],
             milestones: [
-                { name: 'Critical Gaps Closed', targetDate: '+6 weeks', criteria: ['All critical gaps addressed'] },
-                { name: 'Core Controls Complete', targetDate: '+14 weeks', criteria: ['High-priority controls implemented'] },
-                { name: 'Audit Ready', targetDate: '+20 weeks', criteria: ['Full coverage achieved', 'Documentation complete'] },
+                {
+                    name: 'Critical Gaps Closed',
+                    targetDate: '+6 weeks',
+                    criteria: ['All critical gaps addressed'],
+                },
+                {
+                    name: 'Core Controls Complete',
+                    targetDate: '+14 weeks',
+                    criteria: ['High-priority controls implemented'],
+                },
+                {
+                    name: 'Audit Ready',
+                    targetDate: '+20 weeks',
+                    criteria: ['Full coverage achieved', 'Documentation complete'],
+                },
             ],
             dependencies: [
                 { from: 'Policy Framework', to: 'Control Implementation', type: 'prerequisite' },

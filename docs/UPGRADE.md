@@ -1,6 +1,7 @@
 # Upgrade guide
 
-This revision uses one shared Prisma schema and a controls-owned startup synchronization flow. It does not use independent migrations for each service.
+This revision uses one shared Prisma schema and a controls-owned, committed migration chain. It
+does not use independent migrations for each service.
 
 ## Current schema flow
 
@@ -13,11 +14,13 @@ services/shared/prisma/schema.prisma
 When the controls container starts, its entrypoint:
 
 1. waits for PostgreSQL;
-2. runs `prisma db push` against the shared schema;
+2. runs `deploy/prisma-migrate-safe.sh`, which records the baseline on legacy installations and
+   applies pending migrations with `prisma migrate deploy`;
 3. applies the idempotent BC/DR SQL migration; and
 4. starts the controls API.
 
-Other services consume the same database. Do not run `prisma migrate deploy` from controls, frameworks, policies, TPRM, trust, and audit separately.
+Other services consume the same database. Do not run migrations from frameworks, policies, TPRM,
+trust, or audit.
 
 The numbered files under `database/init/` are not a sequential upgrade procedure. Current Compose files mount only the supporting first-boot scripts; controls owns application schema synchronization.
 
@@ -27,11 +30,13 @@ The numbered files under `database/init/` are not a sequential upgrade procedure
 2. Compare the current and target `services/shared/prisma/schema.prisma`.
 3. Back up PostgreSQL and object storage.
 4. Restore that backup into an isolated staging environment.
-5. Start the target controls image against staging and inspect the schema/result.
+5. Run `scripts/rollout-database-hardening.sh audit`, backfill/validate any reported legacy rows,
+   then start the target controls image against staging.
 6. Run representative workflow and tenant-isolation tests.
 7. Decide whether downtime is required.
 
-`prisma db push` is not a versioned rollback mechanism. Never rely on a code checkout alone to reverse a database change.
+Migrations are forward-only. Never rely on a code checkout alone to reverse a database change;
+restore the tested backup when rollback requires database reversal.
 
 ## Local Docker upgrade
 

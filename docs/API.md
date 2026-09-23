@@ -6,14 +6,14 @@ The running services generate the authoritative OpenAPI documents. This file doc
 
 Local Docker exposes each service on a loopback debugging port:
 
-| Service | Swagger |
-| --- | --- |
-| Controls | `http://localhost:3001/api/docs` |
+| Service    | Swagger                          |
+| ---------- | -------------------------------- |
+| Controls   | `http://localhost:3001/api/docs` |
 | Frameworks | `http://localhost:3002/api/docs` |
-| Policies | `http://localhost:3004/api/docs` |
-| TPRM | `http://localhost:3005/api/docs` |
-| Trust | `http://localhost:3006/api/docs` |
-| Audit | `http://localhost:3007/api/docs` |
+| Policies   | `http://localhost:3004/api/docs` |
+| TPRM       | `http://localhost:3005/api/docs` |
+| Trust      | `http://localhost:3006/api/docs` |
+| Audit      | `http://localhost:3007/api/docs` |
 
 Use those documents for request bodies, query parameters, response shapes, and role requirements on the running revision.
 
@@ -128,7 +128,9 @@ See [Integration implementation status](INTEGRATION_IMPLEMENTATION_STATUS.md).
 
 ## MCP
 
-MCP servers are separate packages under `mcp-servers/`. They are not HTTP services started by the default Compose stack and should not be inferred from application API routes.
+MCP servers remain independent stdio packages under `mcp-servers/`, but the default Controls image
+builds, packages, and launches all three. Controls exposes authenticated `/api/mcp/*` management and
+workflow routes; upstream integrations and AI tools still require their documented credentials.
 
 ## API change policy
 

@@ -116,14 +116,14 @@ When evaluating an AI response, check `isMockMode` and `mockModeReason` where th
 
 The local application starts without every external provider. These capabilities remain configuration-required:
 
-| Capability | Prerequisite |
-| --- | --- |
-| Real AI analysis | OpenAI or Anthropic key, selected provider, outbound HTTPS |
-| Integration sync | Provider credentials, required scopes/APIs, outbound HTTPS |
-| Email delivery | SMTP or another implemented email provider |
-| SSO | Keycloak realm/client configuration or an operator-managed identity setup |
-| Off-host backup | Remote S3 bucket and credentials |
-| MCP servers | Build and run the separate packages under `mcp-servers/` |
+| Capability       | Prerequisite                                                                           |
+| ---------------- | -------------------------------------------------------------------------------------- |
+| Real AI analysis | OpenAI or Anthropic key, selected provider, outbound HTTPS                             |
+| Integration sync | Provider credentials, required scopes/APIs, outbound HTTPS                             |
+| Email delivery   | SMTP or another implemented email provider                                             |
+| SSO              | Keycloak realm/client configuration or an operator-managed identity setup              |
+| Off-host backup  | Remote S3 bucket and credentials                                                       |
+| MCP servers      | Packaged in the Controls image; configure required provider credentials for live tools |
 
 ## Stop or inspect the demo
 

@@ -69,13 +69,13 @@ Do not use `http://localhost:3000` as the application URL. That port exposes the
 
 ### Local access points
 
-| Service | URL | Credentials |
-| --- | --- | --- |
-| Application | `https://localhost` | Dev Login |
-| Keycloak | `https://auth.localhost` | `KEYCLOAK_ADMIN` / `KEYCLOAK_ADMIN_PASSWORD` in `.env` |
-| Grafana | `https://grafana.localhost` | `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` in `.env` |
-| Prometheus | `https://prometheus.localhost` | None in local Compose |
-| RustFS | `http://localhost:9001` | `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` in `.env` |
+| Service     | URL                            | Credentials                                               |
+| ----------- | ------------------------------ | --------------------------------------------------------- |
+| Application | `https://localhost`            | Dev Login                                                 |
+| Keycloak    | `https://auth.localhost`       | `KEYCLOAK_ADMIN` / `KEYCLOAK_ADMIN_PASSWORD` in `.env`    |
+| Grafana     | `https://grafana.localhost`    | `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` in `.env` |
+| Prometheus  | `https://prometheus.localhost` | None in local Compose                                     |
+| RustFS      | `http://localhost:9001`        | `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` in `.env`       |
 
 Credentials are generated per installation. Shared fixed admin passwords are not used.
 
@@ -150,7 +150,8 @@ All application services share `services/shared/prisma/schema.prisma`.
 
 The controls container owns schema synchronization. At startup it:
 
-1. runs `prisma db push` against the shared schema; then
+1. applies the committed baseline and forward-only Prisma migrations through
+   `deploy/prisma-migrate-safe.sh`; then
 2. applies `database/init/12-bcdr-module.sql`.
 
 Do not run a migration from each service. The old numbered SQL files are not a current sequential migration procedure.

@@ -4,14 +4,14 @@ This document describes the deployment artifacts that exist on this revision and
 
 ## Deployment status
 
-| Target | Repository configuration | Status |
-| --- | --- | --- |
-| Local Docker Compose | `docker-compose.yml`, `start.sh` | Canonical development/evaluation flow |
-| Production Docker Compose | `docker-compose.prod.yml`, `env.example.production` | Configuration-required reference; do not deploy unreviewed |
-| Kubernetes | `helm/` | Chart present; image registry, secrets, ingress, storage, and validation required |
-| Supabase + Vercel | No deployable adapter or Vercel configuration | Unsupported |
-| Gitpod | No `.gitpod.yml` | Unsupported |
-| GitHub Codespaces | No `.devcontainer/` configuration | Unsupported |
+| Target                    | Repository configuration                            | Status                                                                            |
+| ------------------------- | --------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Local Docker Compose      | `docker-compose.yml`, `start.sh`                    | Canonical development/evaluation flow                                             |
+| Production Docker Compose | `docker-compose.prod.yml`, `env.example.production` | Configuration-required reference; do not deploy unreviewed                        |
+| Kubernetes                | `helm/`                                             | Chart present; image registry, secrets, ingress, storage, and validation required |
+| Supabase + Vercel         | No deployable adapter or Vercel configuration       | Unsupported                                                                       |
+| Gitpod                    | No `.gitpod.yml`                                    | Unsupported                                                                       |
+| GitHub Codespaces         | No `.devcontainer/` configuration                   | Unsupported                                                                       |
 
 There is no hosted service or one-click cloud deployment in this repository.
 
@@ -109,13 +109,14 @@ services/shared/prisma/schema.prisma
 Current container startup behavior:
 
 1. PostgreSQL first-boot scripts create supporting databases, extensions, and schemas.
-2. The controls entrypoint runs `prisma db push --schema=/app/shared/prisma/schema.prisma`.
+2. The controls entrypoint runs `deploy/prisma-migrate-safe.sh` to establish the baseline and apply
+   committed forward-only migrations.
 3. The controls entrypoint applies the idempotent BC/DR migration.
 4. All services use the resulting shared database.
 
-Only the controls container should own this startup synchronization. Do not run `prisma migrate deploy` from every service and do not apply every numbered `database/init` SQL file in sequence.
-
-`prisma db push` is schema synchronization, not a versioned production migration strategy. Back up the database and review the schema diff before every production upgrade. The repository must move to a fully versioned migration chain before unattended production upgrades can be claimed.
+Only the controls container should own migrations. Do not run `prisma migrate deploy` from every
+service and do not apply every numbered `database/init` SQL file in sequence. Back up and rehearse
+upgrades using [Database hardening rollout](DATABASE_HARDENING_ROLLOUT.md).
 
 ## External infrastructure
 

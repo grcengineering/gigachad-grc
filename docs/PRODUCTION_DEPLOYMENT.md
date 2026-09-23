@@ -5,7 +5,6 @@ The repository contains a production-oriented Compose file, but this revision is
 ## Known limitations on this revision
 
 - Application images are built locally; no supported release image registry is declared.
-- The controls entrypoint uses `prisma db push`, not a complete versioned migration chain.
 - Not every setting in `env.example.production` is forwarded by `docker-compose.prod.yml`. Required application secrets must be checked in the rendered container environment.
 - Prometheus, Grafana, and centralized logging are not provided by the production Compose file.
 - High availability, database replication, object-storage replication, autoscaling, and zero-downtime migration are not supplied.
@@ -137,24 +136,24 @@ All services use:
 services/shared/prisma/schema.prisma
 ```
 
-The controls container entrypoint currently performs:
+The controls container entrypoint performs:
 
 ```text
-prisma db push --schema=/app/shared/prisma/schema.prisma --skip-generate
+deploy/prisma-migrate-safe.sh
 prisma db execute --file=/app/database/migrations/12-bcdr-module.sql
 ```
 
-Do not run migrations from each service. Do not manually execute every file in `database/init/`.
-
-Because `db push` can alter the live schema without a versioned rollback:
+The safe wrapper records the committed baseline for legacy `db push` installations, then runs
+`prisma migrate deploy`. Do not run migrations from each service or manually execute every file in
+`database/init/`.
 
 1. take and verify a backup;
-2. compare the current and target Prisma schemas;
-3. test startup against a restored production copy;
-4. schedule downtime if the diff is not demonstrably backward compatible; and
-5. start controls before the other application services.
+2. run `scripts/rollout-database-hardening.sh audit` against a restored production copy;
+3. backfill tenant mismatches and validate staged constraints;
+4. run the target controls entrypoint and representative workflows; and
+5. switch to the least-privilege application role only after request paths establish tenant context.
 
-Fresh PostgreSQL first-boot scripts create supporting databases and extensions. They are not the application migration history.
+See [Database hardening rollout](DATABASE_HARDENING_ROLLOUT.md).
 
 ## Build and start
 
@@ -195,14 +194,14 @@ There is no shared production admin password. Use generated values in the protec
 
 The following are unavailable until configured:
 
-| Capability | Required configuration |
-| --- | --- |
-| Real AI output | OpenAI or Anthropic credentials and outbound HTTPS |
-| Email delivery | SMTP/provider credentials |
-| Integrations | Provider credentials, scopes, enabled APIs, and egress |
-| Remote backup | S3-compatible bucket and credentials |
-| Error tracking | External APM/DSN |
-| MCP tools | Separately deployed MCP packages and credentials |
+| Capability     | Required configuration                                 |
+| -------------- | ------------------------------------------------------ |
+| Real AI output | OpenAI or Anthropic credentials and outbound HTTPS     |
+| Email delivery | SMTP/provider credentials                              |
+| Integrations   | Provider credentials, scopes, enabled APIs, and egress |
+| Remote backup  | S3-compatible bucket and credentials                   |
+| Error tracking | External APM/DSN                                       |
+| MCP tools      | Separately deployed MCP packages and credentials       |
 
 Do not enable `AI_MOCK_MODE` in production; the main AI service ignores it there. Do not use connector catalog presence as evidence that a connector is production-ready.
 

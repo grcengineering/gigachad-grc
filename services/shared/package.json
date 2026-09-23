@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
-    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config jest.config.js --runInBand src/auth/jwt.guard.spec.ts src/auth/application-auth.guard.spec.ts",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config jest.config.js --runInBand src/auth/jwt.guard.spec.ts src/auth/application-auth.guard.spec.ts src/watermark/watermark.service.spec.ts",
     "test:auth": "npm test",
     "clean": "rm -rf dist",
     "prepublish": "npm run build"
@@ -22,6 +22,7 @@
     "ioredis": "^5.10.1",
     "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^3.1.0",
+    "pdf-lib": "1.17.1",
     "pdfkit": "^0.18.0",
     "sanitize-html": "2.17.7",
     "winston": "^3.11.0"

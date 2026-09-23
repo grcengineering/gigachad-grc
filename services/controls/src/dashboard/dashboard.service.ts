@@ -9,7 +9,7 @@ export class DashboardService {
 
   constructor(
     private prisma: PrismaService,
-    private cache: CacheService,
+    private cache: CacheService
   ) {}
 
   /**
@@ -27,13 +27,7 @@ export class DashboardService {
         this.logger.debug(`Building full dashboard for org ${organizationId}`);
 
         // Execute all queries in parallel for maximum performance
-        const [
-          summary,
-          frameworks,
-          policyStats,
-          riskSummary,
-          vendorSummary,
-        ] = await Promise.all([
+        const [summary, frameworks, policyStats, riskSummary, vendorSummary] = await Promise.all([
           this.getSummaryUncached(organizationId),
           this.getFrameworksWithReadiness(organizationId),
           this.getPolicyStats(organizationId),
@@ -53,7 +47,7 @@ export class DashboardService {
           generatedAt: new Date().toISOString(),
         };
       },
-      300, // 5 minute cache - dashboard data doesn't change frequently
+      300 // 5 minute cache - dashboard data doesn't change frequently
     );
   }
 
@@ -61,19 +55,14 @@ export class DashboardService {
    * Get summary data without caching (for use in consolidated endpoint)
    */
   private async getSummaryUncached(organizationId: string) {
-    const [
-      controlStats,
-      evidenceStats,
-      upcomingTests,
-      recentActivity,
-      complianceScore,
-    ] = await Promise.all([
-      this.getControlStats(organizationId),
-      this.getEvidenceStats(organizationId),
-      this.getUpcomingTests(organizationId),
-      this.getRecentActivity(organizationId),
-      this.calculateComplianceScore(organizationId),
-    ]);
+    const [controlStats, evidenceStats, upcomingTests, recentActivity, complianceScore] =
+      await Promise.all([
+        this.getControlStats(organizationId),
+        this.getEvidenceStats(organizationId),
+        this.getUpcomingTests(organizationId),
+        this.getRecentActivity(organizationId),
+        this.calculateComplianceScore(organizationId),
+      ]);
 
     return {
       complianceScore,
@@ -115,7 +104,7 @@ export class DashboardService {
 
     // Calculate readiness for each framework using a single query
     // Use Prisma.join for safe IN clause parameterization
-    const frameworkIds = frameworks.map(f => f.id);
+    const frameworkIds = frameworks.map((f) => f.id);
     const readinessData = await this.prisma.$queryRaw<
       { frameworkId: string; total: number; compliant: number }[]
     >`
@@ -129,13 +118,14 @@ export class DashboardService {
       GROUP BY cm.framework_id
     `;
 
-    const readinessMap = new Map(readinessData.map(r => [r.frameworkId, r]));
+    const readinessMap = new Map(readinessData.map((r) => [r.frameworkId, r]));
 
-    return frameworks.map(fw => {
+    return frameworks.map((fw) => {
       const readiness = readinessMap.get(fw.id);
-      const score = readiness && readiness.total > 0
-        ? Math.round((readiness.compliant / readiness.total) * 100)
-        : 0;
+      const score =
+        readiness && readiness.total > 0
+          ? Math.round((readiness.compliant / readiness.total) * 100)
+          : 0;
 
       return {
         id: fw.id,
@@ -182,7 +172,7 @@ export class DashboardService {
       published: 0,
     };
 
-    byStatus.forEach(s => {
+    byStatus.forEach((s) => {
       statusCounts[s.status] = s._count;
     });
 
@@ -220,7 +210,7 @@ export class DashboardService {
 
     // Calculate counts by risk level
     const byLevel: Record<string, number> = {};
-    risks.forEach(r => {
+    risks.forEach((r) => {
       if (r.inherentRisk) {
         byLevel[r.inherentRisk] = (byLevel[r.inherentRisk] || 0) + 1;
       }
@@ -267,14 +257,14 @@ export class DashboardService {
       medium: 0,
       low: 0,
     };
-    byCriticality.forEach(c => {
+    byCriticality.forEach((c) => {
       if (c.criticality) {
         criticalityCounts[c.criticality] = c._count;
       }
     });
 
     const statusCounts: Record<string, number> = {};
-    byStatus.forEach(s => {
+    byStatus.forEach((s) => {
       statusCounts[s.status] = s._count;
     });
 
@@ -292,24 +282,19 @@ export class DashboardService {
 
   async getSummary(organizationId: string) {
     const cacheKey = CacheKeys.dashboard(organizationId);
-    
+
     // Try to get from cache first (60 second TTL for dashboard)
     return this.cache.getOrSet(
       cacheKey,
       async () => {
-        const [
-          controlStats,
-          evidenceStats,
-          upcomingTests,
-          recentActivity,
-          complianceScore,
-        ] = await Promise.all([
-          this.getControlStats(organizationId),
-          this.getEvidenceStats(organizationId),
-          this.getUpcomingTests(organizationId),
-          this.getRecentActivity(organizationId),
-          this.calculateComplianceScore(organizationId),
-        ]);
+        const [controlStats, evidenceStats, upcomingTests, recentActivity, complianceScore] =
+          await Promise.all([
+            this.getControlStats(organizationId),
+            this.getEvidenceStats(organizationId),
+            this.getUpcomingTests(organizationId),
+            this.getRecentActivity(organizationId),
+            this.calculateComplianceScore(organizationId),
+          ]);
 
         return {
           complianceScore,
@@ -319,7 +304,7 @@ export class DashboardService {
           recentActivity,
         };
       },
-      60, // 60 second cache for dashboard data
+      60 // 60 second cache for dashboard data
     );
   }
 
@@ -341,7 +326,7 @@ export class DashboardService {
 
     const byCategory: Record<string, number> = {};
 
-    implementations.forEach(impl => {
+    implementations.forEach((impl) => {
       byStatus[impl.status] = (byStatus[impl.status] || 0) + 1;
       const category = impl.control.category;
       byCategory[category] = (byCategory[category] || 0) + 1;
@@ -427,17 +412,15 @@ export class DashboardService {
     }
 
     const implementedCount = implementations.filter(
-      i => i.status === ControlImplementationStatus.implemented,
+      (i) => i.status === ControlImplementationStatus.implemented
     ).length;
 
     const applicableCount = implementations.filter(
-      i => i.status !== ControlImplementationStatus.not_applicable,
+      (i) => i.status !== ControlImplementationStatus.not_applicable
     ).length;
 
     const overall =
-      applicableCount > 0
-        ? Math.round((implementedCount / applicableCount) * 100)
-        : 0;
+      applicableCount > 0 ? Math.round((implementedCount / applicableCount) * 100) : 0;
 
     // Calculate by framework
     // Note: Raw SQL uses ENUM string values - cast to text for comparison
@@ -459,24 +442,81 @@ export class DashboardService {
     `;
 
     const byFramework: Record<string, number> = {};
-    frameworkScores.forEach(fs => {
+    frameworkScores.forEach((fs) => {
       byFramework[fs.name] = Number(fs.score) || 0;
     });
 
     return { overall, byFramework };
   }
 
-  async getComplianceTrend(organizationId: string, _days = 30) {
-    // This would typically query a historical scores table
-    // For now, return current score as single point
-    const currentScore = await this.calculateComplianceScore(organizationId);
-    
-    return [
-      {
-        date: new Date(),
-        score: currentScore.overall,
-      },
-    ];
+  async getComplianceTrend(organizationId: string, days = 30) {
+    const periodDays = Math.max(1, Math.min(Math.trunc(Number(days) || 30), 365));
+    const now = new Date();
+    const oldestBoundary = new Date(now);
+    oldestBoundary.setUTCDate(oldestBoundary.getUTCDate() - (periodDays - 1));
+
+    const [implementations, statusChanges] = await Promise.all([
+      this.prisma.controlImplementation.findMany({
+        where: { organizationId },
+        select: { controlId: true, status: true, createdAt: true },
+      }),
+      this.prisma.auditLog.findMany({
+        where: {
+          organizationId,
+          entityType: 'control',
+          timestamp: { gte: oldestBoundary },
+        },
+        select: { entityId: true, changes: true, timestamp: true },
+        orderBy: { timestamp: 'desc' },
+      }),
+    ]);
+
+    const statuses = new Map(
+      implementations.map((implementation) => [implementation.controlId, implementation.status])
+    );
+    const createdAt = new Map(
+      implementations.map((implementation) => [implementation.controlId, implementation.createdAt])
+    );
+    const validStatuses = new Set(Object.values(ControlImplementationStatus));
+    const points: Array<{ date: Date; score: number }> = [];
+    let changeIndex = 0;
+
+    for (let offset = 0; offset < periodDays; offset++) {
+      const boundary = new Date(now);
+      boundary.setUTCDate(boundary.getUTCDate() - offset);
+
+      while (
+        changeIndex < statusChanges.length &&
+        statusChanges[changeIndex].timestamp.getTime() > boundary.getTime()
+      ) {
+        const change = statusChanges[changeIndex];
+        const changes = change.changes as {
+          before?: { status?: ControlImplementationStatus };
+        } | null;
+        const previousStatus = changes?.before?.status;
+        if (previousStatus && validStatuses.has(previousStatus)) {
+          statuses.set(change.entityId, previousStatus);
+        }
+        changeIndex++;
+      }
+
+      const historicalStatuses = [...statuses.entries()]
+        .filter(([controlId]) => (createdAt.get(controlId)?.getTime() ?? 0) <= boundary.getTime())
+        .map(([, status]) => status);
+      const applicable = historicalStatuses.filter(
+        (status) => status !== ControlImplementationStatus.not_applicable
+      );
+      const implemented = applicable.filter(
+        (status) => status === ControlImplementationStatus.implemented
+      ).length;
+
+      points.push({
+        date: boundary,
+        score: applicable.length > 0 ? Math.round((implemented / applicable.length) * 100) : 0,
+      });
+    }
+
+    return points.reverse();
   }
 
   async getControlsByOwner(organizationId: string) {
@@ -488,17 +528,16 @@ export class DashboardService {
 
     const ownerDetails = await this.prisma.user.findMany({
       where: {
-        id: { in: owners.map(o => o.ownerId!).filter(Boolean) },
+        id: { in: owners.map((o) => o.ownerId!).filter(Boolean) },
       },
       select: { id: true, displayName: true, email: true },
     });
 
-    const ownerMap = new Map(ownerDetails.map(o => [o.id, o]));
+    const ownerMap = new Map(ownerDetails.map((o) => [o.id, o]));
 
-    return owners.map(o => ({
+    return owners.map((o) => ({
       owner: ownerMap.get(o.ownerId!) || { id: o.ownerId, displayName: 'Unknown' },
       count: o._count,
     }));
   }
 }
-

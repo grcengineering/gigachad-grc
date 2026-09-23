@@ -6,6 +6,7 @@ import {
   DEMO_POLICIES,
   DEMO_VENDORS,
   DEMO_RISKS,
+  DEMO_RISK_SCENARIOS,
   DEMO_TRAINING_COURSES,
   DEMO_ASSET_TYPES,
   DEMO_INTEGRATIONS,
@@ -59,6 +60,7 @@ export interface SeedResult {
     vendors: number;
     vendorAssessments: number;
     risks: number;
+    riskScenarios: number;
     employees: number;
     trainingRecords: number;
     backgroundChecks: number;
@@ -414,6 +416,7 @@ export class SeedDataService {
         vendors: 0,
         vendorAssessments: 0,
         risks: 0,
+        riskScenarios: 0,
         employees: 0,
         trainingRecords: 0,
         backgroundChecks: 0,
@@ -480,6 +483,9 @@ export class SeedDataService {
 
       // Create risks
       result.recordsCreated.risks = await this.seedRisks(organizationId, userId);
+
+      // Create reusable threat scenarios
+      result.recordsCreated.riskScenarios = await this.seedRiskScenarios(organizationId, userId);
 
       // Create employees
       const employeeIds = await this.seedEmployees(organizationId);
@@ -661,10 +667,7 @@ export class SeedDataService {
 
       // Create implementation record with varied status
       const status = statusDistribution[i % statusDistribution.length] as
-        | 'implemented'
-        | 'in_progress'
-        | 'not_started'
-        | 'not_applicable';
+        'implemented' | 'in_progress' | 'not_started' | 'not_applicable';
       const implementation = await this.prisma.controlImplementation.create({
         data: {
           controlId: created.id,
@@ -1152,6 +1155,18 @@ export class SeedDataService {
     }
 
     return count;
+  }
+
+  private async seedRiskScenarios(organizationId: string, userId: string): Promise<number> {
+    const result = await this.prisma.riskScenarioTemplate.createMany({
+      data: DEMO_RISK_SCENARIOS.map((scenario) => ({
+        organizationId,
+        ...scenario,
+        createdBy: userId,
+      })),
+    });
+
+    return result.count;
   }
 
   private async seedEmployees(organizationId: string): Promise<string[]> {

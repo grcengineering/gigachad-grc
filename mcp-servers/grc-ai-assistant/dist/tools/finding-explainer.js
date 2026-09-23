@@ -1,8 +1,9 @@
 import { aiClient } from './ai-client.js';
+import { useExplicitDemoFallback } from '../demo-mode.js';
 export async function explainFinding(params) {
     const { finding, audience = 'general', includeRemediation = true } = params;
     if (!aiClient.isConfigured()) {
-        return generateMockExplanation(finding, audience, includeRemediation);
+        return useExplicitDemoFallback('AI service is not configured', () => generateMockExplanation(finding, audience, includeRemediation));
     }
     const audienceContext = {
         technical: 'Use technical terminology, include specific system details and configurations',
@@ -28,7 +29,10 @@ Return JSON:
     try {
         const result = await aiClient.completeJSON([
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: `Explain this finding:\nTitle: ${finding.title}\nDescription: ${finding.description}\nSeverity: ${finding.severity || 'Unknown'}\nFramework: ${finding.framework || 'N/A'}\nControl Reference: ${finding.controlReference || 'N/A'}` },
+            {
+                role: 'user',
+                content: `Explain this finding:\nTitle: ${finding.title}\nDescription: ${finding.description}\nSeverity: ${finding.severity || 'Unknown'}\nFramework: ${finding.framework || 'N/A'}\nControl Reference: ${finding.controlReference || 'N/A'}`,
+            },
         ]);
         return {
             findingTitle: finding.title,
@@ -37,8 +41,8 @@ Return JSON:
             ...result,
         };
     }
-    catch {
-        return generateMockExplanation(finding, audience, includeRemediation);
+    catch (error) {
+        return useExplicitDemoFallback(`AI finding explanation failed: ${error instanceof Error ? error.message : String(error)}`, () => generateMockExplanation(finding, audience, includeRemediation));
     }
 }
 function generateMockExplanation(finding, audience, includeRemediation) {
@@ -56,7 +60,12 @@ function generateMockExplanation(finding, audience, includeRemediation) {
         general: `We found an issue with how we protect our information. "${finding.title}" means that there's a gap in our security that we need to fix. This is a ${severityLevel} priority item that the security team is working to address.`,
     };
     const impactStatements = {
-        high: ['Data breach potential', 'Regulatory non-compliance', 'Financial loss', 'Reputational damage'],
+        high: [
+            'Data breach potential',
+            'Regulatory non-compliance',
+            'Financial loss',
+            'Reputational damage',
+        ],
         medium: ['Increased vulnerability', 'Compliance gaps', 'Operational inefficiency'],
         low: ['Minor security gap', 'Documentation deficiency', 'Process improvement opportunity'],
     };
@@ -90,13 +99,42 @@ function generateMockExplanation(finding, audience, includeRemediation) {
         result.remediation = {
             overview: `Address this finding by implementing the recommended controls and verifying their effectiveness through testing.`,
             steps: [
-                { step: 1, action: 'Assess current state and document gaps', responsible: 'Security Team', timeline: 'Week 1' },
-                { step: 2, action: 'Develop remediation plan', responsible: 'Security Manager', timeline: 'Week 1-2' },
-                { step: 3, action: 'Implement technical controls', responsible: 'IT Operations', timeline: 'Week 2-4' },
-                { step: 4, action: 'Test and validate remediation', responsible: 'Security Team', timeline: 'Week 4-5' },
-                { step: 5, action: 'Document evidence and close finding', responsible: 'GRC Team', timeline: 'Week 5' },
+                {
+                    step: 1,
+                    action: 'Assess current state and document gaps',
+                    responsible: 'Security Team',
+                    timeline: 'Week 1',
+                },
+                {
+                    step: 2,
+                    action: 'Develop remediation plan',
+                    responsible: 'Security Manager',
+                    timeline: 'Week 1-2',
+                },
+                {
+                    step: 3,
+                    action: 'Implement technical controls',
+                    responsible: 'IT Operations',
+                    timeline: 'Week 2-4',
+                },
+                {
+                    step: 4,
+                    action: 'Test and validate remediation',
+                    responsible: 'Security Team',
+                    timeline: 'Week 4-5',
+                },
+                {
+                    step: 5,
+                    action: 'Document evidence and close finding',
+                    responsible: 'GRC Team',
+                    timeline: 'Week 5',
+                },
             ],
-            estimatedEffort: severityLevel === 'high' ? '4-6 weeks' : severityLevel === 'medium' ? '2-4 weeks' : '1-2 weeks',
+            estimatedEffort: severityLevel === 'high'
+                ? '4-6 weeks'
+                : severityLevel === 'medium'
+                    ? '2-4 weeks'
+                    : '1-2 weeks',
             priority: severityLevel === 'high' ? 'Critical' : severityLevel === 'medium' ? 'High' : 'Medium',
         };
     }

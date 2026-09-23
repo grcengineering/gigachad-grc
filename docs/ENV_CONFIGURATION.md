@@ -92,7 +92,9 @@ All services share:
 services/shared/prisma/schema.prisma
 ```
 
-The controls container entrypoint runs `prisma db push` and then the BC/DR SQL migration. There are no separate per-service schemas or migration commands in the current Docker flow.
+The controls container entrypoint runs the committed Prisma migration chain through
+`deploy/prisma-migrate-safe.sh`, then applies the BC/DR SQL migration. There are no separate
+per-service schemas or migration commands in the current Docker flow.
 
 ## Storage
 

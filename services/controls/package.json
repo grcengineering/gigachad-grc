@@ -35,6 +35,7 @@
     "@nestjs/swagger": "11.4.7",
     "@nestjs/throttler": "^6.7.0",
     "@prisma/client": "^5.22.0",
+    "@xmldom/xmldom": "0.9.12",
     "@types/nodemailer": "^7.0.4",
     "@types/pdfkit": "^0.17.5",
     "@willsoto/nestjs-prometheus": "^6.1.1",

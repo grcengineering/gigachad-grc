@@ -702,6 +702,11 @@ services:
       - VITE_ENABLE_DEV_AUTH=true
     depends_on:
       - controls
+      - frameworks
+      - policies
+      - tprm
+      - trust
+      - audit
     networks:
       - grc-network
     labels:

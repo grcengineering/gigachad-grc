@@ -1,8 +1,9 @@
 import { aiClient } from './ai-client.js';
+import { useExplicitDemoFallback } from '../demo-mode.js';
 export async function assessVendorRisk(params) {
     const { vendor, assessmentData, riskAppetite = 'medium' } = params;
     if (!aiClient.isConfigured()) {
-        return generateMockAssessment(vendor, assessmentData, riskAppetite);
+        return useExplicitDemoFallback('AI service is not configured', () => generateMockAssessment(vendor, assessmentData, riskAppetite, 'Explicit MCP demo mode'));
     }
     const systemPrompt = `You are a third-party risk management expert. Assess the risk of engaging with the specified vendor.
 
@@ -21,18 +22,20 @@ Provide comprehensive risk assessment with actionable recommendations.`;
         return {
             assessedAt: new Date().toISOString(),
             ...result,
+            isMockMode: false,
         };
     }
-    catch {
-        return generateMockAssessment(vendor, assessmentData, riskAppetite);
+    catch (error) {
+        const reason = `AI vendor assessment failed: ${error instanceof Error ? error.message : String(error)}`;
+        return useExplicitDemoFallback(reason, () => generateMockAssessment(vendor, assessmentData, riskAppetite, reason));
     }
 }
-function generateMockAssessment(vendor, assessmentData, riskAppetite) {
+function generateMockAssessment(vendor, assessmentData, riskAppetite, mockReason = 'AI service not available') {
     // Calculate risk factors
-    const hasSecurityCerts = assessmentData?.certifications?.some(c => ['SOC 2', 'ISO 27001', 'SOC2', 'ISO27001'].includes(c));
+    const hasSecurityCerts = assessmentData?.certifications?.some((c) => ['SOC 2', 'ISO 27001', 'SOC2', 'ISO27001'].includes(c));
     const hasDataAccess = (vendor.dataAccess?.length || 0) > 0;
     const hasPreviousIncidents = (assessmentData?.previousIncidents?.length || 0) > 0;
-    const isCriticalService = ['cloud', 'infrastructure', 'payment', 'identity'].some(s => vendor.services?.some(vs => vs.toLowerCase().includes(s)));
+    const isCriticalService = ['cloud', 'infrastructure', 'payment', 'identity'].some((s) => vendor.services?.some((vs) => vs.toLowerCase().includes(s)));
     // Calculate risk score (0-100, higher = more risk)
     let riskScore = 30; // Base score
     if (!hasSecurityCerts)
@@ -73,29 +76,31 @@ function generateMockAssessment(vendor, assessmentData, riskAppetite) {
             category: 'Security Posture',
             score: hasSecurityCerts ? 25 : 70,
             findings: hasSecurityCerts
-                ? [`Vendor holds: ${assessmentData?.certifications?.join(', ')}`]
-                : ['No recognized security certifications'],
-            concerns: hasSecurityCerts ? [] : ['Lack of third-party security validation'],
+                ? [`[DEMO] Vendor holds: ${assessmentData?.certifications?.join(', ')}`]
+                : ['[DEMO] No recognized security certifications'],
+            concerns: hasSecurityCerts ? [] : ['[DEMO] Lack of third-party security validation'],
         },
         {
             category: 'Data Handling',
             score: hasDataAccess ? 60 : 20,
-            findings: vendor.dataAccess?.map(d => `Access to: ${d}`) || ['No data access required'],
-            concerns: hasDataAccess ? ['Vendor will have access to sensitive data'] : [],
+            findings: vendor.dataAccess?.map((d) => `[DEMO] Access to: ${d}`) || [
+                '[DEMO] No data access required',
+            ],
+            concerns: hasDataAccess ? ['[DEMO] Vendor will have access to sensitive data'] : [],
         },
         {
             category: 'Operational Risk',
             score: isCriticalService ? 55 : 30,
-            findings: [`Services: ${vendor.services?.join(', ') || 'Not specified'}`],
-            concerns: isCriticalService ? ['Critical service dependency'] : [],
+            findings: [`[DEMO] Services: ${vendor.services?.join(', ') || 'Not specified'}`],
+            concerns: isCriticalService ? ['[DEMO] Critical service dependency'] : [],
         },
         {
             category: 'Historical Performance',
             score: hasPreviousIncidents ? 80 : 20,
             findings: hasPreviousIncidents
-                ? assessmentData?.previousIncidents || []
-                : ['No known security incidents'],
-            concerns: hasPreviousIncidents ? ['Previous security incidents on record'] : [],
+                ? (assessmentData?.previousIncidents || []).map((i) => `[DEMO] ${i}`)
+                : ['[DEMO] No known security incidents'],
+            concerns: hasPreviousIncidents ? ['[DEMO] Previous security incidents on record'] : [],
         },
     ];
     return {
@@ -170,6 +175,8 @@ function generateMockAssessment(vendor, assessmentData, riskAppetite) {
             },
         ],
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        isMockMode: true,
+        mockModeReason: mockReason,
     };
 }
 //# sourceMappingURL=vendor-risk-assessor.js.map

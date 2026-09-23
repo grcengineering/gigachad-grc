@@ -9,7 +9,7 @@ export interface QueueModuleOptions {
    * Default: redis://localhost:6379
    */
   redisUrl?: string;
-  
+
   /**
    * Default job options
    */
@@ -26,7 +26,7 @@ export interface QueueModuleOptions {
 
 /**
  * Queue Module for background job processing using BullMQ.
- * 
+ *
  * Features:
  * - Durable job persistence (Redis-backed)
  * - Automatic retries with exponential backoff
@@ -34,19 +34,19 @@ export interface QueueModuleOptions {
  * - Delayed jobs (scheduling)
  * - Job progress tracking
  * - Dead letter queue for failed jobs
- * 
+ *
  * Usage:
- * 
+ *
  * 1. Import the module:
  *    QueueModule.forRoot({ redisUrl: process.env.REDIS_URL })
- * 
+ *
  * 2. Inject QueueService and add jobs:
  *    await this.queueService.addJob('notifications', 'send-digest', { userId: '123' });
- * 
+ *
  * 3. Process jobs by extending JobProcessor
- * 
- * Note: Requires Redis to be running. Falls back to in-memory processing
- * if Redis is unavailable (not recommended for production).
+ *
+ * Note: Requires Redis to be running. Job submission fails closed when Redis
+ * is unavailable so callers never receive a synthetic success response.
  */
 @Global()
 @Module({})
@@ -61,10 +61,11 @@ export class QueueModule {
         {
           provide: 'QUEUE_OPTIONS',
           useFactory: (configService: ConfigService) => {
-            const redisUrl = options?.redisUrl 
-              || configService.get<string>('REDIS_URL') 
-              || 'redis://localhost:6379';
-            
+            const redisUrl =
+              options?.redisUrl ||
+              configService.get<string>('REDIS_URL') ||
+              'redis://localhost:6379';
+
             return {
               redisUrl,
               defaultJobOptions: options?.defaultJobOptions || {
@@ -74,7 +75,7 @@ export class QueueModule {
                   delay: 1000,
                 },
                 removeOnComplete: 100, // Keep last 100 completed jobs
-                removeOnFail: 500,     // Keep last 500 failed jobs
+                removeOnFail: 500, // Keep last 500 failed jobs
               },
             };
           },
@@ -107,4 +108,3 @@ export class QueueModule {
     };
   }
 }
-

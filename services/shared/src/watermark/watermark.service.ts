@@ -1,11 +1,12 @@
 /**
  * Watermark Service
- * 
+ *
  * Adds watermarks to PDFs and images for secure document sharing.
  * Used primarily for the auditor portal to track document access.
  */
 
-import PDFDocument from 'pdfkit';
+import PDFKitDocument from 'pdfkit';
+import { PDFDocument as PDFLibDocument, StandardFonts, degrees, rgb, type RGB } from 'pdf-lib';
 import { Writable } from 'stream';
 
 export interface WatermarkOptions {
@@ -25,62 +26,103 @@ export interface WatermarkResult {
 }
 
 /**
- * Add watermark to a PDF document
- * 
- * Note: Full PDF watermarking requires pdf-lib for modifying existing PDFs.
- * This implementation creates a wrapper page with watermark for simple cases.
- * For production, consider using pdf-lib to overlay watermark on each page.
+ * Add a visible watermark and access metadata to every page while preserving
+ * the original PDF content and page count.
  */
 export async function watermarkPdf(
   pdfBuffer: Buffer,
-  options: WatermarkOptions,
+  options: WatermarkOptions
 ): Promise<WatermarkResult> {
-  // For full PDF watermarking, we would use pdf-lib
-  // This is a simplified implementation that adds a cover page with watermark info
-  // In production, integrate pdf-lib to add watermarks to each page
-  
-  const doc = new PDFDocument({ size: 'A4' });
-  const chunks: Buffer[] = [];
+  const document = await PDFLibDocument.load(pdfBuffer);
+  const font = await document.embedFont(StandardFonts.Helvetica);
+  const {
+    fontSize = 48,
+    opacity = 0.15,
+    color = '#000000',
+    rotation = -45,
+    position = 'diagonal',
+    includeTimestamp = true,
+    includeIpAddress,
+  } = options;
+  const watermarkText = toPdfText(options.text);
+  const metadata = [
+    includeTimestamp ? `Accessed: ${new Date().toISOString()}` : '',
+    includeIpAddress ? `IP: ${includeIpAddress}` : '',
+  ]
+    .filter(Boolean)
+    .join(' | ');
+  const pdfColor = parsePdfColor(color);
 
-  const writeStream = new Writable({
-    write(chunk, encoding, callback) {
-      chunks.push(chunk);
-      callback();
-    },
-  });
+  for (const page of document.getPages()) {
+    const { width, height } = page.getSize();
+    const textWidth = font.widthOfTextAtSize(watermarkText, fontSize);
+    const common = {
+      size: fontSize,
+      font,
+      color: pdfColor,
+      opacity: clamp(opacity, 0, 1),
+    };
 
-  return new Promise((resolve, reject) => {
-    writeStream.on('finish', () => {
-      resolve({
-        buffer: Buffer.concat(chunks),
-        contentType: 'application/pdf',
+    if (position === 'header' || position === 'footer') {
+      const edgeSize = Math.min(fontSize, 14);
+      page.drawText(watermarkText, {
+        ...common,
+        size: edgeSize,
+        x: 36,
+        y: position === 'header' ? height - edgeSize - 24 : 24,
+        opacity: Math.max(common.opacity, 0.35),
       });
-    });
-
-    writeStream.on('error', reject);
-    doc.pipe(writeStream);
-
-    // Add watermark info page
-    addWatermarkPage(doc, options);
-
-    // Note: In a full implementation, we would:
-    // 1. Parse the original PDF with pdf-lib
-    // 2. Add watermark to each page
-    // 3. Return the modified PDF
-    // For now, we just add the original buffer info
-    doc.addPage();
-    doc.fontSize(10).fillColor('#666666');
-    doc.text('This document is watermarked. The watermark information is on the first page.', 50, 50);
-    doc.text(`Watermark: ${options.text}`, 50, 70);
-    if (options.includeTimestamp) {
-      doc.text(`Accessed: ${new Date().toISOString()}`, 50, 90);
-    }
-    if (options.includeIpAddress) {
-      doc.text(`IP Address: ${options.includeIpAddress}`, 50, 110);
+    } else {
+      page.drawText(watermarkText, {
+        ...common,
+        x: Math.max(24, (width - textWidth) / 2),
+        y: height / 2,
+        rotate: position === 'diagonal' ? degrees(rotation) : undefined,
+      });
     }
 
-    doc.end();
-  });
+    if (metadata) {
+      page.drawText(toPdfText(metadata), {
+        size: 8,
+        font,
+        color: pdfColor,
+        opacity: Math.max(clamp(opacity, 0, 1), 0.35),
+        x: 36,
+        y: 10,
+      });
+    }
+  }
+
+  const bytes = await document.save();
+  return {
+    buffer: Buffer.from(bytes),
+    contentType: 'application/pdf',
+  };
+}
+
+function clamp(value: number, minimum: number, maximum: number): number {
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
+function parsePdfColor(value: string): RGB {
+  const normalized = value.trim().replace(/^#/, '');
+  const expanded =
+    normalized.length === 3
+      ? normalized
+          .split('')
+          .map((character) => character.repeat(2))
+          .join('')
+      : normalized;
+  if (!/^[0-9a-f]{6}$/i.test(expanded)) return rgb(0, 0, 0);
+  return rgb(
+    parseInt(expanded.slice(0, 2), 16) / 255,
+    parseInt(expanded.slice(2, 4), 16) / 255,
+    parseInt(expanded.slice(4, 6), 16) / 255
+  );
+}
+
+function toPdfText(value: string): string {
+  return value.replace(/[^\x20-\x7e\xa0-\xff]/g, '?');
 }
 
 /**
@@ -128,11 +170,11 @@ function addWatermarkPage(doc: PDFKit.PDFDocument, options: WatermarkOptions): v
   // Add timestamp and IP if requested
   doc.fillOpacity(0.3);
   doc.fontSize(8);
-  
+
   if (includeTimestamp) {
     doc.text(`Generated: ${new Date().toISOString()}`, 50, pageHeight - 30);
   }
-  
+
   if (includeIpAddress) {
     doc.text(`Access IP: ${includeIpAddress}`, 50, pageHeight - 20);
   }
@@ -146,7 +188,7 @@ function addWatermarkPage(doc: PDFKit.PDFDocument, options: WatermarkOptions): v
 export function generateWatermarkText(
   auditorName: string,
   auditorEmail: string,
-  auditName?: string,
+  auditName?: string
 ): string {
   const parts = [auditorName, auditorEmail];
   if (auditName) {
@@ -161,9 +203,9 @@ export function generateWatermarkText(
  */
 export async function createWatermarkCoverPage(
   originalFileName: string,
-  options: WatermarkOptions,
+  options: WatermarkOptions
 ): Promise<Buffer> {
-  const doc = new PDFDocument({ size: 'A4' });
+  const doc = new PDFKitDocument({ size: 'A4' });
   const chunks: Buffer[] = [];
 
   const writeStream = new Writable({
@@ -225,7 +267,7 @@ export async function createWatermarkCoverPage(
       'This document contains confidential information and is intended solely for the use of the individual or entity to whom it is addressed. Unauthorized review, use, disclosure, or distribution is prohibited.',
       70,
       405,
-      { width: 460 },
+      { width: 460 }
     );
 
     // Add diagonal watermark
@@ -248,7 +290,7 @@ export function supportsDirectWatermark(mimeType: string): boolean {
 export function getDefaultWatermarkOptions(
   auditorName: string,
   auditorEmail: string,
-  ipAddress?: string,
+  ipAddress?: string
 ): WatermarkOptions {
   return {
     text: generateWatermarkText(auditorName, auditorEmail),

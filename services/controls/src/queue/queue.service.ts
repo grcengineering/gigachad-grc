@@ -1,4 +1,11 @@
-import { Injectable, Logger, Inject, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  Inject,
+  OnModuleInit,
+  OnModuleDestroy,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { Queue, Worker, Job, QueueEvents, JobsOptions } from 'bullmq';
 import { Counter, Histogram } from 'prom-client';
 
@@ -63,7 +70,6 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
   private workers: Map<string, Worker> = new Map();
   private queueEvents: Map<string, QueueEvents> = new Map();
   private isRedisAvailable = false;
-  private inMemoryJobs: Map<string, JobData[]> = new Map();
   private dlqQueue: Queue | null = null;
 
   private jobsProcessedCounter?: Counter<string>;
@@ -150,7 +156,7 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
 
       this.logger.warn(
         `Redis not available at ${this.options.redisUrl}. ` +
-          `Falling back to in-memory job inspection for development only. Jobs will not be processed.`
+          `Background job submission is disabled until Redis is available.`
       );
     }
   }
@@ -173,8 +179,9 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
   private getOrCreateQueue(name: string): Queue {
     if (!this.queues.has(name)) {
       if (!this.isRedisAvailable) {
-        // Return a mock queue for in-memory processing
-        return this.createMockQueue(name);
+        throw new ServiceUnavailableException(
+          `Background queue "${name}" is unavailable because Redis is not connected`
+        );
       }
 
       const connection = this.parseRedisUrl(this.options.redisUrl);
@@ -258,31 +265,6 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
     } catch (error) {
       this.logger.error(`Failed to move job ${jobId} to DLQ:`, error);
     }
-  }
-
-  /**
-   * Create a mock queue for in-memory processing when Redis is unavailable
-   */
-  private createMockQueue(name: string): Queue {
-    if (!this.inMemoryJobs.has(name)) {
-      this.inMemoryJobs.set(name, []);
-    }
-    // Return a proxy that mimics Queue interface
-    return {
-      add: async (jobName: string, data: JobData) => {
-        this.inMemoryJobs.get(name)!.push({ jobName, ...data });
-        this.logger.debug(`In-memory job added to ${name}: ${jobName}`);
-        return { id: `inmem-${Date.now()}`, name: jobName, data };
-      },
-      getJobCounts: async () => ({
-        waiting: this.inMemoryJobs.get(name)?.length || 0,
-        active: 0,
-        completed: 0,
-        failed: 0,
-        delayed: 0,
-      }),
-      close: async () => {},
-    } as unknown as Queue;
   }
 
   /**

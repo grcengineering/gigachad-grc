@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, NotImplementedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { ResourceMapper } from './resources/resource-mapper';
@@ -11,10 +11,7 @@ import {
   ConfigFormat,
   ResourceType,
 } from './dto/export-config.dto';
-import {
-  ImportConfigDto,
-  ImportConfigResponseDto,
-} from './dto/import-config.dto';
+import { ImportConfigDto, ImportConfigResponseDto } from './dto/import-config.dto';
 import { Exporter } from './exporters/exporter.interface';
 
 @Injectable()
@@ -27,7 +24,7 @@ export class ConfigAsCodeService {
     private readonly resourceMapper: ResourceMapper,
     private readonly yamlExporter: YamlExporter,
     private readonly jsonExporter: JsonExporter,
-    private readonly terraformExporter: TerraformExporter,
+    private readonly terraformExporter: TerraformExporter
   ) {}
 
   /**
@@ -36,7 +33,7 @@ export class ConfigAsCodeService {
   async exportConfig(
     organizationId: string,
     userId: string,
-    dto: ExportConfigDto,
+    dto: ExportConfigDto
   ): Promise<ExportConfigResponseDto> {
     this.logger.log(`Exporting config for organization ${organizationId} in format ${dto.format}`);
 
@@ -47,7 +44,7 @@ export class ConfigAsCodeService {
     const resourceData = await this.resourceMapper.mapResources(
       organizationId,
       resourceTypes,
-      dto.workspaceId,
+      dto.workspaceId
     );
 
     // Get exporter for the requested format
@@ -96,40 +93,13 @@ export class ConfigAsCodeService {
    * Import configuration and apply changes
    */
   async importConfig(
-    organizationId: string,
-    userId: string,
-    dto: ImportConfigDto,
+    _organizationId: string,
+    _userId: string,
+    dto: ImportConfigDto
   ): Promise<ImportConfigResponseDto> {
-    this.logger.log(`Importing config for organization ${organizationId} in format ${dto.format}`);
-
-    // For now, return a placeholder response
-    // Full import implementation will be added in Phase 2
-    const response: ImportConfigResponseDto = {
-      total: 0,
-      created: 0,
-      updated: 0,
-      skipped: 0,
-      deleted: 0,
-      errors: 0,
-      errorDetails: [],
-      dryRun: dto.dryRun || false,
-    };
-
-    // Audit log
-    await this.auditService.log({
-      organizationId,
-      userId,
-      action: 'import',
-      entityType: 'config_as_code',
-      entityId: 'import',
-      description: `Imported GRC configuration in ${dto.format} format (dryRun: ${dto.dryRun})`,
-      metadata: {
-        format: dto.format,
-        dryRun: dto.dryRun,
-      },
-    });
-
-    return response;
+    throw new NotImplementedException(
+      `Generic ${dto.format} import is not supported. Use the validated /api/config-as-code/files preview and apply workflow.`
+    );
   }
 
   /**
@@ -148,4 +118,3 @@ export class ConfigAsCodeService {
     }
   }
 }
-

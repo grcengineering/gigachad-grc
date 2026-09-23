@@ -1,4 +1,5 @@
 import * as path from 'path';
+import { useExplicitDemoFallback } from '../demo-mode.js';
 
 interface GoogleWorkspaceEvidenceParams {
   checks?: string[];
@@ -210,9 +211,9 @@ export async function collectGoogleWorkspaceEvidence(
   const customerId = process.env.GOOGLE_CUSTOMER_ID || 'my_customer';
 
   if (!serviceAccountKey || !adminEmail) {
-    console.warn('Google Workspace credentials not configured - running in demo mode');
-
-    return {
+    const reason =
+      'Google Workspace credentials not configured. Set GOOGLE_SERVICE_ACCOUNT_KEY and GOOGLE_ADMIN_EMAIL.';
+    return useExplicitDemoFallback(reason, () => ({
       service: 'google_workspace',
       collectedAt: new Date().toISOString(),
       findings: getDemoFindings(checks),
@@ -222,20 +223,20 @@ export async function collectGoogleWorkspaceEvidence(
         warnings: 0,
       },
       isMockMode: true,
-      mockModeReason:
-        'Google Workspace credentials not configured. Set GOOGLE_SERVICE_ACCOUNT_KEY (JSON string or path), GOOGLE_ADMIN_EMAIL (delegated admin), and optionally GOOGLE_CUSTOMER_ID.',
+      mockModeReason: reason,
       requiredCredentials: [
         'GOOGLE_SERVICE_ACCOUNT_KEY',
         'GOOGLE_ADMIN_EMAIL',
         'GOOGLE_CUSTOMER_ID (optional)',
       ],
-    };
+    }));
   }
 
   // Load Google APIs
   const apis = await loadGoogleAPIs();
   if (!apis) {
-    return {
+    const reason = 'googleapis package not installed. Run: npm install googleapis';
+    return useExplicitDemoFallback(reason, () => ({
       service: 'google_workspace',
       collectedAt: new Date().toISOString(),
       findings: getDemoFindings(checks),
@@ -245,9 +246,9 @@ export async function collectGoogleWorkspaceEvidence(
         warnings: 0,
       },
       isMockMode: true,
-      mockModeReason: 'googleapis package not installed. Run: npm install googleapis',
+      mockModeReason: reason,
       requiredCredentials: ['googleapis npm package'],
-    };
+    }));
   }
 
   try {
@@ -349,7 +350,10 @@ export async function collectGoogleWorkspaceEvidence(
     };
   } catch (error) {
     console.error('Google Workspace evidence collection failed:', error);
-    return {
+    const reason = `Google Workspace API error: ${
+      error instanceof Error ? error.message : String(error)
+    }`;
+    return useExplicitDemoFallback(reason, () => ({
       service: 'google_workspace',
       collectedAt: new Date().toISOString(),
       findings: [
@@ -365,8 +369,8 @@ export async function collectGoogleWorkspaceEvidence(
         warnings: 0,
       },
       isMockMode: true,
-      mockModeReason: `API Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-    };
+      mockModeReason: reason,
+    }));
   }
 }
 

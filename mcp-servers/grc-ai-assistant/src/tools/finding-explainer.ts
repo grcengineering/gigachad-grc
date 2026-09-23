@@ -1,4 +1,5 @@
 import { aiClient } from './ai-client.js';
+import { useExplicitDemoFallback } from '../demo-mode.js';
 
 interface FindingExplainerParams {
   finding: {
@@ -47,13 +48,16 @@ export async function explainFinding(params: FindingExplainerParams): Promise<Fi
   const { finding, audience = 'general', includeRemediation = true } = params;
 
   if (!aiClient.isConfigured()) {
-    return generateMockExplanation(finding, audience, includeRemediation);
+    return useExplicitDemoFallback('AI service is not configured', () =>
+      generateMockExplanation(finding, audience, includeRemediation)
+    );
   }
 
   const audienceContext = {
     technical: 'Use technical terminology, include specific system details and configurations',
     executive: 'Focus on business impact, risk, and strategic implications. Avoid jargon.',
-    auditor: 'Include compliance framework references, evidence requirements, and control objectives',
+    auditor:
+      'Include compliance framework references, evidence requirements, and control objectives',
     general: 'Use clear, simple language accessible to non-technical stakeholders',
   };
 
@@ -74,9 +78,14 @@ Return JSON:
 }`;
 
   try {
-    const result = await aiClient.completeJSON<Omit<FindingExplanation, 'findingTitle' | 'explainedAt' | 'audience'>>([
+    const result = await aiClient.completeJSON<
+      Omit<FindingExplanation, 'findingTitle' | 'explainedAt' | 'audience'>
+    >([
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: `Explain this finding:\nTitle: ${finding.title}\nDescription: ${finding.description}\nSeverity: ${finding.severity || 'Unknown'}\nFramework: ${finding.framework || 'N/A'}\nControl Reference: ${finding.controlReference || 'N/A'}` },
+      {
+        role: 'user',
+        content: `Explain this finding:\nTitle: ${finding.title}\nDescription: ${finding.description}\nSeverity: ${finding.severity || 'Unknown'}\nFramework: ${finding.framework || 'N/A'}\nControl Reference: ${finding.controlReference || 'N/A'}`,
+      },
     ]);
 
     return {
@@ -85,8 +94,11 @@ Return JSON:
       audience,
       ...result,
     };
-  } catch {
-    return generateMockExplanation(finding, audience, includeRemediation);
+  } catch (error) {
+    return useExplicitDemoFallback(
+      `AI finding explanation failed: ${error instanceof Error ? error.message : String(error)}`,
+      () => generateMockExplanation(finding, audience, includeRemediation)
+    );
   }
 }
 
@@ -96,7 +108,7 @@ function generateMockExplanation(
   includeRemediation: boolean
 ): FindingExplanation {
   const severityLevel = finding.severity?.toLowerCase() || 'medium';
-  
+
   const summaries: Record<string, string> = {
     technical: `Technical security gap identified in ${finding.controlReference || 'system controls'}: ${finding.title}`,
     executive: `Business risk identified: ${finding.title} requires attention to maintain security posture and compliance`,
@@ -112,7 +124,12 @@ function generateMockExplanation(
   };
 
   const impactStatements: Record<string, string[]> = {
-    high: ['Data breach potential', 'Regulatory non-compliance', 'Financial loss', 'Reputational damage'],
+    high: [
+      'Data breach potential',
+      'Regulatory non-compliance',
+      'Financial loss',
+      'Reputational damage',
+    ],
     medium: ['Increased vulnerability', 'Compliance gaps', 'Operational inefficiency'],
     low: ['Minor security gap', 'Documentation deficiency', 'Process improvement opportunity'],
   };
@@ -126,7 +143,8 @@ function generateMockExplanation(
     businessImpact: `If not addressed, this finding could result in ${impactStatements[severityLevel]?.slice(0, 2).join(' and ').toLowerCase() || 'security gaps'}. The ${severityLevel} severity level indicates ${severityLevel === 'high' ? 'urgent attention is required' : severityLevel === 'medium' ? 'timely remediation is recommended' : 'remediation should be planned'}.`,
     riskAssessment: {
       severity: finding.severity || 'Medium',
-      likelihood: severityLevel === 'high' ? 'Likely' : severityLevel === 'medium' ? 'Possible' : 'Unlikely',
+      likelihood:
+        severityLevel === 'high' ? 'Likely' : severityLevel === 'medium' ? 'Possible' : 'Unlikely',
       potentialImpact: impactStatements[severityLevel] || impactStatements.medium,
     },
     relatedControls: [
@@ -149,20 +167,47 @@ function generateMockExplanation(
     result.remediation = {
       overview: `Address this finding by implementing the recommended controls and verifying their effectiveness through testing.`,
       steps: [
-        { step: 1, action: 'Assess current state and document gaps', responsible: 'Security Team', timeline: 'Week 1' },
-        { step: 2, action: 'Develop remediation plan', responsible: 'Security Manager', timeline: 'Week 1-2' },
-        { step: 3, action: 'Implement technical controls', responsible: 'IT Operations', timeline: 'Week 2-4' },
-        { step: 4, action: 'Test and validate remediation', responsible: 'Security Team', timeline: 'Week 4-5' },
-        { step: 5, action: 'Document evidence and close finding', responsible: 'GRC Team', timeline: 'Week 5' },
+        {
+          step: 1,
+          action: 'Assess current state and document gaps',
+          responsible: 'Security Team',
+          timeline: 'Week 1',
+        },
+        {
+          step: 2,
+          action: 'Develop remediation plan',
+          responsible: 'Security Manager',
+          timeline: 'Week 1-2',
+        },
+        {
+          step: 3,
+          action: 'Implement technical controls',
+          responsible: 'IT Operations',
+          timeline: 'Week 2-4',
+        },
+        {
+          step: 4,
+          action: 'Test and validate remediation',
+          responsible: 'Security Team',
+          timeline: 'Week 4-5',
+        },
+        {
+          step: 5,
+          action: 'Document evidence and close finding',
+          responsible: 'GRC Team',
+          timeline: 'Week 5',
+        },
       ],
-      estimatedEffort: severityLevel === 'high' ? '4-6 weeks' : severityLevel === 'medium' ? '2-4 weeks' : '1-2 weeks',
-      priority: severityLevel === 'high' ? 'Critical' : severityLevel === 'medium' ? 'High' : 'Medium',
+      estimatedEffort:
+        severityLevel === 'high'
+          ? '4-6 weeks'
+          : severityLevel === 'medium'
+            ? '2-4 weeks'
+            : '1-2 weeks',
+      priority:
+        severityLevel === 'high' ? 'Critical' : severityLevel === 'medium' ? 'High' : 'Medium',
     };
   }
 
   return result;
 }
-
-
-
-

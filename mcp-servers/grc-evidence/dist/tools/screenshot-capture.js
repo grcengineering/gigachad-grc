@@ -1,5 +1,50 @@
+import { useExplicitDemoFallback } from '../demo-mode.js';
+/**
+ * SSRF Protection: Validates that a URL is safe to navigate to.
+ * Blocks private IPs, localhost, and non-HTTP(S) protocols.
+ */
+function isValidPublicUrl(url) {
+    try {
+        const parsed = new URL(url);
+        // Only allow http and https protocols
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+            return false;
+        }
+        const hostname = parsed.hostname.toLowerCase();
+        // Block localhost variants
+        if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+            return false;
+        }
+        // Block 0.0.0.0
+        if (hostname === '0.0.0.0') {
+            return false;
+        }
+        // Block private IP ranges:
+        // - 10.0.0.0/8 (10.x.x.x)
+        // - 172.16.0.0/12 (172.16.x.x - 172.31.x.x)
+        // - 192.168.0.0/16 (192.168.x.x)
+        // - 127.0.0.0/8 (127.x.x.x)
+        // - 169.254.0.0/16 (link-local)
+        if (/^(10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|192\.168\.|127\.|169\.254\.)/.test(hostname)) {
+            return false;
+        }
+        // Block IPv6 private/local addresses
+        // Covers ::1, fe80::, fc00::, fd00::, etc.
+        if (/^(::1|fe80:|fc00:|fd00:|::ffff:(10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|192\.168\.|127\.|169\.254\.))/.test(hostname)) {
+            return false;
+        }
+        // Block metadata service endpoints (cloud provider SSRF targets)
+        if (hostname === '169.254.169.254' || hostname === 'metadata.google.internal') {
+            return false;
+        }
+        return true;
+    }
+    catch {
+        return false;
+    }
+}
 export async function captureScreenshot(params) {
-    const { url, selector, waitForSelector, fullPage = false, authentication, } = params;
+    const { url, selector, waitForSelector, fullPage = false, authentication } = params;
     const startTime = Date.now();
     try {
         // Dynamically import puppeteer to avoid loading it if not needed
@@ -29,7 +74,7 @@ export async function captureScreenshot(params) {
                             Authorization: `Bearer ${authentication.credentials.token}`,
                         });
                         break;
-                    case 'cookie':
+                    case 'cookie': {
                         const cookies = Object.entries(authentication.credentials).map(([name, value]) => ({
                             name,
                             value,
@@ -37,7 +82,13 @@ export async function captureScreenshot(params) {
                         }));
                         await page.setCookie(...cookies);
                         break;
+                    }
                 }
+            }
+            // SSRF Protection: Validate URL before navigation
+            if (!isValidPublicUrl(url)) {
+                throw new Error('Invalid URL: Only public HTTP/HTTPS URLs are allowed. ' +
+                    'Private IPs, localhost, and internal endpoints are blocked for security.');
             }
             // Navigate to URL
             const response = await page.goto(url, {
@@ -59,15 +110,15 @@ export async function captureScreenshot(params) {
                 if (!element) {
                     throw new Error(`Element not found: ${selector}`);
                 }
-                screenshotBuffer = await element.screenshot({
+                screenshotBuffer = (await element.screenshot({
                     type: 'png',
-                });
+                }));
             }
             else {
-                screenshotBuffer = await page.screenshot({
+                screenshotBuffer = (await page.screenshot({
                     type: 'png',
                     fullPage,
-                });
+                }));
             }
             const captureTime = Date.now() - startTime;
             // Get viewport dimensions
@@ -97,12 +148,14 @@ export async function captureScreenshot(params) {
         }
     }
     catch (error) {
-        // Puppeteer not available or failed, return placeholder
-        return {
+        const reason = `Screenshot capture failed: ${error instanceof Error ? error.message : String(error)}`;
+        return useExplicitDemoFallback(reason, () => ({
             type: 'screenshot',
             url,
             collectedAt: new Date().toISOString(),
-            screenshot: '', // Empty screenshot
+            screenshot: '',
+            isMockMode: true,
+            mockModeReason: reason,
             metadata: {
                 width: 0,
                 height: 0,
@@ -115,7 +168,7 @@ export async function captureScreenshot(params) {
                 statusCode: 0,
                 loadTime: 0,
             },
-        };
+        }));
     }
 }
 //# sourceMappingURL=screenshot-capture.js.map

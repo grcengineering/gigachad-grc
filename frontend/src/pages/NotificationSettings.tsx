@@ -406,8 +406,8 @@ export default function NotificationSettings() {
               <div>
                 <h4 className="text-amber-700 font-medium">Email Notifications</h4>
                 <p className="text-surface-500 text-sm mt-1">
-                  Email notifications are currently in placeholder mode. Configure your email
-                  provider in the settings to enable email delivery.
+                  Preferences are saved immediately. Email delivery runs only after an administrator
+                  configures and verifies SMTP, SendGrid, or Amazon SES for your organization.
                 </p>
               </div>
             </div>

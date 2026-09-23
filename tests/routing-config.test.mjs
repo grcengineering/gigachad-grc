@@ -106,7 +106,22 @@ test('proxies API requests before the nginx SPA fallback', () => {
   assert.notEqual(apiLocation, -1);
   assert.notEqual(spaLocation, -1);
   assert.ok(apiLocation < spaLocation, 'nginx API fallback must precede the SPA fallback');
-  assert.match(nginx.slice(apiLocation, spaLocation), /proxy_pass http:\/\/controls:3001/);
+  assert.match(nginx.slice(apiLocation, spaLocation), /proxy_pass \$controls_upstream/);
+  for (const [service, port] of [
+    ['controls', 3001],
+    ['frameworks', 3002],
+    ['policies', 3004],
+    ['tprm', 3005],
+    ['trust', 3006],
+    ['audit', 3007],
+  ]) {
+    assert.match(
+      nginx,
+      new RegExp(`set \\$${service}_upstream http://${service}:${port}`),
+      `nginx direct access must route ${service} APIs to their owning service`
+    );
+  }
+  assert.match(nginx, /resolver 127\.0\.0\.11 valid=10s/);
 });
 
 test('keeps Vite service proxies ahead of its controls fallback', () => {

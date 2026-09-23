@@ -27,6 +27,8 @@ interface VendorRiskAssessmentResult {
     contractualRequirements: string[];
     monitoringRequirements: MonitoringRequirement[];
     dueDate: string;
+    isMockMode?: boolean;
+    mockModeReason?: string;
 }
 interface RiskCategory {
     category: string;

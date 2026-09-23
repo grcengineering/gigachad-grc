@@ -1,5 +1,6 @@
 import { DefaultAzureCredential } from '@azure/identity';
 import { ResourceManagementClient } from '@azure/arm-resources';
+import { useExplicitDemoFallback } from '../demo-mode.js';
 export async function collectAzureEvidence(params) {
     const { subscriptionId, resourceTypes = ['security-center', 'key-vault', 'network', 'storage'] } = params;
     const findings = [];
@@ -85,7 +86,10 @@ export async function collectAzureEvidence(params) {
             errorMessage.includes('authentication') ||
             errorMessage.includes('AZURE_');
         console.warn(`Azure evidence collection failed: ${errorMessage}`);
-        return {
+        const reason = isAuthError
+            ? 'Azure credentials not configured. Set AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, and AZURE_TENANT_ID, or use managed identity.'
+            : `Azure evidence collection failed: ${errorMessage}`;
+        return useExplicitDemoFallback(reason, () => ({
             service: 'azure',
             collectedAt: new Date().toISOString(),
             subscriptionId,
@@ -96,13 +100,11 @@ export async function collectAzureEvidence(params) {
                 nonCompliantResources: 0,
             },
             isMockMode: true,
-            mockModeReason: isAuthError
-                ? 'Azure credentials not configured. Set AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, and AZURE_TENANT_ID environment variables, or run on Azure with managed identity.'
-                : `Azure evidence collection failed: ${errorMessage}`,
+            mockModeReason: reason,
             requiredCredentials: isAuthError
                 ? ['AZURE_CLIENT_ID', 'AZURE_CLIENT_SECRET', 'AZURE_TENANT_ID']
                 : undefined,
-        };
+        }));
     }
 }
 async function collectSecurityCenterEvidence(credential, subscriptionId) {
@@ -158,7 +160,8 @@ async function collectSecurityCenterEvidence(credential, subscriptionId) {
                     timeGenerated: alert.timeGeneratedUtc,
                     description: alert.description,
                 });
-                if (alert.status === 'Active' && (alert.severity === 'High' || alert.severity === 'Medium')) {
+                if (alert.status === 'Active' &&
+                    (alert.severity === 'High' || alert.severity === 'Medium')) {
                     nonCompliant++;
                 }
             }
@@ -180,10 +183,13 @@ async function collectSecurityCenterEvidence(credential, subscriptionId) {
                     alertCount: alerts.length,
                 },
                 compliance: {
-                    overallScore: secureScores[0] ? secureScores[0].percentage * 100 : 0,
+                    overallScore: secureScores[0]
+                        ? secureScores[0].percentage * 100
+                        : 0,
                     healthyAssessments: assessments.filter((a) => a.status === 'Healthy').length,
                     unhealthyAssessments: assessments.filter((a) => a.status === 'Unhealthy').length,
-                    activeAlerts: alerts.filter((a) => a.status === 'Active').length,
+                    activeAlerts: alerts.filter((a) => a.status === 'Active')
+                        .length,
                 },
             },
             compliant,
@@ -193,8 +199,7 @@ async function collectSecurityCenterEvidence(credential, subscriptionId) {
     catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         const err = error;
-        const isModuleError = err.code === 'MODULE_NOT_FOUND' ||
-            errorMessage.includes('Cannot find module');
+        const isModuleError = err.code === 'MODULE_NOT_FOUND' || errorMessage.includes('Cannot find module');
         console.warn(`Security Center evidence collection: ${isModuleError ? 'SDK not installed' : errorMessage}`);
         return {
             finding: {
@@ -203,12 +208,10 @@ async function collectSecurityCenterEvidence(credential, subscriptionId) {
                 collectedAt: new Date().toISOString(),
                 count: 0,
                 findings: {
-                    secureScore: { current: 0, max: 100, percentage: 0 },
-                    recommendations: [],
-                    alerts: [],
+                    error: errorMessage,
+                    status: 'failed',
                 },
-                isMockMode: true,
-                mockModeReason: isModuleError
+                error: isModuleError
                     ? 'Install @azure/arm-security SDK: npm install @azure/arm-security'
                     : `Security Center collection failed: ${errorMessage}`,
             },
@@ -240,7 +243,6 @@ async function collectKeyVaultEvidence(credential, resourceClient, subscriptionI
         const kvClient = new KeyVaultManagementClient(credential, subscriptionId);
         for await (const vault of kvClient.vaults.list()) {
             const vaultName = vault.name || 'unknown';
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const properties = vault.properties;
             // Check soft delete
             if (properties?.enableSoftDelete) {
@@ -417,11 +419,11 @@ async function collectNetworkEvidence(credential, resourceClient, subscriptionId
                 }
             }
             // Check for SSH/RDP from internet
-            const hasSshFromInternet = rules.some(r => r.access === 'Allow' &&
+            const hasSshFromInternet = rules.some((r) => r.access === 'Allow' &&
                 r.direction === 'Inbound' &&
                 (r.sourceAddressPrefix === '*' || r.sourceAddressPrefix === 'Internet') &&
                 r.destinationPortRange === '22');
-            const hasRdpFromInternet = rules.some(r => r.access === 'Allow' &&
+            const hasRdpFromInternet = rules.some((r) => r.access === 'Allow' &&
                 r.direction === 'Inbound' &&
                 (r.sourceAddressPrefix === '*' || r.sourceAddressPrefix === 'Internet') &&
                 r.destinationPortRange === '3389');

@@ -593,7 +593,7 @@ export default function ContractDetail() {
                   navigate('/contracts');
                 } catch (error) {
                   console.error('Error deleting contract:', error);
-                  alert('Failed to delete contract');
+                  toast.error('Failed to delete contract');
                 }
               }}
             >
