@@ -36,7 +36,8 @@ export interface SecurityHeaders {
 export interface DNSSecurityInfo {
   hasSPF: boolean;
   hasDMARC: boolean;
-  hasDNSSEC: boolean;
+  hasDNSSEC: boolean | null;
+  dnssecStatus: 'validated' | 'unsigned' | 'unknown';
   hasCAA: boolean;
   spfRecord?: string;
   dmarcRecord?: string;
@@ -129,7 +130,7 @@ export interface SecurityScanResult {
   targetUrl: string;
   scannedAt: string;
   status: 'completed' | 'failed' | 'partial';
-  
+
   // Collected Data
   ssl: SSLInfo;
   securityHeaders: SecurityHeaders;
@@ -138,13 +139,13 @@ export interface SecurityScanResult {
   webPresence: WebPresenceInfo;
   compliance: ComplianceIndicators;
   subdomains?: SubdomainScanResult;
-  
+
   // Analysis Results
   categoryScores: CategoryScores;
   overallScore: number;
   riskLevel: 'Critical' | 'High' | 'Medium' | 'Low';
   findings: SecurityFinding[];
-  
+
   // Summary
   summary: string;
   keyRisks: string[];

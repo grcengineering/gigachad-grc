@@ -17,7 +17,8 @@ export class DNSCollector {
     const result: DNSSecurityInfo = {
       hasSPF: false,
       hasDMARC: false,
-      hasDNSSEC: false,
+      hasDNSSEC: null,
+      dnssecStatus: 'unknown',
       hasCAA: false,
     };
 
@@ -38,8 +39,9 @@ export class DNSCollector {
       // Check CAA record
       result.hasCAA = await this.checkCAA(domain);
 
-      // DNSSEC is more complex to check - simplified check
-      result.hasDNSSEC = await this.checkDNSSEC(domain);
+      const dnssec = await this.checkDNSSEC(domain);
+      result.hasDNSSEC = dnssec.hasDNSSEC;
+      result.dnssecStatus = dnssec.status;
     } catch (error) {
       this.logger.warn(`Failed to collect DNS info for ${targetUrl}: ${error.message}`);
     }
@@ -88,12 +90,40 @@ export class DNSCollector {
     }
   }
 
-  private async checkDNSSEC(domain: string): Promise<boolean> {
-    // DNSSEC validation requires DNSKEY record type which is not supported
-    // by Node.js built-in DNS resolver. A full implementation would need
-    // an external library like dns-packet or dig command.
-    // For now, we return false as we cannot verify DNSSEC status.
-    this.logger.debug(`DNSSEC check skipped for ${domain} - requires external tools`);
-    return false;
+  private async checkDNSSEC(
+    domain: string
+  ): Promise<{ hasDNSSEC: boolean | null; status: 'validated' | 'unsigned' | 'unknown' }> {
+    try {
+      const endpoint = new URL('https://cloudflare-dns.com/dns-query');
+      endpoint.searchParams.set('name', domain);
+      endpoint.searchParams.set('type', 'DNSKEY');
+      const response = await fetch(endpoint, {
+        headers: { Accept: 'application/dns-json' },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok) {
+        throw new Error(`DNS-over-HTTPS returned ${response.status}`);
+      }
+
+      const payload = (await response.json()) as {
+        Status?: number;
+        AD?: boolean;
+        Answer?: Array<{ type?: number }>;
+      };
+      if (payload.Status !== 0) {
+        return { hasDNSSEC: null, status: 'unknown' };
+      }
+
+      const hasDnsKey = payload.Answer?.some((answer) => answer.type === 48) === true;
+      const validated = payload.AD === true && hasDnsKey;
+      return {
+        hasDNSSEC: validated,
+        status: validated ? 'validated' : 'unsigned',
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`DNSSEC validation failed for ${domain}: ${message}`);
+      return { hasDNSSEC: null, status: 'unknown' };
+    }
   }
 }

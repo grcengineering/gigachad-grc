@@ -21,7 +21,11 @@ import { STORAGE_PROVIDER, StorageProvider } from '@gigachad-grc/shared';
  * @remarks Using index signature with any to allow flexible access to connector-specific properties
  */
 export interface SyncResult {
-  summary?: { totalRecords?: number };
+  success?: boolean;
+  message?: string;
+  error?: string;
+  errors?: unknown[];
+  summary?: { totalRecords?: number; totalItems?: number };
   computers?: { total?: number; managed?: number; compliant?: number; devices?: unknown[] };
   mobileDevices?: { total?: number; managed?: number };
   suppliers?: { total?: number; items?: unknown[] };
@@ -604,6 +608,11 @@ export class IntegrationsService {
     if (!INTEGRATION_TYPES[dto.type as keyof typeof INTEGRATION_TYPES]) {
       throw new BadRequestException(`Invalid integration type: ${dto.type}`);
     }
+    if (!this.connectorFactory.hasConnector(dto.type)) {
+      throw new BadRequestException(
+        `Integration type "${dto.type}" is not supported by this deployment`
+      );
+    }
 
     // Generate a temporary ID for secrets path (will be replaced with actual ID)
     const tempId = crypto.randomUUID();
@@ -913,10 +922,22 @@ export class IntegrationsService {
 
       // Use the ConnectorFactory to sync all integration types
       const syncResult = (await this.connectorFactory.sync(integration.type, config)) as SyncResult;
+      if (
+        syncResult.success === false ||
+        (typeof syncResult.error === 'string' && syncResult.error.trim()) ||
+        (Array.isArray(syncResult.errors) && syncResult.errors.length > 0)
+      ) {
+        const failure =
+          syncResult.message ||
+          syncResult.error ||
+          syncResult.errors?.map((error) => String(error)).join('; ') ||
+          'Connector reported an unsuccessful sync';
+        throw new Error(failure);
+      }
 
       // Calculate items processed from sync result
       if (syncResult.summary) {
-        itemsProcessed = syncResult.summary.totalRecords || 0;
+        itemsProcessed = syncResult.summary.totalRecords || syncResult.summary.totalItems || 0;
       } else if (syncResult.computers || syncResult.mobileDevices) {
         itemsProcessed =
           (syncResult.computers?.total || 0) + (syncResult.mobileDevices?.total || 0);
@@ -1553,7 +1574,15 @@ export class IntegrationsService {
   }
 
   async getTypeMetadata() {
-    return INTEGRATION_TYPES;
+    return Object.fromEntries(
+      Object.entries(INTEGRATION_TYPES).map(([type, metadata]) => [
+        type,
+        {
+          ...metadata,
+          supported: this.connectorFactory.hasConnector(type),
+        },
+      ])
+    );
   }
 
   // Helper to mask sensitive values in config

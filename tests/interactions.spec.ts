@@ -103,7 +103,7 @@ test.describe('Controls — nested EvidenceDrawer (the bug we just fixed)', () =
       await page.waitForTimeout(250);
     }
 
-    test.skip(!evidenceButton, 'No control with linked evidence in seed data');
+    expect(evidenceButton, 'At least one seeded control must have linked evidence').not.toBeNull();
 
     expect(openedControlTitle.length).toBeGreaterThan(0);
 

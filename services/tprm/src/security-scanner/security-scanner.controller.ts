@@ -23,31 +23,40 @@ export class SecurityScannerController {
     @Body() dto: InitiateSecurityScanDto,
     @CurrentUser() user: UserContext
   ) {
-    return this.securityScannerService.initiateScan(vendorId, dto, user.userId);
+    return this.securityScannerService.initiateScan(
+      vendorId,
+      dto,
+      user.userId,
+      user.organizationId
+    );
   }
 
   /**
    * Get the latest security scan for a vendor
    */
   @Get('latest')
-  async getLatestScan(@Param('vendorId') vendorId: string) {
-    return this.securityScannerService.getLatestScan(vendorId);
+  async getLatestScan(@Param('vendorId') vendorId: string, @CurrentUser() user: UserContext) {
+    return this.securityScannerService.getLatestScan(vendorId, user.organizationId);
   }
 
   /**
    * Get a specific security scan by ID
    */
   @Get(':scanId')
-  async getScanById(@Param('vendorId') vendorId: string, @Param('scanId') scanId: string) {
-    return this.securityScannerService.getScanById(vendorId, scanId);
+  async getScanById(
+    @Param('vendorId') vendorId: string,
+    @Param('scanId') scanId: string,
+    @CurrentUser() user: UserContext
+  ) {
+    return this.securityScannerService.getScanById(vendorId, scanId, user.organizationId);
   }
 
   /**
    * Get all security scans for a vendor
    */
   @Get('history')
-  async getScanHistory(@Param('vendorId') vendorId: string) {
-    return this.securityScannerService.getScanHistory(vendorId);
+  async getScanHistory(@Param('vendorId') vendorId: string, @CurrentUser() user: UserContext) {
+    return this.securityScannerService.getScanHistory(vendorId, user.organizationId);
   }
 
   /**
@@ -55,7 +64,13 @@ export class SecurityScannerController {
    */
   @Post('crawl-subdomain')
   @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
-  async crawlSubdomain(@Param('vendorId') vendorId: string, @Body() dto: { subdomain: string }) {
+  async crawlSubdomain(
+    @Param('vendorId') vendorId: string,
+    @Body() dto: { subdomain: string },
+    @CurrentUser() user: UserContext
+  ) {
+    await this.securityScannerService.verifyVendorAccess(vendorId, user.organizationId);
+
     // SSRF Protection: Validate the URL before crawling
     // This prevents requests to internal networks, localhost, and private IP ranges
     const targetUrl = dto.subdomain.startsWith('http') ? dto.subdomain : `https://${dto.subdomain}`;

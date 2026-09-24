@@ -1,4 +1,12 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy, Inject, forwardRef, Optional } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  OnModuleDestroy,
+  Inject,
+  forwardRef,
+  Optional,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JobsService } from './jobs.service';
 import { CollectorsService } from '../collectors/collectors.service';
@@ -13,14 +21,10 @@ import { RetentionService } from '../retention/retention.service';
 import { RetentionPolicyStatus } from '../retention/dto/retention.dto';
 import { WebhooksService } from '../webhooks/webhooks.service';
 import { SessionService } from '../auth/session.service';
+import { ScheduledReportsService } from '../scheduled-reports/scheduled-reports.service';
 
-/**
- * Job execution result with mock mode indicator
- */
 interface JobResult {
   status: string;
-  isMockMode?: boolean;
-  mockModeReason?: string;
   [key: string]: any;
 }
 
@@ -34,8 +38,8 @@ interface JobResult {
  * 3. Handles delayed/retry jobs
  * 4. Provides crash-resilient scheduling
  *
- * When external services are not configured, jobs run in demo mode
- * with clear warnings logged.
+ * Missing dependencies and external delivery failures are surfaced as failed
+ * jobs; the scheduler never reports simulated work as completed.
  */
 @Injectable()
 export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
@@ -51,28 +55,42 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jobsService: JobsService,
-    @Optional() @Inject(forwardRef(() => CollectorsService))
+    @Optional()
+    @Inject(forwardRef(() => CollectorsService))
     private readonly collectorsService: CollectorsService | null,
-    @Optional() @Inject(forwardRef(() => EmailService))
+    @Optional()
+    @Inject(forwardRef(() => EmailService))
     private readonly emailService: EmailService | null,
-    @Optional() @Inject(forwardRef(() => NotificationsService))
+    @Optional()
+    @Inject(forwardRef(() => NotificationsService))
     private readonly notificationsService: NotificationsService | null,
-    @Optional() @Inject(forwardRef(() => ScheduledNotificationsService))
+    @Optional()
+    @Inject(forwardRef(() => ScheduledNotificationsService))
     private readonly scheduledNotificationsService: ScheduledNotificationsService | null,
-    @Optional() @Inject(forwardRef(() => JiraService))
+    @Optional()
+    @Inject(forwardRef(() => JiraService))
     private readonly jiraService: JiraService | null,
-    @Optional() @Inject(forwardRef(() => ServiceNowService))
+    @Optional()
+    @Inject(forwardRef(() => ServiceNowService))
     private readonly serviceNowService: ServiceNowService | null,
-    @Optional() @Inject(forwardRef(() => ExportsService))
+    @Optional()
+    @Inject(forwardRef(() => ExportsService))
     private readonly exportsService: ExportsService | null,
-    @Optional() @Inject(forwardRef(() => ReportsService))
+    @Optional()
+    @Inject(forwardRef(() => ReportsService))
     private readonly reportsService: ReportsService | null,
-    @Optional() @Inject(forwardRef(() => RetentionService))
+    @Optional()
+    @Inject(forwardRef(() => RetentionService))
     private readonly retentionService: RetentionService | null,
-    @Optional() @Inject(forwardRef(() => WebhooksService))
+    @Optional()
+    @Inject(forwardRef(() => WebhooksService))
     private readonly webhooksService: WebhooksService | null,
-    @Optional() @Inject(forwardRef(() => SessionService))
+    @Optional()
+    @Inject(forwardRef(() => SessionService))
     private readonly sessionService: SessionService | null,
+    @Optional()
+    @Inject(forwardRef(() => ScheduledReportsService))
+    private readonly scheduledReportsService: ScheduledReportsService | null
   ) {}
 
   onModuleInit() {
@@ -96,28 +114,30 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
 
     // Start job processing loop
     this.processingIntervalId = setInterval(() => {
-      this.processJobs().catch(err => {
+      this.processJobs().catch((err) => {
         this.logger.error('Error processing jobs', err);
       });
     }, this.JOB_PROCESSING_INTERVAL);
 
     // Start scheduled job runner
     this.schedulerIntervalId = setInterval(() => {
-      this.jobsService.processScheduledJobs().catch(err => {
+      this.jobsService.processScheduledJobs().catch((err) => {
         this.logger.error('Error processing scheduled jobs', err);
       });
+      this.processScheduledReports();
     }, this.SCHEDULER_INTERVAL);
 
     // Run initial processing
-    this.processJobs().catch(err => {
+    this.processJobs().catch((err) => {
       this.logger.error('Error in initial job processing', err);
     });
-    this.jobsService.processScheduledJobs().catch(err => {
+    this.jobsService.processScheduledJobs().catch((err) => {
       this.logger.error('Error in initial scheduled job processing', err);
     });
+    this.processScheduledReports();
 
     this.logger.log(
-      `Job scheduler started (processing: ${this.JOB_PROCESSING_INTERVAL / 1000}s, scheduling: ${this.SCHEDULER_INTERVAL / 1000}s)`,
+      `Job scheduler started (processing: ${this.JOB_PROCESSING_INTERVAL / 1000}s, scheduling: ${this.SCHEDULER_INTERVAL / 1000}s)`
     );
   }
 
@@ -131,6 +151,18 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
       this.schedulerIntervalId = null;
     }
     this.logger.log('Job scheduler stopped');
+  }
+
+  private processScheduledReports(): void {
+    if (!this.scheduledReportsService) {
+      if (process.env.NODE_ENV === 'production') {
+        this.logger.error('ScheduledReportsService is unavailable in production');
+      }
+      return;
+    }
+    this.scheduledReportsService.processDueReports().catch((error) => {
+      this.logger.error('Error processing scheduled reports', error);
+    });
   }
 
   /**
@@ -255,8 +287,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
         return this.deliverWebhook(data);
 
       default:
-        this.logger.warn(`Unknown job type: ${name}`);
-        return { status: 'skipped', reason: `Unknown job type: ${name}` };
+        throw new Error(`Unknown job type: ${name}`);
     }
   }
 
@@ -294,13 +325,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     this.logger.log(`Running evidence collector ${collectorId}`);
 
     if (!this.collectorsService) {
-      this.logger.warn('CollectorsService not available - running in demo mode');
-      return {
-        status: 'completed',
-        collectorId,
-        isMockMode: true,
-        mockModeReason: 'CollectorsService not injected - ensure CollectorsModule is imported',
-      };
+      throw new Error('CollectorsService is not available');
     }
 
     try {
@@ -308,7 +333,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
       const result = await this.collectorsService.run(
         collectorId,
         organizationId,
-        'system-scheduler',
+        'system-scheduler'
       );
       return { status: 'completed', collectorId, result };
     } catch (error: any) {
@@ -324,12 +349,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('Running scheduled notifications');
 
     if (!this.scheduledNotificationsService) {
-      this.logger.warn('ScheduledNotificationsService not available - running in demo mode');
-      return {
-        status: 'completed',
-        isMockMode: true,
-        mockModeReason: 'ScheduledNotificationsService not injected',
-      };
+      throw new Error('ScheduledNotificationsService is not available');
     }
 
     try {
@@ -349,17 +369,14 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     this.logger.log(`Sending email to ${to}`);
 
     if (!this.emailService) {
-      this.logger.warn('EmailService not available - running in demo mode');
-      return {
-        status: 'sent',
-        to,
-        isMockMode: true,
-        mockModeReason: 'EmailService not injected',
-      };
+      throw new Error('EmailService is not available');
     }
 
     try {
-      await this.emailService.sendEmail({ to, subject, html, text });
+      const delivered = await this.emailService.sendEmail({ to, subject, html, text });
+      if (!delivered) {
+        throw new Error('Email provider did not accept the message');
+      }
       return { status: 'sent', to };
     } catch (error: any) {
       this.logger.error(`Email to ${to} failed: ${error.message}`);
@@ -375,13 +392,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     this.logger.log(`Syncing Jira mapping ${mappingId}`);
 
     if (!this.jiraService) {
-      this.logger.warn('JiraService not available - running in demo mode');
-      return {
-        status: 'synced',
-        mappingId,
-        isMockMode: true,
-        mockModeReason: 'JiraService not injected - ensure JiraModule is imported',
-      };
+      throw new Error('JiraService is not available');
     }
 
     try {
@@ -401,13 +412,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     this.logger.log(`Syncing ServiceNow mapping ${mappingId}`);
 
     if (!this.serviceNowService) {
-      this.logger.warn('ServiceNowService not available - running in demo mode');
-      return {
-        status: 'synced',
-        mappingId,
-        isMockMode: true,
-        mockModeReason: 'ServiceNowService not injected - ensure ServiceNowModule is imported',
-      };
+      throw new Error('ServiceNowService is not available');
     }
 
     try {
@@ -427,13 +432,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     this.logger.log(`Generating export ${exportId}`);
 
     if (!this.exportsService) {
-      this.logger.warn('ExportsService not available - running in demo mode');
-      return {
-        status: 'generated',
-        exportId,
-        isMockMode: true,
-        mockModeReason: 'ExportsService not injected',
-      };
+      throw new Error('ExportsService is not available');
     }
 
     try {
@@ -453,13 +452,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     this.logger.log(`Generating report ${reportType}`);
 
     if (!this.reportsService) {
-      this.logger.warn('ReportsService not available - running in demo mode');
-      return {
-        status: 'generated',
-        reportType,
-        isMockMode: true,
-        mockModeReason: 'ReportsService not injected',
-      };
+      throw new Error('ReportsService is not available');
     }
 
     try {
@@ -470,7 +463,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
       const result = await this.reportsService.generateReport(
         organizationId,
         'system-scheduler',
-        dto,
+        dto
       );
       return { status: 'generated', reportType, filename: result.filename };
     } catch (error: any) {
@@ -486,13 +479,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('Running session cleanup');
 
     if (!this.sessionService) {
-      this.logger.warn('SessionService not available - running in demo mode');
-      return {
-        status: 'completed',
-        deletedCount: 0,
-        isMockMode: true,
-        mockModeReason: 'SessionService not injected',
-      };
+      throw new Error('SessionService is not available');
     }
 
     try {
@@ -537,12 +524,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('Running retention policies');
 
     if (!this.retentionService) {
-      this.logger.warn('RetentionService not available - running in demo mode');
-      return {
-        status: 'completed',
-        isMockMode: true,
-        mockModeReason: 'RetentionService not injected',
-      };
+      throw new Error('RetentionService is not available');
     }
 
     try {
@@ -555,8 +537,9 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
       for (const policy of policies.data || []) {
         const result = await this.retentionService.runPolicy(
           organizationId,
+          'system-scheduler',
           policy.id,
-          { dryRun: false },
+          { dryRun: false }
         );
         results.push(result);
       }
@@ -633,13 +616,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     this.logger.log(`Delivering webhook ${deliveryId || webhookId}`);
 
     if (!this.webhooksService) {
-      this.logger.warn('WebhooksService not available - running in demo mode');
-      return {
-        status: 'delivered',
-        deliveryId,
-        isMockMode: true,
-        mockModeReason: 'WebhooksService not injected',
-      };
+      throw new Error('WebhooksService is not available');
     }
 
     try {

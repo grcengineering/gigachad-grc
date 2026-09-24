@@ -58,17 +58,17 @@ help: ## Show this help message
 # Getting Started
 # ─────────────────────────────────────────────────────────────────────────────
 
-init: ## Interactive first-time setup (asks what you want)
-	@./init.sh
+init: ## Start the canonical Docker stack
+	@./start.sh
 
-demo: ## Start demo mode (Docker + frontend, one command to explore)
-	@./init.sh demo
+demo: ## Start the canonical Docker demo stack
+	@./scripts/start-demo.sh
 
 dev: ## Set up local development (install deps, start infra)
 	@./init.sh dev
 
-docker: ## Start all services via Docker only
-	@./init.sh docker
+docker: ## Start all services via Docker
+	@./start.sh
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Docker Commands
@@ -167,14 +167,14 @@ backend: ## Start controls service in dev mode (primary backend)
 db-shell: ## Open PostgreSQL shell
 	docker compose exec postgres psql -U grc -d gigachad_grc
 
-db-migrate: ## Run database migrations
-	cd services/controls && npx prisma migrate deploy
+db-migrate: ## Synchronize the shared schema in development (not production)
+	npm --workspace @gigachad-grc/controls run prisma:push
 
 db-seed: ## Seed database with sample data
 	cd scripts && npx ts-node seed-database.ts
 
 redis-cli: ## Open Redis CLI
-	docker compose exec redis redis-cli -a redis_secret
+	@set -a; . ./.env; set +a; docker compose exec redis redis-cli -a "$$REDIS_PASSWORD"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Maintenance

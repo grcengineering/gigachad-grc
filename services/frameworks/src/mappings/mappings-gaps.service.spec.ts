@@ -9,6 +9,9 @@ describe('MappingsService — findGaps', () => {
   let service: MappingsService;
 
   const mockPrismaService = {
+    framework: {
+      findFirst: jest.fn(),
+    },
     controlMapping: {
       findMany: jest.fn(),
       findFirst: jest.fn(),
@@ -49,6 +52,7 @@ describe('MappingsService — findGaps', () => {
 
     service = module.get<MappingsService>(MappingsService);
     jest.clearAllMocks();
+    mockPrismaService.framework.findFirst.mockResolvedValue({ id: 'fw-1' });
   });
 
   it('should be defined', () => {

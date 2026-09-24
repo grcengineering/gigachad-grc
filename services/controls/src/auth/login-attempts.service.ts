@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { createHash } from 'crypto';
 
 /**
  * Configuration for brute force protection
@@ -24,20 +25,6 @@ const BRUTE_FORCE_CONFIG = {
   alertThreshold: 10,
 };
 
-interface LoginAttemptRecord {
-  identifier: string;
-  ip: string;
-  attemptCount: number;
-  lastAttemptAt: Date;
-  lockedUntil: Date | null;
-}
-
-/**
- * In-memory store for login attempts
- * In production, this should be backed by Redis for distributed systems
- */
-const attemptStore = new Map<string, LoginAttemptRecord>();
-
 /**
  * Service to track and manage login attempts for brute force protection
  */
@@ -60,19 +47,24 @@ export class LoginAttemptsService {
     ip: string,
     success: boolean,
   ): Promise<{ allowed: boolean; delayMs: number; message?: string }> {
-    const key = this.buildKey(identifier, ip);
+    const identifierHash = this.hashIdentifier(identifier);
     const now = new Date();
     
-    // Get or create attempt record
-    let record = attemptStore.get(key);
+    let record = await this.prisma.loginAttempt.findUnique({
+      where: { identifierHash_ipAddress: { identifierHash, ipAddress: ip } },
+    });
     
     if (!record) {
       record = {
+        id: '',
+        identifierHash,
         identifier,
-        ip,
+        ipAddress: ip,
         attemptCount: 0,
         lastAttemptAt: now,
         lockedUntil: null,
+        createdAt: now,
+        updatedAt: now,
       };
     }
 
@@ -107,7 +99,22 @@ export class LoginAttemptsService {
       // Successful login - reset counter
       record.attemptCount = 0;
       record.lockedUntil = null;
-      attemptStore.set(key, record);
+      record.lastAttemptAt = now;
+      await this.prisma.loginAttempt.upsert({
+        where: { identifierHash_ipAddress: { identifierHash, ipAddress: ip } },
+        create: {
+          identifierHash,
+          identifier,
+          ipAddress: ip,
+          attemptCount: 0,
+          lastAttemptAt: now,
+        },
+        update: {
+          attemptCount: 0,
+          lockedUntil: null,
+          lastAttemptAt: now,
+        },
+      });
       
       await this.logAttempt(identifier, ip, true, false);
       
@@ -138,7 +145,22 @@ export class LoginAttemptsService {
       }
     }
 
-    attemptStore.set(key, record);
+    await this.prisma.loginAttempt.upsert({
+      where: { identifierHash_ipAddress: { identifierHash, ipAddress: ip } },
+      create: {
+        identifierHash,
+        identifier,
+        ipAddress: ip,
+        attemptCount: record.attemptCount,
+        lastAttemptAt: record.lastAttemptAt,
+        lockedUntil: record.lockedUntil,
+      },
+      update: {
+        attemptCount: record.attemptCount,
+        lastAttemptAt: record.lastAttemptAt,
+        lockedUntil: record.lockedUntil,
+      },
+    });
     
     // Log failed attempt
     await this.logAttempt(identifier, ip, false, record.lockedUntil !== null);
@@ -162,8 +184,14 @@ export class LoginAttemptsService {
    * Check if an identifier/IP combo is currently locked
    */
   async isLocked(identifier: string, ip: string): Promise<boolean> {
-    const key = this.buildKey(identifier, ip);
-    const record = attemptStore.get(key);
+    const record = await this.prisma.loginAttempt.findUnique({
+      where: {
+        identifierHash_ipAddress: {
+          identifierHash: this.hashIdentifier(identifier),
+          ipAddress: ip,
+        },
+      },
+    });
     
     if (!record?.lockedUntil) {
       return false;
@@ -176,16 +204,13 @@ export class LoginAttemptsService {
    * Manually unlock an account (admin action)
    */
   async unlock(identifier: string, ip?: string): Promise<void> {
+    const identifierHash = this.hashIdentifier(identifier);
     if (ip) {
-      const key = this.buildKey(identifier, ip);
-      attemptStore.delete(key);
+      await this.prisma.loginAttempt.deleteMany({
+        where: { identifierHash, ipAddress: ip },
+      });
     } else {
-      // Unlock all IPs for this identifier
-      for (const [key, record] of attemptStore.entries()) {
-        if (record.identifier === identifier) {
-          attemptStore.delete(key);
-        }
-      }
+      await this.prisma.loginAttempt.deleteMany({ where: { identifierHash } });
     }
     
     this.logger.log(`Account unlocked: identifier=${identifier}, ip=${ip || 'all'}`);
@@ -200,8 +225,14 @@ export class LoginAttemptsService {
     lockedUntil: Date | null;
     remainingAttempts: number;
   }> {
-    const key = this.buildKey(identifier, ip);
-    const record = attemptStore.get(key);
+    const record = await this.prisma.loginAttempt.findUnique({
+      where: {
+        identifierHash_ipAddress: {
+          identifierHash: this.hashIdentifier(identifier),
+          ipAddress: ip,
+        },
+      },
+    });
     
     if (!record) {
       return {
@@ -222,11 +253,8 @@ export class LoginAttemptsService {
     };
   }
 
-  /**
-   * Build a unique key for tracking attempts
-   */
-  private buildKey(identifier: string, ip: string): string {
-    return `${identifier.toLowerCase()}:${ip}`;
+  private hashIdentifier(identifier: string): string {
+    return createHash('sha256').update(identifier.trim().toLowerCase()).digest('hex');
   }
 
   /**
@@ -327,19 +355,15 @@ export class LoginAttemptsService {
   /**
    * Clean up old records (call periodically)
    */
-  cleanup(): void {
+  async cleanup(): Promise<void> {
     const now = new Date();
     const windowMs = BRUTE_FORCE_CONFIG.attemptWindowMinutes * 60 * 1000;
-    
-    for (const [key, record] of attemptStore.entries()) {
-      // Remove records outside the window that aren't locked
-      if (
-        now.getTime() - record.lastAttemptAt.getTime() > windowMs &&
-        (!record.lockedUntil || record.lockedUntil < now)
-      ) {
-        attemptStore.delete(key);
-      }
-    }
+    await this.prisma.loginAttempt.deleteMany({
+      where: {
+        lastAttemptAt: { lt: new Date(now.getTime() - windowMs) },
+        OR: [{ lockedUntil: null }, { lockedUntil: { lt: now } }],
+      },
+    });
   }
 }
 

@@ -23,13 +23,7 @@ export class AssessmentsController {
   @Post()
   @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   create(@Body() createAssessmentDto: CreateAssessmentDto, @CurrentUser() user: UserContext) {
-    return this.assessmentsService.create(
-      {
-        ...createAssessmentDto,
-        organizationId: user.organizationId,
-      },
-      user.userId
-    );
+    return this.assessmentsService.create(createAssessmentDto, user.userId, user.organizationId);
   }
 
   @Get()

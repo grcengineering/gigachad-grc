@@ -6,10 +6,18 @@ import {
   Logger,
   Inject,
   forwardRef,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import { CacheService, CacheKeys } from '@gigachad-grc/shared';
+import {
+  CacheService,
+  CacheKeys,
+  createEvent,
+  EVENT_BUS,
+  EventBus,
+  EventChannels,
+} from '@gigachad-grc/shared';
 import { RiskWorkflowTasksService } from './risk-workflow-tasks.service';
 import { RiskLevel as PrismaRiskLevel } from '@prisma/client';
 import {
@@ -55,8 +63,84 @@ export class RiskService {
     private auditService: AuditService,
     private cache: CacheService,
     @Inject(forwardRef(() => RiskWorkflowTasksService))
-    private riskWorkflowTasksService: RiskWorkflowTasksService
+    private riskWorkflowTasksService: RiskWorkflowTasksService,
+    @Optional() @Inject(EVENT_BUS) private readonly eventBus?: EventBus
   ) {}
+
+  private async requireWorkspaceAccess(
+    workspaceId: string | undefined,
+    organizationId: string,
+    userId: string | undefined
+  ) {
+    if (!workspaceId) return;
+    if (!userId) {
+      throw new NotFoundException('Workspace not found');
+    }
+
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, organizationId, status: 'active' },
+      select: { role: true },
+    });
+    if (!user) {
+      throw new NotFoundException('Workspace not found');
+    }
+
+    const workspace = await this.prisma.workspace.findFirst({
+      where: {
+        id: workspaceId,
+        organizationId,
+        ...(user.role !== 'admin' && { members: { some: { userId } } }),
+      },
+      select: { id: true },
+    });
+    if (!workspace) {
+      throw new NotFoundException('Workspace not found');
+    }
+  }
+
+  private async requireOrganizationUsers(
+    organizationId: string,
+    userIds: Array<string | null | undefined>
+  ) {
+    const uniqueIds = [...new Set(userIds.filter((id): id is string => Boolean(id)))];
+    if (uniqueIds.length === 0) return;
+    const count = await this.prisma.user.count({
+      where: {
+        id: { in: uniqueIds },
+        organizationId,
+        status: 'active',
+      },
+    });
+    if (count !== uniqueIds.length) {
+      throw new NotFoundException('One or more assigned users not found');
+    }
+  }
+
+  private async requireControls(organizationId: string, controlIds: string[]) {
+    const uniqueIds = [...new Set(controlIds)];
+    if (uniqueIds.length === 0) return;
+    const count = await this.prisma.control.count({
+      where: {
+        id: { in: uniqueIds },
+        deletedAt: null,
+        OR: [{ organizationId }, { organizationId: null }],
+      },
+    });
+    if (count !== uniqueIds.length) {
+      throw new NotFoundException('One or more controls not found');
+    }
+  }
+
+  private async requireAssets(organizationId: string, assetIds: string[]) {
+    const uniqueIds = [...new Set(assetIds)];
+    if (uniqueIds.length === 0) return;
+    const count = await this.prisma.asset.count({
+      where: { id: { in: uniqueIds }, organizationId, deletedAt: null },
+    });
+    if (count !== uniqueIds.length) {
+      throw new NotFoundException('One or more assets not found');
+    }
+  }
 
   // ===========================
   // Risk CRUD
@@ -69,8 +153,11 @@ export class RiskService {
     organizationId: string,
     filters: RiskFilterDto,
     page: number = 1,
-    limit: number = 25
+    limit: number = 25,
+    userId?: string
   ) {
+    await this.requireWorkspaceAccess(filters.workspaceId, organizationId, userId);
+
     const where: Record<string, unknown> = { organizationId, deletedAt: null };
 
     if (filters.workspaceId) {
@@ -150,8 +237,11 @@ export class RiskService {
     organizationId: string,
     filters: RiskFilterDto,
     page: number = 1,
-    limit: number = 50
+    limit: number = 50,
+    userId?: string
   ) {
+    await this.requireWorkspaceAccess(filters.workspaceId, organizationId, userId);
+
     const where: Record<string, unknown> = { organizationId, deletedAt: null };
 
     // Workspace filter for multi-workspace mode
@@ -434,6 +524,8 @@ export class RiskService {
     userId: string,
     userEmail?: string
   ): Promise<RiskResponseDto> {
+    await this.requireWorkspaceAccess(dto.workspaceId, organizationId, userId);
+
     // Generate risk ID
     const count = await this.prisma.risk.count({ where: { organizationId, deletedAt: null } });
     const riskId = `RISK-${String(count + 1).padStart(4, '0')}`;
@@ -489,6 +581,36 @@ export class RiskService {
 
     // Invalidate caches
     await this.invalidateRiskCaches(organizationId);
+
+    if (this.eventBus) {
+      try {
+        await this.eventBus.publish(
+          EventChannels.RISKS,
+          createEvent(
+            'risk.created',
+            organizationId,
+            {
+              riskDescription: risk.description,
+              risk: {
+                id: risk.id,
+                riskId: risk.riskId,
+                title: risk.title,
+                description: risk.description,
+              },
+            },
+            {
+              userId,
+              entityId: risk.id,
+              entityType: 'risk',
+            }
+          )
+        );
+      } catch (error) {
+        this.logger.warn(
+          `Risk ${risk.id} was created but its workflow event could not be published: ${error}`
+        );
+      }
+    }
 
     return this.toResponseDto(risk);
   }
@@ -608,6 +730,8 @@ export class RiskService {
     userId: string,
     userEmail?: string
   ): Promise<RiskResponseDto> {
+    await this.requireOrganizationUsers(organizationId, [dto.riskAssessorId]);
+
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
     });
@@ -690,6 +814,8 @@ export class RiskService {
     userId: string,
     userEmail?: string
   ): Promise<RiskResponseDto> {
+    await this.requireOrganizationUsers(organizationId, [riskAssessorId]);
+
     const risk = await this.prisma.risk.findFirst({
       where: { id, organizationId, deletedAt: null },
     });
@@ -774,6 +900,12 @@ export class RiskService {
     if (risk.assessment.status !== RiskAssessmentStatus.RISK_ASSESSOR_ANALYSIS) {
       throw new BadRequestException('Assessment is not in the correct status');
     }
+
+    await Promise.all([
+      this.requireOrganizationUsers(organizationId, [dto.recommendedOwnerId]),
+      this.requireAssets(organizationId, dto.affectedAssets || []),
+      this.requireControls(organizationId, dto.existingControls || []),
+    ]);
 
     // Calculate risk score
     const calculatedRiskScore = calculateRiskLevel(
@@ -1044,6 +1176,8 @@ export class RiskService {
       throw new BadRequestException('Assessment is not in revision status');
     }
 
+    await this.requireOrganizationUsers(organizationId, [dto.recommendedOwnerId]);
+
     // Recalculate score if likelihood or impact changed
     let calculatedRiskScore = risk.assessment.calculatedRiskScore;
     const likelihood = (dto.likelihoodScore || risk.assessment.likelihoodScore) as Likelihood;
@@ -1250,6 +1384,8 @@ export class RiskService {
     if (risk.treatment.status !== RiskTreatmentStatus.IDENTIFY_EXECUTIVE_APPROVER) {
       throw new BadRequestException('Treatment is not awaiting executive approver assignment');
     }
+
+    await this.requireOrganizationUsers(organizationId, [dto.executiveApproverId]);
 
     await this.prisma.$transaction([
       this.prisma.riskTreatment.update({
@@ -1763,7 +1899,11 @@ export class RiskService {
     }
 
     const control = await this.prisma.control.findFirst({
-      where: { id: dto.controlId, deletedAt: null },
+      where: {
+        id: dto.controlId,
+        deletedAt: null,
+        OR: [{ organizationId }, { organizationId: null }],
+      },
     });
 
     if (!control) {
@@ -1818,6 +1958,17 @@ export class RiskService {
       throw new NotFoundException('Risk not found');
     }
 
+    const linkedControl = await this.prisma.riskControl.findFirst({
+      where: {
+        riskId: id,
+        controlId,
+        control: { OR: [{ organizationId }, { organizationId: null }] },
+      },
+    });
+    if (!linkedControl) {
+      throw new NotFoundException('Risk control link not found');
+    }
+
     await this.prisma.riskControl.update({
       where: {
         riskId_controlId: { riskId: id, controlId },
@@ -1853,6 +2004,18 @@ export class RiskService {
 
     if (!risk) {
       throw new NotFoundException('Risk not found');
+    }
+
+    const control = await this.prisma.control.findFirst({
+      where: {
+        id: controlId,
+        deletedAt: null,
+        OR: [{ organizationId }, { organizationId: null }],
+      },
+      select: { id: true },
+    });
+    if (!control) {
+      throw new NotFoundException('Control not found');
     }
 
     await this.prisma.riskControl.deleteMany({
@@ -1905,6 +2068,8 @@ export class RiskService {
     if (!risk) {
       throw new NotFoundException('Risk not found');
     }
+
+    await this.requireAssets(organizationId, dto.targetAssets || []);
 
     const scenario = await this.prisma.riskScenario.create({
       data: {
@@ -1964,8 +2129,17 @@ export class RiskService {
       throw new NotFoundException('Risk not found');
     }
 
+    await this.requireAssets(organizationId, dto.targetAssets || []);
+    const existingScenario = await this.prisma.riskScenario.findFirst({
+      where: { id: scenarioId, riskId: id },
+      select: { id: true },
+    });
+    if (!existingScenario) {
+      throw new NotFoundException('Scenario not found');
+    }
+
     const scenario = await this.prisma.riskScenario.update({
-      where: { id: scenarioId },
+      where: { id: existingScenario.id },
       data: {
         title: dto.title,
         description: dto.description,

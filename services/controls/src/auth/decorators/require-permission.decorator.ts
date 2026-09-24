@@ -44,6 +44,7 @@ export const CurrentUser = createParamDecorator((data: unknown, ctx: ExecutionCo
       userId: request.user.userId,
       organizationId: request.user.organizationId,
       email: request.user.email,
+      role: request.user.role,
     };
   }
   // In dev mode, user info comes from headers set by DevAuthGuard
@@ -51,5 +52,6 @@ export const CurrentUser = createParamDecorator((data: unknown, ctx: ExecutionCo
     userId: request.headers['x-user-id'] || 'dev-user-id',
     organizationId: request.headers['x-organization-id'] || 'dev-org-id',
     email: request.headers['x-user-email'] || 'dev@example.com',
+    role: request.headers['x-user-role'] || 'viewer',
   };
 });

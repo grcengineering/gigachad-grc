@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { PrismaService } from '../common/prisma.service';
 import { AuditService } from '../common/audit.service';
 import { CreateAssessmentDto } from './dto/create-assessment.dto';
 import { UpdateAssessmentDto } from './dto/update-assessment.dto';
 import { calculateNextReviewDate } from '../vendors/vendors.service';
 import { Prisma, VendorAssessment, Vendor, VendorAssessmentStatus } from '@prisma/client';
+import { createEvent, EVENT_BUS, EventBus, EventChannels } from '@gigachad-grc/shared';
 
 // Type for assessment with vendor relation
 type AssessmentWithVendor = VendorAssessment & {
@@ -29,16 +30,59 @@ function toAssessmentStatus(
 
 @Injectable()
 export class AssessmentsService {
+  private readonly logger = new Logger(AssessmentsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
-    private readonly audit: AuditService
+    private readonly audit: AuditService,
+    @Optional() @Inject(EVENT_BUS) private readonly eventBus?: EventBus
   ) {}
 
-  async create(createAssessmentDto: CreateAssessmentDto, userId: string) {
-    const { status, dueDate, completedAt, responses, findings, ...rest } = createAssessmentDto;
+  private async requireVendor(vendorId: string, organizationId: string) {
+    const vendor = await this.prisma.vendor.findFirst({
+      where: { id: vendorId, organizationId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!vendor) {
+      throw new NotFoundException(`Vendor with ID ${vendorId} not found`);
+    }
+  }
+
+  private async requireOrganizationUsers(
+    organizationId: string,
+    userIds: Array<string | undefined>
+  ) {
+    const uniqueIds = [...new Set(userIds.filter((id): id is string => Boolean(id)))];
+    if (uniqueIds.length === 0) return;
+    const count = await this.prisma.user.count({
+      where: { id: { in: uniqueIds }, organizationId, status: 'active' },
+    });
+    if (count !== uniqueIds.length) {
+      throw new NotFoundException('One or more assigned users not found');
+    }
+  }
+
+  async create(createAssessmentDto: CreateAssessmentDto, userId: string, organizationId: string) {
+    await Promise.all([
+      this.requireVendor(createAssessmentDto.vendorId, organizationId),
+      this.requireOrganizationUsers(organizationId, [
+        createAssessmentDto.assessorId,
+        createAssessmentDto.reviewerId,
+      ]),
+    ]);
+
+    const {
+      organizationId: _organizationId,
+      status,
+      dueDate,
+      completedAt,
+      responses,
+      findings,
+      ...rest
+    } = createAssessmentDto;
     const data: Prisma.VendorAssessmentUncheckedCreateInput = {
       ...rest,
-      organizationId: createAssessmentDto.organizationId!,
+      organizationId,
       status: toAssessmentStatus(status),
       dueDate: dueDate ? new Date(dueDate) : undefined,
       completedAt: completedAt ? new Date(completedAt) : undefined,
@@ -73,6 +117,34 @@ export class AssessmentsService {
         assessmentType: assessment.assessmentType,
       },
     });
+
+    if (this.eventBus) {
+      try {
+        await this.eventBus.publish(
+          EventChannels.VENDORS,
+          createEvent(
+            'vendor.assessment_requested',
+            assessment.organizationId,
+            {
+              vendor: {
+                id: assessmentWithVendor.vendor.id,
+                name: assessmentWithVendor.vendor.name,
+              },
+              assessmentData: assessment,
+            },
+            {
+              userId,
+              entityId: assessment.id,
+              entityType: 'vendor_assessment',
+            }
+          )
+        );
+      } catch (error) {
+        this.logger.warn(
+          `Assessment ${assessment.id} was created but its workflow event could not be published: ${error}`
+        );
+      }
+    }
 
     return assessment;
   }
@@ -147,7 +219,20 @@ export class AssessmentsService {
     // SECURITY: Verify assessment belongs to user's organization before updating
     const currentAssessment = await this.findOne(id, organizationId);
 
-    const { status, dueDate, completedAt, responses, findings, ...rest } = updateAssessmentDto;
+    const {
+      organizationId: _organizationId,
+      status,
+      dueDate,
+      completedAt,
+      responses,
+      findings,
+      ...rest
+    } = updateAssessmentDto;
+
+    await Promise.all([
+      rest.vendorId ? this.requireVendor(rest.vendorId, organizationId) : Promise.resolve(),
+      this.requireOrganizationUsers(organizationId, [rest.assessorId, rest.reviewerId]),
+    ]);
     const data: Prisma.VendorAssessmentUpdateInput = { ...rest };
 
     if (status) {

@@ -1,4 +1,5 @@
 import { aiClient } from './ai-client.js';
+import { useExplicitDemoFallback } from '../demo-mode.js';
 
 interface ControlSuggestionParams {
   risk: {
@@ -42,11 +43,15 @@ interface ControlSuggestionResult {
   longTermStrategies: string[];
 }
 
-export async function suggestControls(params: ControlSuggestionParams): Promise<ControlSuggestionResult> {
+export async function suggestControls(
+  params: ControlSuggestionParams
+): Promise<ControlSuggestionResult> {
   const { risk, frameworks = [], maxSuggestions = 5 } = params;
 
   if (!aiClient.isConfigured()) {
-    return generateMockSuggestions(risk, frameworks, maxSuggestions);
+    return useExplicitDemoFallback('AI service is not configured', () =>
+      generateMockSuggestions(risk, frameworks, maxSuggestions)
+    );
   }
 
   const systemPrompt = `You are a GRC expert specializing in control design and implementation.
@@ -77,9 +82,14 @@ Return JSON with structure:
 }`;
 
   try {
-    const result = await aiClient.completeJSON<Omit<ControlSuggestionResult, 'riskTitle' | 'analyzedAt'>>([
+    const result = await aiClient.completeJSON<
+      Omit<ControlSuggestionResult, 'riskTitle' | 'analyzedAt'>
+    >([
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: `Suggest up to ${maxSuggestions} controls for this risk:\nTitle: ${risk.title}\nDescription: ${risk.description}\nCategory: ${risk.category || 'General'}\nCurrent Likelihood: ${risk.currentLikelihood || 'Unknown'}\nCurrent Impact: ${risk.currentImpact || 'Unknown'}` },
+      {
+        role: 'user',
+        content: `Suggest up to ${maxSuggestions} controls for this risk:\nTitle: ${risk.title}\nDescription: ${risk.description}\nCategory: ${risk.category || 'General'}\nCurrent Likelihood: ${risk.currentLikelihood || 'Unknown'}\nCurrent Impact: ${risk.currentImpact || 'Unknown'}`,
+      },
     ]);
 
     return {
@@ -87,8 +97,11 @@ Return JSON with structure:
       analyzedAt: new Date().toISOString(),
       ...result,
     };
-  } catch {
-    return generateMockSuggestions(risk, frameworks, maxSuggestions);
+  } catch (error) {
+    return useExplicitDemoFallback(
+      `AI control suggestion failed: ${error instanceof Error ? error.message : String(error)}`,
+      () => generateMockSuggestions(risk, frameworks, maxSuggestions)
+    );
   }
 }
 
@@ -101,11 +114,17 @@ function generateMockSuggestions(
     {
       controlId: 'CTRL-001',
       title: 'Access Control Policy Implementation',
-      description: 'Implement role-based access control (RBAC) to restrict access to sensitive resources',
+      description:
+        'Implement role-based access control (RBAC) to restrict access to sensitive resources',
       type: 'preventive',
       category: 'Access Management',
       implementation: {
-        steps: ['Define roles and permissions', 'Implement RBAC system', 'Configure access rules', 'Test and validate'],
+        steps: [
+          'Define roles and permissions',
+          'Implement RBAC system',
+          'Configure access rules',
+          'Test and validate',
+        ],
         estimatedEffort: '2-4 weeks',
         estimatedCost: '$5,000 - $15,000',
         prerequisites: ['Identity management system', 'Documented access requirements'],
@@ -129,7 +148,12 @@ function generateMockSuggestions(
       type: 'detective',
       category: 'Monitoring',
       implementation: {
-        steps: ['Deploy SIEM solution', 'Configure log collection', 'Set up alerts', 'Establish response procedures'],
+        steps: [
+          'Deploy SIEM solution',
+          'Configure log collection',
+          'Set up alerts',
+          'Establish response procedures',
+        ],
         estimatedEffort: '4-8 weeks',
         estimatedCost: '$20,000 - $50,000',
         prerequisites: ['Log aggregation infrastructure', 'Alert response team'],
@@ -177,7 +201,12 @@ function generateMockSuggestions(
       type: 'preventive',
       category: 'Human Resources',
       implementation: {
-        steps: ['Select training platform', 'Develop content', 'Roll out training', 'Track completion'],
+        steps: [
+          'Select training platform',
+          'Develop content',
+          'Roll out training',
+          'Track completion',
+        ],
         estimatedEffort: '3-4 weeks',
         estimatedCost: '$3,000 - $10,000',
         prerequisites: ['HR support', 'Training budget'],
@@ -201,7 +230,12 @@ function generateMockSuggestions(
       type: 'preventive',
       category: 'Data Protection',
       implementation: {
-        steps: ['Identify sensitive data', 'Select encryption standards', 'Implement encryption', 'Manage keys'],
+        steps: [
+          'Identify sensitive data',
+          'Select encryption standards',
+          'Implement encryption',
+          'Manage keys',
+        ],
         estimatedEffort: '4-6 weeks',
         estimatedCost: '$10,000 - $30,000',
         prerequisites: ['Data classification', 'Key management infrastructure'],
@@ -236,7 +270,3 @@ function generateMockSuggestions(
     ],
   };
 }
-
-
-
-

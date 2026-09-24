@@ -43,7 +43,7 @@ const detailRoutes: Array<{
 for (const route of detailRoutes) {
   test(`${route.name} loads cleanly`, async ({ page, request }) => {
     const id = await route.fetchId(request);
-    test.skip(!id, `No seed data — skipping ${route.name}`);
+    expect(id, `${route.name} fixture must exist`).not.toBe('');
 
     const pageErrors = trackPageErrors(page);
     const consoleErrors = trackConsoleErrors(page);

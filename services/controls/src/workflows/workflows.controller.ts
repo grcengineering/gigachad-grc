@@ -47,16 +47,6 @@ export class WorkflowsController {
     return this.workflowsService.listWorkflows(user.organizationId, query);
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get a workflow definition' })
-  @ApiResponse({ status: 200, type: WorkflowDto })
-  async getWorkflow(
-    @CurrentUser() user: UserContext,
-    @Param('id') id: string,
-  ): Promise<WorkflowDto> {
-    return this.workflowsService.getWorkflow(user.organizationId, id);
-  }
-
   @Post()
   @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Create a workflow definition' })
@@ -81,7 +71,7 @@ export class WorkflowsController {
     @Param('id') id: string,
     @Body() dto: UpdateWorkflowDto,
   ): Promise<WorkflowDto> {
-    return this.workflowsService.updateWorkflow(user.organizationId, id, dto);
+    return this.workflowsService.updateWorkflow(user.organizationId, user.userId, id, dto);
   }
 
   @Delete(':id')
@@ -91,7 +81,7 @@ export class WorkflowsController {
     @CurrentUser() user: UserContext,
     @Param('id') id: string,
   ): Promise<void> {
-    return this.workflowsService.deleteWorkflow(user.organizationId, id);
+    return this.workflowsService.deleteWorkflow(user.organizationId, user.userId, id);
   }
 
   // ==================== Approval Requests ====================
@@ -170,5 +160,16 @@ export class WorkflowsController {
       user.userId,
       id,
     );
+  }
+
+  // Keep the dynamic workflow route after static request routes.
+  @Get(':id')
+  @ApiOperation({ summary: 'Get a workflow definition' })
+  @ApiResponse({ status: 200, type: WorkflowDto })
+  async getWorkflow(
+    @CurrentUser() user: UserContext,
+    @Param('id') id: string,
+  ): Promise<WorkflowDto> {
+    return this.workflowsService.getWorkflow(user.organizationId, id);
   }
 }

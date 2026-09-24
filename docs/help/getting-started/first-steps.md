@@ -11,13 +11,15 @@ Ensure you have:
 
 ## Try Demo Data (Optional)
 
-New to the platform? Load demo data to explore features with realistic sample records:
+On a non-production development stack, sample records can be loaded through the controls API:
 
-1. Click your profile icon → **Settings** → **Organization**
-2. Scroll to **Demo Data** and click **"Load Demo Data"**
-3. In seconds, you'll have 50+ controls, 20 vendors, 25 risks, and more
+```bash
+curl -k -X POST https://localhost/api/seed/load-demo
+```
 
-This is perfect for evaluation or training. See the [Demo Data Guide](demo-data.md) for full details.
+The old in-app Demo Data button is not present on this revision, exact record
+counts can change, and seed mutations are disabled in production. See the
+[Demo Data Guide](demo-data.md) for details.
 
 ## Step 1: Explore the Dashboard (2 minutes)
 

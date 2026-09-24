@@ -1,8 +1,9 @@
 import { aiClient } from './ai-client.js';
+import { useExplicitDemoFallback } from '../demo-mode.js';
 export async function prioritizeRemediation(params) {
     const { findings, constraints, prioritizationStrategy = 'balanced' } = params;
     if (!aiClient.isConfigured()) {
-        return generateMockPrioritization(findings, constraints, prioritizationStrategy);
+        return useExplicitDemoFallback('AI service is not configured', () => generateMockPrioritization(findings, constraints, prioritizationStrategy));
     }
     const systemPrompt = `You are a GRC remediation planning expert. Prioritize the provided findings based on the ${prioritizationStrategy} strategy.
 
@@ -23,8 +24,8 @@ Return JSON with prioritized findings organized into phases.`;
             ...result,
         };
     }
-    catch {
-        return generateMockPrioritization(findings, constraints, prioritizationStrategy);
+    catch (error) {
+        return useExplicitDemoFallback(`AI remediation prioritization failed: ${error instanceof Error ? error.message : String(error)}`, () => generateMockPrioritization(findings, constraints, prioritizationStrategy));
     }
 }
 function generateMockPrioritization(findings, constraints, strategy) {
@@ -53,13 +54,13 @@ function generateMockPrioritization(findings, constraints, strategy) {
                 valueScore = riskScore * 2;
                 break;
             case 'quick_wins':
-                valueScore = riskScore / effortScore * 5;
+                valueScore = (riskScore / effortScore) * 5;
                 break;
             case 'compliance_deadline':
                 valueScore = riskScore + (10 - index);
                 break;
             default:
-                valueScore = (riskScore * 1.5) + (5 / effortScore);
+                valueScore = riskScore * 1.5 + 5 / effortScore;
         }
         const effortConfig = effortWeights[effort] || effortWeights.medium;
         return {
@@ -88,12 +89,16 @@ function generateMockPrioritization(findings, constraints, strategy) {
     const maxPhases = constraints?.timeframeWeeks ? Math.ceil(constraints.timeframeWeeks / 4) : 3;
     const phases = [];
     for (let phase = 1; phase <= maxPhases; phase++) {
-        const phaseFindings = prioritizedFindings.filter(f => f.recommendedPhase === phase);
+        const phaseFindings = prioritizedFindings.filter((f) => f.recommendedPhase === phase);
         if (phaseFindings.length === 0 && phase > 1)
             continue;
         phases.push({
             phase,
-            name: phase === 1 ? 'Critical & Quick Wins' : phase === 2 ? 'High Priority Items' : 'Remaining Items',
+            name: phase === 1
+                ? 'Critical & Quick Wins'
+                : phase === 2
+                    ? 'High Priority Items'
+                    : 'Remaining Items',
             duration: `Weeks ${(phase - 1) * 4 + 1}-${phase * 4}`,
             findings: phaseFindings,
             milestones: [
@@ -105,7 +110,7 @@ function generateMockPrioritization(findings, constraints, strategy) {
     }
     // Calculate summary
     const totalEstimatedCost = prioritizedFindings.reduce((sum, f) => sum + f.estimatedCost, 0);
-    const totalEstimatedWeeks = Math.max(...prioritizedFindings.map(f => f.recommendedPhase * 4));
+    const totalEstimatedWeeks = Math.max(...prioritizedFindings.map((f) => f.recommendedPhase * 4));
     return {
         prioritizedAt: new Date().toISOString(),
         strategy,
@@ -114,10 +119,10 @@ function generateMockPrioritization(findings, constraints, strategy) {
         summary: {
             totalEstimatedCost,
             totalEstimatedWeeks,
-            criticalFindings: prioritizedFindings.filter(f => f.priorityLabel === 'Critical').length,
-            highFindings: prioritizedFindings.filter(f => f.priorityLabel === 'High').length,
-            mediumFindings: prioritizedFindings.filter(f => f.priorityLabel === 'Medium').length,
-            lowFindings: prioritizedFindings.filter(f => f.priorityLabel === 'Low').length,
+            criticalFindings: prioritizedFindings.filter((f) => f.priorityLabel === 'Critical').length,
+            highFindings: prioritizedFindings.filter((f) => f.priorityLabel === 'High').length,
+            mediumFindings: prioritizedFindings.filter((f) => f.priorityLabel === 'Medium').length,
+            lowFindings: prioritizedFindings.filter((f) => f.priorityLabel === 'Low').length,
         },
         recommendations: [
             'Address critical findings immediately to reduce risk exposure',

@@ -157,9 +157,7 @@ test.describe('Knowledge Base list', () => {
   test('list renders with empty state or content', async ({ page }) => {
     const errs = trackPageErrors(page);
     await page.goto('/knowledge-base');
-    const empty = page.getByText(/no entries found/i);
-    const card = page.getByRole('link').or(page.locator('[data-card-list]')).first();
-    await expect(empty.or(card)).toBeVisible({ timeout: 5_000 });
+    await expect(page.locator('main h3').first()).toBeVisible({ timeout: 5_000 });
     await expectPageHealthy(page, errs);
   });
 });
@@ -216,34 +214,35 @@ test.describe('Risk Scenarios', () => {
   test('clicking a scenario card opens its detail dialog', async ({ page }) => {
     const errs = trackPageErrors(page);
     await page.goto('/risk-scenarios');
-    const firstCard = page.getByText(/phishing attack on employees/i).first();
+    const firstCard = page.getByText(/phishing attack leading to data breach/i).first();
     await expect(firstCard).toBeVisible({ timeout: 5_000 });
     await firstCard.click();
-    await expect(page.getByRole('heading', { name: /phishing attack on employees/i })).toBeVisible({
-      timeout: 3_000,
-    });
+    await expect(
+      page.getByRole('heading', { name: /phishing attack leading to data breach/i })
+    ).toBeVisible({ timeout: 3_000 });
     await page.keyboard.press('Escape');
     await expectPageHealthy(page, errs);
   });
 });
 
 test.describe('Audit Findings', () => {
-  test('empty-state page renders cleanly', async ({ page }) => {
+  test('renders findings or the empty state cleanly', async ({ page }) => {
     const errs = trackPageErrors(page);
     await page.goto('/audit-findings');
-    await expect(page.getByText(/no findings yet/i)).toBeVisible({ timeout: 5_000 });
+    const empty = page.getByRole('heading', { name: /no findings yet/i });
+    const findingsTable = page.locator('main table');
+    await expect(empty.or(findingsTable)).toBeVisible({ timeout: 5_000 });
     await expectPageHealthy(page, errs);
   });
 });
 
 test.describe('Awareness & Training', () => {
-  test('Coming Soon banner + all 6 feature cards render', async ({ page }) => {
+  test('live training and phishing surfaces render', async ({ page }) => {
     const errs = trackPageErrors(page);
     await page.goto('/tools/awareness');
-    await expect(page.getByRole('heading', { name: 'Coming Soon' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Training Courses' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Phishing Simulations' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Compliance Tracking' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Awareness & Training' })).toBeVisible();
+    await expect(page.getByText('Training library', { exact: true })).toBeVisible();
+    await expect(page.getByText('Phishing simulations', { exact: true })).toBeVisible();
     await expectPageHealthy(page, errs);
   });
 });

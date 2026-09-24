@@ -2,6 +2,11 @@
 
 GigaChad GRC integrates AI capabilities to enhance audit efficiency and quality. From automated categorization to intelligent recommendations, AI assists auditors throughout the audit lifecycle.
 
+> **Availability:** Audit AI routes exist, but the UI and provider coverage
+> vary by action. Treat the feature descriptions below as intended workflows,
+> verify each action against the deployed UI and audit-service Swagger schema,
+> and do not use generated output without human review.
+
 ## Overview
 
 AI features include:
@@ -242,5 +247,7 @@ View in **Audit Log** for compliance and quality review.
 
 ## API Reference
 
-See the [API Documentation](/docs/API.md#audit-ai) for programmatic access to AI features.
+Use the audit service Swagger document at
+`http://localhost:3007/api/docs` for routes present on the running revision.
+See the repository [API reference](../../API.md) for routing and authentication.
 

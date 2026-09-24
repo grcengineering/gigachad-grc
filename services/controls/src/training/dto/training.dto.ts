@@ -1,5 +1,19 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsInt, IsEnum, IsBoolean, IsDateString, Min, Max, IsArray } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
+  IsBoolean,
+  IsDateString,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 
 export enum TrainingStatus {
   not_started = 'not_started',
@@ -62,6 +76,27 @@ export class CompleteModuleDto {
   @Min(0)
   @Max(100)
   score?: number;
+}
+
+export class QuizAnswerDto {
+  @ApiProperty()
+  @IsString()
+  questionId: string;
+
+  @ApiProperty({ minimum: 0 })
+  @IsInt()
+  @Min(0)
+  selectedOption: number;
+}
+
+export class SubmitQuizDto {
+  @ApiProperty({ type: [QuizAnswerDto] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(25)
+  @ValidateNested({ each: true })
+  @Type(() => QuizAnswerDto)
+  answers: QuizAnswerDto[];
 }
 
 // ==========================================
@@ -141,15 +176,18 @@ export class CreateCampaignDto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ description: 'Training module IDs to include (built-in or custom)', type: [String] })
+  @ApiProperty({
+    description: 'Training module IDs to include (built-in or custom)',
+    type: [String],
+  })
   @IsArray()
   @IsString({ each: true })
   moduleIds: string[];
 
-  @ApiProperty({ 
-    description: 'Target groups: user roles (admin, compliance_manager, auditor, viewer) or "all"', 
+  @ApiProperty({
+    description: 'Target groups: user roles (admin, compliance_manager, auditor, viewer) or "all"',
     type: [String],
-    example: ['admin', 'compliance_manager']
+    example: ['admin', 'compliance_manager'],
   })
   @IsArray()
   @IsString({ each: true })
@@ -193,10 +231,15 @@ export class UpdateCampaignDto {
   @IsString({ each: true })
   targetGroups?: string[];
 
+  @ApiPropertyOptional({ description: 'Campaign start date' })
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
   @ApiPropertyOptional({ description: 'Campaign end date' })
   @IsOptional()
   @IsDateString()
-  endDate?: string;
+  endDate?: string | null;
 
   @ApiPropertyOptional({ description: 'Whether campaign is active' })
   @IsOptional()
@@ -343,7 +386,3 @@ export class CampaignStatsResponse {
   averageCompletionRate: number;
   averageScore: number;
 }
-
-
-
-

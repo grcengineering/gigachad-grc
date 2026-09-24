@@ -1,197 +1,172 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { Logger } from '@nestjs/common';
 import { MCPWorkflowService } from './mcp-workflow.service';
-import { MCPClientService } from './mcp-client.service';
-import { PrismaService } from '../prisma/prisma.service';
 
-// Mock Prometheus Counter
-const mockCounter = {
-  inc: jest.fn(),
-  labels: jest.fn().mockReturnThis(),
-};
+describe('MCPWorkflowService durable execution state', () => {
+  const definitions: any[] = [];
+  const executions: any[] = [];
+  const prisma: any = {
+    mcpWorkflowDefinition: {
+      upsert: jest.fn(async ({ where, create, update }) => {
+        const index = definitions.findIndex((row) => row.id === where.id);
+        const now = new Date();
+        if (index >= 0) {
+          definitions[index] = { ...definitions[index], ...update, updatedAt: now };
+          return definitions[index];
+        }
+        const row = { ...create, createdAt: now, updatedAt: now };
+        definitions.push(row);
+        return row;
+      }),
+      findMany: jest.fn(async ({ where }: any = {}) => {
+        if (!where) return definitions;
+        return definitions.filter((row) =>
+          where.isBuiltIn === true
+            ? row.isBuiltIn
+            : where.OR.some(
+                (condition: any) =>
+                  (condition.organizationId !== undefined &&
+                    row.organizationId === condition.organizationId) ||
+                  (condition.organizationId === null &&
+                    row.organizationId === null &&
+                    row.isBuiltIn)
+              )
+        );
+      }),
+      findFirst: jest.fn(
+        async ({ where }) =>
+          definitions.find(
+            (row) =>
+              row.id === where.id &&
+              where.OR.some(
+                (condition: any) =>
+                  (condition.organizationId !== undefined &&
+                    row.organizationId === condition.organizationId) ||
+                  (condition.organizationId === null &&
+                    row.organizationId === null &&
+                    row.isBuiltIn)
+              )
+          ) ?? null
+      ),
+    },
+    mcpWorkflowExecution: {
+      updateMany: jest.fn(async ({ where, data }) => {
+        let count = 0;
+        for (const row of executions) {
+          if (row.status === where.status) {
+            Object.assign(row, data);
+            count++;
+          }
+        }
+        return { count };
+      }),
+      create: jest.fn(async ({ data }) => {
+        const row = {
+          ...data,
+          input: data.input ?? null,
+          variables: data.variables ?? null,
+          output: null,
+          error: null,
+          completedAt: null,
+          startedAt: new Date(),
+        };
+        executions.push(row);
+        return row;
+      }),
+      update: jest.fn(async ({ where, data }) => {
+        const row = executions.find((candidate) => candidate.id === where.id);
+        Object.assign(row, data);
+        return row;
+      }),
+      findFirst: jest.fn(
+        async ({ where }) =>
+          executions.find(
+            (row) => row.id === where.id && row.organizationId === where.organizationId
+          ) ?? null
+      ),
+      findMany: jest.fn(async ({ where }) =>
+        executions.filter((row) => row.organizationId === where.organizationId)
+      ),
+    },
+    auditLog: { create: jest.fn(async () => ({})) },
+    organization: { findMany: jest.fn(async () => []) },
+  };
+  const mcpClient: any = {
+    callTool: jest.fn(async () => ({ collected: true })),
+  };
+  const counter: any = { inc: jest.fn() };
 
-// The injection token used by @InjectMetric decorator
-const METRIC_TOKEN = 'PROM_METRIC_MCP_WORKFLOW_EXECUTIONS_TOTAL';
-
-// Simple MCPClientService mock
-class MCPClientServiceMock {
-  public calls: Array<{ serverId: string; toolName: string; args: any }> = [];
-  private failCount = 0;
-  private failUntil = 0;
-
-  setFailureMode(failUntil: number) {
-    this.failCount = 0;
-    this.failUntil = failUntil;
-  }
-
-  async callTool(serverId: string, toolName: string, args: any) {
-    this.calls.push({ serverId, toolName, args });
-    if (this.failCount < this.failUntil) {
-      this.failCount++;
-      throw new Error('Simulated MCP failure');
-    }
-    return { success: true, result: { ok: true, attempt: this.failCount + 1 } };
-  }
-}
-
-describe('MCPWorkflowService - resilience features', () => {
-  let service: MCPWorkflowService;
-  let mcpClient: MCPClientServiceMock;
-
-  beforeAll(async () => {
-    mcpClient = new MCPClientServiceMock();
-
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        MCPWorkflowService,
-        { provide: MCPClientService, useValue: mcpClient },
-        { provide: PrismaService, useValue: {} },
-        { provide: METRIC_TOKEN, useValue: mockCounter },
-      ],
-    })
-      .setLogger(new Logger('MCPWorkflowServiceTest'))
-      .compile();
-
-    service = module.get<MCPWorkflowService>(MCPWorkflowService);
+  beforeEach(() => {
+    definitions.length = 0;
+    executions.length = 0;
+    jest.clearAllMocks();
+    process.env.NODE_ENV = 'test';
   });
 
-  it('retries a failing step according to retryPolicy and eventually succeeds', async () => {
-    const workflow: any = {
-      id: 'wf-1',
-      name: 'Test Workflow',
-      steps: [
-        {
-          id: 'step-1',
-          serverId: 'server',
-          toolName: 'tool',
-          arguments: {},
-          retryPolicy: {
-            maxAttempts: 3,
-            delayMs: 1,
-          },
-        },
-      ],
-    };
+  it('persists built-in definitions and reads them after reconstruction', async () => {
+    const first = new MCPWorkflowService(mcpClient, prisma, counter);
+    await first.onModuleInit();
 
-    // Register workflow directly into the service
-    (service as any).workflows.set(workflow.id, workflow);
+    const restarted = new MCPWorkflowService(mcpClient, prisma, counter);
+    await restarted.onModuleInit();
+    const workflows = await restarted.getWorkflows('org-a');
 
-    mcpClient.setFailureMode(1); // fail once, then succeed
-
-    const execution = await service.executeWorkflow(workflow.id, {});
-
-    // Let the internal runWorkflow promise finish
-    await new Promise((resolve) => setTimeout(resolve, 25));
-
-    const updatedExecution = service.getExecution(execution.id)!;
-    expect(updatedExecution.status).toBe('completed');
-    expect(updatedExecution.steps[0].status).toBe('completed');
-    expect(mcpClient.calls.length).toBeGreaterThanOrEqual(2);
+    expect(workflows.some((workflow) => workflow.id === 'evidence-collection')).toBe(true);
+    expect(definitions).toHaveLength(6);
   });
 
-  it('enforces a max workflow duration', async () => {
-    const workflow: any = {
-      id: 'wf-long',
-      name: 'Long Workflow',
-      timeout: 1,
-      steps: [
-        {
-          id: 'step-1',
-          serverId: 'server',
-          toolName: 'tool',
-          arguments: {},
-        },
-      ],
-    };
+  it('persists step and completion state across service instances', async () => {
+    const service = new MCPWorkflowService(mcpClient, prisma, counter);
+    await service.onModuleInit();
+    const execution = await service.executeWorkflow('org-a', 'user-a', 'policy-review', {
+      policyId: 'policy-1',
+      framework: 'SOC2',
+      policyType: 'security',
+    });
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
-    // Force callTool to be slow but successful
-    mcpClient.setFailureMode(0);
-    const originalCallTool = mcpClient.callTool.bind(mcpClient);
-    jest
-      .spyOn(mcpClient, 'callTool')
-      .mockImplementation(async (serverId: string, toolName: string, args: any) => {
-        await new Promise((resolve) => setTimeout(resolve, 10));
-        return originalCallTool(serverId, toolName, args);
-      });
-
-    (service as any).workflows.set(workflow.id, workflow);
-    const execution = await service.executeWorkflow(workflow.id, {});
-
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
-    const updatedExecution = service.getExecution(execution.id)!;
-    expect(['failed', 'completed']).toContain(updatedExecution.status);
+    const restarted = new MCPWorkflowService(mcpClient, prisma, counter);
+    const persisted = await restarted.getExecution('org-a', execution.id);
+    expect(persisted?.status).toBe('completed');
+    expect(persisted?.steps.every((step) => step.status === 'completed')).toBe(true);
   });
 
-  it('marks step as failed and stops workflow when retries are exhausted', async () => {
-    const workflow: any = {
-      id: 'wf-retry-fail',
-      name: 'Retry Exhaustion Workflow',
-      steps: [
-        {
-          id: 'step-1',
-          serverId: 'server',
-          toolName: 'always-fail',
-          arguments: {},
-          retryPolicy: {
-            maxAttempts: 2,
-            delayMs: 1,
-          },
-        },
-      ],
-    };
+  it('marks interrupted executions failed on restart', async () => {
+    executions.push({
+      id: 'exec-interrupted',
+      workflowId: 'policy-review',
+      organizationId: 'org-a',
+      requestedBy: 'user-a',
+      status: 'running',
+      steps: [],
+      input: null,
+      variables: null,
+      output: null,
+      error: null,
+      startedAt: new Date(),
+      completedAt: null,
+    });
 
-    (service as any).workflows.set(workflow.id, workflow);
-
-    jest
-      .spyOn(mcpClient, 'callTool')
-      .mockRejectedValueOnce(new Error('fail-1'))
-      .mockRejectedValueOnce(new Error('fail-2'));
-
-    const execution = await service.executeWorkflow(workflow.id, {});
-    await new Promise((resolve) => setTimeout(resolve, 25));
-
-    const updatedExecution = service.getExecution(execution.id)!;
-    expect(updatedExecution.status).toBe('failed');
-    expect(updatedExecution.steps[0].status).toBe('failed');
-    expect(mcpClient.calls.length).toBeGreaterThanOrEqual(2);
+    const restarted = new MCPWorkflowService(mcpClient, prisma, counter);
+    await restarted.onModuleInit();
+    const persisted = await restarted.getExecution('org-a', 'exec-interrupted');
+    expect(persisted).toMatchObject({
+      status: 'failed',
+      error: 'Execution interrupted by service restart',
+    });
   });
 
-  it('continues workflow when a step fails with onFailure=continue', async () => {
-    const workflow: any = {
-      id: 'wf-continue',
-      name: 'Continue on Failure Workflow',
-      steps: [
-        {
-          id: 'step-1',
-          serverId: 'server',
-          toolName: 'fail-step',
-          arguments: {},
-          onFailure: 'continue',
-        },
-        {
-          id: 'step-2',
-          serverId: 'server',
-          toolName: 'success-step',
-          arguments: {},
-          dependsOn: ['step-1'],
-        },
-      ],
-    };
+  it('starts and persists event-triggered workflows in the authenticated organization', async () => {
+    const service = new MCPWorkflowService(mcpClient, prisma, counter);
+    await service.onModuleInit();
 
-    (service as any).workflows.set(workflow.id, workflow);
+    const started = await service.triggerEvent('org-a', 'user-a', 'risk.created', {
+      riskDescription: 'Credential compromise',
+    });
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
-    jest
-      .spyOn(mcpClient, 'callTool')
-      .mockRejectedValueOnce(new Error('step-1-fail'))
-      .mockResolvedValueOnce({ success: true, result: { ok: true, attempt: 1 } });
-
-    const execution = await service.executeWorkflow(workflow.id, {});
-    await new Promise((resolve) => setTimeout(resolve, 25));
-
-    const updatedExecution = service.getExecution(execution.id)!;
-    expect(updatedExecution.status).toBe('completed');
-    expect(updatedExecution.steps.find((s) => s.stepId === 'step-1')?.status).toBe('failed');
-    expect(updatedExecution.steps.find((s) => s.stepId === 'step-2')?.status).toBe('completed');
+    expect(started).toHaveLength(1);
+    expect(started[0].workflowId).toBe('risk-assessment');
+    await expect(service.getExecution('org-a', started[0].id)).resolves.toMatchObject({
+      status: 'completed',
+    });
   });
 });

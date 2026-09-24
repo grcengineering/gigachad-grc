@@ -341,7 +341,7 @@ export class ConnectorFactory {
     this.connectors.set('bloomfire', new ProductivityConnectors.BloomfireConnector());
     this.connectors.set('helpjuice', new ProductivityConnectors.HelpjuiceConnector());
     this.connectors.set('knowledgeowl', new ProductivityConnectors.KnowledgeOwlConnector());
-    this.connectors.set('notion', new AdditionalConnectors.NotionKMConnector());
+    this.connectors.set('notion_km', new AdditionalConnectors.NotionKMConnector());
 
     // Storage
     this.connectors.set('sharepoint', new ITAMConnectors.SharePointConnector());
@@ -401,8 +401,9 @@ export class ConnectorFactory {
 
     if (!connector) {
       return {
-        success: true,
-        message: `Configuration validated (${integrationType} connector pending implementation)`,
+        success: false,
+        message: `Integration type "${integrationType}" is not supported by this deployment`,
+        details: { supported: false },
       };
     }
 
@@ -463,12 +464,7 @@ export class ConnectorFactory {
     const connector = this.getConnector(integrationType);
 
     if (!connector) {
-      return {
-        success: false,
-        message: `No connector available for ${integrationType}`,
-        collectedAt: new Date().toISOString(),
-        errors: [`Connector not implemented for ${integrationType}`],
-      };
+      throw new Error(`Integration type "${integrationType}" is not supported by this deployment`);
     }
 
     const circuitBreaker = this.getCircuitBreaker(integrationType);
@@ -484,20 +480,48 @@ export class ConnectorFactory {
     try {
       // Execute with circuit breaker and retry (use standard policy for sync operations)
       return await circuitBreaker.fire(async () => {
-        return await withRetry(() => connector.sync(config), {
-          ...RetryPolicies.standard,
-          operationName: `sync:${integrationType}`,
-          onRetry: (error, attempt) => {
-            this.logger.warn(
-              `Retrying sync for ${integrationType} (attempt ${attempt}): ${error.message}`
-            );
+        return await withRetry(
+          async () => {
+            const result = await connector.sync(config);
+            const failure = this.getSyncFailure(result);
+            if (failure) {
+              throw new Error(failure);
+            }
+            return result;
           },
-        });
+          {
+            ...RetryPolicies.standard,
+            operationName: `sync:${integrationType}`,
+            onRetry: (error, attempt) => {
+              this.logger.warn(
+                `Retrying sync for ${integrationType} (attempt ${attempt}): ${error.message}`
+              );
+            },
+          }
+        );
       });
     } catch (error: any) {
       this.logger.error(`Sync failed for ${integrationType}`, error);
       throw error;
     }
+  }
+
+  private getSyncFailure(result: any): string | null {
+    if (!result || typeof result !== 'object') {
+      return 'Connector returned an invalid sync result';
+    }
+    if (result.success === false) {
+      return result.message || 'Connector reported an unsuccessful sync';
+    }
+    if (typeof result.error === 'string' && result.error.trim()) {
+      return result.error;
+    }
+    if (Array.isArray(result.errors) && result.errors.length > 0) {
+      return `Connector sync returned errors: ${result.errors
+        .map((error: unknown) => (typeof error === 'string' ? error : JSON.stringify(error)))
+        .join('; ')}`;
+    }
+    return null;
   }
 
   /**

@@ -76,7 +76,7 @@ export class RetentionController {
     @Param('id') id: string,
     @Body() dto: UpdateRetentionPolicyDto,
   ): Promise<RetentionPolicyDto> {
-    return this.retentionService.updatePolicy(user.organizationId, id, dto);
+    return this.retentionService.updatePolicy(user.organizationId, user.userId, id, dto);
   }
 
   @Delete(':id')
@@ -85,7 +85,7 @@ export class RetentionController {
     @CurrentUser() user: UserContext,
     @Param('id') id: string,
   ): Promise<void> {
-    return this.retentionService.deletePolicy(user.organizationId, id);
+    return this.retentionService.deletePolicy(user.organizationId, user.userId, id);
   }
 
   @Post(':id/run')
@@ -96,6 +96,6 @@ export class RetentionController {
     @Param('id') id: string,
     @Body() dto: RunRetentionPolicyDto,
   ): Promise<RetentionRunResultDto> {
-    return this.retentionService.runPolicy(user.organizationId, id, dto);
+    return this.retentionService.runPolicy(user.organizationId, user.userId, id, dto);
   }
 }

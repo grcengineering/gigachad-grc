@@ -1,4 +1,5 @@
 import { aiClient } from './ai-client.js';
+import { useExplicitDemoFallback } from '../demo-mode.js';
 
 interface RemediationPrioritizerParams {
   findings: {
@@ -62,11 +63,15 @@ interface ResourceRequirement {
   notes: string;
 }
 
-export async function prioritizeRemediation(params: RemediationPrioritizerParams): Promise<RemediationPlan> {
+export async function prioritizeRemediation(
+  params: RemediationPrioritizerParams
+): Promise<RemediationPlan> {
   const { findings, constraints, prioritizationStrategy = 'balanced' } = params;
 
   if (!aiClient.isConfigured()) {
-    return generateMockPrioritization(findings, constraints, prioritizationStrategy);
+    return useExplicitDemoFallback('AI service is not configured', () =>
+      generateMockPrioritization(findings, constraints, prioritizationStrategy)
+    );
   }
 
   const systemPrompt = `You are a GRC remediation planning expert. Prioritize the provided findings based on the ${prioritizationStrategy} strategy.
@@ -89,8 +94,13 @@ Return JSON with prioritized findings organized into phases.`;
       prioritizedAt: new Date().toISOString(),
       ...result,
     };
-  } catch {
-    return generateMockPrioritization(findings, constraints, prioritizationStrategy);
+  } catch (error) {
+    return useExplicitDemoFallback(
+      `AI remediation prioritization failed: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      () => generateMockPrioritization(findings, constraints, prioritizationStrategy)
+    );
   }
 }
 
@@ -117,10 +127,10 @@ function generateMockPrioritization(
   const prioritizedFindings: PrioritizedFinding[] = findings.map((finding, index) => {
     const severity = finding.severity?.toLowerCase() || 'medium';
     const effort = finding.estimatedEffort?.toLowerCase() || 'medium';
-    
+
     const riskScore = severityWeights[severity] || 4;
     const effortScore = effort === 'low' ? 1 : effort === 'medium' ? 3 : effort === 'high' ? 5 : 7;
-    
+
     // Value score based on strategy
     let valueScore: number;
     switch (strategy) {
@@ -128,13 +138,13 @@ function generateMockPrioritization(
         valueScore = riskScore * 2;
         break;
       case 'quick_wins':
-        valueScore = riskScore / effortScore * 5;
+        valueScore = (riskScore / effortScore) * 5;
         break;
       case 'compliance_deadline':
         valueScore = riskScore + (10 - index);
         break;
       default:
-        valueScore = (riskScore * 1.5) + (5 / effortScore);
+        valueScore = riskScore * 1.5 + 5 / effortScore;
     }
 
     const effortConfig = effortWeights[effort] || effortWeights.medium;
@@ -166,14 +176,19 @@ function generateMockPrioritization(
   // Organize into phases
   const maxPhases = constraints?.timeframeWeeks ? Math.ceil(constraints.timeframeWeeks / 4) : 3;
   const phases: RemediationPhase[] = [];
-  
+
   for (let phase = 1; phase <= maxPhases; phase++) {
-    const phaseFindings = prioritizedFindings.filter(f => f.recommendedPhase === phase);
+    const phaseFindings = prioritizedFindings.filter((f) => f.recommendedPhase === phase);
     if (phaseFindings.length === 0 && phase > 1) continue;
 
     phases.push({
       phase,
-      name: phase === 1 ? 'Critical & Quick Wins' : phase === 2 ? 'High Priority Items' : 'Remaining Items',
+      name:
+        phase === 1
+          ? 'Critical & Quick Wins'
+          : phase === 2
+            ? 'High Priority Items'
+            : 'Remaining Items',
       duration: `Weeks ${(phase - 1) * 4 + 1}-${phase * 4}`,
       findings: phaseFindings,
       milestones: [
@@ -186,7 +201,7 @@ function generateMockPrioritization(
 
   // Calculate summary
   const totalEstimatedCost = prioritizedFindings.reduce((sum, f) => sum + f.estimatedCost, 0);
-  const totalEstimatedWeeks = Math.max(...prioritizedFindings.map(f => f.recommendedPhase * 4));
+  const totalEstimatedWeeks = Math.max(...prioritizedFindings.map((f) => f.recommendedPhase * 4));
 
   return {
     prioritizedAt: new Date().toISOString(),
@@ -196,10 +211,10 @@ function generateMockPrioritization(
     summary: {
       totalEstimatedCost,
       totalEstimatedWeeks,
-      criticalFindings: prioritizedFindings.filter(f => f.priorityLabel === 'Critical').length,
-      highFindings: prioritizedFindings.filter(f => f.priorityLabel === 'High').length,
-      mediumFindings: prioritizedFindings.filter(f => f.priorityLabel === 'Medium').length,
-      lowFindings: prioritizedFindings.filter(f => f.priorityLabel === 'Low').length,
+      criticalFindings: prioritizedFindings.filter((f) => f.priorityLabel === 'Critical').length,
+      highFindings: prioritizedFindings.filter((f) => f.priorityLabel === 'High').length,
+      mediumFindings: prioritizedFindings.filter((f) => f.priorityLabel === 'Medium').length,
+      lowFindings: prioritizedFindings.filter((f) => f.priorityLabel === 'Low').length,
     },
     recommendations: [
       'Address critical findings immediately to reduce risk exposure',
@@ -214,7 +229,3 @@ function generateMockPrioritization(
     ],
   };
 }
-
-
-
-

@@ -5,26 +5,20 @@
 [![License: Elastic-2.0](https://img.shields.io/badge/License-Elastic--2.0-blue.svg)](LICENSE)
 [![Node.js 22.22.3+](https://img.shields.io/badge/Node.js-22.22.3%2B-green.svg)](https://nodejs.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-A comprehensive, modular, containerized Governance, Risk, and Compliance (GRC) platform built with modern technologies. Manage your entire security program from compliance tracking to risk management, third-party assessments, and external audits.
+GigaChad GRC is a self-hosted, modular Governance, Risk, and Compliance platform. The repository contains a React frontend, six NestJS API services, PostgreSQL, Redis, Keycloak, RustFS object storage, Traefik, and local monitoring.
 
----
+> The supported evaluation path on this revision is the local Docker Compose stack. The production Compose file and Helm chart are deployment references that require environment-specific review and configuration. Supabase/Vercel, Gitpod, and GitHub Codespaces are not configured deployment targets in this repository.
 
-## Quick Start
+## Quick start
 
 ### Prerequisites
 
-| Requirement        | Minimum    | Notes                                                                                                                                                                                                |
-| ------------------ | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Docker Desktop** | v4.0+      | [Download for Mac](https://www.docker.com/products/docker-desktop/) / [Windows](https://www.docker.com/products/docker-desktop/) (requires WSL 2) / Linux: `curl -fsSL https://get.docker.com \| sh` |
-| **RAM**            | 8 GB       | 16 GB recommended                                                                                                                                                                                    |
-| **CPU**            | 4 cores    | 8 cores recommended                                                                                                                                                                                  |
-| **Disk**           | 10 GB free | 20 GB recommended                                                                                                                                                                                    |
+- Docker Desktop or Docker Engine with Compose v2
+- 8 GB RAM and 10 GB free disk minimum
+- Git
 
-> **No Node.js, npm, or other development tools required.** Everything runs inside Docker containers.
-
-### Start the Platform
+Node.js is not required for the canonical Docker flow.
 
 ```bash
 git clone https://github.com/grcengineering/gigachad-grc.git
@@ -32,378 +26,170 @@ cd gigachad-grc
 ./start.sh
 ```
 
-**Windows users:** Run `start.bat` instead.
+`./start.sh`:
 
-`./start.sh` handles everything automatically:
+1. verifies Docker;
+2. creates `.env` with generated local credentials when the file does not exist;
+3. creates a self-signed development certificate;
+4. runs `docker compose up -d --build`; and
+5. opens `https://localhost` on macOS.
 
-1. Checks that Docker is installed and running
-2. Generates a `.env` file with secure random secrets (if one doesn't exist)
-3. Builds and starts all containers with `docker compose up -d --build`
-4. Opens your browser to `https://localhost`
+If `.env` already exists, it is reused unchanged. Replace placeholders yourself or remove the file and run `./start.sh` again. Never commit `.env`.
 
-**First run takes 3-5 minutes** while Docker builds the images. Subsequent starts take ~30 seconds.
-
-> **Use `https://localhost`, not `http://localhost:3000`.** Port 3000 is the frontend container's *direct* port - it serves the app's static files but has no route to the backend APIs, so pages will load with no data (and some will crash outright). All traffic - UI and API alike - goes through the Traefik gateway at `https://localhost`, which is also the only origin Keycloak SSO is configured to redirect back to. Since the cert is self-signed, your browser will warn on first visit; click through it (see [Local HTTPS](#local-https) below).
-
-### Log In
-
-When the browser opens to `https://localhost`, click the **"Dev Login"** button. No username or password needed. This bypasses Keycloak SSO and uses a local development account.
-
-> **Important:** The Dev Login button only appears when `VITE_ENABLE_DEV_AUTH=true` is set in your `.env` file. The `./start.sh` script sets this automatically. If you created your `.env` manually, you must add this variable yourself.
-
-### Manage the Platform
-
-| Command             | Description                                |
-| ------------------- | ------------------------------------------ |
-| `./start.sh`        | Start the platform                         |
-| `./start.sh stop`   | Stop all services                          |
-| `./start.sh logs`   | View live logs                             |
-| `./start.sh status` | Check service health                       |
-| `./start.sh reset`  | Stop and remove all containers and volumes |
-
----
-
-## Manual Setup (Alternative)
-
-If you prefer to run `docker compose` directly instead of using `./start.sh`, you **must** create a valid `.env` file first. The `.env.example` file contains placeholder values that will not work as-is.
-
-### Step 1: Generate Secrets and Create `.env`
+The first build can take several minutes. Check progress with:
 
 ```bash
-cp .env.example .env
+./start.sh status
+./start.sh logs
 ```
 
-Then replace **every placeholder** value in `.env` with real secrets:
+### Access and credentials
+
+Use the gateway URL for the application:
+
+| Service        | URL                            | Authentication                                              |
+| -------------- | ------------------------------ | ----------------------------------------------------------- |
+| Application    | `https://localhost`            | Click **Dev Login**                                         |
+| Keycloak       | `https://auth.localhost`       | `KEYCLOAK_ADMIN` / `KEYCLOAK_ADMIN_PASSWORD` from `.env`    |
+| Grafana        | `https://grafana.localhost`    | `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` from `.env` |
+| Prometheus     | `https://prometheus.localhost` | None in the local stack                                     |
+| RustFS console | `http://localhost:9001`        | `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` from `.env`       |
+
+The self-signed certificate causes a browser warning on first use. Direct ports such as `http://localhost:3000` and `http://localhost:8080` are loopback-only debugging endpoints. Port 3000 serves the frontend shell without gateway API routing, so it is not the application URL.
+
+Per-service Swagger documentation is available on direct local ports:
+
+| Service    | Swagger URL                      |
+| ---------- | -------------------------------- |
+| Controls   | `http://localhost:3001/api/docs` |
+| Frameworks | `http://localhost:3002/api/docs` |
+| Policies   | `http://localhost:3004/api/docs` |
+| TPRM       | `http://localhost:3005/api/docs` |
+| Trust      | `http://localhost:3006/api/docs` |
+| Audit      | `http://localhost:3007/api/docs` |
+
+The Traefik dashboard is disabled by default. It is not available at port 8090 unless the relevant local environment flags are explicitly enabled.
+
+### Local authentication and mock behavior
+
+The local Compose build intentionally enables development authentication:
+
+- backend services run with `NODE_ENV=development`;
+- the frontend is built with `VITE_ENABLE_DEV_AUTH=true`; and
+- `VITE_ENABLE_DEV_STUBS` remains disabled.
+
+Development authentication is rejected by the backend in production. It is not a production login mechanism.
+
+External integrations do not silently generate sample evidence when credentials are absent. Configure and test each provider before syncing. AI mock output is opt-in in non-production environments with:
 
 ```bash
-# Generate and replace ENCRYPTION_KEY
-openssl rand -hex 32
-
-# Generate and replace JWT_SECRET, SESSION_SECRET
-openssl rand -base64 64
-
-# Generate and replace POSTGRES_PASSWORD, REDIS_PASSWORD,
-# MINIO_ROOT_PASSWORD, GRAFANA_ADMIN_PASSWORD,
-# KEYCLOAK_ADMIN_PASSWORD, PHISHING_TRACKING_SECRET
-openssl rand -base64 24
+AI_MOCK_MODE=true
 ```
 
-After generating your `POSTGRES_PASSWORD`, update the `DATABASE_URL` to match:
+Without a configured AI provider or that explicit flag, AI availability varies by module and may return an unavailable error. See [Feature and integration availability](#feature-and-integration-availability).
 
-```
-DATABASE_URL=postgresql://grc:YOUR_GENERATED_PASSWORD@localhost:5433/gigachad_grc
-```
+### Demo data
 
-Set `VITE_ENABLE_DEV_AUTH=true` to enable the Dev Login button (required for local use without Keycloak HTTPS).
-
-### Step 2: Required Environment Variables
-
-Docker Compose will **refuse to start** if any of these variables are missing or empty:
-
-| Variable                   | Description                       | Example Value             |
-| -------------------------- | --------------------------------- | ------------------------- |
-| `POSTGRES_USER`            | Database username                 | `grc`                     |
-| `POSTGRES_PASSWORD`        | Database password                 | _(generate with openssl)_ |
-| `REDIS_PASSWORD`           | Redis password                    | _(generate with openssl)_ |
-| `MINIO_ROOT_USER`          | RustFS/S3 storage username        | `rustfsadmin`             |
-| `MINIO_ROOT_PASSWORD`      | RustFS/S3 storage password        | _(generate with openssl)_ |
-| `KEYCLOAK_ADMIN_PASSWORD`  | Keycloak admin password           | _(generate with openssl)_ |
-| `ENCRYPTION_KEY`           | AES encryption key (64 hex chars) | _(generate with openssl)_ |
-| `PHISHING_TRACKING_SECRET` | Phishing module signing secret    | _(generate with openssl)_ |
-| `GRAFANA_ADMIN_USER`       | Grafana admin username            | `admin`                   |
-| `GRAFANA_ADMIN_PASSWORD`   | Grafana admin password            | _(generate with openssl)_ |
-
-### Step 3: Start
+Demo records are not loaded automatically, and this revision has no active in-app demo-data button. In the local development stack, load them through the controls API:
 
 ```bash
-./scripts/generate-dev-certs.sh   # one-time: generates the gateway's self-signed cert
-docker compose up -d --build
+curl -k -X POST https://localhost/api/seed/load-demo
 ```
 
-Wait 2-3 minutes on first run, then open `https://localhost`.
+The endpoint is admin-only, idempotence-protected, and disabled when `NODE_ENV=production`. See [Demo and sandbox guide](docs/DEMO.md).
 
----
-
-## Troubleshooting
-
-### `GRAFANA_ADMIN_USER is required` or `GRAFANA_ADMIN_PASSWORD is required`
-
-Your `.env` file is missing Grafana credentials. Add:
-
-```
-GRAFANA_ADMIN_USER=admin
-GRAFANA_ADMIN_PASSWORD=your_secure_password
-```
-
-Or use `./start.sh` which generates these automatically.
-
-### Page redirects to `localhost:8080/realms/gigachad-grc/...` and fails
-
-This happens when you access the app or Keycloak directly by port (`http://localhost:3000`, `http://localhost:8080`) instead of through the Traefik gateway. Use `https://localhost` instead - see [Local HTTPS](#local-https) below. Dev Login (below) is also available as a Keycloak-free shortcut either way.
-
-### Local HTTPS
-
-The gateway (Traefik) terminates TLS with a self-signed certificate so both the app and Keycloak SSO work correctly at `https://localhost` / `https://auth.localhost`. Direct container ports (`:3000`, `:8080`, etc.) remain plain HTTP and bypass API routing - they're for debugging individual containers, not for using the app.
-
-The certificate is generated automatically the first time you need it, or you can generate/regenerate it yourself:
+### Common commands
 
 ```bash
-./scripts/generate-dev-certs.sh          # skips if a cert already exists
-./scripts/generate-dev-certs.sh --force  # regenerate
+./start.sh          # start or rebuild the stack
+./start.sh status   # show container status
+./start.sh logs     # follow logs
+./start.sh stop     # stop containers, preserve data
+./start.sh reset    # remove containers, volumes, and generated .env
 ```
 
-Your browser will warn about the self-signed certificate on first visit to `https://localhost` (and `https://auth.localhost`, `https://grafana.localhost`, `https://prometheus.localhost`) - click through it (e.g. "Advanced > Proceed"), or import `gateway/certs/dev-localhost.crt` into your OS/browser trust store to silence the warning permanently.
+`./scripts/start-demo.sh` is a compatibility wrapper around `./start.sh`; it does not maintain a separate Node/Vite launch path.
 
-### `Cannot access 'N' before initialization` (recharts error)
+## Database schema and startup flow
 
-This was a Vite code-splitting issue that has been fixed. Pull the latest code:
+All services use one Prisma schema:
 
-```bash
-git pull origin main
-./start.sh
+```text
+services/shared/prisma/schema.prisma
 ```
 
-### `pull access denied for grc-trust` (or other service)
+The Docker startup flow is:
 
-```
-pull access denied for grc-trust, repository does not exist or may require 'docker login'
-```
+1. PostgreSQL first-boot scripts create supporting databases, extensions, and schemas.
+2. The controls container entrypoint runs the committed Prisma baseline and forward-only
+   migrations through `deploy/prisma-migrate-safe.sh`.
+3. The same entrypoint applies the idempotent BC/DR SQL migration.
+4. Other services start against that shared database.
 
-All application services (controls, frameworks, trust, etc.) are built locally from Dockerfiles -- they don't exist on Docker Hub. This error means Docker tried to pull the image instead of building it, which happens when you run `docker compose up` without the `--build` flag.
+Do not run independent per-service migrations or the numbered `database/init/*.sql` files as an
+application migration chain. See [Database schema](docs/DATABASE_SCHEMA.md),
+[Database hardening rollout](docs/DATABASE_HARDENING_ROLLOUT.md), and
+[Upgrade guide](docs/UPGRADE.md).
 
-**Fix:** Use `./start.sh` (which includes `--build` automatically), or run:
+## Feature and integration availability
 
-```bash
-docker compose up -d --build
-```
+The repository includes UI and API implementations for controls, frameworks, evidence, policies, risks, TPRM, trust, audits, training, BC/DR, and administration. Availability still depends on the selected workflow, permissions, storage, and external providers.
 
-### Port already in use
+Configuration-required capabilities include:
 
-Another process is using one of the required ports. Check with:
+- Keycloak SSO outside local development;
+- SMTP and other outbound notification providers;
+- OpenAI or Anthropic for real AI output;
+- credentials, scopes, enabled upstream APIs, and network egress for connectors;
+- external backup storage for off-host disaster recovery;
+- MCP server credentials and any upstream tools they call. The default Controls image packages
+  and launches the three repository MCP servers; and
+- custom integration code execution, which is disabled unless `ENABLE_CUSTOM_CODE_EXECUTION=true`.
 
-```bash
-# macOS/Linux
-lsof -i :3000
-
-# Stop existing GigaChad containers
-./start.sh stop
-```
-
-### Docker is not running
-
-```
-Cannot connect to the Docker daemon
-```
-
-Start Docker Desktop and wait for it to fully initialize before running `./start.sh`.
-
-### Resetting everything
-
-To completely reset (removes all data, volumes, and containers):
-
-```bash
-docker compose down -v
-./start.sh
-```
-
-> **Warning:** `docker compose down -v` deletes all database data, evidence files, and cached sessions. Run backups first if you have data to preserve.
-
----
-
-## Access Points
-
-**Use the app itself at `https://localhost`** (via the Traefik gateway, see [Local HTTPS](#local-https)) - not the direct frontend port below, which has no route to the backend APIs. The per-service ports are for hitting an individual service's Swagger docs directly, or for debugging that one container.
-
-| Service               | URL                             | Credentials       |
-| --------------------- | -------------------------------- | ----------------- |
-| **App (via gateway)** | https://localhost                | Click "Dev Login" |
-| **Frontend (direct)** | http://localhost:3000            | UI shell only - no API access |
-| **Controls API**      | http://localhost:3001/api/docs   | Swagger UI        |
-| **Frameworks API**    | http://localhost:3002/api/docs   | Swagger UI        |
-| **Grafana**           | https://grafana.localhost        | Set in `.env`     |
-| **Policies API**      | http://localhost:3004/api/docs   | Swagger UI        |
-| **TPRM API**          | http://localhost:3005/api/docs   | Swagger UI        |
-| **Trust API**         | http://localhost:3006/api/docs   | Swagger UI        |
-| **Audit API**         | http://localhost:3007/api/docs   | Swagger UI        |
-| **Keycloak Admin**    | https://auth.localhost           | Set in `.env`     |
-| **Traefik Dashboard** | http://localhost:8090            | None              |
-| **RustFS Console**    | http://localhost:9001            | Set in `.env`     |
-| **Prometheus**        | https://prometheus.localhost     | None              |
-| **PostgreSQL**        | localhost:5433                   | Set in `.env`     |
-| **Redis**             | localhost:6380                   | Set in `.env`     |
-
----
-
-## System Requirements
-
-### Minimum (development/demo)
-
-- Docker Desktop 4.0+
-- 8 GB RAM, 4 CPU cores, 10 GB disk
-- macOS, Windows (WSL 2), or Linux
-
-### Recommended (development)
-
-- 16 GB RAM, 8 cores, 20 GB disk
-- SSD storage for faster Docker builds
-
-### Production
-
-See the [Deployment Guide](docs/DEPLOYMENT.md) and [Production Deployment Checklist](docs/PRODUCTION_DEPLOYMENT.md).
-
----
-
-## Platform Overview
-
-GigaChad GRC is a complete enterprise GRC solution organized into specialized modules:
-
-| Module                      | Description                                                                                                                      |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| **Compliance**              | Controls library, framework readiness (SOC 2, ISO 27001, NIST CSF, PCI DSS, HIPAA), evidence collection, cross-framework mapping |
-| **Risk Management**         | Risk register, likelihood/impact scoring, heatmaps, treatment tracking, scenario modeling, risk workflows                        |
-| **Policies**                | Policy lifecycle management with versioning, approval workflows, review scheduling                                               |
-| **Third-Party Risk (TPRM)** | Vendor management, security assessments, contract lifecycle, SLA tracking                                                        |
-| **Trust**                   | Security questionnaires, knowledge base, public-facing trust center portal                                                       |
-| **Audit**                   | Internal/external audit management, evidence requests, findings, auditor portal, FieldGuide integration                          |
-| **Tools**                   | Security awareness training, phishing simulations, certificate management                                                        |
-| **AI & Automation**         | AI-powered risk scoring, auto-categorization, smart search, MCP server integration                                               |
-| **Integrations**            | AWS, Azure, GitHub, Okta, Google Workspace, Jamf, and 40+ connectors for automated evidence collection                           |
-| **Administration**          | User management, RBAC, audit logging, risk configuration, system health monitoring                                               |
-
-For detailed module documentation including API endpoints, see the [API Reference](docs/API.md).
-
----
+The integration catalog is larger than the set verified end-to-end. A catalog card or factory registration is not a support guarantee. Review [Integration implementation status](docs/INTEGRATION_IMPLEMENTATION_STATUS.md) before relying on a connector.
 
 ## Architecture
 
+```text
+Browser
+  |
+  v
+Traefik (HTTPS :443)
+  |-- Frontend
+  |-- Controls API    :3001
+  |-- Frameworks API  :3002
+  |-- Policies API    :3004
+  |-- TPRM API        :3005
+  |-- Trust API       :3006
+  `-- Audit API       :3007
+          |
+          +-- PostgreSQL (one shared Prisma schema)
+          +-- Redis
+          +-- Keycloak
+          `-- RustFS
 ```
-                           ┌─────────────────────────────────┐
-                           │       Traefik API Gateway       │
-                           │         (Ports 80/443)          │
-                           └──────────┬──────────────────────┘
-                                      │
-          ┌───────────┬───────────┬────┴────┬───────────┬───────────┬───────────┐
-          │           │           │         │           │           │           │
-     Controls    Frameworks   Policies    TPRM       Trust       Audit     Frontend
-      :3001        :3002       :3004     :3005      :3006       :3007       :3000
-          │           │           │         │           │           │
-          └───────────┴───────────┴────┬────┴───────────┴───────────┘
-                                       │
-                              Shared Library
-                    (Prisma, Auth, Storage, Events, Types)
-                                       │
-               ┌───────────┬───────────┼───────────┐
-               │           │           │           │
-          PostgreSQL     Redis     Keycloak     RustFS
-            :5433        :6380      :8080     :9000/:9001
-```
-
-### Tech Stack
-
-- **Backend**: Node.js 22 LTS + TypeScript with NestJS
-- **Frontend**: React + TypeScript with Vite, TailwindCSS
-- **Database**: PostgreSQL 16 with Prisma ORM
-- **Authentication**: Keycloak (SSO, RBAC) with dev-mode bypass
-- **API Gateway**: Traefik v3
-- **Cache**: Redis
-- **Storage**: RustFS (S3-compatible, Apache 2.0 -- [github.com/rustfs/rustfs](https://github.com/rustfs/rustfs))
-- **Monitoring**: Prometheus + Grafana
-- **Containers**: Docker with Docker Compose
-
----
 
 ## Documentation
 
-### Getting Started
+- [Getting started](GETTING_STARTED.md)
+- [Demo and sandbox](docs/DEMO.md)
+- [Deployment status and options](docs/DEPLOYMENT.md)
+- [Production deployment](docs/PRODUCTION_DEPLOYMENT.md)
+- [Upgrade guide](docs/UPGRADE.md)
+- [Environment configuration](docs/ENV_CONFIGURATION.md)
+- [Development](docs/DEVELOPMENT.md)
+- [API reference](docs/API.md)
+- [Help center content](docs/help/README.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
 
-| Document                                        | Description                                                |
-| ----------------------------------------------- | ---------------------------------------------------------- |
-| **[Getting Started Guide](GETTING_STARTED.md)** | Complete setup guide with screenshots for all skill levels |
-| [Quick Start Guide](docs/QUICK_START.md)        | Fast-track setup for experienced users                     |
-| [Demo & Sandbox](docs/DEMO.md)                  | One-click demo setup with sample data                      |
-| [Troubleshooting](docs/TROUBLESHOOTING.md)      | Common issues and solutions                                |
+Run documentation validation with:
 
-### Core Documentation
-
-| Document                                         | Description                                                       |
-| ------------------------------------------------ | ----------------------------------------------------------------- |
-| [Architecture Guide](docs/ARCHITECTURE.md)       | System architecture, API gateway, microservices, network topology |
-| [API Reference](docs/API.md)                     | Complete API documentation with endpoints and examples            |
-| [Configuration Reference](docs/CONFIGURATION.md) | Environment variables, service configuration, database            |
-| [Development Guide](docs/DEVELOPMENT.md)         | Local setup, project structure, coding standards, testing         |
-| [Deployment Guide](docs/DEPLOYMENT.md)           | Production deployment, CI/CD, monitoring, backups                 |
-| [Database Schema](docs/DATABASE_SCHEMA.md)       | All Prisma models, enums, and entity relationships                |
-| [Shared Library](services/shared/README.md)      | Auth, storage, events, utils, and shared types                    |
-
-### Security
-
-| Document                                         | Description                                  |
-| ------------------------------------------------ | -------------------------------------------- |
-| [Security Policy](SECURITY.md)                   | Vulnerability reporting and policies         |
-| [Security Model](docs/SECURITY_MODEL.md)         | Authentication, authorization, and hardening |
-| [Permissions Matrix](docs/PERMISSIONS_MATRIX.md) | Role-based access control definitions        |
-
-### Operations
-
-| Document                                               | Description                              |
-| ------------------------------------------------------ | ---------------------------------------- |
-| [Environment Configuration](docs/ENV_CONFIGURATION.md) | Detailed environment variable reference  |
-| [Module Configuration](docs/MODULE_CONFIGURATION.md)   | Enable/disable platform modules          |
-| [Production Deployment](docs/PRODUCTION_DEPLOYMENT.md) | Production-ready deployment checklist    |
-| [Remote Deployment](docs/REMOTE_DEPLOYMENT.md)         | Deploying on remote servers, VMs, or LAN |
-| [Monitoring](monitoring/README.md)                     | Prometheus + Grafana setup               |
-
----
-
-## Project Structure
-
+```bash
+npm run validate:docs
 ```
-gigachad-grc/
-├── frontend/                 # React SPA (Vite + TailwindCSS)
-├── services/
-│   ├── shared/               # Shared library (Prisma, auth, storage, types)
-│   ├── controls/             # Controls, evidence, integrations, risk, audit logging
-│   ├── frameworks/           # Framework assessments and readiness
-│   ├── policies/             # Policy lifecycle management
-│   ├── tprm/                 # Vendor risk, assessments, contracts
-│   ├── trust/                # Questionnaires, knowledge base, trust center
-│   └── audit/                # Audit management, findings, auditor portal
-├── mcp-servers/              # MCP server integrations (evidence, compliance, AI)
-├── gateway/                  # Traefik API gateway configuration
-├── monitoring/               # Prometheus + Grafana configuration
-├── deploy/                   # Production deployment configs
-├── terraform/                # Infrastructure as Code
-├── docker-compose.yml        # Container orchestration
-├── .env.example              # Environment variable template
-├── start.sh                  # One-command startup script
-└── start.bat                 # Windows startup script
-```
-
----
 
 ## License
 
-This project is licensed under the **Elastic License 2.0 (ELv2)**.
+This project is licensed under the [Elastic License 2.0](LICENSE).
 
-**You CAN:** Use internally for commercial purposes, modify for your own use, self-host, contribute improvements.
-
-**You CANNOT:** Offer as a hosted/managed service, sell the software, create a competing commercial product, remove license notices.
-
-See [LICENSE](LICENSE) for complete terms.
-
-## Contributing
-
-We welcome contributions. Please read the [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md).
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes following the [coding standards](CONTRIBUTING.md#coding-standards)
-4. Run tests (`npm test`)
-5. Submit a pull request
-
-## Support
-
-- **Documentation**: [docs/](./docs)
-- **Issues**: [GitHub Issues](../../issues)
-- **Discussions**: [GitHub Discussions](../../discussions)
-- **Security**: [Report vulnerabilities](../../security/advisories/new)
+You may use it internally, modify it for your own use, and contribute changes. You may not offer it as a hosted or managed service, sell the software, create a competing commercial product, or remove license notices.

@@ -2,6 +2,21 @@
 
 GigaChad GRC uses a single PostgreSQL database with a unified Prisma schema located at `services/shared/prisma/schema.prisma`. All microservices share this schema through the `@gigachad-grc/shared` package.
 
+## Current schema migration
+
+The controls container is the single schema owner in the Docker flow. Its
+entrypoint runs the committed Prisma baseline and forward-only migrations through
+`deploy/prisma-migrate-safe.sh`, then applies the idempotent BC/DR SQL migration.
+Other services do not run their own migrations.
+
+The numbered files under `database/init/` are not a current sequential
+application migration chain. PostgreSQL mounts only supporting first-boot
+scripts in the Compose files.
+
+For production changes, back up and rehearse the migration chain before Controls
+starts. See [Database hardening rollout](DATABASE_HARDENING_ROLLOUT.md) and
+[Upgrade Guide](UPGRADE.md).
+
 ## Entity Relationship Overview
 
 ```

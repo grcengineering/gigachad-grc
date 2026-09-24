@@ -1,9 +1,20 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+  Optional,
+} from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import type { Counter } from 'prom-client';
+import * as cronParser from 'cron-parser';
+import { EVENT_BUS, EventBus } from '@gigachad-grc/shared';
 import { MCPClientService } from './mcp-client.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { McpWorkflowDefinition, McpWorkflowExecution, Prisma } from '@prisma/client';
+import { auditMutation } from '../common/audit-mutation';
 
 interface WorkflowStep {
   id: string;
@@ -57,24 +68,23 @@ interface WorkflowStepExecution {
 }
 
 @Injectable()
-export class MCPWorkflowService {
+export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(MCPWorkflowService.name);
-  private workflows: Map<string, WorkflowDefinition> = new Map();
-  private executions: Map<string, WorkflowExecution> = new Map();
+  private scheduleTimers = new Map<string, NodeJS.Timeout>();
+  private readonly eventChannels = ['grc:risks', 'grc:vendors', 'grc:alerts'];
 
   constructor(
     private mcpClient: MCPClientService,
     private prisma: PrismaService,
     @InjectMetric('mcp_workflow_executions_total')
     private readonly workflowExecutionsCounter: Counter<string>,
-  ) {
-    // Register built-in workflows
-    this.registerBuiltinWorkflows();
-  }
+    @Optional() @Inject(EVENT_BUS) private readonly eventBus?: EventBus
+  ) {}
 
-  private registerBuiltinWorkflows(): void {
+  private getBuiltinWorkflows(): WorkflowDefinition[] {
+    const workflows: WorkflowDefinition[] = [];
     // Evidence Collection Workflow
-    this.registerWorkflow({
+    workflows.push({
       id: 'evidence-collection',
       name: 'Automated Evidence Collection',
       description: 'Collect compliance evidence from configured sources',
@@ -112,21 +122,11 @@ export class MCPWorkflowService {
           },
           dependsOn: ['collect-aws'],
         },
-        {
-          id: 'store-evidence',
-          name: 'Store Collected Evidence',
-          serverId: 'grc-evidence',
-          toolName: 'store_evidence',
-          arguments: {
-            sources: ['${collect-aws.output}', '${collect-github.output}', '${collect-okta.output}'],
-          },
-          dependsOn: ['collect-github', 'collect-okta'],
-        },
       ],
     });
 
     // Compliance Check Workflow
-    this.registerWorkflow({
+    workflows.push({
       id: 'compliance-check',
       name: 'Automated Compliance Check',
       description: 'Run automated compliance checks against frameworks',
@@ -156,7 +156,7 @@ export class MCPWorkflowService {
           serverId: 'grc-compliance',
           toolName: 'generate_compliance_report',
           arguments: {
-            frameworks: ['SOC2', 'ISO27001'],
+            framework: 'SOC2',
             reportType: 'detailed',
             includeEvidence: true,
           },
@@ -178,7 +178,7 @@ export class MCPWorkflowService {
     });
 
     // Risk Assessment Workflow
-    this.registerWorkflow({
+    workflows.push({
       id: 'risk-assessment',
       name: 'AI-Powered Risk Assessment',
       description: 'Analyze risks and generate mitigation recommendations',
@@ -225,7 +225,7 @@ export class MCPWorkflowService {
     });
 
     // Vendor Assessment Workflow
-    this.registerWorkflow({
+    workflows.push({
       id: 'vendor-assessment',
       name: 'Vendor Risk Assessment',
       description: 'Comprehensive vendor security assessment',
@@ -257,7 +257,7 @@ export class MCPWorkflowService {
     });
 
     // Incident Response Workflow
-    this.registerWorkflow({
+    workflows.push({
       id: 'incident-response',
       name: 'Incident Response Assistance',
       description: 'AI-assisted incident response guidance',
@@ -289,7 +289,7 @@ export class MCPWorkflowService {
     });
 
     // Policy Review Workflow
-    this.registerWorkflow({
+    workflows.push({
       id: 'policy-review',
       name: 'Policy Compliance Review',
       description: 'Review policies against compliance frameworks',
@@ -322,31 +322,193 @@ export class MCPWorkflowService {
         },
       ],
     });
+    return workflows;
+  }
+
+  async onModuleInit(): Promise<void> {
+    await this.prisma.mcpWorkflowExecution.updateMany({
+      where: { status: 'running' },
+      data: {
+        status: 'failed',
+        error: 'Execution interrupted by service restart',
+        completedAt: new Date(),
+      },
+    });
+    for (const workflow of this.getBuiltinWorkflows()) {
+      await this.persistWorkflow(workflow, null, true);
+    }
+
+    if (process.env.NODE_ENV === 'test') return;
+
+    const scheduledRows = await this.prisma.mcpWorkflowDefinition.findMany();
+    for (const row of scheduledRows) {
+      const workflow = this.toWorkflowDefinition(row);
+      if (workflow.trigger.type === 'scheduled' && workflow.trigger.schedule) {
+        this.scheduleWorkflow(workflow, row.organizationId);
+      }
+    }
+
+    if (this.eventBus) {
+      for (const channel of this.eventChannels) {
+        await this.eventBus.subscribe<{
+          type?: string;
+          data?: Record<string, unknown>;
+          organizationId?: string;
+          entityId?: string;
+        }>(channel, async (event) => {
+          if (!event?.type || !event.organizationId) return;
+          await this.triggerEvent(event.organizationId, 'system-event', event.type, {
+            ...(event.data || {}),
+            organizationId: event.organizationId,
+            entityId: event.entityId,
+          });
+        });
+      }
+    }
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    for (const timer of this.scheduleTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.scheduleTimers.clear();
+
+    if (this.eventBus) {
+      await Promise.all(
+        this.eventChannels.map((channel) =>
+          this.eventBus!.unsubscribe(channel).catch((error) =>
+            this.logger.warn(`Failed to unsubscribe MCP workflows from ${channel}: ${error}`)
+          )
+        )
+      );
+    }
+  }
+
+  async triggerEvent(
+    organizationId: string,
+    userId: string,
+    eventName: string,
+    payload: Record<string, unknown>
+  ): Promise<WorkflowExecution[]> {
+    const workflows = (await this.getWorkflows(organizationId)).filter(
+      (workflow) => workflow.trigger.type === 'event' && workflow.trigger.event === eventName
+    );
+
+    return Promise.all(
+      workflows.map((workflow) =>
+        this.executeWorkflow(organizationId, userId, workflow.id, undefined, { event: payload })
+      )
+    );
+  }
+
+  private scheduleWorkflow(
+    workflow: WorkflowDefinition,
+    workflowOrganizationId: string | null
+  ): void {
+    const schedule = workflow.trigger.schedule;
+    if (!schedule) return;
+
+    try {
+      const nextRun = cronParser
+        .parseExpression(schedule, {
+          currentDate: new Date(),
+        })
+        .next()
+        .toDate();
+      const delay = Math.max(0, nextRun.getTime() - Date.now());
+      const timer = setTimeout(async () => {
+        try {
+          const organizationIds = workflowOrganizationId
+            ? [workflowOrganizationId]
+            : (
+                await this.prisma.organization.findMany({
+                  select: { id: true },
+                })
+              ).map((organization) => organization.id);
+          await Promise.all(
+            organizationIds.map((organizationId) =>
+              this.executeWorkflow(organizationId, 'system-scheduler', workflow.id, undefined, {
+                trigger: {
+                  type: 'scheduled',
+                  scheduledAt: nextRun.toISOString(),
+                },
+              })
+            )
+          );
+        } catch (error) {
+          this.logger.error(
+            `Scheduled MCP workflow ${workflow.id} failed to start: ${
+              error instanceof Error ? error.message : String(error)
+            }`
+          );
+        } finally {
+          this.scheduleWorkflow(workflow, workflowOrganizationId);
+        }
+      }, delay);
+      timer.unref();
+      this.scheduleTimers.set(`${workflowOrganizationId || 'built-in'}:${workflow.id}`, timer);
+      this.logger.log(`Scheduled MCP workflow ${workflow.id} for ${nextRun.toISOString()}`);
+    } catch (error) {
+      this.logger.error(
+        `Invalid schedule for MCP workflow ${workflow.id}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
   }
 
   // Register a new workflow
-  registerWorkflow(workflow: WorkflowDefinition): void {
-    this.workflows.set(workflow.id, workflow);
+  async registerWorkflow(
+    organizationId: string,
+    userId: string,
+    workflow: WorkflowDefinition
+  ): Promise<void> {
+    await this.persistWorkflow(workflow, organizationId, false);
+    await auditMutation(this.prisma, {
+      organizationId,
+      userId,
+      action: 'UPSERT',
+      entityType: 'McpWorkflowDefinition',
+      entityId: workflow.id,
+      entityName: workflow.name,
+      description: `Registered MCP workflow: ${workflow.name}`,
+    });
     this.logger.log(`Registered workflow: ${workflow.name} (${workflow.id})`);
   }
 
   // Get all workflows
-  getWorkflows(): WorkflowDefinition[] {
-    return Array.from(this.workflows.values());
+  async getWorkflows(organizationId?: string, builtInsOnly = false): Promise<WorkflowDefinition[]> {
+    const rows = await this.prisma.mcpWorkflowDefinition.findMany({
+      where: builtInsOnly
+        ? { isBuiltIn: true }
+        : organizationId
+          ? { OR: [{ organizationId }, { organizationId: null, isBuiltIn: true }] }
+          : { isBuiltIn: true },
+      orderBy: { name: 'asc' },
+    });
+    return rows.map((row) => this.toWorkflowDefinition(row));
   }
 
   // Get workflow by ID
-  getWorkflow(id: string): WorkflowDefinition | undefined {
-    return this.workflows.get(id);
+  async getWorkflow(organizationId: string, id: string): Promise<WorkflowDefinition | undefined> {
+    const row = await this.prisma.mcpWorkflowDefinition.findFirst({
+      where: {
+        id,
+        OR: [{ organizationId }, { organizationId: null, isBuiltIn: true }],
+      },
+    });
+    return row ? this.toWorkflowDefinition(row) : undefined;
   }
 
   // Execute a workflow
   async executeWorkflow(
+    organizationId: string,
+    userId: string,
     workflowId: string,
     input?: Record<string, unknown>,
-    variables?: Record<string, unknown>,
+    variables?: Record<string, unknown>
   ): Promise<WorkflowExecution> {
-    const workflow = this.workflows.get(workflowId);
+    const workflow = await this.getWorkflow(organizationId, workflowId);
     if (!workflow) {
       throw new Error(`Workflow not found: ${workflowId}`);
     }
@@ -363,11 +525,36 @@ export class MCPWorkflowService {
       })),
     };
 
-    this.executions.set(executionId, execution);
+    await this.prisma.mcpWorkflowExecution.create({
+      data: {
+        id: executionId,
+        workflowId,
+        organizationId,
+        requestedBy: userId,
+        status: execution.status,
+        steps: execution.steps as unknown as Prisma.InputJsonValue,
+        input: input as Prisma.InputJsonValue | undefined,
+        variables: variables as Prisma.InputJsonValue | undefined,
+      },
+    });
+    await auditMutation(this.prisma, {
+      organizationId,
+      userId,
+      action: 'EXECUTE',
+      entityType: 'McpWorkflowExecution',
+      entityId: executionId,
+      entityName: workflow.name,
+      description: `Started MCP workflow: ${workflow.name}`,
+    });
     this.logger.log(`Starting workflow execution: ${workflow.name} (${executionId})`);
 
     // Execute workflow in background and record metrics
-    this.runWorkflow(execution, workflow, { ...workflow.variables, ...variables, input })
+    this.runWorkflow(execution, workflow, {
+      ...workflow.variables,
+      ...variables,
+      input,
+      organizationId,
+    })
       .then(() => {
         this.workflowExecutionsCounter.inc({ status: 'success' });
       })
@@ -377,6 +564,7 @@ export class MCPWorkflowService {
         execution.completedAt = new Date();
         this.workflowExecutionsCounter.inc({ status: 'failure' });
         this.logger.error(`Workflow failed: ${error.message}`);
+        return this.persistExecution(execution);
       });
 
     return execution;
@@ -385,7 +573,7 @@ export class MCPWorkflowService {
   private async runWorkflow(
     execution: WorkflowExecution,
     workflow: WorkflowDefinition,
-    context: Record<string, unknown>,
+    context: Record<string, unknown>
   ): Promise<void> {
     const startedAt = Date.now();
     const maxDurationMs =
@@ -395,9 +583,17 @@ export class MCPWorkflowService {
 
     // Build dependency graph and execute steps
     const completed = new Set<string>();
-    const _stepMap = new Map(workflow.steps.map((s) => [s.id, s]));
 
     while (completed.size < workflow.steps.length) {
+      const durableState = await this.prisma.mcpWorkflowExecution.findFirst({
+        where: { id: execution.id, organizationId: context.organizationId as string | undefined },
+        select: { status: true },
+      });
+      if (durableState?.status === 'cancelled') {
+        execution.status = 'cancelled';
+        execution.completedAt = new Date();
+        return;
+      }
       // Check for global timeout
       if (Date.now() - startedAt > maxDurationMs) {
         throw new Error(`Workflow exceeded max duration of ${maxDurationMs}ms`);
@@ -407,7 +603,7 @@ export class MCPWorkflowService {
       const readySteps = workflow.steps.filter(
         (step) =>
           !completed.has(step.id) &&
-          (!step.dependsOn || step.dependsOn.every((dep) => completed.has(dep))),
+          (!step.dependsOn || step.dependsOn.every((dep) => completed.has(dep)))
       );
 
       if (readySteps.length === 0) {
@@ -422,6 +618,7 @@ export class MCPWorkflowService {
 
           stepExecution.status = 'running';
           stepExecution.startedAt = new Date();
+          await this.persistExecution(execution);
 
           try {
             // Resolve arguments with context and step outputs
@@ -440,10 +637,12 @@ export class MCPWorkflowService {
             stepOutputs[step.id] = result.result;
 
             completed.add(step.id);
+            await this.persistExecution(execution);
           } catch (error) {
             stepExecution.status = 'failed';
             stepExecution.completedAt = new Date();
             stepExecution.error = error instanceof Error ? error.message : 'Unknown error';
+            await this.persistExecution(execution);
 
             // Handle failure actions
             if (step.onFailure === 'continue') {
@@ -452,18 +651,19 @@ export class MCPWorkflowService {
               throw error;
             }
           }
-        }),
+        })
       );
     }
 
     execution.status = 'completed';
     execution.completedAt = new Date();
     execution.output = stepOutputs;
+    await this.persistExecution(execution);
   }
 
   private async executeStepWithRetry(
     step: WorkflowStep,
-    args: Record<string, unknown>,
+    args: Record<string, unknown>
   ): Promise<{ success: boolean; result?: unknown; error?: string }> {
     const maxAttempts = step.retryPolicy?.maxAttempts ?? 1;
     const baseDelayMs = step.retryPolicy?.delayMs ?? 1000;
@@ -485,7 +685,7 @@ export class MCPWorkflowService {
         this.logger.warn(
           `MCP workflow step "${step.id}" failed (attempt ${attempt + 1}/${maxAttempts}): ${
             error instanceof Error ? error.message : String(error)
-          } – retrying in ${delay}ms`,
+          } – retrying in ${delay}ms`
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
         attempt++;
@@ -498,31 +698,38 @@ export class MCPWorkflowService {
   private resolveArguments(
     args: Record<string, unknown>,
     context: Record<string, unknown>,
-    stepOutputs: Record<string, unknown>,
+    stepOutputs: Record<string, unknown>
   ): Record<string, unknown> {
     const resolved: Record<string, unknown> = {};
 
     for (const [key, value] of Object.entries(args)) {
-      if (typeof value === 'string' && value.startsWith('${')) {
-        resolved[key] = this.resolveVariable(value, context, stepOutputs);
-      } else if (typeof value === 'object' && value !== null) {
-        resolved[key] = this.resolveArguments(
-          value as Record<string, unknown>,
-          context,
-          stepOutputs,
-        );
-      } else {
-        resolved[key] = value;
-      }
+      resolved[key] = this.resolveValue(value, context, stepOutputs);
     }
 
     return resolved;
   }
 
+  private resolveValue(
+    value: unknown,
+    context: Record<string, unknown>,
+    stepOutputs: Record<string, unknown>
+  ): unknown {
+    if (typeof value === 'string' && value.startsWith('${') && value.endsWith('}')) {
+      return this.resolveVariable(value, context, stepOutputs);
+    }
+    if (Array.isArray(value)) {
+      return value.map((item) => this.resolveValue(item, context, stepOutputs));
+    }
+    if (typeof value === 'object' && value !== null) {
+      return this.resolveArguments(value as Record<string, unknown>, context, stepOutputs);
+    }
+    return value;
+  }
+
   private resolveVariable(
     variable: string,
     context: Record<string, unknown>,
-    stepOutputs: Record<string, unknown>,
+    stepOutputs: Record<string, unknown>
   ): unknown {
     // Extract variable path from ${...}
     const path = variable.slice(2, -1);
@@ -552,23 +759,109 @@ export class MCPWorkflowService {
   }
 
   // Get execution status
-  getExecution(executionId: string): WorkflowExecution | undefined {
-    return this.executions.get(executionId);
+  async getExecution(
+    organizationId: string,
+    executionId: string
+  ): Promise<WorkflowExecution | undefined> {
+    const execution = await this.prisma.mcpWorkflowExecution.findFirst({
+      where: { id: executionId, organizationId },
+    });
+    return execution ? this.toWorkflowExecution(execution) : undefined;
   }
 
   // Get all executions
-  getExecutions(): WorkflowExecution[] {
-    return Array.from(this.executions.values());
+  async getExecutions(organizationId: string): Promise<WorkflowExecution[]> {
+    const executions = await this.prisma.mcpWorkflowExecution.findMany({
+      where: { organizationId },
+      orderBy: { startedAt: 'desc' },
+      take: 100,
+    });
+    return executions.map((execution) => this.toWorkflowExecution(execution));
   }
 
   // Cancel execution
-  async cancelExecution(executionId: string): Promise<void> {
-    const execution = this.executions.get(executionId);
-    if (execution && execution.status === 'running') {
-      execution.status = 'cancelled';
-      execution.completedAt = new Date();
+  async cancelExecution(
+    organizationId: string,
+    userId: string,
+    executionId: string
+  ): Promise<void> {
+    const execution = await this.prisma.mcpWorkflowExecution.findFirst({
+      where: { id: executionId, organizationId },
+    });
+    if (execution?.status === 'running') {
+      await this.prisma.mcpWorkflowExecution.update({
+        where: { id: executionId },
+        data: { status: 'cancelled', completedAt: new Date() },
+      });
+      await auditMutation(this.prisma, {
+        organizationId,
+        userId,
+        action: 'CANCEL',
+        entityType: 'McpWorkflowExecution',
+        entityId: executionId,
+        description: `Cancelled MCP workflow execution ${executionId}`,
+      });
       this.logger.log(`Cancelled workflow execution: ${executionId}`);
     }
   }
-}
 
+  private async persistWorkflow(
+    workflow: WorkflowDefinition,
+    organizationId: string | null,
+    isBuiltIn: boolean
+  ): Promise<void> {
+    const data = {
+      organizationId,
+      name: workflow.name,
+      description: workflow.description,
+      trigger: workflow.trigger as unknown as Prisma.InputJsonValue,
+      steps: workflow.steps as unknown as Prisma.InputJsonValue,
+      variables: workflow.variables as Prisma.InputJsonValue | undefined,
+      timeoutMs: workflow.timeout,
+      isBuiltIn,
+    };
+    await this.prisma.mcpWorkflowDefinition.upsert({
+      where: { id: workflow.id },
+      create: { id: workflow.id, ...data },
+      update: data,
+    });
+  }
+
+  private async persistExecution(execution: WorkflowExecution): Promise<void> {
+    await this.prisma.mcpWorkflowExecution.update({
+      where: { id: execution.id },
+      data: {
+        status: execution.status,
+        steps: execution.steps as unknown as Prisma.InputJsonValue,
+        output: execution.output as Prisma.InputJsonValue | undefined,
+        error: execution.error,
+        completedAt: execution.completedAt,
+      },
+    });
+  }
+
+  private toWorkflowDefinition(row: McpWorkflowDefinition): WorkflowDefinition {
+    return {
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      trigger: row.trigger as unknown as WorkflowTrigger,
+      steps: row.steps as unknown as WorkflowStep[],
+      variables: row.variables as Record<string, unknown> | undefined,
+      timeout: row.timeoutMs ?? undefined,
+    };
+  }
+
+  private toWorkflowExecution(row: McpWorkflowExecution): WorkflowExecution {
+    return {
+      id: row.id,
+      workflowId: row.workflowId,
+      status: row.status as WorkflowExecution['status'],
+      startedAt: row.startedAt,
+      completedAt: row.completedAt ?? undefined,
+      steps: row.steps as unknown as WorkflowStepExecution[],
+      output: row.output as Record<string, unknown> | undefined,
+      error: row.error ?? undefined,
+    };
+  }
+}

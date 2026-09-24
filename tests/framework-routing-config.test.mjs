@@ -23,8 +23,9 @@ test('routes framework catalog to controls in every deployment surface', () => {
   );
   assert.match(
     nginx,
-    /location \/api\/frameworks\/catalog[\s\S]*?proxy_pass http:\/\/controls:3001/
+    /location (?:\^~ )?\/api\/frameworks\/catalog[\s\S]*?proxy_pass \$controls_upstream/
   );
+  assert.match(nginx, /set \$controls_upstream http:\/\/controls:3001/);
 });
 
 test('does not use the removed development-only framework library API', () => {

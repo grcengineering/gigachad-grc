@@ -35,6 +35,15 @@ export class RemediationService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  private async requireAssignee(organizationId: string, userId?: string) {
+    if (!userId) return;
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, organizationId, status: 'active' },
+      select: { id: true },
+    });
+    if (!user) throw new NotFoundException('Assignee not found');
+  }
+
   async createPlan(organizationId: string, dto: CreateRemediationPlanDto, userId: string) {
     // Verify finding exists
     const finding = await this.prisma.auditFinding.findFirst({
@@ -117,6 +126,7 @@ export class RemediationService {
 
   async addMilestone(planId: string, organizationId: string, dto: CreateMilestoneDto) {
     await this.findOnePlan(planId, organizationId);
+    await this.requireAssignee(organizationId, dto.assignedTo);
 
     const count = await this.prisma.remediationMilestone.count({ where: { planId } });
 
@@ -141,6 +151,7 @@ export class RemediationService {
     if (!milestone || milestone.plan.organizationId !== organizationId) {
       throw new NotFoundException(`Milestone ${id} not found`);
     }
+    await this.requireAssignee(organizationId, dto.assignedTo);
 
     // SECURITY: Explicit field mapping to prevent mass assignment vulnerabilities
     const updated = await this.prisma.remediationMilestone.update({

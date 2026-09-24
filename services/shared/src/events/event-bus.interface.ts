@@ -58,6 +58,11 @@ export type GrcEventType =
   | 'integration.error'
   | 'compliance_check.completed'
   
+  // Risk and vendor workflow events
+  | 'risk.created'
+  | 'vendor.assessment_requested'
+  | 'incident.created'
+
   // Alert events
   | 'alert.created'
   | 'alert.acknowledged'
@@ -81,6 +86,8 @@ export const EventChannels = {
   FRAMEWORKS: 'grc:frameworks',
   POLICIES: 'grc:policies',
   INTEGRATIONS: 'grc:integrations',
+  RISKS: 'grc:risks',
+  VENDORS: 'grc:vendors',
   ALERTS: 'grc:alerts',
   NOTIFICATIONS: 'grc:notifications',
 } as const;

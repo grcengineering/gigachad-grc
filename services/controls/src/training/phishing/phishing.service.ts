@@ -268,14 +268,21 @@ export class PhishingService {
     if (!template) {
       throw new BadRequestException('Campaign template not found');
     }
+    if (!this.emailService.getStatus().isConfigured) {
+      throw new BadRequestException('Email delivery must be configured before starting a campaign');
+    }
 
     campaign.status = CampaignStatus.ACTIVE;
     campaign.startedAt = new Date();
 
-    // Send emails to targets
-    await this.sendCampaignEmails(organizationId, campaign, template);
-
-    await this.updateCampaign(organizationId, campaign);
+    try {
+      await this.sendCampaignEmails(organizationId, campaign, template);
+      await this.updateCampaign(organizationId, campaign);
+    } catch (error) {
+      campaign.status = CampaignStatus.PAUSED;
+      await this.updateCampaign(organizationId, campaign);
+      throw error;
+    }
 
     return this.toCampaignDto(campaign);
   }
@@ -298,15 +305,18 @@ export class PhishingService {
       throw new NotFoundException('Campaign not found');
     }
 
+    const reportRecipients = campaign.reportRecipients as string[] | undefined;
+    if (campaign.sendReportEmail && reportRecipients && reportRecipients.length > 0) {
+      if (!this.emailService.getStatus().isConfigured) {
+        throw new BadRequestException(
+          'Email delivery must be configured before completing a campaign with report delivery',
+        );
+      }
+      await this.sendCampaignReport(organizationId, campaign);
+    }
     campaign.status = CampaignStatus.COMPLETED;
     campaign.completedAt = new Date();
     await this.updateCampaign(organizationId, campaign);
-
-    // Send report if configured
-    const reportRecipients = campaign.reportRecipients as string[] | undefined;
-    if (campaign.sendReportEmail && reportRecipients && reportRecipients.length > 0) {
-      await this.sendCampaignReport(organizationId, campaign);
-    }
 
     return this.toCampaignDto(campaign);
   }
@@ -690,6 +700,7 @@ export class PhishingService {
     const trackingDomain = process.env.PHISHING_TRACKING_DOMAIN || 'localhost:3001';
     const targetsArray = campaign.targets as Array<Record<string, unknown>>;
 
+    let failed = 0;
     for (const target of targetsArray) {
       try {
         const trackingUrl = `http://${trackingDomain}/api/phishing/track/click?t=${target.trackingToken}`;
@@ -705,12 +716,15 @@ export class PhishingService {
           .replace(/{{TRACKING_URL}}/g, trackingUrl)
           .replace(/{{NAME}}/g, (target.name as string) || 'User');
 
-        await this.emailService.sendEmail({
+        const sent = await this.emailService.sendEmail({
           to: target.email as string,
           subject: template.subject,
           html: htmlBody,
           text: textBody,
         });
+        if (!sent) {
+          throw new Error('Email provider rejected the message');
+        }
 
         target.sentAt = new Date();
         target.status = TargetStatus.SENT;
@@ -725,7 +739,11 @@ export class PhishingService {
           `Failed to send phishing email to ${maskEmail(target.email as string)}: ${errorMessage}`
         );
         target.status = TargetStatus.BOUNCED;
+        failed++;
       }
+    }
+    if (failed > 0) {
+      throw new Error(`Failed to deliver ${failed} phishing campaign email(s)`);
     }
   }
 
@@ -751,12 +769,15 @@ export class PhishingService {
 
     const reportRecipients = campaign.reportRecipients as string[];
     for (const recipient of reportRecipients) {
-      await this.emailService.sendEmail({
+      const sent = await this.emailService.sendEmail({
         to: recipient,
         subject: `Phishing Campaign Report: ${campaign.name}`,
         html: reportHtml,
         text: `Campaign ${campaign.name} completed. Click rate: ${results.metrics.clickRate.toFixed(1)}%`,
       });
+      if (!sent) {
+        throw new Error(`Failed to deliver phishing campaign report to ${recipient}`);
+      }
     }
   }
 

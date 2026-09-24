@@ -23,6 +23,15 @@ describe('MappingsService', () => {
   };
 
   const mockPrismaService = {
+    framework: {
+      findFirst: jest.fn(),
+    },
+    frameworkRequirement: {
+      findFirst: jest.fn(),
+    },
+    control: {
+      findFirst: jest.fn(),
+    },
     controlMapping: {
       findFirst: jest.fn(),
       findMany: jest.fn(),
@@ -84,6 +93,15 @@ describe('MappingsService', () => {
 
     service = module.get<MappingsService>(MappingsService);
     jest.clearAllMocks();
+    mockPrismaService.framework.findFirst.mockResolvedValue({
+      id: 'fw-1',
+      organizationId: orgId,
+    });
+    mockPrismaService.frameworkRequirement.findFirst.mockResolvedValue({ id: 'req-1' });
+    mockPrismaService.control.findFirst.mockResolvedValue({
+      id: 'ctl-1',
+      organizationId: orgId,
+    });
 
     // Default $transaction wires the callback through with mockTx
     mockPrismaService.$transaction.mockImplementation(
@@ -210,7 +228,7 @@ describe('MappingsService', () => {
       expect(mockAuditService.log).not.toHaveBeenCalled();
     });
 
-    it('uses OR-on-both control and framework org checks', async () => {
+    it('requires both resources to be tenant-visible and one to be tenant-owned', async () => {
       mockPrismaService.controlMapping.findFirst.mockResolvedValue(baseMapping);
       mockTx.controlMapping.update.mockResolvedValue(baseMapping);
 
@@ -220,9 +238,25 @@ describe('MappingsService', () => {
         expect.objectContaining({
           where: expect.objectContaining({
             id: 'm-1',
-            OR: [
-              { control: { OR: [{ organizationId: orgId }, { organizationId: null }] } },
-              { framework: { OR: [{ organizationId: orgId }, { organizationId: null }] } },
+            AND: [
+              {
+                framework: {
+                  deletedAt: null,
+                  OR: [{ organizationId: orgId }, { organizationId: null }],
+                },
+              },
+              {
+                control: {
+                  deletedAt: null,
+                  OR: [{ organizationId: orgId }, { organizationId: null }],
+                },
+              },
+              {
+                OR: [
+                  { framework: { organizationId: orgId } },
+                  { control: { organizationId: orgId } },
+                ],
+              },
             ],
           }),
         })
@@ -435,7 +469,7 @@ describe('MappingsService', () => {
       );
     });
 
-    it('uses OR-on-both control and framework org checks for tenant isolation', async () => {
+    it('uses AND-on-both control and framework org checks for tenant isolation', async () => {
       mockPrismaService.controlMapping.findFirst.mockResolvedValue(baseMapping);
       mockPrismaService.controlMappingHistory.findFirst.mockResolvedValue(historyRow);
       mockTx.controlMapping.update.mockResolvedValue(baseMapping);
@@ -446,10 +480,10 @@ describe('MappingsService', () => {
         expect.objectContaining({
           where: expect.objectContaining({
             id: baseMapping.id,
-            OR: [
-              { control: { OR: [{ organizationId: orgId }, { organizationId: null }] } },
-              { framework: { OR: [{ organizationId: orgId }, { organizationId: null }] } },
-            ],
+            AND: expect.arrayContaining([
+              expect.objectContaining({ framework: expect.any(Object) }),
+              expect.objectContaining({ control: expect.any(Object) }),
+            ]),
           }),
         })
       );
@@ -476,6 +510,50 @@ describe('MappingsService', () => {
       expect(mockAuditService.log).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'mapping.bulk_created' })
       );
+    });
+  });
+
+  describe('tenant integrity', () => {
+    it('rejects creation when the framework belongs to Org B', async () => {
+      mockPrismaService.framework.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.create(userId, 'org-a', {
+          frameworkId: 'org-b-framework',
+          requirementId: 'org-b-requirement',
+          controlId: 'org-a-control',
+        })
+      ).rejects.toThrow(NotFoundException);
+      expect(mockTx.controlMapping.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects mutation of a global-to-global template mapping', async () => {
+      mockPrismaService.framework.findFirst.mockResolvedValue({
+        id: 'global-framework',
+        organizationId: null,
+      });
+      mockPrismaService.control.findFirst.mockResolvedValue({
+        id: 'global-control',
+        organizationId: null,
+      });
+
+      await expect(
+        service.create(userId, 'org-a', {
+          frameworkId: 'global-framework',
+          requirementId: 'global-requirement',
+          controlId: 'global-control',
+        })
+      ).rejects.toThrow(NotFoundException);
+      expect(mockTx.controlMapping.create).not.toHaveBeenCalled();
+    });
+
+    it('requires both mapping sides to be accessible on updates', async () => {
+      mockPrismaService.controlMapping.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.update('org-b-mapping', { notes: 'tamper' }, userId, 'org-a')
+      ).rejects.toThrow(NotFoundException);
+      expect(mockTx.controlMapping.update).not.toHaveBeenCalled();
     });
   });
 });

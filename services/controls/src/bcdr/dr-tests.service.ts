@@ -21,6 +21,44 @@ export class DRTestsService {
     private readonly notificationsService: NotificationsService
   ) {}
 
+  private async requireTenantReferences(
+    organizationId: string,
+    requestingUserId: string,
+    workspaceId?: string,
+    userIds: Array<string | undefined> = []
+  ) {
+    const uniqueUserIds = [...new Set(userIds.filter((id): id is string => Boolean(id)))];
+    const requestingUser = workspaceId
+      ? await this.prisma.user.findFirst({
+          where: { id: requestingUserId, organizationId, status: 'active' },
+          select: { role: true },
+        })
+      : null;
+    const [workspace, userCount] = await Promise.all([
+      workspaceId
+        ? this.prisma.workspace.findFirst({
+            where: {
+              id: workspaceId,
+              organizationId,
+              ...(requestingUser?.role !== 'admin' && {
+                members: { some: { userId: requestingUserId } },
+              }),
+            },
+            select: { id: true },
+          })
+        : Promise.resolve({ id: 'none' }),
+      uniqueUserIds.length
+        ? this.prisma.user.count({
+            where: { id: { in: uniqueUserIds }, organizationId, status: 'active' },
+          })
+        : Promise.resolve(0),
+    ]);
+    if (!workspace) throw new NotFoundException('Workspace not found');
+    if (userCount !== uniqueUserIds.length) {
+      throw new NotFoundException('One or more assigned users not found');
+    }
+  }
+
   async findAll(organizationId: string, filters: DRTestFilterDto) {
     const { search, testType, status, planId, page = 1, limit = 25 } = filters;
     const offset = (page - 1) * limit;
@@ -121,6 +159,11 @@ export class DRTestsService {
     userEmail?: string,
     userName?: string
   ) {
+    await this.requireTenantReferences(organizationId, userId, dto.workspaceId, [
+      dto.coordinatorId,
+      ...(dto.participantIds || []),
+    ]);
+
     // Check for duplicate testId
     const existing = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM bcdr.dr_tests 
@@ -184,6 +227,10 @@ export class DRTestsService {
     userName?: string
   ) {
     await this.findOne(id, organizationId);
+    await this.requireTenantReferences(organizationId, userId, undefined, [
+      dto.coordinatorId,
+      ...(dto.participantIds || []),
+    ]);
 
     // SECURITY: Allowed column names for dynamic UPDATE query.
     // Only these hardcoded column names can be included in the query.

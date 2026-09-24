@@ -2958,7 +2958,7 @@ export const INTEGRATION_TYPES = {
       { key: 'apiKey', label: 'API Key', type: 'password', required: true },
     ],
   },
-  notion: {
+  notion_km: {
     name: 'Notion',
     description: 'Connected workspace for notes and docs',
     icon: 'notion',
@@ -2966,7 +2966,7 @@ export const INTEGRATION_TYPES = {
     category: 'Knowledge Management',
     apiDocs: 'https://developers.notion.com/',
     configFields: [
-      { key: 'apiKey', label: 'API Key', type: 'password', required: true },
+      { key: 'apiToken', label: 'Internal Integration Token', type: 'password', required: true },
     ],
   },
   palo_alto: {

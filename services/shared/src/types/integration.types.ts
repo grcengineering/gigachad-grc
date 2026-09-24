@@ -1,6 +1,6 @@
 /**
  * Integration Types
- * 
+ *
  * Type definitions for third-party integrations and their responses.
  */
 
@@ -24,6 +24,7 @@ export type IntegrationType =
   | 'datadog'
   | 'splunk'
   | 'pagerduty'
+  | 'notion_km'
   | 'custom';
 
 export type IntegrationStatus = 'active' | 'inactive' | 'error' | 'pending';

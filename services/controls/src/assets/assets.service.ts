@@ -23,11 +23,38 @@ export class AssetsService {
     private readonly auditService: AuditService
   ) {}
 
+  private async requireWorkspaceAccess(
+    workspaceId: string | undefined,
+    organizationId: string,
+    userId: string | undefined
+  ) {
+    if (!workspaceId) return;
+    if (!userId) throw new NotFoundException('Workspace not found');
+
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, organizationId, status: 'active' },
+      select: { role: true },
+    });
+    if (!user) throw new NotFoundException('Workspace not found');
+
+    const workspace = await this.prisma.workspace.findFirst({
+      where: {
+        id: workspaceId,
+        organizationId,
+        ...(user.role !== 'admin' && { members: { some: { userId } } }),
+      },
+      select: { id: true },
+    });
+    if (!workspace) throw new NotFoundException('Workspace not found');
+  }
+
   // ============================================
   // CRUD Operations
   // ============================================
 
   async create(organizationId: string, dto: CreateAssetDto, userId?: string): Promise<AssetDto> {
+    await this.requireWorkspaceAccess(dto.workspaceId, organizationId, userId);
+
     // Check for duplicate external ID if provided
     if (dto.externalId) {
       const existing = await this.prisma.asset.findFirst({

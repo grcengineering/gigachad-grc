@@ -333,24 +333,24 @@ export class DevAuthGuard implements CanActivate {
 
 - **Access Token Lifetime**: 5 minutes (configurable in Keycloak)
 - **Refresh Token Lifetime**: 30 minutes (configurable)
-- **Session Storage**: `sessionStorage` for in-memory tokens (frontend)
-- **Backend Session Storage**: Redis-backed storage for distributed deployments
-- **CSRF Protection**: SameSite cookies, CORS restrictions
+- **Frontend Token Storage**: `localStorage` so the shared Axios/fetch clients can attach the
+  Keycloak bearer token after reload. This makes strict CSP, output sanitization, and dependency
+  review critical because injected JavaScript could read the token.
+- **Backend Session Records**: PostgreSQL-backed session inventory and organization settings;
+  Keycloak remains the source of truth for JWT login sessions.
+- **Request Protection**: Bearer authentication, tenant-scoped authorization, and CORS restrictions.
 
-#### Redis Session Storage (v1.2.0+)
+#### Durable Session Inventory
 
-Backend sessions are now stored in Redis for persistence and scalability:
+The Controls service persists session metadata used by the Account UI:
 
 ```typescript
-// Session storage configuration
-const sessionStore = new RedisSessionStore();
-// Sessions automatically expire based on TTL
-// User and organization indexes for efficient lookups
+await prisma.userSession.findMany({
+  where: { organizationId, userId, isActive: true },
+});
 ```
 
-**Configuration:**
-
-- `REDIS_URL`: Redis connection string (e.g., `redis://localhost:6379`)
+Revoking a Keycloak login session still requires configured Keycloak admin-client credentials.
 
 **Features:**
 
@@ -734,14 +734,14 @@ allowlist and size cap at the route definition. The pattern mirrors
 [`services/tprm/src/contracts/contracts.controller.ts`](../services/tprm/src/contracts/contracts.controller.ts)
 and is applied across all upload endpoints:
 
-| Controller | MIME allowlist | Size cap |
-|------------|----------------|----------|
-| `tprm/contracts` | pdf, docx | 25 MB |
-| `controls/evidence` | pdf, png, jpeg, csv, xlsx, docx, txt, json | 50 MB |
-| `controls/bcdr-plans` | pdf, docx, txt | 25 MB |
-| `controls/training` | mp4, pdf, jpg, png, SCORM zip | 25 MB |
-| `frameworks` (control imports) | csv, xlsx | 25 MB |
-| `policies` | pdf, docx, md, txt | 25 MB |
+| Controller                     | MIME allowlist                             | Size cap |
+| ------------------------------ | ------------------------------------------ | -------- |
+| `tprm/contracts`               | pdf, docx                                  | 25 MB    |
+| `controls/evidence`            | pdf, png, jpeg, csv, xlsx, docx, txt, json | 50 MB    |
+| `controls/bcdr-plans`          | pdf, docx, txt                             | 25 MB    |
+| `controls/training`            | mp4, pdf, jpg, png, SCORM zip              | 25 MB    |
+| `frameworks` (control imports) | csv, xlsx                                  | 25 MB    |
+| `policies`                     | pdf, docx, md, txt                         | 25 MB    |
 
 Each controller exports `*_MIME_ALLOWLIST` and `*_MAX_BYTES` constants
 alongside a named `fileFilter` function, so the policy is reviewable

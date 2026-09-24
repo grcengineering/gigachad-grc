@@ -1,4 +1,5 @@
 import { aiClient } from './ai-client.js';
+import { useExplicitDemoFallback } from '../demo-mode.js';
 
 interface RiskAnalysisParams {
   riskDescription: string;
@@ -69,8 +70,9 @@ export async function analyzeRisk(params: RiskAnalysisParams): Promise<RiskAnaly
   const riskId = `risk-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
   if (!aiClient.isConfigured()) {
-    // Return mock analysis if AI is not configured
-    return generateMockAnalysis(riskId, riskDescription, includeQuantitative);
+    return useExplicitDemoFallback('AI service is not configured', () =>
+      generateMockAnalysis(riskId, riskDescription, includeQuantitative)
+    );
   }
 
   const systemPrompt = `You are an expert GRC (Governance, Risk, and Compliance) analyst. 
@@ -105,19 +107,23 @@ Return JSON with this structure:
   const userPrompt = `Analyze this risk: "${riskDescription}"`;
 
   try {
-    const analysis = await aiClient.completeJSON<Omit<RiskAnalysisResult, 'riskId' | 'analyzedAt'>>([
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
-    ]);
+    const analysis = await aiClient.completeJSON<Omit<RiskAnalysisResult, 'riskId' | 'analyzedAt'>>(
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ]
+    );
 
     return {
       riskId,
       analyzedAt: new Date().toISOString(),
       ...analysis,
     };
-  } catch {
-    // Fallback to mock analysis on error
-    return generateMockAnalysis(riskId, riskDescription, includeQuantitative);
+  } catch (error) {
+    return useExplicitDemoFallback(
+      `AI risk analysis failed: ${error instanceof Error ? error.message : String(error)}`,
+      () => generateMockAnalysis(riskId, riskDescription, includeQuantitative)
+    );
   }
 }
 
@@ -127,7 +133,9 @@ function generateMockAnalysis(
   includeQuantitative?: boolean
 ): RiskAnalysisResult {
   // Generate deterministic but varied scores based on description
-  const descHash = riskDescription.split('').reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0);
+  const descHash = riskDescription
+    .split('')
+    .reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0);
   const likelihood = Math.abs(descHash % 5) + 1;
   const impact = Math.abs((descHash >> 3) % 5) + 1;
   const inherentScore = likelihood * impact;
@@ -187,18 +195,11 @@ function generateMockAnalysis(
         type: 'transfer',
         effectiveness: 'Medium',
         estimatedCost: '$5,000 - $20,000 annually',
-        implementation: [
-          'Evaluate cyber insurance options',
-          'Document risk transfer strategy',
-        ],
+        implementation: ['Evaluate cyber insurance options', 'Document risk transfer strategy'],
         timeline: '1-2 months',
       },
     ],
-    relatedRisks: [
-      'Data breach',
-      'Compliance violation',
-      'Business continuity disruption',
-    ],
+    relatedRisks: ['Data breach', 'Compliance violation', 'Business continuity disruption'],
     complianceImpact: [
       {
         framework: 'SOC 2',
@@ -234,7 +235,3 @@ function generateMockAnalysis(
 
   return result;
 }
-
-
-
-

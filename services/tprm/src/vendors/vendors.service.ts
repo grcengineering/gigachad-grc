@@ -215,7 +215,7 @@ export class VendorsService {
     }
   }
 
-  async create(createVendorDto: CreateVendorDto, userId: string) {
+  async create(createVendorDto: CreateVendorDto, userId: string, organizationId: string) {
     // Auto-generate vendorId if not provided
     const vendorId = createVendorDto.vendorId || (await this.generateVendorId());
 
@@ -226,15 +226,14 @@ export class VendorsService {
 
     // Auto-set review frequency based on tier if not provided
     const reviewFrequency =
-      createVendorDto.reviewFrequency ||
-      (await this.getFrequencyForTier(createVendorDto.organizationId!, tier));
+      createVendorDto.reviewFrequency || (await this.getFrequencyForTier(organizationId, tier));
 
     // Calculate next review due date
     const nextReviewDue = calculateNextReviewDate(null, reviewFrequency);
 
     const vendor = await this.prisma.vendor.create({
       data: {
-        organizationId: createVendorDto.organizationId!,
+        organizationId,
         vendorId,
         name: createVendorDto.name,
         legalName: createVendorDto.legalName,
@@ -367,7 +366,7 @@ export class VendorsService {
     // SECURITY: Verify vendor belongs to user's organization before updating
     const currentVendor = await this.findOne(id, organizationId);
 
-    const { category, tier, status, ...restDto } = updateVendorDto;
+    const { organizationId: _organizationId, category, tier, status, ...restDto } = updateVendorDto;
     const updateData: Prisma.VendorUpdateInput = { ...restDto };
 
     if (category) {

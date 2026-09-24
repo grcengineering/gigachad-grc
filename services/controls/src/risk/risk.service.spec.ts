@@ -3,9 +3,9 @@ import { RiskService } from './risk.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { RiskWorkflowTasksService } from './risk-workflow-tasks.service';
-import { 
-  RiskFilterDto, 
-  CreateRiskDto, 
+import {
+  RiskFilterDto,
+  CreateRiskDto,
   UpdateRiskDto,
   LinkControlDto,
   RiskCategory,
@@ -33,6 +33,7 @@ describe('RiskService', () => {
       findFirst: jest.fn(),
       findUnique: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
       delete: jest.fn(),
       deleteMany: jest.fn(),
     },
@@ -53,6 +54,17 @@ describe('RiskService', () => {
       findMany: jest.fn(),
     },
     control: {
+      findFirst: jest.fn(),
+      count: jest.fn(),
+    },
+    asset: {
+      count: jest.fn(),
+    },
+    user: {
+      findFirst: jest.fn(),
+      count: jest.fn(),
+    },
+    workspace: {
       findFirst: jest.fn(),
     },
   };
@@ -113,8 +125,24 @@ describe('RiskService', () => {
 
     it('should return risks for an organization', async () => {
       const mockRisks = [
-        { id: '1', title: 'Risk 1', inherentRiskLevel: 'high', organizationId: 'org-1', assessment: null, treatment: null, _count: { assets: 0, controls: 0, scenarios: 0 } },
-        { id: '2', title: 'Risk 2', inherentRiskLevel: 'medium', organizationId: 'org-1', assessment: null, treatment: null, _count: { assets: 0, controls: 0, scenarios: 0 } },
+        {
+          id: '1',
+          title: 'Risk 1',
+          inherentRiskLevel: 'high',
+          organizationId: 'org-1',
+          assessment: null,
+          treatment: null,
+          _count: { assets: 0, controls: 0, scenarios: 0 },
+        },
+        {
+          id: '2',
+          title: 'Risk 2',
+          inherentRiskLevel: 'medium',
+          organizationId: 'org-1',
+          assessment: null,
+          treatment: null,
+          _count: { assets: 0, controls: 0, scenarios: 0 },
+        },
       ];
 
       mockPrismaService.risk.findMany.mockResolvedValue(mockRisks);
@@ -279,6 +307,43 @@ describe('RiskService', () => {
       await service.linkControl('risk-1', 'org-1', dto, 'user-1');
 
       expect(mockPrismaService.riskControl.create).toHaveBeenCalled();
+    });
+
+    it('rejects a control owned by Org B', async () => {
+      mockPrismaService.risk.findFirst.mockResolvedValue({
+        id: 'risk-a',
+        organizationId: 'org-a',
+      });
+      mockPrismaService.control.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.linkControl('risk-a', 'org-a', { controlId: 'control-b' }, 'user-a')
+      ).rejects.toThrow();
+      expect(mockPrismaService.riskControl.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('workspace integrity', () => {
+    it('rejects creating a risk in a foreign or non-member workspace', async () => {
+      mockPrismaService.user.findFirst.mockResolvedValue({
+        role: 'compliance_manager',
+      });
+      mockPrismaService.workspace.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.create(
+          'org-a',
+          {
+            title: 'Injected risk',
+            description: 'Should not be created',
+            source: RiskSource.EMPLOYEE_REPORTING,
+            initialSeverity: InitialSeverity.MEDIUM,
+            workspaceId: 'workspace-b',
+          },
+          'user-a'
+        )
+      ).rejects.toThrow();
+      expect(mockPrismaService.risk.create).not.toHaveBeenCalled();
     });
   });
 });

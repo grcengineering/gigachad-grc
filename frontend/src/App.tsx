@@ -58,7 +58,6 @@ import TrainingAdmin from './pages/TrainingAdmin';
 // Settings deep
 import MCPSettings from './pages/MCPSettings';
 import TPRMConfiguration from './pages/TPRMConfiguration';
-import TrustConfiguration from './pages/TrustConfiguration';
 import ConfigAsCode from './pages/ConfigAsCode';
 import DeveloperDocs from './pages/DeveloperDocs';
 import AccountSettings from './pages/AccountSettings';
@@ -71,8 +70,6 @@ import MappingGaps from './pages/MappingGaps';
 import ReportBuilder from './pages/ReportBuilder';
 import ScheduledReportsPage from './pages/ScheduledReportsPage';
 import FrameworkLibrary from './pages/FrameworkLibrary';
-import TrustAnalytics from './pages/TrustAnalytics';
-import TrustCenterSettings from './pages/TrustCenterSettings';
 import HelpCenter from './pages/HelpCenter';
 import HelpArticle from './pages/HelpArticle';
 import CustomDashboards from './pages/CustomDashboards';
@@ -236,7 +233,7 @@ export default function App() {
         {/* Settings deep */}
         <Route path="settings/mcp" element={<MCPSettings />} />
         <Route path="settings/tprm" element={<TPRMConfiguration />} />
-        <Route path="settings/trust" element={<TrustConfiguration />} />
+        <Route path="settings/trust" element={<TrustCenter />} />
         <Route path="settings/config-as-code" element={<ConfigAsCode />} />
         <Route path="settings/workspaces" element={<WorkspaceList />} />
         <Route path="settings/workspaces/:id" element={<WorkspaceSettings />} />
@@ -252,8 +249,7 @@ export default function App() {
         <Route path="scheduled-reports" element={<ScheduledReportsPage />} />
         <Route path="tools/ai-risk-assistant" element={<AIRiskAssistant />} />
         <Route path="answer-templates" element={<AnswerTemplates />} />
-        <Route path="trust-analytics" element={<TrustAnalytics />} />
-        <Route path="trust-center/settings" element={<TrustCenterSettings />} />
+        <Route path="trust-center/settings" element={<TrustCenter />} />
         <Route path="help" element={<HelpCenter />} />
         <Route path="help/:category/:article" element={<HelpArticle />} />
         <Route path="module-disabled" element={<DisabledModulePage />} />

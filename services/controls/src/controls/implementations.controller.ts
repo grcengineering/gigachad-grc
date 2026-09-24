@@ -1,20 +1,5 @@
-import {
-  Controller,
-  Get,
-  Put,
-  Post,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { Controller, Get, Put, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { ImplementationsService } from './implementations.service';
 import {
   UpdateImplementationDto,
@@ -22,12 +7,7 @@ import {
   ImplementationFilterDto,
   BulkUpdateImplementationsDto,
 } from './dto/implementation.dto';
-import {
-  Roles,
-  RolesGuard,
-  CurrentUser,
-  UserContext,
-} from '@gigachad-grc/shared';
+import { Roles, RolesGuard, CurrentUser, UserContext } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 @ApiTags('implementations')
@@ -40,20 +20,14 @@ export class ImplementationsController {
   @Get()
   @ApiOperation({ summary: 'List control implementations' })
   @ApiResponse({ status: 200, description: 'Returns paginated implementations' })
-  async findAll(
-    @CurrentUser() user: UserContext,
-    @Query() filters: ImplementationFilterDto,
-  ) {
-    return this.implementationsService.findAll(user.organizationId, filters);
+  async findAll(@CurrentUser() user: UserContext, @Query() filters: ImplementationFilterDto) {
+    return this.implementationsService.findAll(user.organizationId, filters, user.userId);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get implementation by ID' })
   @ApiParam({ name: 'id', description: 'Implementation ID' })
-  async findOne(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  async findOne(@Param('id') id: string, @CurrentUser() user: UserContext) {
     return this.implementationsService.findOne(id, user.organizationId);
   }
 
@@ -64,28 +38,16 @@ export class ImplementationsController {
   async update(
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
-    @Body() dto: UpdateImplementationDto,
+    @Body() dto: UpdateImplementationDto
   ) {
-    return this.implementationsService.update(
-      id,
-      user.organizationId,
-      user.userId,
-      dto,
-    );
+    return this.implementationsService.update(id, user.organizationId, user.userId, dto);
   }
 
   @Post('bulk-update')
   @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Bulk update implementations' })
-  async bulkUpdate(
-    @CurrentUser() user: UserContext,
-    @Body() dto: BulkUpdateImplementationsDto,
-  ) {
-    return this.implementationsService.bulkUpdate(
-      user.organizationId,
-      user.userId,
-      dto,
-    );
+  async bulkUpdate(@CurrentUser() user: UserContext, @Body() dto: BulkUpdateImplementationsDto) {
+    return this.implementationsService.bulkUpdate(user.organizationId, user.userId, dto);
   }
 
   @Post(':id/tests')
@@ -95,23 +57,15 @@ export class ImplementationsController {
   async createTest(
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
-    @Body() dto: CreateControlTestDto,
+    @Body() dto: CreateControlTestDto
   ) {
-    return this.implementationsService.createTest(
-      id,
-      user.organizationId,
-      user.userId,
-      dto,
-    );
+    return this.implementationsService.createTest(id, user.organizationId, user.userId, dto);
   }
 
   @Get(':id/tests')
   @ApiOperation({ summary: 'Get test history for implementation' })
   @ApiParam({ name: 'id', description: 'Implementation ID' })
-  async getTestHistory(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  async getTestHistory(@Param('id') id: string, @CurrentUser() user: UserContext) {
     return this.implementationsService.getTestHistory(id, user.organizationId);
   }
 
@@ -119,10 +73,6 @@ export class ImplementationsController {
   @Roles('admin')
   @ApiOperation({ summary: 'Initialize implementations for all controls' })
   async initialize(@CurrentUser() user: UserContext) {
-    return this.implementationsService.initializeForOrganization(
-      user.organizationId,
-      user.userId,
-    );
+    return this.implementationsService.initializeForOrganization(user.organizationId, user.userId);
   }
 }
-

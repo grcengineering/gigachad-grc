@@ -1,6 +1,17 @@
 import { aiClient } from './ai-client.js';
+import { useExplicitDemoFallback } from '../demo-mode.js';
 
-type PolicyType = 'information_security' | 'access_control' | 'data_classification' | 'incident_response' | 'acceptable_use' | 'password' | 'remote_work' | 'vendor_management' | 'data_retention' | 'privacy';
+type PolicyType =
+  | 'information_security'
+  | 'access_control'
+  | 'data_classification'
+  | 'incident_response'
+  | 'acceptable_use'
+  | 'password'
+  | 'remote_work'
+  | 'vendor_management'
+  | 'data_retention'
+  | 'privacy';
 
 interface PolicyDraftParams {
   policyType: PolicyType;
@@ -39,54 +50,159 @@ interface PolicySection {
 const policyTemplates: Record<PolicyType, { title: string; sections: string[] }> = {
   information_security: {
     title: 'Information Security Policy',
-    sections: ['Purpose', 'Scope', 'Policy Statement', 'Roles and Responsibilities', 'Security Principles', 'Compliance', 'Exceptions', 'Enforcement', 'Policy Review'],
+    sections: [
+      'Purpose',
+      'Scope',
+      'Policy Statement',
+      'Roles and Responsibilities',
+      'Security Principles',
+      'Compliance',
+      'Exceptions',
+      'Enforcement',
+      'Policy Review',
+    ],
   },
   access_control: {
     title: 'Access Control Policy',
-    sections: ['Purpose', 'Scope', 'Access Control Principles', 'User Account Management', 'Authentication Requirements', 'Authorization', 'Privileged Access', 'Access Reviews', 'Enforcement'],
+    sections: [
+      'Purpose',
+      'Scope',
+      'Access Control Principles',
+      'User Account Management',
+      'Authentication Requirements',
+      'Authorization',
+      'Privileged Access',
+      'Access Reviews',
+      'Enforcement',
+    ],
   },
   data_classification: {
     title: 'Data Classification Policy',
-    sections: ['Purpose', 'Scope', 'Classification Levels', 'Handling Requirements', 'Labeling', 'Data Lifecycle', 'Roles and Responsibilities', 'Enforcement'],
+    sections: [
+      'Purpose',
+      'Scope',
+      'Classification Levels',
+      'Handling Requirements',
+      'Labeling',
+      'Data Lifecycle',
+      'Roles and Responsibilities',
+      'Enforcement',
+    ],
   },
   incident_response: {
     title: 'Incident Response Policy',
-    sections: ['Purpose', 'Scope', 'Incident Categories', 'Incident Response Team', 'Response Procedures', 'Communication', 'Evidence Handling', 'Post-Incident Review', 'Reporting'],
+    sections: [
+      'Purpose',
+      'Scope',
+      'Incident Categories',
+      'Incident Response Team',
+      'Response Procedures',
+      'Communication',
+      'Evidence Handling',
+      'Post-Incident Review',
+      'Reporting',
+    ],
   },
   acceptable_use: {
     title: 'Acceptable Use Policy',
-    sections: ['Purpose', 'Scope', 'General Use', 'Email Use', 'Internet Use', 'Software Use', 'Mobile Devices', 'Prohibited Activities', 'Monitoring', 'Enforcement'],
+    sections: [
+      'Purpose',
+      'Scope',
+      'General Use',
+      'Email Use',
+      'Internet Use',
+      'Software Use',
+      'Mobile Devices',
+      'Prohibited Activities',
+      'Monitoring',
+      'Enforcement',
+    ],
   },
   password: {
     title: 'Password Policy',
-    sections: ['Purpose', 'Scope', 'Password Requirements', 'Password Changes', 'Password Storage', 'Multi-Factor Authentication', 'Privileged Accounts', 'Enforcement'],
+    sections: [
+      'Purpose',
+      'Scope',
+      'Password Requirements',
+      'Password Changes',
+      'Password Storage',
+      'Multi-Factor Authentication',
+      'Privileged Accounts',
+      'Enforcement',
+    ],
   },
   remote_work: {
     title: 'Remote Work Security Policy',
-    sections: ['Purpose', 'Scope', 'Eligibility', 'Security Requirements', 'Network Security', 'Physical Security', 'Data Protection', 'Equipment', 'Reporting'],
+    sections: [
+      'Purpose',
+      'Scope',
+      'Eligibility',
+      'Security Requirements',
+      'Network Security',
+      'Physical Security',
+      'Data Protection',
+      'Equipment',
+      'Reporting',
+    ],
   },
   vendor_management: {
     title: 'Vendor Management Policy',
-    sections: ['Purpose', 'Scope', 'Vendor Assessment', 'Risk Classification', 'Due Diligence', 'Contractual Requirements', 'Ongoing Monitoring', 'Termination', 'Enforcement'],
+    sections: [
+      'Purpose',
+      'Scope',
+      'Vendor Assessment',
+      'Risk Classification',
+      'Due Diligence',
+      'Contractual Requirements',
+      'Ongoing Monitoring',
+      'Termination',
+      'Enforcement',
+    ],
   },
   data_retention: {
     title: 'Data Retention Policy',
-    sections: ['Purpose', 'Scope', 'Retention Categories', 'Retention Periods', 'Legal Holds', 'Disposal Requirements', 'Roles and Responsibilities', 'Enforcement'],
+    sections: [
+      'Purpose',
+      'Scope',
+      'Retention Categories',
+      'Retention Periods',
+      'Legal Holds',
+      'Disposal Requirements',
+      'Roles and Responsibilities',
+      'Enforcement',
+    ],
   },
   privacy: {
     title: 'Privacy Policy',
-    sections: ['Purpose', 'Scope', 'Personal Data Collection', 'Use of Personal Data', 'Data Subject Rights', 'Data Protection', 'Third-Party Sharing', 'International Transfers', 'Contact Information'],
+    sections: [
+      'Purpose',
+      'Scope',
+      'Personal Data Collection',
+      'Use of Personal Data',
+      'Data Subject Rights',
+      'Data Protection',
+      'Third-Party Sharing',
+      'International Transfers',
+      'Contact Information',
+    ],
   },
 };
 
 export async function draftPolicy(params: PolicyDraftParams): Promise<PolicyDraftResult> {
-  const { policyType, frameworks = ['SOC 2', 'ISO 27001'], organizationContext, format = 'markdown' } = params;
+  const {
+    policyType,
+    frameworks = ['SOC 2', 'ISO 27001'],
+    organizationContext,
+    format = 'markdown',
+  } = params;
 
   const template = policyTemplates[policyType];
   const orgName = organizationContext?.name || '[Organization Name]';
 
   if (!aiClient.isConfigured()) {
-    return generateMockPolicy(policyType, template, orgName, frameworks, format);
+    return useExplicitDemoFallback('AI service is not configured', () =>
+      generateMockPolicy(policyType, template, orgName, frameworks, format)
+    );
   }
 
   const systemPrompt = `You are a GRC policy expert. Draft a comprehensive ${template.title} for ${orgName}.
@@ -103,7 +219,10 @@ Return the policy in ${format} format.`;
   try {
     const response = await aiClient.complete([
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: `Draft a ${template.title} with sections: ${template.sections.join(', ')}` },
+      {
+        role: 'user',
+        content: `Draft a ${template.title} with sections: ${template.sections.join(', ')}`,
+      },
     ]);
 
     const sections = template.sections.map((title) => ({
@@ -129,8 +248,11 @@ Return the policy in ${format} format.`;
         requirements: getFrameworkRequirements(policyType, fw),
       })),
     };
-  } catch {
-    return generateMockPolicy(policyType, template, orgName, frameworks, format);
+  } catch (error) {
+    return useExplicitDemoFallback(
+      `AI policy drafting failed: ${error instanceof Error ? error.message : String(error)}`,
+      () => generateMockPolicy(policyType, template, orgName, frameworks, format)
+    );
   }
 }
 
@@ -183,11 +305,13 @@ function generateMockPolicy(
     content: generateSectionContent(title, policyType, orgName),
   }));
 
-  const content = sections.map((s) => 
-    format === 'markdown' 
-      ? `## ${s.title}\n\n${s.content}` 
-      : `<h2>${s.title}</h2>\n<p>${s.content}</p>`
-  ).join('\n\n');
+  const content = sections
+    .map((s) =>
+      format === 'markdown'
+        ? `## ${s.title}\n\n${s.content}`
+        : `<h2>${s.title}</h2>\n<p>${s.content}</p>`
+    )
+    .join('\n\n');
 
   return {
     policyType,
@@ -209,20 +333,23 @@ function generateMockPolicy(
   };
 }
 
-function generateSectionContent(sectionTitle: string, policyType: PolicyType, orgName: string): string {
+function generateSectionContent(
+  sectionTitle: string,
+  policyType: PolicyType,
+  orgName: string
+): string {
   const contentMap: Record<string, string> = {
-    'Purpose': `This policy establishes the requirements for ${policyType.replace(/_/g, ' ')} at ${orgName}. It defines the standards, procedures, and responsibilities to ensure the security and integrity of information assets.`,
-    'Scope': `This policy applies to all employees, contractors, consultants, and third parties who have access to ${orgName}'s information systems and data. It covers all information assets, including but not limited to electronic data, systems, networks, and physical facilities.`,
+    Purpose: `This policy establishes the requirements for ${policyType.replace(/_/g, ' ')} at ${orgName}. It defines the standards, procedures, and responsibilities to ensure the security and integrity of information assets.`,
+    Scope: `This policy applies to all employees, contractors, consultants, and third parties who have access to ${orgName}'s information systems and data. It covers all information assets, including but not limited to electronic data, systems, networks, and physical facilities.`,
     'Policy Statement': `${orgName} is committed to maintaining the highest standards of ${policyType.replace(/_/g, ' ')}. All personnel must adhere to the requirements outlined in this policy to protect organizational assets and maintain compliance with applicable laws and regulations.`,
     'Roles and Responsibilities': `- **Executive Management**: Provides oversight and ensures adequate resources for implementation\n- **Information Security Team**: Develops, implements, and monitors security controls\n- **Department Managers**: Ensures team compliance with policy requirements\n- **All Users**: Adheres to policy requirements and reports violations`,
-    'Compliance': `All personnel must comply with this policy. Compliance will be monitored through regular audits, reviews, and assessments. The policy aligns with industry standards including SOC 2, ISO 27001, and applicable regulatory requirements.`,
-    'Enforcement': `Violations of this policy may result in disciplinary action, up to and including termination of employment or contract. Violations that result in criminal activity may be reported to appropriate law enforcement authorities.`,
+    Compliance: `All personnel must comply with this policy. Compliance will be monitored through regular audits, reviews, and assessments. The policy aligns with industry standards including SOC 2, ISO 27001, and applicable regulatory requirements.`,
+    Enforcement: `Violations of this policy may result in disciplinary action, up to and including termination of employment or contract. Violations that result in criminal activity may be reported to appropriate law enforcement authorities.`,
     'Policy Review': `This policy will be reviewed at least annually or when significant changes occur to ensure it remains current and effective. The Information Security team is responsible for initiating and coordinating policy reviews.`,
   };
 
-  return contentMap[sectionTitle] || `This section defines the ${sectionTitle.toLowerCase()} requirements for ${policyType.replace(/_/g, ' ')} at ${orgName}.`;
+  return (
+    contentMap[sectionTitle] ||
+    `This section defines the ${sectionTitle.toLowerCase()} requirements for ${policyType.replace(/_/g, ' ')} at ${orgName}.`
+  );
 }
-
-
-
-

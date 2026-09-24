@@ -56,7 +56,7 @@ export class RiskController {
     @User() user: UserContext
   ) {
     // Use lightweight endpoint for better performance
-    return this.riskService.findAllLight(user.organizationId, filters, page, limit);
+    return this.riskService.findAllLight(user.organizationId, filters, page, limit, user.userId);
   }
 
   @Get('full')
@@ -68,7 +68,7 @@ export class RiskController {
     @User() user: UserContext
   ) {
     // Full endpoint for exports or when full data is needed
-    return this.riskService.findAll(user.organizationId, filters, page, limit);
+    return this.riskService.findAll(user.organizationId, filters, page, limit, user.userId);
   }
 
   @Get('dashboard')

@@ -36,9 +36,9 @@ cd ../shared && npm install
 npm run install:all
 ```
 
-### Database migrations fail
+### Database schema synchronization fails
 
-**Symptom:** Prisma migrate fails with schema errors.
+**Symptom:** The controls container fails while running Prisma schema synchronization.
 
 **Solution:**
 
@@ -48,18 +48,21 @@ docker compose up postgres -d
 docker logs grc-postgres
 ```
 
-2. Reset and re-run migrations:
+2. For disposable local data, reset and let the controls entrypoint rebuild the shared schema:
 ```bash
-cd services/controls
-npx prisma migrate reset --force
-npx prisma migrate deploy
+docker compose down -v
+./start.sh
 ```
 
-3. If schema conflicts exist, regenerate:
+3. For host development, generate clients and intentionally sync the shared schema:
 ```bash
-npx prisma db pull
-npx prisma generate
+npm run db:generate
+npm --workspace @gigachad-grc/controls run prisma:push
 ```
+
+Do not run a separate migration from every service. The current Docker flow is
+owned by the controls entrypoint and uses
+`services/shared/prisma/schema.prisma`.
 
 ### Services can't connect to database
 
@@ -102,12 +105,13 @@ docker network inspect gigachad-grc_default
 1. In Keycloak Admin Console:
    - Go to Clients → grc-frontend
    - Check "Valid Redirect URIs" includes your app URL
-   - For development: `http://localhost:3000/*`
+   - Local Docker flow: `https://localhost/*`
+   - Host Vite development only: the exact Vite origin
    - For production: `https://grc.yourcompany.com/*`
 
 2. Check "Web Origins":
    - Should match your frontend URL
-   - For development: `http://localhost:3000`
+   - Local Docker flow: `https://localhost`
 
 ### "Token validation failed"
 
@@ -168,24 +172,24 @@ location.reload();
 
 **Solution:**
 
-1. Run all init scripts in order:
+1. Check the controls entrypoint, which owns shared-schema synchronization:
 ```bash
-psql -h localhost -U grc_user -d gigachad_grc -f database/init/01-init.sql
-psql -h localhost -U grc_user -d gigachad_grc -f database/init/02-soft-delete-migration.sql
-# ... continue for all init scripts
+docker compose logs controls
 ```
 
-2. Verify schemas exist:
-```sql
-SELECT schema_name FROM information_schema.schemata;
--- Should see: controls, frameworks, policies, tprm, trust, shared, audit
+2. For disposable local data, rebuild from a clean volume:
+```bash
+docker compose down -v
+./start.sh
 ```
 
-3. If using Prisma, sync with database:
+3. For host development, intentionally sync the single shared schema:
 ```bash
-npx prisma db pull
-npx prisma generate
+npm run db:generate
+npm --workspace @gigachad-grc/controls run prisma:push
 ```
+
+Do not apply every numbered `database/init` file in sequence.
 
 ### Slow queries
 
@@ -193,10 +197,9 @@ npx prisma generate
 
 **Solution:**
 
-1. Add performance indexes:
-```bash
-psql -h localhost -U grc_user -d gigachad_grc -f database/init/11-performance-indexes.sql
-```
+1. Capture and review the query plan before adding indexes. Historical SQL
+   files under `database/init/` are not automatically part of the current
+   application migration flow and must not be applied ad hoc.
 
 2. Analyze query performance:
 ```sql

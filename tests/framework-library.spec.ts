@@ -15,7 +15,7 @@ test.describe('Framework Library', () => {
     expect(await cards.count()).toBeGreaterThan(0);
 
     await page.getByRole('button', { name: 'Preview' }).first().click();
-    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'SOC 2 Type II', level: 2 })).toBeVisible();
     await expect(page.getByText(/requirements/i).last()).toBeVisible();
   });
 

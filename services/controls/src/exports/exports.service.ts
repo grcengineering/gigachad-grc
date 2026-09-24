@@ -1,9 +1,10 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import * as crypto from 'crypto';
 import * as ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
 import { Writable } from 'stream';
+import { ExportJob, Prisma } from '@prisma/client';
+import { auditMutation } from '../common/audit-mutation';
 import {
   CreateExportJobDto,
   ExportJobDto,
@@ -28,7 +29,7 @@ interface ExportJobRecord {
   includeRelations: boolean;
   fileName?: string;
   fileSize?: number;
-  fileContent?: string; // Base64 encoded for in-memory storage
+  fileContent?: Buffer;
   expiresAt?: Date;
   errorMessage?: string;
   recordCount?: number;
@@ -37,63 +38,71 @@ interface ExportJobRecord {
   completedAt?: Date;
 }
 
-// In-memory store for export jobs
-const exportJobStore = new Map<string, ExportJobRecord>();
-
-// Cleanup expired jobs every hour
-setInterval(() => {
-  const now = new Date();
-  for (const [id, job] of exportJobStore.entries()) {
-    if (job.expiresAt && job.expiresAt < now) {
-      exportJobStore.delete(id);
-    }
-  }
-}, 60 * 60 * 1000);
-
 @Injectable()
-export class ExportsService {
+export class ExportsService implements OnModuleInit {
   private readonly logger = new Logger(ExportsService.name);
 
   constructor(private readonly prisma: PrismaService) {}
+
+  async onModuleInit(): Promise<void> {
+    const interrupted = await this.prisma.exportJob.findMany({
+      where: { status: { in: [ExportStatus.PENDING, ExportStatus.PROCESSING] } },
+      select: { id: true, organizationId: true },
+    });
+    for (const job of interrupted) {
+      this.processExportJob(job.id, job.organizationId).catch((error) => {
+        this.logger.error(`Failed to resume export job ${job.id}: ${error.message}`);
+      });
+    }
+  }
 
   async createExportJob(
     organizationId: string,
     userId: string,
     dto: CreateExportJobDto,
   ): Promise<ExportJobDto> {
-    const id = crypto.randomUUID();
-    const now = new Date();
-
-    const job: ExportJobRecord = {
-      id,
+    if (dto.format === ExportFormat.PPTX) {
+      throw new BadRequestException('PPTX export is not supported; use PDF, XLSX, CSV, or JSON');
+    }
+    const created = await this.prisma.exportJob.create({
+      data: {
+        organizationId,
+        entityType: dto.entityType,
+        format: dto.format || ExportFormat.JSON,
+        status: ExportStatus.PENDING,
+        config: {
+          filters: dto.filters || {},
+          fields: dto.fields || [],
+          includeRelations: dto.includeRelations || false,
+        } as Prisma.InputJsonValue,
+        requestedBy: userId,
+      },
+    });
+    await auditMutation(this.prisma, {
       organizationId,
-      entityType: dto.entityType,
-      format: dto.format || ExportFormat.JSON,
-      status: ExportStatus.PENDING,
-      filters: dto.filters,
-      fields: dto.fields,
-      includeRelations: dto.includeRelations || false,
-      requestedBy: userId,
-      createdAt: now,
-    };
-
-    exportJobStore.set(id, job);
-    this.logger.log(`Created export job ${id} for ${dto.entityType}`);
+      userId,
+      action: 'CREATE',
+      entityType: 'ExportJob',
+      entityId: created.id,
+      description: `Created ${created.entityType} export job`,
+      metadata: { format: created.format },
+    });
+    this.logger.log(`Created export job ${created.id} for ${dto.entityType}`);
 
     // Process asynchronously
-    this.processExportJob(id).catch(err => {
-      this.logger.error(`Export job ${id} failed: ${err.message}`);
+    this.processExportJob(created.id, organizationId).catch(err => {
+      this.logger.error(`Export job ${created.id} failed: ${err.message}`);
     });
 
-    return this.toDto(job);
+    return this.toDto(this.toRecord(created));
   }
 
   async getExportJob(organizationId: string, id: string): Promise<ExportJobDto> {
-    const job = exportJobStore.get(id);
-    if (!job || job.organizationId !== organizationId) {
+    const job = await this.prisma.exportJob.findFirst({ where: { id, organizationId } });
+    if (!job) {
       throw new NotFoundException(`Export job ${id} not found`);
     }
-    return this.toDto(job);
+    return this.toDto(this.toRecord(job));
   }
 
   async listExportJobs(
@@ -105,25 +114,23 @@ export class ExportsService {
       limit: query.limit,
     });
 
-    let jobs = Array.from(exportJobStore.values())
-      .filter(j => j.organizationId === organizationId);
-
-    if (query.status) {
-      jobs = jobs.filter(j => j.status === query.status);
-    }
-
-    if (query.entityType) {
-      jobs = jobs.filter(j => j.entityType === query.entityType);
-    }
-
-    jobs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-    const total = jobs.length;
-    const offset = (pagination.page - 1) * pagination.limit;
-    const paginatedJobs = jobs.slice(offset, offset + pagination.limit);
+    const where = {
+      organizationId,
+      status: query.status,
+      entityType: query.entityType,
+    };
+    const [jobs, total] = await Promise.all([
+      this.prisma.exportJob.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (pagination.page - 1) * pagination.limit,
+        take: pagination.limit,
+      }),
+      this.prisma.exportJob.count({ where }),
+    ]);
 
     return createPaginatedResponse(
-      paginatedJobs.map(j => this.toDto(j)),
+      jobs.map(j => this.toDto(this.toRecord(j))),
       total,
       pagination,
     );
@@ -132,11 +139,12 @@ export class ExportsService {
   async downloadExport(
     organizationId: string,
     id: string,
-  ): Promise<{ content: string; contentType: string; fileName: string }> {
-    const job = exportJobStore.get(id);
-    if (!job || job.organizationId !== organizationId) {
+  ): Promise<{ content: Buffer; contentType: string; fileName: string }> {
+    const row = await this.prisma.exportJob.findFirst({ where: { id, organizationId } });
+    if (!row) {
       throw new NotFoundException(`Export job ${id} not found`);
     }
+    const job = this.toRecord(row);
 
     if (job.status !== ExportStatus.COMPLETED) {
       throw new BadRequestException(`Export job is not completed (status: ${job.status})`);
@@ -149,15 +157,15 @@ export class ExportsService {
     const contentType = this.getContentType(job.format);
     
     return {
-      content: job.fileContent || '',
+      content: job.fileContent || Buffer.alloc(0),
       contentType,
       fileName: job.fileName || `export.${job.format}`,
     };
   }
 
-  async cancelExportJob(organizationId: string, id: string): Promise<void> {
-    const job = exportJobStore.get(id);
-    if (!job || job.organizationId !== organizationId) {
+  async cancelExportJob(organizationId: string, userId: string, id: string): Promise<void> {
+    const job = await this.prisma.exportJob.findFirst({ where: { id, organizationId } });
+    if (!job) {
       throw new NotFoundException(`Export job ${id} not found`);
     }
 
@@ -165,40 +173,81 @@ export class ExportsService {
       throw new BadRequestException('Cannot cancel completed export');
     }
 
-    job.status = ExportStatus.FAILED;
-    job.errorMessage = 'Cancelled by user';
-    exportJobStore.set(id, job);
+    await this.prisma.exportJob.update({
+      where: { id },
+      data: { status: ExportStatus.FAILED, errorMessage: 'Cancelled by user' },
+    });
+    await auditMutation(this.prisma, {
+      organizationId,
+      userId,
+      action: 'CANCEL',
+      entityType: 'ExportJob',
+      entityId: id,
+      description: `Cancelled export job ${id}`,
+    });
   }
 
   /**
    * Process an export job by ID
    * Can be called by the job scheduler for async processing
    */
-  async processExportJob(id: string, _organizationId?: string): Promise<void> {
-    const job = exportJobStore.get(id);
-    if (!job) return;
+  async processExportJob(id: string, organizationId?: string): Promise<void> {
+    const row = await this.prisma.exportJob.findFirst({
+      where: { id, organizationId },
+    });
+    if (!row) {
+      throw new NotFoundException(`Export job ${id} not found`);
+    }
+    const job = this.toRecord(row);
 
     try {
-      job.status = ExportStatus.PROCESSING;
-      exportJobStore.set(id, job);
+      await this.prisma.exportJob.update({
+        where: { id },
+        data: { status: ExportStatus.PROCESSING, errorMessage: null },
+      });
 
       const data = await this.fetchData(job);
       const content = await this.formatData(data, job.format);
-
-      job.status = ExportStatus.COMPLETED;
-      job.fileContent = Buffer.from(content).toString('base64');
-      job.fileName = `${job.entityType}_export_${new Date().toISOString().split('T')[0]}.${job.format}`;
-      job.fileSize = content.length;
-      job.recordCount = Array.isArray(data) ? data.length : 1;
-      job.completedAt = new Date();
-      job.expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hour expiry
-
-      exportJobStore.set(id, job);
-      this.logger.log(`Export job ${id} completed: ${job.recordCount} records`);
-    } catch (error) {
-      job.status = ExportStatus.FAILED;
-      job.errorMessage = error.message;
-      exportJobStore.set(id, job);
+      const fileName = `${job.entityType}_export_${new Date().toISOString().split('T')[0]}.${job.format}`;
+      const recordCount = Array.isArray(data) ? data.length : 1;
+      await this.prisma.exportJob.update({
+        where: { id },
+        data: {
+          status: ExportStatus.COMPLETED,
+          progress: 100,
+          fileContent: content,
+          fileName,
+          fileSize: content.length,
+          recordCount,
+          completedAt: new Date(),
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        },
+      });
+      await auditMutation(this.prisma, {
+        organizationId: job.organizationId,
+        userId: job.requestedBy,
+        action: 'COMPLETE',
+        entityType: 'ExportJob',
+        entityId: id,
+        description: `Completed export job ${id}`,
+        metadata: { recordCount, fileSize: content.length, format: job.format },
+      });
+      this.logger.log(`Export job ${id} completed: ${recordCount} records`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      await this.prisma.exportJob.update({
+        where: { id },
+        data: { status: ExportStatus.FAILED, errorMessage: message },
+      });
+      await auditMutation(this.prisma, {
+        organizationId: job.organizationId,
+        userId: job.requestedBy,
+        action: 'FAIL',
+        entityType: 'ExportJob',
+        entityId: id,
+        description: `Export job ${id} failed`,
+        metadata: { error: message },
+      });
       throw error;
     }
   }
@@ -210,12 +259,12 @@ export class ExportsService {
       case ExportEntityType.Controls:
         return this.prisma.control.findMany({
           where: {
+            ...filters,
             OR: [
               { organizationId: null },
               { organizationId },
             ],
             deletedAt: null,
-            ...filters,
           },
           include: includeRelations ? {
             implementations: { where: { organizationId } },
@@ -225,7 +274,7 @@ export class ExportsService {
 
       case ExportEntityType.Policies:
         return this.prisma.policy.findMany({
-          where: { organizationId, deletedAt: null, ...filters },
+          where: { ...filters, organizationId, deletedAt: null },
           include: includeRelations ? {
             versions: true,
             controlLinks: true,
@@ -234,7 +283,7 @@ export class ExportsService {
 
       case ExportEntityType.Risks:
         return this.prisma.risk.findMany({
-          where: { organizationId, deletedAt: null, ...filters },
+          where: { ...filters, organizationId, deletedAt: null },
           include: includeRelations ? {
             controls: true,
             assessment: true,
@@ -243,7 +292,7 @@ export class ExportsService {
 
       case ExportEntityType.Evidence:
         return this.prisma.evidence.findMany({
-          where: { organizationId, deletedAt: null, ...filters },
+          where: { ...filters, organizationId, deletedAt: null },
           include: includeRelations ? {
             controlLinks: true,
           } : undefined,
@@ -251,7 +300,7 @@ export class ExportsService {
 
       case ExportEntityType.Tasks:
         return this.prisma.task.findMany({
-          where: { organizationId, ...filters },
+          where: { ...filters, organizationId },
           include: includeRelations ? {
             assignee: { select: { id: true, displayName: true, email: true } },
           } : undefined,
@@ -259,14 +308,14 @@ export class ExportsService {
 
       case ExportEntityType.AuditLogs:
         return this.prisma.auditLog.findMany({
-          where: { organizationId, ...filters },
+          where: { ...filters, organizationId },
           orderBy: { timestamp: 'desc' },
           take: 10000, // Limit audit log exports
         });
 
       case ExportEntityType.Users:
         return this.prisma.user.findMany({
-          where: { organizationId, ...filters },
+          where: { ...filters, organizationId },
           select: {
             id: true,
             email: true,
@@ -281,11 +330,11 @@ export class ExportsService {
       case ExportEntityType.Frameworks:
         return this.prisma.framework.findMany({
           where: {
+            ...filters,
             OR: [
               { organizationId: null },
               { organizationId },
             ],
-            ...filters,
           },
           include: includeRelations ? {
             requirements: true,
@@ -315,13 +364,13 @@ export class ExportsService {
     }
   }
 
-  private async formatData(data: any[], format: ExportFormat): Promise<string> {
+  private async formatData(data: any[], format: ExportFormat): Promise<Buffer> {
     switch (format) {
       case ExportFormat.JSON:
-        return JSON.stringify(data, null, 2);
+        return Buffer.from(JSON.stringify(data, null, 2), 'utf8');
 
       case ExportFormat.CSV:
-        return this.formatAsCsv(data);
+        return Buffer.from(this.formatAsCsv(data), 'utf8');
 
       case ExportFormat.XLSX:
         return await this.formatAsExcel(data);
@@ -330,11 +379,19 @@ export class ExportsService {
         return await this.formatAsPdf(data);
 
       case ExportFormat.PPTX:
-        return await this.formatAsPowerPoint(data);
+        throw new BadRequestException('PPTX export is not supported');
 
       default:
-        return JSON.stringify(data, null, 2);
+        throw new BadRequestException(`Unsupported export format: ${format}`);
     }
+  }
+
+  async formatRows(data: unknown[], format: 'pdf' | 'csv' | 'xlsx'): Promise<Buffer> {
+    return this.formatData(data as any[], format as ExportFormat);
+  }
+
+  getFormatContentType(format: 'pdf' | 'csv' | 'xlsx'): string {
+    return this.getContentType(format as ExportFormat);
   }
 
   /**
@@ -365,7 +422,7 @@ export class ExportsService {
   /**
    * Format data as Excel using ExcelJS
    */
-  private async formatAsExcel(data: any[]): Promise<string> {
+  private async formatAsExcel(data: any[]): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'GigaChad GRC';
     workbook.created = new Date();
@@ -422,15 +479,15 @@ export class ExportsService {
 
     // Write to buffer
     const buffer = await workbook.xlsx.writeBuffer();
-    return Buffer.from(buffer).toString('base64');
+    return Buffer.from(buffer);
   }
 
   /**
    * Format data as PDF using PDFKit
    */
-  private async formatAsPdf(data: any[]): Promise<string> {
+  private async formatAsPdf(data: any[]): Promise<Buffer> {
     return new Promise((resolve, reject) => {
-      const doc = new PDFDocument({ size: 'A4', margin: 50 });
+      const doc = new PDFDocument({ size: 'A4', margin: 50, bufferPages: true });
       const chunks: Buffer[] = [];
 
       const writeStream = new Writable({
@@ -442,7 +499,7 @@ export class ExportsService {
 
       writeStream.on('finish', () => {
         const buffer = Buffer.concat(chunks);
-        resolve(buffer.toString('base64'));
+        resolve(buffer);
       });
 
       writeStream.on('error', reject);
@@ -693,6 +750,29 @@ export class ExportsService {
       default:
         return 'application/octet-stream';
     }
+  }
+
+  private toRecord(job: ExportJob): ExportJobRecord {
+    const config = (job.config || {}) as Record<string, unknown>;
+    return {
+      id: job.id,
+      organizationId: job.organizationId,
+      entityType: job.entityType as ExportEntityType,
+      format: job.format as ExportFormat,
+      status: job.status as ExportStatus,
+      filters: config.filters as Record<string, unknown> | undefined,
+      fields: config.fields as string[] | undefined,
+      includeRelations: Boolean(config.includeRelations),
+      fileName: job.fileName ?? job.name ?? undefined,
+      fileSize: job.fileSize ?? undefined,
+      fileContent: job.fileContent ? Buffer.from(job.fileContent) : undefined,
+      expiresAt: job.expiresAt ?? undefined,
+      errorMessage: job.errorMessage ?? undefined,
+      recordCount: job.recordCount ?? undefined,
+      requestedBy: job.requestedBy,
+      createdAt: job.createdAt,
+      completedAt: job.completedAt ?? undefined,
+    };
   }
 
   private toDto(job: ExportJobRecord): ExportJobDto {

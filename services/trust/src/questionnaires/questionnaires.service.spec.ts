@@ -4,6 +4,7 @@ import { PrismaService } from '../common/prisma.service';
 import { AuditService } from '../common/audit.service';
 import { CacheService } from '@gigachad-grc/shared';
 import { NotFoundException } from '@nestjs/common';
+import { QuestionnaireStatus } from '@prisma/client';
 
 describe('QuestionnairesService', () => {
   let service: QuestionnairesService;
@@ -205,7 +206,7 @@ describe('QuestionnairesService', () => {
   describe('update', () => {
     const mockUpdateDto = {
       title: 'Updated Questionnaire',
-      status: 'completed',
+      status: QuestionnaireStatus.answered,
     };
 
     const mockUpdatedQuestionnaire = {

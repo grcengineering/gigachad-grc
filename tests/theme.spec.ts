@@ -2,8 +2,9 @@ import { expect, test } from '@playwright/test';
 
 test.describe('theme preferences', () => {
   test('applies and persists dark mode from Settings', async ({ page }) => {
-    await page.addInitScript(() => localStorage.setItem('theme', 'system'));
     await page.goto('/settings');
+    await page.evaluate(() => localStorage.setItem('theme', 'system'));
+    await page.reload();
     await page.getByRole('button', { name: 'Appearance' }).click();
 
     await page.getByRole('button', { name: 'System' }).click();

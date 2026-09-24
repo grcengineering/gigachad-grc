@@ -1,3 +1,5 @@
+import { useExplicitDemoFallback } from '../demo-mode.js';
+
 interface ScreenshotParams {
   url: string;
   selector?: string;
@@ -204,13 +206,17 @@ export async function captureScreenshot(params: ScreenshotParams): Promise<Scree
     } finally {
       await browser.close();
     }
-  } catch {
-    // Puppeteer not available or failed, return placeholder
-    return {
+  } catch (error) {
+    const reason = `Screenshot capture failed: ${
+      error instanceof Error ? error.message : String(error)
+    }`;
+    return useExplicitDemoFallback(reason, () => ({
       type: 'screenshot',
       url,
       collectedAt: new Date().toISOString(),
-      screenshot: '', // Empty screenshot
+      screenshot: '',
+      isMockMode: true,
+      mockModeReason: reason,
       metadata: {
         width: 0,
         height: 0,
@@ -223,6 +229,6 @@ export async function captureScreenshot(params: ScreenshotParams): Promise<Scree
         statusCode: 0,
         loadTime: 0,
       },
-    };
+    }));
   }
 }

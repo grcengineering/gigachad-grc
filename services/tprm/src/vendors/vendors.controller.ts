@@ -27,12 +27,7 @@ export class VendorsController {
   @Post()
   @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   create(@Body() createVendorDto: CreateVendorDto, @CurrentUser() user: UserContext) {
-    // Inject organizationId from user context
-    const dtoWithOrg = {
-      ...createVendorDto,
-      organizationId: user.organizationId,
-    };
-    return this.vendorsService.create(dtoWithOrg, user.userId);
+    return this.vendorsService.create(createVendorDto, user.userId, user.organizationId);
   }
 
   @Get()

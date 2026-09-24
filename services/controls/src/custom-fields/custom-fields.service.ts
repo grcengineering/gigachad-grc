@@ -6,7 +6,8 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import * as crypto from 'crypto';
+import { CustomFieldDefinition, CustomFieldValue, Prisma } from '@prisma/client';
+import { auditMutation } from '../common/audit-mutation';
 import {
   CreateCustomFieldDto,
   UpdateCustomFieldDto,
@@ -49,10 +50,6 @@ interface CustomFieldValueRecord {
   updatedAt: Date;
 }
 
-// In-memory stores
-const fieldStore = new Map<string, CustomFieldRecord>();
-const valueStore = new Map<string, CustomFieldValueRecord>(); // Key: `${fieldId}:${entityId}`
-
 @Injectable()
 export class CustomFieldsService {
   private readonly logger = new Logger(CustomFieldsService.name);
@@ -64,97 +61,113 @@ export class CustomFieldsService {
     userId: string,
     dto: CreateCustomFieldDto
   ): Promise<CustomFieldDto> {
-    // Check for duplicate slug
-    const existing = Array.from(fieldStore.values()).find(
-      (f) =>
-        f.organizationId === organizationId &&
-        f.entityType === dto.entityType &&
-        f.slug === dto.slug
-    );
+    const existing = await this.prisma.customFieldDefinition.findFirst({
+      where: { organizationId, entityType: dto.entityType, name: dto.slug },
+    });
     if (existing) {
       throw new ConflictException(
         `Field with slug '${dto.slug}' already exists for ${dto.entityType}`
       );
     }
 
-    const id = crypto.randomUUID();
-    const now = new Date();
-
-    const field: CustomFieldRecord = {
-      id,
+    const created = await this.prisma.customFieldDefinition.create({
+      data: {
+        organizationId,
+        name: dto.slug,
+        label: dto.name,
+        description: dto.description,
+        fieldType: dto.fieldType,
+        entityType: dto.entityType,
+        entityTypes: [dto.entityType],
+        isRequired: dto.isRequired || false,
+        defaultValue: dto.defaultValue === undefined
+          ? undefined
+          : (dto.defaultValue as Prisma.InputJsonValue),
+        placeholder: dto.placeholder,
+        options: dto.options as Prisma.InputJsonValue | undefined,
+        order: dto.displayOrder || 0,
+        createdBy: userId,
+      },
+    });
+    await auditMutation(this.prisma, {
       organizationId,
-      name: dto.name,
-      slug: dto.slug,
-      fieldType: dto.fieldType,
-      entityType: dto.entityType,
-      description: dto.description,
-      defaultValue: dto.defaultValue,
-      options: dto.options,
-      isRequired: dto.isRequired || false,
-      placeholder: dto.placeholder,
-      displayOrder: dto.displayOrder || 0,
-      isActive: true,
-      createdBy: userId,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    fieldStore.set(id, field);
-    this.logger.log(`Created custom field ${id} (${dto.slug}) for ${dto.entityType}`);
-
-    return this.toFieldDto(field);
+      userId,
+      action: 'CREATE',
+      entityType: 'CustomFieldDefinition',
+      entityId: created.id,
+      entityName: created.label,
+      description: `Created custom field ${created.name}`,
+    });
+    this.logger.log(`Created custom field ${created.id} (${dto.slug}) for ${dto.entityType}`);
+    return this.toFieldDto(this.toFieldRecord(created));
   }
 
   async updateField(
     organizationId: string,
+    userId: string,
     fieldId: string,
     dto: UpdateCustomFieldDto
   ): Promise<CustomFieldDto> {
-    const field = fieldStore.get(fieldId);
-    if (!field || field.organizationId !== organizationId) {
+    const field = await this.prisma.customFieldDefinition.findFirst({
+      where: { id: fieldId, organizationId },
+    });
+    if (!field) {
       throw new NotFoundException(`Custom field ${fieldId} not found`);
     }
-
-    const updated: CustomFieldRecord = {
-      ...field,
-      name: dto.name ?? field.name,
-      description: dto.description ?? field.description,
-      defaultValue: dto.defaultValue ?? field.defaultValue,
-      options: dto.options ?? field.options,
-      isRequired: dto.isRequired ?? field.isRequired,
-      placeholder: dto.placeholder ?? field.placeholder,
-      displayOrder: dto.displayOrder ?? field.displayOrder,
-      isActive: dto.isActive ?? field.isActive,
-      updatedAt: new Date(),
-    };
-
-    fieldStore.set(fieldId, updated);
-    return this.toFieldDto(updated);
+    const updated = await this.prisma.customFieldDefinition.update({
+      where: { id: fieldId },
+      data: {
+        label: dto.name,
+        description: dto.description,
+        defaultValue: dto.defaultValue as Prisma.InputJsonValue | undefined,
+        options: dto.options as Prisma.InputJsonValue | undefined,
+        isRequired: dto.isRequired,
+        placeholder: dto.placeholder,
+        order: dto.displayOrder,
+        isActive: dto.isActive,
+      },
+    });
+    await auditMutation(this.prisma, {
+      organizationId,
+      userId,
+      action: 'UPDATE',
+      entityType: 'CustomFieldDefinition',
+      entityId: fieldId,
+      entityName: updated.label,
+      description: `Updated custom field ${updated.name}`,
+    });
+    return this.toFieldDto(this.toFieldRecord(updated));
   }
 
-  async deleteField(organizationId: string, fieldId: string): Promise<void> {
-    const field = fieldStore.get(fieldId);
-    if (!field || field.organizationId !== organizationId) {
+  async deleteField(organizationId: string, userId: string, fieldId: string): Promise<void> {
+    const field = await this.prisma.customFieldDefinition.findFirst({
+      where: { id: fieldId, organizationId },
+    });
+    if (!field) {
       throw new NotFoundException(`Custom field ${fieldId} not found`);
     }
 
-    // Delete all values for this field
-    for (const [key, value] of valueStore.entries()) {
-      if (value.fieldId === fieldId) {
-        valueStore.delete(key);
-      }
-    }
-
-    fieldStore.delete(fieldId);
+    await this.prisma.customFieldDefinition.delete({ where: { id: fieldId } });
+    await auditMutation(this.prisma, {
+      organizationId,
+      userId,
+      action: 'DELETE',
+      entityType: 'CustomFieldDefinition',
+      entityId: fieldId,
+      entityName: field.label,
+      description: `Deleted custom field ${field.name}`,
+    });
     this.logger.log(`Deleted custom field ${fieldId}`);
   }
 
   async getField(organizationId: string, fieldId: string): Promise<CustomFieldDto> {
-    const field = fieldStore.get(fieldId);
-    if (!field || field.organizationId !== organizationId) {
+    const field = await this.prisma.customFieldDefinition.findFirst({
+      where: { id: fieldId, organizationId },
+    });
+    if (!field) {
       throw new NotFoundException(`Custom field ${fieldId} not found`);
     }
-    return this.toFieldDto(field);
+    return this.toFieldDto(this.toFieldRecord(field));
   }
 
   async listFields(organizationId: string, query: CustomFieldListQueryDto) {
@@ -163,24 +176,23 @@ export class CustomFieldsService {
       limit: query.limit,
     });
 
-    let fields = Array.from(fieldStore.values()).filter((f) => f.organizationId === organizationId);
-
-    if (query.entityType) {
-      fields = fields.filter((f) => f.entityType === query.entityType);
-    }
-
-    if (query.activeOnly) {
-      fields = fields.filter((f) => f.isActive);
-    }
-
-    fields.sort((a, b) => a.displayOrder - b.displayOrder);
-
-    const total = fields.length;
-    const offset = (pagination.page - 1) * pagination.limit;
-    const paginatedFields = fields.slice(offset, offset + pagination.limit);
+    const where: Prisma.CustomFieldDefinitionWhereInput = {
+      organizationId,
+      entityType: query.entityType,
+      isActive: query.activeOnly ? true : undefined,
+    };
+    const [fields, total] = await Promise.all([
+      this.prisma.customFieldDefinition.findMany({
+        where,
+        orderBy: { order: 'asc' },
+        skip: (pagination.page - 1) * pagination.limit,
+        take: pagination.limit,
+      }),
+      this.prisma.customFieldDefinition.count({ where }),
+    ]);
 
     return createPaginatedResponse(
-      paginatedFields.map((f) => this.toFieldDto(f)),
+      fields.map((f) => this.toFieldDto(this.toFieldRecord(f))),
       total,
       pagination
     );
@@ -193,20 +205,17 @@ export class CustomFieldsService {
     entityId: string,
     dto: SetCustomFieldValueDto
   ): Promise<CustomFieldValueDto> {
-    // Find field by ID or slug
-    let field = fieldStore.get(dto.fieldIdOrSlug);
-    if (!field) {
-      field = Array.from(fieldStore.values()).find(
-        (f) =>
-          f.organizationId === organizationId &&
-          f.entityType === entityType &&
-          f.slug === dto.fieldIdOrSlug
-      );
-    }
-
-    if (!field || field.organizationId !== organizationId) {
+    const fieldRow = await this.prisma.customFieldDefinition.findFirst({
+      where: {
+        organizationId,
+        entityType,
+        OR: [{ id: dto.fieldIdOrSlug }, { name: dto.fieldIdOrSlug }],
+      },
+    });
+    if (!fieldRow) {
       throw new NotFoundException(`Custom field '${dto.fieldIdOrSlug}' not found`);
     }
+    const field = this.toFieldRecord(fieldRow);
 
     if (field.entityType !== entityType) {
       throw new BadRequestException(`Field '${field.slug}' is not applicable to ${entityType}`);
@@ -215,22 +224,35 @@ export class CustomFieldsService {
     // Validate value
     this.validateFieldValue(field, dto.value);
 
-    const key = `${field.id}:${entityId}`;
-    const now = new Date();
-
-    const existing = valueStore.get(key);
-    const valueRecord: CustomFieldValueRecord = {
-      id: existing?.id || crypto.randomUUID(),
-      fieldId: field.id,
-      entityId,
-      value: dto.value,
-      createdBy: existing?.createdBy || userId,
-      createdAt: existing?.createdAt || now,
-      updatedAt: now,
-    };
-
-    valueStore.set(key, valueRecord);
-
+    const value = await this.prisma.customFieldValue.upsert({
+      where: {
+        fieldId_entityType_entityId: {
+          fieldId: field.id,
+          entityType,
+          entityId,
+        },
+      },
+      create: {
+        fieldId: field.id,
+        entityType,
+        entityId,
+        value: dto.value as Prisma.InputJsonValue,
+        createdBy: userId,
+      },
+      update: {
+        value: dto.value as Prisma.InputJsonValue,
+      },
+    });
+    await auditMutation(this.prisma, {
+      organizationId,
+      userId,
+      action: 'SET_VALUE',
+      entityType: 'CustomFieldValue',
+      entityId: value.id,
+      entityName: field.name,
+      description: `Set custom field ${field.slug} on ${entityType} ${entityId}`,
+    });
+    const valueRecord = this.toValueRecord(value);
     return this.toValueDto(field, valueRecord);
   }
 
@@ -239,15 +261,22 @@ export class CustomFieldsService {
     entityType: CustomFieldEntityType,
     entityId: string
   ): Promise<EntityCustomFieldsDto> {
-    const fields = Array.from(fieldStore.values()).filter(
-      (f) => f.organizationId === organizationId && f.entityType === entityType && f.isActive
-    );
+    const fieldRows = await this.prisma.customFieldDefinition.findMany({
+      where: { organizationId, entityType, isActive: true },
+      include: {
+        values: {
+          where: { entityType, entityId },
+        },
+      },
+      orderBy: { order: 'asc' },
+    });
+    const fields = fieldRows.map((field) => this.toFieldRecord(field));
 
     const values: CustomFieldValueDto[] = [];
 
     for (const field of fields) {
-      const key = `${field.id}:${entityId}`;
-      const valueRecord = valueStore.get(key);
+      const row = fieldRows.find((candidate) => candidate.id === field.id)?.values[0];
+      const valueRecord = row ? this.toValueRecord(row) : undefined;
 
       if (valueRecord) {
         values.push(this.toValueDto(field, valueRecord));
@@ -273,26 +302,36 @@ export class CustomFieldsService {
 
   async deleteEntityFieldValue(
     organizationId: string,
+    userId: string,
     entityType: CustomFieldEntityType,
     entityId: string,
     fieldIdOrSlug: string
   ): Promise<void> {
-    let field = fieldStore.get(fieldIdOrSlug);
+    const field = await this.prisma.customFieldDefinition.findFirst({
+      where: {
+        organizationId,
+        entityType,
+        OR: [{ id: fieldIdOrSlug }, { name: fieldIdOrSlug }],
+      },
+    });
     if (!field) {
-      field = Array.from(fieldStore.values()).find(
-        (f) =>
-          f.organizationId === organizationId &&
-          f.entityType === entityType &&
-          f.slug === fieldIdOrSlug
-      );
-    }
-
-    if (!field || field.organizationId !== organizationId) {
       throw new NotFoundException(`Custom field '${fieldIdOrSlug}' not found`);
     }
 
-    const key = `${field.id}:${entityId}`;
-    valueStore.delete(key);
+    const deleted = await this.prisma.customFieldValue.deleteMany({
+      where: { fieldId: field.id, entityType, entityId },
+    });
+    if (deleted.count > 0) {
+      await auditMutation(this.prisma, {
+        organizationId,
+        userId,
+        action: 'DELETE_VALUE',
+        entityType: 'CustomFieldValue',
+        entityId: `${field.id}:${entityId}`,
+        entityName: field.label,
+        description: `Deleted custom field ${field.name} from ${entityType} ${entityId}`,
+      });
+    }
   }
 
   private validateFieldValue(field: CustomFieldRecord, value: string): void {
@@ -387,6 +426,39 @@ export class CustomFieldsService {
       default:
         return value;
     }
+  }
+
+  private toFieldRecord(field: CustomFieldDefinition): CustomFieldRecord {
+    return {
+      id: field.id,
+      organizationId: field.organizationId,
+      name: field.label,
+      slug: field.name,
+      fieldType: field.fieldType as CustomFieldType,
+      entityType: field.entityType as CustomFieldEntityType,
+      description: field.description ?? undefined,
+      defaultValue: typeof field.defaultValue === 'string' ? field.defaultValue : undefined,
+      options: Array.isArray(field.options) ? field.options.map(String) : undefined,
+      isRequired: field.isRequired,
+      placeholder: field.placeholder ?? undefined,
+      displayOrder: field.order,
+      isActive: field.isActive,
+      createdBy: field.createdBy ?? 'system',
+      createdAt: field.createdAt,
+      updatedAt: field.updatedAt,
+    };
+  }
+
+  private toValueRecord(value: CustomFieldValue): CustomFieldValueRecord {
+    return {
+      id: value.id,
+      fieldId: value.fieldId,
+      entityId: value.entityId,
+      value: typeof value.value === 'string' ? value.value : JSON.stringify(value.value),
+      createdBy: value.createdBy ?? 'system',
+      createdAt: value.createdAt,
+      updatedAt: value.updatedAt,
+    };
   }
 
   private toFieldDto(field: CustomFieldRecord): CustomFieldDto {

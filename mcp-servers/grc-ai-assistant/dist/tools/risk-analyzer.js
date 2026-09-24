@@ -1,10 +1,10 @@
 import { aiClient } from './ai-client.js';
+import { useExplicitDemoFallback } from '../demo-mode.js';
 export async function analyzeRisk(params) {
     const { riskDescription, context, includeQuantitative } = params;
     const riskId = `risk-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     if (!aiClient.isConfigured()) {
-        // Return mock analysis if AI is not configured
-        return generateMockAnalysis(riskId, riskDescription, includeQuantitative);
+        return useExplicitDemoFallback('AI service is not configured', () => generateMockAnalysis(riskId, riskDescription, includeQuantitative));
     }
     const systemPrompt = `You are an expert GRC (Governance, Risk, and Compliance) analyst. 
 Analyze the provided risk and return a comprehensive assessment in JSON format.
@@ -46,14 +46,15 @@ Return JSON with this structure:
             ...analysis,
         };
     }
-    catch {
-        // Fallback to mock analysis on error
-        return generateMockAnalysis(riskId, riskDescription, includeQuantitative);
+    catch (error) {
+        return useExplicitDemoFallback(`AI risk analysis failed: ${error instanceof Error ? error.message : String(error)}`, () => generateMockAnalysis(riskId, riskDescription, includeQuantitative));
     }
 }
 function generateMockAnalysis(riskId, riskDescription, includeQuantitative) {
     // Generate deterministic but varied scores based on description
-    const descHash = riskDescription.split('').reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0);
+    const descHash = riskDescription
+        .split('')
+        .reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0);
     const likelihood = Math.abs(descHash % 5) + 1;
     const impact = Math.abs((descHash >> 3) % 5) + 1;
     const inherentScore = likelihood * impact;
@@ -112,18 +113,11 @@ function generateMockAnalysis(riskId, riskDescription, includeQuantitative) {
                 type: 'transfer',
                 effectiveness: 'Medium',
                 estimatedCost: '$5,000 - $20,000 annually',
-                implementation: [
-                    'Evaluate cyber insurance options',
-                    'Document risk transfer strategy',
-                ],
+                implementation: ['Evaluate cyber insurance options', 'Document risk transfer strategy'],
                 timeline: '1-2 months',
             },
         ],
-        relatedRisks: [
-            'Data breach',
-            'Compliance violation',
-            'Business continuity disruption',
-        ],
+        relatedRisks: ['Data breach', 'Compliance violation', 'Business continuity disruption'],
         complianceImpact: [
             {
                 framework: 'SOC 2',

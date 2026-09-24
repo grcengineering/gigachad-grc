@@ -37,17 +37,19 @@ export async function collectJamfEvidence(params) {
     try {
         for (const evidenceType of evidenceTypes) {
             switch (evidenceType) {
-                case 'device-inventory':
+                case 'device-inventory': {
                     const inventoryFindings = await collectDeviceInventory(client, filters);
                     findings.push(inventoryFindings);
                     totalDevices += inventoryFindings.totalDevices;
                     break;
-                case 'compliance-status':
+                }
+                case 'compliance-status': {
                     const complianceFindings = await collectComplianceStatus(client);
                     findings.push(complianceFindings);
                     compliantDevices += complianceFindings.compliantCount;
                     nonCompliantDevices += complianceFindings.nonCompliantCount;
                     break;
+                }
                 case 'patch-status':
                     findings.push(await collectPatchStatus(client));
                     break;

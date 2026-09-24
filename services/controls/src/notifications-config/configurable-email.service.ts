@@ -8,6 +8,11 @@ export interface EmailOptions {
   subject: string;
   html: string;
   text?: string;
+  attachments?: Array<{
+    filename: string;
+    content: Buffer;
+    contentType: string;
+  }>;
 }
 
 @Injectable()
@@ -111,6 +116,10 @@ export class ConfigurableEmailService {
   /**
    * Send an email using the organization's configuration
    */
+  async isConfigured(organizationId: string): Promise<boolean> {
+    return (await this.getTransporter(organizationId)) !== null;
+  }
+
   async sendEmail(organizationId: string, options: EmailOptions): Promise<boolean> {
     const transporter = await this.getTransporter(organizationId);
 
@@ -130,6 +139,7 @@ export class ConfigurableEmailService {
         subject: options.subject,
         html: options.html,
         text: options.text || this.stripHtml(options.html),
+        attachments: options.attachments,
       });
 
       this.logger.log(`Email sent to ${options.to} (Message ID: ${info.messageId})`);

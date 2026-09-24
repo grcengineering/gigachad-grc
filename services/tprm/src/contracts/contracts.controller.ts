@@ -68,13 +68,7 @@ export class ContractsController {
   @Post()
   @Roles('admin', 'compliance_manager', 'tprm_manager', 'auditor')
   create(@Body() createContractDto: CreateContractDto, @CurrentUser() user: UserContext) {
-    return this.contractsService.create(
-      {
-        ...createContractDto,
-        organizationId: user.organizationId,
-      },
-      user.userId
-    );
+    return this.contractsService.create(createContractDto, user.userId, user.organizationId);
   }
 
   @Get()

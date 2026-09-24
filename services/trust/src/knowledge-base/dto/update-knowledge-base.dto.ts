@@ -1,9 +1,10 @@
-import { IsString, IsOptional, IsArray, IsBoolean, IsDateString } from 'class-validator';
+import { IsString, IsOptional, IsArray, IsBoolean, IsDateString, IsEnum } from 'class-validator';
+import { KnowledgeBaseCategory, KnowledgeBaseStatus } from '@prisma/client';
 
 export class UpdateKnowledgeBaseDto {
-  @IsString()
+  @IsEnum(KnowledgeBaseCategory)
   @IsOptional()
-  category?: string;
+  category?: KnowledgeBaseCategory;
 
   @IsString()
   @IsOptional()
@@ -25,9 +26,9 @@ export class UpdateKnowledgeBaseDto {
   @IsOptional()
   framework?: string;
 
-  @IsString()
+  @IsEnum(KnowledgeBaseStatus)
   @IsOptional()
-  status?: string;
+  status?: KnowledgeBaseStatus;
 
   @IsString()
   @IsOptional()

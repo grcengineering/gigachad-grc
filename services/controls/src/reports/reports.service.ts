@@ -7,17 +7,62 @@ import {
   ComplianceSummaryData,
   FrameworkAssessmentData,
   RiskRegisterData,
+  RiskTrendData,
   ControlStatusData,
 } from '@gigachad-grc/shared';
-import { ControlImplementationStatus } from '@prisma/client';
+import { ControlImplementationStatus, Prisma } from '@prisma/client';
 
 export interface GenerateReportDto {
-  reportType: 'compliance_summary' | 'framework_assessment' | 'risk_register' | 'control_status' | 'bcdr_summary' | 'bia_report' | 'dr_test_report';
+  reportType:
+    | 'compliance_summary'
+    | 'framework_assessment'
+    | 'risk_register'
+    | 'risk_summary'
+    | 'treatment_status'
+    | 'risk_trends'
+    | 'executive_summary'
+    | 'control_status'
+    | 'bcdr_summary'
+    | 'bia_report'
+    | 'dr_test_report';
   title?: string;
   frameworkId?: string;
   periodStart?: string;
   periodEnd?: string;
   confidential?: boolean;
+  category?: string;
+  riskLevel?: string;
+  status?: string;
+}
+
+export interface MappingGapsReport {
+  totals: {
+    totalGaps: number;
+    requirementsWithoutControls: number;
+    controlsWithoutEvidence: number;
+    evidenceWithoutApproval: number;
+  };
+  requirementGaps: Array<{
+    id: string;
+    framework: string;
+    requirementCode: string;
+    requirementTitle: string;
+    mappedControlCount: number;
+  }>;
+  controlGaps: Array<{
+    id: string;
+    controlCode: string;
+    controlTitle: string;
+    evidenceCount: number;
+    lastReviewDate?: Date;
+  }>;
+  evidenceGaps: Array<{
+    id: string;
+    evidenceTitle: string;
+    type: string;
+    status: string;
+    daysPending: number;
+  }>;
 }
 
 @Injectable()
@@ -26,7 +71,7 @@ export class ReportsService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly auditService: AuditService,
+    private readonly auditService: AuditService
   ) {}
 
   /**
@@ -37,7 +82,7 @@ export class ReportsService {
     userId: string,
     dto: GenerateReportDto,
     userEmail?: string,
-    userName?: string,
+    userName?: string
   ): Promise<{ buffer: Buffer; filename: string }> {
     this.logger.log(`Generating ${dto.reportType} report for org ${organizationId}`);
 
@@ -55,9 +100,7 @@ export class ReportsService {
       organization: orgName,
       generatedBy: userName || userEmail || 'System',
       generatedAt: new Date(),
-      // Cast here so we can support extended internal report types while keeping
-      // compatibility with the shared PDF generator's narrower union type.
-      reportType: dto.reportType as ReportMetadata['reportType'],
+      reportType: this.getRenderType(dto.reportType),
       confidential: dto.confidential ?? true,
     };
 
@@ -69,7 +112,12 @@ export class ReportsService {
     }
 
     // Generate report based on type
-    let data: ComplianceSummaryData | FrameworkAssessmentData | RiskRegisterData | ControlStatusData;
+    let data:
+      | ComplianceSummaryData
+      | FrameworkAssessmentData
+      | RiskRegisterData
+      | RiskTrendData
+      | ControlStatusData;
     let filename: string;
 
     switch (dto.reportType) {
@@ -88,8 +136,28 @@ export class ReportsService {
         break;
 
       case 'risk_register':
-        data = await this.getRiskRegisterData(organizationId);
+        data = await this.getRiskRegisterData(organizationId, dto);
         filename = `risk-register-${this.formatDateForFilename(new Date())}.pdf`;
+        break;
+
+      case 'risk_summary':
+        data = await this.getComplianceSummaryData(organizationId, dto);
+        filename = `risk-summary-${this.formatDateForFilename(new Date())}.pdf`;
+        break;
+
+      case 'treatment_status':
+        data = await this.getRiskRegisterData(organizationId, dto, true);
+        filename = `risk-treatment-status-${this.formatDateForFilename(new Date())}.pdf`;
+        break;
+
+      case 'risk_trends':
+        data = await this.getRiskTrendData(organizationId, dto.periodStart, dto.periodEnd);
+        filename = `risk-trends-${this.formatDateForFilename(new Date())}.pdf`;
+        break;
+
+      case 'executive_summary':
+        data = await this.getComplianceSummaryData(organizationId, dto);
+        filename = `risk-executive-summary-${this.formatDateForFilename(new Date())}.pdf`;
         break;
 
       case 'control_status':
@@ -98,17 +166,21 @@ export class ReportsService {
         break;
 
       case 'bcdr_summary':
-        data = await this.getBCDRSummaryData(organizationId) as unknown as ComplianceSummaryData;
+        data = (await this.getBCDRSummaryData(organizationId)) as unknown as ComplianceSummaryData;
         filename = `bcdr-summary-${this.formatDateForFilename(new Date())}.pdf`;
         break;
 
       case 'bia_report':
-        data = await this.getBIAReportData(organizationId) as unknown as ComplianceSummaryData;
+        data = (await this.getBIAReportData(organizationId)) as unknown as ComplianceSummaryData;
         filename = `bia-report-${this.formatDateForFilename(new Date())}.pdf`;
         break;
 
       case 'dr_test_report':
-        data = await this.getDRTestReportData(organizationId, dto.periodStart, dto.periodEnd) as unknown as ComplianceSummaryData;
+        data = (await this.getDRTestReportData(
+          organizationId,
+          dto.periodStart,
+          dto.periodEnd
+        )) as unknown as ComplianceSummaryData;
         filename = `dr-test-report-${this.formatDateForFilename(new Date())}.pdf`;
         break;
 
@@ -143,7 +215,10 @@ export class ReportsService {
   /**
    * Get compliance summary data
    */
-  private async getComplianceSummaryData(organizationId: string): Promise<ComplianceSummaryData> {
+  private async getComplianceSummaryData(
+    organizationId: string,
+    riskFilters?: GenerateReportDto
+  ): Promise<ComplianceSummaryData> {
     // Get framework scores
     const frameworks = await this.prisma.framework.findMany({
       where: { isActive: true },
@@ -169,12 +244,12 @@ export class ReportsService {
       const implementations = fw.mappings
         .map((m) => m.control.implementations[0]?.status)
         .filter(Boolean);
-      
+
       const total = implementations.length;
       const implemented = implementations.filter(
-        (s) => s === ControlImplementationStatus.implemented,
+        (s) => s === ControlImplementationStatus.implemented
       ).length;
-      
+
       return {
         name: fw.name,
         score: total > 0 ? Math.round((implemented / total) * 100) : 0,
@@ -206,26 +281,44 @@ export class ReportsService {
 
     const totalControls = Object.values(controlsByStatus).reduce((a, b) => a + b, 0);
     const applicableControls = totalControls - controlsByStatus.not_applicable;
-    const overallScore = applicableControls > 0
-      ? Math.round((controlsByStatus.implemented / applicableControls) * 100)
-      : 0;
+    const overallScore =
+      applicableControls > 0
+        ? Math.round((controlsByStatus.implemented / applicableControls) * 100)
+        : 0;
 
     // Get risk summary
+    const riskWhere: Prisma.RiskWhereInput = {
+      organizationId,
+      deletedAt: null,
+      ...(riskFilters?.category ? { category: riskFilters.category } : {}),
+      ...(riskFilters?.status ? { status: riskFilters.status as never } : {}),
+      ...(riskFilters?.riskLevel ? { inherentRisk: riskFilters.riskLevel as never } : {}),
+    };
+    if (riskFilters?.periodStart || riskFilters?.periodEnd) {
+      riskWhere.createdAt = {
+        ...(riskFilters.periodStart ? { gte: new Date(riskFilters.periodStart) } : {}),
+        ...(riskFilters.periodEnd
+          ? { lte: new Date(`${riskFilters.periodEnd}T23:59:59.999`) }
+          : {}),
+      };
+    }
+
     const riskStats = await this.prisma.risk.groupBy({
       by: ['inherentRisk'],
-      where: { organizationId, deletedAt: null },
+      where: riskWhere,
       _count: true,
     });
 
     const totalRisks = await this.prisma.risk.count({
-      where: { organizationId, deletedAt: null },
+      where: riskWhere,
     });
 
     const openRisks = await this.prisma.risk.count({
       where: {
-        organizationId,
-        deletedAt: null,
-        status: { in: ['risk_identified', 'actual_risk', 'risk_analysis_in_progress', 'risk_analyzed'] },
+        ...riskWhere,
+        status: {
+          in: ['risk_identified', 'actual_risk', 'risk_analysis_in_progress', 'risk_analyzed'],
+        },
       },
     });
 
@@ -307,7 +400,7 @@ export class ReportsService {
    */
   private async getFrameworkAssessmentData(
     organizationId: string,
-    frameworkId: string,
+    frameworkId: string
   ): Promise<FrameworkAssessmentData> {
     const framework = await this.prisma.framework.findUnique({
       where: { id: frameworkId },
@@ -347,10 +440,10 @@ export class ReportsService {
       const implementations = req.mappings
         .map((m) => m.control.implementations[0]?.status)
         .filter(Boolean);
-      
+
       const mappedControls = req.mappings.length;
       const implementedControls = implementations.filter(
-        (s) => s === ControlImplementationStatus.implemented,
+        (s) => s === ControlImplementationStatus.implemented
       ).length;
 
       let status: 'compliant' | 'partial' | 'non_compliant' | 'not_applicable' | 'not_assessed';
@@ -381,9 +474,8 @@ export class ReportsService {
     };
 
     const totalAssessed = gapSummary.compliant + gapSummary.partial + gapSummary.nonCompliant;
-    const overallScore = totalAssessed > 0
-      ? Math.round((gapSummary.compliant / totalAssessed) * 100)
-      : 0;
+    const overallScore =
+      totalAssessed > 0 ? Math.round((gapSummary.compliant / totalAssessed) * 100) : 0;
 
     return {
       frameworkName: framework.name,
@@ -397,13 +489,31 @@ export class ReportsService {
   /**
    * Get risk register data
    */
-  private async getRiskRegisterData(organizationId: string): Promise<RiskRegisterData> {
+  private async getRiskRegisterData(
+    organizationId: string,
+    dto: GenerateReportDto,
+    treatmentOnly = false
+  ): Promise<RiskRegisterData> {
+    const where: Prisma.RiskWhereInput = {
+      organizationId,
+      deletedAt: null,
+      ...(dto.category ? { category: dto.category } : {}),
+      ...(dto.status ? { status: dto.status as Prisma.EnumRiskIntakeStatusFilter } : {}),
+      ...(dto.riskLevel
+        ? { inherentRisk: dto.riskLevel as Prisma.EnumRiskLevelNullableFilter }
+        : {}),
+      ...(treatmentOnly ? { treatmentPlan: { not: null } } : {}),
+    };
+    if (dto.periodStart || dto.periodEnd) {
+      where.createdAt = {
+        ...(dto.periodStart ? { gte: new Date(dto.periodStart) } : {}),
+        ...(dto.periodEnd ? { lte: new Date(`${dto.periodEnd}T23:59:59.999`) } : {}),
+      };
+    }
+
     const risks = await this.prisma.risk.findMany({
-      where: { organizationId, deletedAt: null },
-      orderBy: [
-        { inherentRisk: 'desc' },
-        { createdAt: 'desc' },
-      ],
+      where,
+      orderBy: [{ inherentRisk: 'desc' }, { createdAt: 'desc' }],
       select: {
         riskId: true,
         title: true,
@@ -430,16 +540,183 @@ export class ReportsService {
     };
   }
 
+  private async getRiskTrendData(
+    organizationId: string,
+    periodStart?: string,
+    periodEnd?: string
+  ): Promise<RiskTrendData> {
+    const changedAt: Prisma.DateTimeFilter = {
+      gte: periodStart ? new Date(periodStart) : new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
+      ...(periodEnd ? { lte: new Date(`${periodEnd}T23:59:59.999`) } : {}),
+    };
+    const history = await this.prisma.riskHistory.findMany({
+      where: {
+        risk: { organizationId, deletedAt: null },
+        changedAt,
+        action: {
+          in: ['risk_submitted', 'assessment_approved', 'mitigation_done', 'executive_approved'],
+        },
+      },
+      orderBy: { changedAt: 'asc' },
+      select: { action: true, changedAt: true },
+    });
+
+    const weekly = new Map<
+      string,
+      { created: number; assessed: number; mitigated: number; accepted: number }
+    >();
+    for (const entry of history) {
+      const date = new Date(entry.changedAt);
+      date.setUTCDate(date.getUTCDate() - date.getUTCDay());
+      const week = date.toISOString().slice(0, 10);
+      const values = weekly.get(week) ?? {
+        created: 0,
+        assessed: 0,
+        mitigated: 0,
+        accepted: 0,
+      };
+      if (entry.action === 'risk_submitted') values.created += 1;
+      if (entry.action === 'assessment_approved') values.assessed += 1;
+      if (entry.action === 'mitigation_done') values.mitigated += 1;
+      if (entry.action === 'executive_approved') values.accepted += 1;
+      weekly.set(week, values);
+    }
+
+    return {
+      trends: Array.from(weekly, ([week, values]) => ({ week, ...values })),
+    };
+  }
+
+  async getMappingGaps(organizationId: string): Promise<MappingGapsReport> {
+    const [requirements, controls, evidence] = await Promise.all([
+      this.prisma.frameworkRequirement.findMany({
+        where: {
+          isCategory: false,
+          framework: {
+            deletedAt: null,
+            OR: [{ organizationId }, { organizationId: null }],
+          },
+          mappings: {
+            none: {
+              control: {
+                deletedAt: null,
+                OR: [{ organizationId }, { organizationId: null }],
+              },
+            },
+          },
+        },
+        select: {
+          id: true,
+          reference: true,
+          title: true,
+          framework: { select: { name: true } },
+          _count: {
+            select: {
+              mappings: {
+                where: {
+                  control: {
+                    deletedAt: null,
+                    OR: [{ organizationId }, { organizationId: null }],
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: [{ framework: { name: 'asc' } }, { reference: 'asc' }],
+      }),
+      this.prisma.control.findMany({
+        where: {
+          deletedAt: null,
+          OR: [{ organizationId }, { organizationId: null }],
+          implementations: { some: { organizationId } },
+          evidenceLinks: {
+            none: { evidence: { organizationId, deletedAt: null } },
+          },
+        },
+        select: {
+          id: true,
+          controlId: true,
+          title: true,
+          evidenceLinks: {
+            where: { evidence: { organizationId, deletedAt: null } },
+            select: { id: true },
+          },
+          implementations: {
+            where: { organizationId },
+            orderBy: { updatedAt: 'desc' },
+            take: 1,
+            select: { lastTestedAt: true, updatedAt: true },
+          },
+        },
+        orderBy: { controlId: 'asc' },
+      }),
+      this.prisma.evidence.findMany({
+        where: {
+          organizationId,
+          deletedAt: null,
+          status: { not: 'approved' },
+        },
+        select: {
+          id: true,
+          title: true,
+          type: true,
+          status: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+    ]);
+
+    const requirementGaps = requirements.map((requirement) => ({
+      id: requirement.id,
+      framework: requirement.framework.name,
+      requirementCode: requirement.reference,
+      requirementTitle: requirement.title,
+      mappedControlCount: requirement._count.mappings,
+    }));
+    const controlGaps = controls.map((control) => ({
+      id: control.id,
+      controlCode: control.controlId,
+      controlTitle: control.title,
+      evidenceCount: control.evidenceLinks.length,
+      lastReviewDate:
+        control.implementations[0]?.lastTestedAt ??
+        control.implementations[0]?.updatedAt ??
+        undefined,
+    }));
+    const now = Date.now();
+    const evidenceGaps = evidence.map((item) => ({
+      id: item.id,
+      evidenceTitle: item.title,
+      type: item.type,
+      status: item.status,
+      daysPending: Math.max(
+        0,
+        Math.floor((now - item.createdAt.getTime()) / (24 * 60 * 60 * 1000))
+      ),
+    }));
+
+    return {
+      totals: {
+        totalGaps: requirementGaps.length + controlGaps.length + evidenceGaps.length,
+        requirementsWithoutControls: requirementGaps.length,
+        controlsWithoutEvidence: controlGaps.length,
+        evidenceWithoutApproval: evidenceGaps.length,
+      },
+      requirementGaps,
+      controlGaps,
+      evidenceGaps,
+    };
+  }
+
   /**
    * Get control status data
    */
   private async getControlStatusData(organizationId: string): Promise<ControlStatusData> {
     const implementations = await this.prisma.controlImplementation.findMany({
       where: { organizationId },
-      orderBy: [
-        { status: 'asc' },
-        { control: { controlId: 'asc' } },
-      ],
+      orderBy: [{ status: 'asc' }, { control: { controlId: 'asc' } }],
       select: {
         status: true,
         lastTestedAt: true,
@@ -590,8 +867,14 @@ export class ReportsService {
   /**
    * Get DR Test report data
    */
-  private async getDRTestReportData(organizationId: string, periodStart?: string, periodEnd?: string): Promise<Record<string, unknown>> {
-    const startDate = periodStart ? new Date(periodStart) : new Date(new Date().setFullYear(new Date().getFullYear() - 1));
+  private async getDRTestReportData(
+    organizationId: string,
+    periodStart?: string,
+    periodEnd?: string
+  ): Promise<Record<string, unknown>> {
+    const startDate = periodStart
+      ? new Date(periodStart)
+      : new Date(new Date().setFullYear(new Date().getFullYear() - 1));
     const endDate = periodEnd ? new Date(periodEnd) : new Date();
 
     const tests = await this.prisma.$queryRaw<Array<Record<string, unknown>>>`
@@ -615,9 +898,10 @@ export class ReportsService {
     `;
 
     // Get findings for each test
-    const testIds = tests.map(t => t.id as string);
-    const findings = testIds.length > 0 
-      ? await this.prisma.$queryRaw<Array<Record<string, unknown>>>`
+    const testIds = tests.map((t) => t.id as string);
+    const findings =
+      testIds.length > 0
+        ? await this.prisma.$queryRaw<Array<Record<string, unknown>>>`
           SELECT 
             f.test_id, f.finding_number, f.title, f.severity, f.category,
             f.remediation_status, f.remediation_notes
@@ -625,7 +909,7 @@ export class ReportsService {
           WHERE f.test_id = ANY(${testIds}::uuid[])
           ORDER BY f.test_id, f.finding_number
         `
-      : [];
+        : [];
 
     // Group findings by test
     const findingsByTest: Record<string, Array<Record<string, unknown>>> = {};
@@ -638,18 +922,24 @@ export class ReportsService {
     }
 
     return {
-      tests: tests.map(t => ({
+      tests: tests.map((t) => ({
         ...t,
         findings: findingsByTest[t.id as string] || [],
       })),
       summary: {
         total: tests.length,
-        passed: tests.filter(t => t.result === 'passed').length,
-        failed: tests.filter(t => t.result === 'failed').length,
-        passedWithIssues: tests.filter(t => t.result === 'passed_with_issues').length,
-        avgRecoveryTime: tests.length > 0 
-          ? Math.round(tests.reduce((sum, t) => sum + ((t.actual_recovery_time_minutes as number) || 0), 0) / tests.length)
-          : 0,
+        passed: tests.filter((t) => t.result === 'passed').length,
+        failed: tests.filter((t) => t.result === 'failed').length,
+        passedWithIssues: tests.filter((t) => t.result === 'passed_with_issues').length,
+        avgRecoveryTime:
+          tests.length > 0
+            ? Math.round(
+                tests.reduce(
+                  (sum, t) => sum + ((t.actual_recovery_time_minutes as number) || 0),
+                  0
+                ) / tests.length
+              )
+            : 0,
       },
       period: {
         start: startDate,
@@ -680,6 +970,34 @@ export class ReportsService {
         name: 'Risk Register',
         description: 'Complete list of identified risks with status and treatment plans',
         requiresFramework: false,
+      },
+      {
+        id: 'risk_summary',
+        name: 'Risk Summary',
+        description: 'High-level risk distribution and open-risk summary',
+        requiresFramework: false,
+        supportsPeriod: true,
+      },
+      {
+        id: 'treatment_status',
+        name: 'Risk Treatment Status',
+        description: 'Risks with active or completed treatment decisions',
+        requiresFramework: false,
+        supportsPeriod: true,
+      },
+      {
+        id: 'risk_trends',
+        name: 'Risk Trend Analysis',
+        description: 'Weekly risk identification, assessment, mitigation, and acceptance activity',
+        requiresFramework: false,
+        supportsPeriod: true,
+      },
+      {
+        id: 'executive_summary',
+        name: 'Executive Risk Summary',
+        description: 'Board-ready risk and compliance overview',
+        requiresFramework: false,
+        supportsPeriod: true,
       },
       {
         id: 'control_status',
@@ -717,6 +1035,14 @@ export class ReportsService {
         return 'Framework Assessment Report';
       case 'risk_register':
         return 'Risk Register';
+      case 'risk_summary':
+        return 'Risk Summary Report';
+      case 'treatment_status':
+        return 'Risk Treatment Status Report';
+      case 'risk_trends':
+        return 'Risk Trend Analysis';
+      case 'executive_summary':
+        return 'Executive Risk Summary';
       case 'control_status':
         return 'Control Status Report';
       case 'bcdr_summary':
@@ -733,5 +1059,14 @@ export class ReportsService {
   private formatDateForFilename(date: Date): string {
     return date.toISOString().split('T')[0];
   }
-}
 
+  private getRenderType(reportType: GenerateReportDto['reportType']): ReportMetadata['reportType'] {
+    if (reportType === 'risk_trends') return 'risk_trends';
+    if (reportType === 'risk_register' || reportType === 'treatment_status') {
+      return 'risk_register';
+    }
+    if (reportType === 'framework_assessment') return 'framework_assessment';
+    if (reportType === 'control_status') return 'control_status';
+    return 'compliance_summary';
+  }
+}

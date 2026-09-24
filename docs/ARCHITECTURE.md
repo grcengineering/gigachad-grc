@@ -521,14 +521,15 @@ tmpfs:
 
 ### Horizontal Scaling
 
-```yaml
-# Scale specific services
-docker-compose up -d --scale controls=3 --scale frameworks=2
-```
+The checked-in Compose files set fixed `container_name` values, so Compose
+replica scaling is not available as written. Horizontal scaling requires an
+operator-managed deployment that removes fixed names and provides safe schema
+synchronization, shared storage, health checks, and load balancing.
 
 ### Load Balancing
 
-Traefik automatically load balances across service replicas:
+Traefik can load balance replicas after the deployment is redesigned for
+horizontal scaling:
 
 ```yaml
 - "traefik.http.services.controls.loadbalancer.server.port=3001"

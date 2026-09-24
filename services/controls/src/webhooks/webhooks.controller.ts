@@ -59,7 +59,7 @@ export class WebhooksController {
     @CurrentUser() user: UserContext,
     @Body() dto: CreateWebhookDto,
   ): Promise<WebhookDto> {
-    return this.webhooksService.create(user.organizationId, dto);
+    return this.webhooksService.create(user.organizationId, user.userId, dto);
   }
 
   @Put(':id')
@@ -71,7 +71,7 @@ export class WebhooksController {
     @Param('id') id: string,
     @Body() dto: UpdateWebhookDto,
   ): Promise<WebhookDto> {
-    return this.webhooksService.update(user.organizationId, id, dto);
+    return this.webhooksService.update(user.organizationId, user.userId, id, dto);
   }
 
   @Delete(':id')
@@ -82,7 +82,7 @@ export class WebhooksController {
     @CurrentUser() user: UserContext,
     @Param('id') id: string,
   ): Promise<void> {
-    return this.webhooksService.delete(user.organizationId, id);
+    return this.webhooksService.delete(user.organizationId, user.userId, id);
   }
 
   @Post(':id/test')

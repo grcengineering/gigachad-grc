@@ -165,7 +165,7 @@ export class EmailService {
       const info = await this.transporter.sendMail(mailOptions);
 
       // In console mode, log the email content
-      if (this.configService.get<string>('EMAIL_PROVIDER', 'smtp') === 'console') {
+      if (this._isConsoleMode) {
         this.logger.log(`[CONSOLE MODE] Email would be sent:
   From: ${mailOptions.from}
   To: ${maskEmail(options.to)}
@@ -175,6 +175,7 @@ export class EmailService {
   Body Preview:
   ${options.text ? options.text.substring(0, 200) : this.stripHtml(options.html).substring(0, 200)}...
         `);
+        return false;
       } else {
         this.logger.log(
           `Email sent successfully to ${maskEmail(options.to)} (Message ID: ${info.messageId})`

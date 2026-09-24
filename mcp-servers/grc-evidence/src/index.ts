@@ -45,7 +45,8 @@ const tools: Tool[] = [
         services: {
           type: 'array',
           items: { type: 'string' },
-          description: 'AWS services to collect evidence from (s3, iam, ec2, vpc, cloudtrail, config)',
+          description:
+            'AWS services to collect evidence from (s3, iam, ec2, vpc, cloudtrail, config)',
         },
         region: {
           type: 'string',
@@ -61,7 +62,8 @@ const tools: Tool[] = [
   },
   {
     name: 'collect_azure_evidence',
-    description: 'Collect compliance evidence from Azure (Resource Groups, Security Center, Key Vault)',
+    description:
+      'Collect compliance evidence from Azure (Resource Groups, Security Center, Key Vault)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -96,7 +98,8 @@ const tools: Tool[] = [
         checks: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Security checks to perform (branch-protection, secrets-scanning, dependabot, code-scanning)',
+          description:
+            'Security checks to perform (branch-protection, secrets-scanning, dependabot, code-scanning)',
         },
       },
       required: ['organization'],
@@ -115,7 +118,8 @@ const tools: Tool[] = [
         checks: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Checks to perform (mfa-status, password-policy, app-assignments, inactive-users)',
+          description:
+            'Checks to perform (mfa-status, password-policy, app-assignments, inactive-users)',
         },
       },
       required: ['domain'],
@@ -188,7 +192,8 @@ const tools: Tool[] = [
         checks: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Checks to perform (admin-audit, login-audit, drive-sharing, mobile-devices)',
+          description:
+            'Checks to perform (admin-audit, login-audit, drive-sharing, mobile-devices)',
         },
         timeRange: {
           type: 'object',
@@ -210,7 +215,8 @@ const tools: Tool[] = [
         evidenceTypes: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Evidence types (device-inventory, compliance-status, patch-status, security-configs)',
+          description:
+            'Evidence types (device-inventory, compliance-status, patch-status, security-configs)',
         },
         filters: {
           type: 'object',
@@ -225,38 +231,9 @@ const tools: Tool[] = [
 ];
 
 // Define available resources
-const resources: Resource[] = [
-  {
-    uri: 'evidence://aws/s3/buckets',
-    name: 'AWS S3 Bucket Configurations',
-    description: 'S3 bucket security configurations and policies',
-    mimeType: 'application/json',
-  },
-  {
-    uri: 'evidence://aws/iam/policies',
-    name: 'AWS IAM Policies',
-    description: 'IAM policies and user configurations',
-    mimeType: 'application/json',
-  },
-  {
-    uri: 'evidence://github/{org}/{repo}/security',
-    name: 'GitHub Repository Security',
-    description: 'Security settings for a GitHub repository',
-    mimeType: 'application/json',
-  },
-  {
-    uri: 'evidence://compliance/{framework}/requirements',
-    name: 'Framework Requirements',
-    description: 'Compliance requirements for a specific framework',
-    mimeType: 'application/json',
-  },
-  {
-    uri: 'evidence://scans/latest',
-    name: 'Latest Vulnerability Scans',
-    description: 'Results from the most recent vulnerability scans',
-    mimeType: 'application/json',
-  },
-];
+// Evidence is collected on demand through tools. Do not advertise resource
+// URIs until a durable evidence-resource store is implemented.
+const resources: Resource[] = [];
 
 // Handle list tools request
 server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -280,7 +257,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         result = await collectAzureEvidence(toolArgs as Parameters<typeof collectAzureEvidence>[0]);
         break;
       case 'collect_github_evidence':
-        result = await collectGitHubEvidence(toolArgs as Parameters<typeof collectGitHubEvidence>[0]);
+        result = await collectGitHubEvidence(
+          toolArgs as Parameters<typeof collectGitHubEvidence>[0]
+        );
         break;
       case 'collect_okta_evidence':
         result = await collectOktaEvidence(toolArgs as Parameters<typeof collectOktaEvidence>[0]);
@@ -292,7 +271,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         result = await captureScreenshot(toolArgs as Parameters<typeof captureScreenshot>[0]);
         break;
       case 'collect_google_workspace_evidence':
-        result = await collectGoogleWorkspaceEvidence(toolArgs as Parameters<typeof collectGoogleWorkspaceEvidence>[0]);
+        result = await collectGoogleWorkspaceEvidence(
+          toolArgs as Parameters<typeof collectGoogleWorkspaceEvidence>[0]
+        );
         break;
       case 'collect_jamf_evidence':
         result = await collectJamfEvidence(toolArgs as Parameters<typeof collectJamfEvidence>[0]);
@@ -331,26 +312,7 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
 // Handle read resource request
 server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
   const { uri } = request.params;
-
-  // Parse the URI and return appropriate data
-  // For now, return placeholder data - actual implementation would fetch from cache/database
-  const resourceData = {
-    uri,
-    fetchedAt: new Date().toISOString(),
-    data: {
-      message: 'Resource data would be fetched from evidence store',
-    },
-  };
-
-  return {
-    contents: [
-      {
-        uri,
-        mimeType: 'application/json',
-        text: JSON.stringify(resourceData, null, 2),
-      },
-    ],
-  };
+  throw new Error(`Evidence resource is not available: ${uri}. Use an evidence collection tool.`);
 });
 
 // Start the server
@@ -361,4 +323,3 @@ async function main() {
 }
 
 main().catch(console.error);
-

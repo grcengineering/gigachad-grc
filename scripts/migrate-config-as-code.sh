@@ -8,16 +8,16 @@ echo "Running Prisma migrations for Configuration as Code module..."
 cd "$(dirname "$0")/../services/shared"
 
 # Check if DATABASE_URL is set
-if [ -z "$DATABASE_URL" ]; then
+if [ -z "${DATABASE_URL:-}" ]; then
   # Try to get it from docker-compose or .env
   if [ -f "../../.env" ]; then
     export $(grep DATABASE_URL ../../.env | xargs)
   fi
-  
-  # Default to docker-compose values if still not set
-  if [ -z "$DATABASE_URL" ]; then
-    export DATABASE_URL="postgresql://grc:grc_secret@localhost:5433/gigachad_grc"
-  fi
+fi
+
+if [ -z "${DATABASE_URL:-}" ]; then
+  echo "DATABASE_URL is required; refusing to guess database credentials" >&2
+  exit 1
 fi
 
 echo "Using DATABASE_URL: ${DATABASE_URL//:\/\/[^:]*:[^@]*@/:\/\/***:***@}"
@@ -26,9 +26,10 @@ echo "Using DATABASE_URL: ${DATABASE_URL//:\/\/[^:]*:[^@]*@/:\/\/***:***@}"
 echo "Generating Prisma client..."
 npx prisma generate
 
-# Run migrations
-echo "Running migrations..."
-npx prisma migrate dev --name add_config_as_code || npx prisma db push
+# Apply the repository's reviewed, forward-only migrations.
+echo "Running committed migrations..."
+cd ../..
+./deploy/prisma-migrate-safe.sh
 
 echo "Migration complete!"
 echo ""

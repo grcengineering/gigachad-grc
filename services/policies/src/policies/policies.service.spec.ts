@@ -24,6 +24,17 @@ describe('PoliciesService', () => {
     policyStatusHistory: {
       create: jest.fn(),
     },
+    user: {
+      findFirst: jest.fn(),
+    },
+    control: {
+      findMany: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    policyControlLink: {
+      createMany: jest.fn(),
+      deleteMany: jest.fn(),
+    },
   };
 
   const mockAuditService = {
@@ -186,6 +197,51 @@ describe('PoliciesService', () => {
           deletedAt: null,
         }),
       });
+    });
+  });
+
+  describe('tenant integrity', () => {
+    it('rejects linking an Org B control to an Org A policy', async () => {
+      mockPrismaService.policy.findFirst.mockResolvedValue({
+        id: 'policy-a',
+        organizationId: 'org-a',
+        title: 'Policy A',
+        controlLinks: [],
+        versions: [],
+        statusHistory: [],
+      });
+      mockPrismaService.control.findMany.mockResolvedValue([]);
+
+      await expect(
+        service.linkToControls('policy-a', 'org-a', 'user-a', ['control-b'])
+      ).rejects.toThrow(NotFoundException);
+      expect(mockPrismaService.policyControlLink.createMany).not.toHaveBeenCalled();
+    });
+
+    it('allows linking a visible global control to a tenant policy', async () => {
+      mockPrismaService.policy.findFirst.mockResolvedValue({
+        id: 'policy-a',
+        organizationId: 'org-a',
+        title: 'Policy A',
+        controlLinks: [],
+        versions: [],
+        statusHistory: [],
+      });
+      mockPrismaService.control.findMany.mockResolvedValue([
+        { id: 'global-control', controlId: 'AC-1', title: 'Access control' },
+      ]);
+      mockPrismaService.policyControlLink.createMany.mockResolvedValue({ count: 1 });
+
+      await service.linkToControls('policy-a', 'org-a', 'user-a', ['global-control']);
+
+      expect(mockPrismaService.control.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: [{ organizationId: 'org-a' }, { organizationId: null }],
+          }),
+        })
+      );
+      expect(mockPrismaService.policyControlLink.createMany).toHaveBeenCalled();
     });
   });
 });

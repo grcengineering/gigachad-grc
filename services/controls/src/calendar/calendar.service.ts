@@ -16,8 +16,44 @@ export class CalendarService {
 
   constructor(
     private prisma: PrismaService,
-    private auditService: AuditService,
+    private auditService: AuditService
   ) {}
+
+  private async requireTenantReferences(
+    organizationId: string,
+    requestingUserId: string,
+    workspaceId?: string,
+    assigneeId?: string
+  ) {
+    const requestingUser = workspaceId
+      ? await this.prisma.user.findFirst({
+          where: { id: requestingUserId, organizationId, status: 'active' },
+          select: { role: true },
+        })
+      : null;
+    const [workspace, assignee] = await Promise.all([
+      workspaceId
+        ? this.prisma.workspace.findFirst({
+            where: {
+              id: workspaceId,
+              organizationId,
+              ...(requestingUser?.role !== 'admin' && {
+                members: { some: { userId: requestingUserId } },
+              }),
+            },
+            select: { id: true },
+          })
+        : Promise.resolve({ id: 'none' }),
+      assigneeId
+        ? this.prisma.user.findFirst({
+            where: { id: assigneeId, organizationId, status: 'active' },
+            select: { id: true },
+          })
+        : Promise.resolve({ id: 'none' }),
+    ]);
+    if (!workspace) throw new NotFoundException('Workspace not found');
+    if (!assignee) throw new NotFoundException('Assignee not found');
+  }
 
   /**
    * Get all calendar events (including automated ones from policies, audits, etc.)
@@ -25,7 +61,7 @@ export class CalendarService {
   async findAll(
     organizationId: string,
     filters: CalendarEventFilterDto,
-    workspaceId?: string,
+    workspaceId?: string
   ): Promise<CalendarEventListResponseDto> {
     const where: Prisma.CalendarEventWhereInput = { organizationId };
     const startDateFilter: { gte?: Date; lte?: Date } = {};
@@ -72,7 +108,7 @@ export class CalendarService {
         organizationId,
         filters.startDate ? new Date(filters.startDate) : undefined,
         filters.endDate ? new Date(filters.endDate) : undefined,
-        workspaceId,
+        workspaceId
       );
       allEvents = [...allEvents, ...automatedEvents];
     }
@@ -93,7 +129,7 @@ export class CalendarService {
     organizationId: string,
     startDate?: Date,
     endDate?: Date,
-    _workspaceId?: string,
+    _workspaceId?: string
   ): Promise<CalendarEventResponseDto[]> {
     const events: CalendarEventResponseDto[] = [];
     const now = new Date();
@@ -316,8 +352,10 @@ export class CalendarService {
     dto: CreateCalendarEventDto,
     actorId: string,
     actorEmail?: string,
-    workspaceId?: string,
+    workspaceId?: string
   ): Promise<CalendarEventResponseDto> {
+    await this.requireTenantReferences(organizationId, actorId, workspaceId, dto.assigneeId);
+
     const event = await this.prisma.calendarEvent.create({
       data: {
         organizationId,
@@ -364,7 +402,7 @@ export class CalendarService {
     organizationId: string,
     dto: UpdateCalendarEventDto,
     actorId?: string,
-    actorEmail?: string,
+    actorEmail?: string
   ): Promise<CalendarEventResponseDto> {
     const existing = await this.prisma.calendarEvent.findFirst({
       where: { id, organizationId },
@@ -373,6 +411,7 @@ export class CalendarService {
     if (!existing) {
       throw new NotFoundException('Calendar event not found');
     }
+    await this.requireTenantReferences(organizationId, actorId || '', undefined, dto.assigneeId);
 
     const event = await this.prisma.calendarEvent.update({
       where: { id },
@@ -416,7 +455,7 @@ export class CalendarService {
     id: string,
     organizationId: string,
     actorId?: string,
-    actorEmail?: string,
+    actorEmail?: string
   ): Promise<void> {
     const existing = await this.prisma.calendarEvent.findFirst({
       where: { id, organizationId },
@@ -450,7 +489,7 @@ export class CalendarService {
   async exportIcal(
     organizationId: string,
     filters: CalendarEventFilterDto,
-    workspaceId?: string,
+    workspaceId?: string
   ): Promise<string> {
     const { events } = await this.findAll(organizationId, filters, workspaceId);
 
@@ -465,7 +504,9 @@ export class CalendarService {
 
     for (const event of events) {
       const startDate = new Date(event.startDate);
-      const endDate = event.endDate ? new Date(event.endDate) : new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
+      const endDate = event.endDate
+        ? new Date(event.endDate)
+        : new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
 
       lines.push('BEGIN:VEVENT');
       lines.push(`UID:${event.id}@gigachad-grc`);
@@ -546,27 +587,29 @@ export class CalendarService {
   /**
    * Convert event to response DTO
    */
-  private toResponseDto(event: Record<string, unknown> & {
-    id: string;
-    title: string;
-    description?: string | null;
-    eventType: string;
-    startDate: Date;
-    endDate?: Date | null;
-    allDay: boolean;
-    isRecurring: boolean;
-    recurrenceRule?: string | null;
-    entityId?: string | null;
-    entityType?: string | null;
-    assigneeId?: string | null;
-    priority: string;
-    status: string;
-    color?: string | null;
-    reminders?: unknown;
-    createdBy: string;
-    createdAt: Date;
-    updatedAt: Date;
-  }): CalendarEventResponseDto {
+  private toResponseDto(
+    event: Record<string, unknown> & {
+      id: string;
+      title: string;
+      description?: string | null;
+      eventType: string;
+      startDate: Date;
+      endDate?: Date | null;
+      allDay: boolean;
+      isRecurring: boolean;
+      recurrenceRule?: string | null;
+      entityId?: string | null;
+      entityType?: string | null;
+      assigneeId?: string | null;
+      priority: string;
+      status: string;
+      color?: string | null;
+      reminders?: unknown;
+      createdBy: string;
+      createdAt: Date;
+      updatedAt: Date;
+    }
+  ): CalendarEventResponseDto {
     return {
       id: event.id,
       title: event.title,

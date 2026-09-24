@@ -162,13 +162,14 @@ export class SecurityScannerService {
   async initiateScan(
     vendorId: string,
     dto: InitiateSecurityScanDto,
-    userId: string
+    userId: string,
+    organizationId: string
   ): Promise<SecurityScanResult> {
     this.logger.log(`Initiating security scan for vendor ${vendorId}`);
 
     // Get vendor and determine target URL
-    const vendor = await this.prisma.vendor.findUnique({
-      where: { id: vendorId },
+    const vendor = await this.prisma.vendor.findFirst({
+      where: { id: vendorId, organizationId, deletedAt: null },
       select: { id: true, name: true, website: true, organizationId: true },
     });
 
@@ -334,10 +335,15 @@ export class SecurityScannerService {
   /**
    * Get the latest security scan for a vendor
    */
-  async getLatestScan(vendorId: string): Promise<SecurityScanResult | null> {
+  async getLatestScan(
+    vendorId: string,
+    organizationId: string
+  ): Promise<SecurityScanResult | null> {
     const assessment = await this.prisma.vendorAssessment.findFirst({
       where: {
         vendorId,
+        organizationId,
+        vendor: { organizationId, deletedAt: null },
         assessmentType: 'security_scan_osint',
         status: 'completed',
       },
@@ -356,11 +362,17 @@ export class SecurityScannerService {
   /**
    * Get a specific security scan by ID
    */
-  async getScanById(vendorId: string, scanId: string): Promise<SecurityScanResult | null> {
+  async getScanById(
+    vendorId: string,
+    scanId: string,
+    organizationId: string
+  ): Promise<SecurityScanResult | null> {
     const assessment = await this.prisma.vendorAssessment.findFirst({
       where: {
         id: scanId,
         vendorId,
+        organizationId,
+        vendor: { organizationId, deletedAt: null },
         assessmentType: 'security_scan_osint',
       },
     });
@@ -375,10 +387,12 @@ export class SecurityScannerService {
   /**
    * Get all security scans for a vendor
    */
-  async getScanHistory(vendorId: string): Promise<SecurityScanResult[]> {
+  async getScanHistory(vendorId: string, organizationId: string): Promise<SecurityScanResult[]> {
     const assessments = await this.prisma.vendorAssessment.findMany({
       where: {
         vendorId,
+        organizationId,
+        vendor: { organizationId, deletedAt: null },
         assessmentType: 'security_scan_osint',
       },
       orderBy: {
@@ -389,6 +403,16 @@ export class SecurityScannerService {
     return assessments
       .map((a) => this.assessmentToScanResult(a))
       .filter((r): r is SecurityScanResult => r !== null);
+  }
+
+  async verifyVendorAccess(vendorId: string, organizationId: string): Promise<void> {
+    const vendor = await this.prisma.vendor.findFirst({
+      where: { id: vendorId, organizationId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!vendor) {
+      throw new NotFoundException(`Vendor with ID ${vendorId} not found`);
+    }
   }
 
   /**

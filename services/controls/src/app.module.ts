@@ -52,6 +52,7 @@ import { CustomReportsModule } from './custom-reports/custom-reports.module';
 import { ScheduledReportsModule } from './scheduled-reports/scheduled-reports.module';
 import { LogoutModule } from './auth/logout.module';
 import { AuthModule } from './auth/auth.module';
+import { MeModule } from './me/me.module';
 import { ModulesController } from './modules/modules.controller';
 import { CustomThrottlerGuard } from './auth/throttler.guard';
 import { CorrelationIdMiddleware } from './common/correlation-id.middleware';
@@ -149,6 +150,7 @@ import {
     CustomReportsModule,
     ScheduledReportsModule,
     LogoutModule,
+    MeModule,
   ],
   controllers: [ModulesController],
   providers: [

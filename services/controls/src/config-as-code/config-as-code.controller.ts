@@ -1,19 +1,6 @@
-import {
-  Controller,
-  Post,
-  Body,
-  UseGuards,
-  Req,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req, HttpCode, HttpStatus } from '@nestjs/common';
 import { Request } from 'express';
-import {
-  ApiTags,
-  ApiBearerAuth,
-  ApiOperation,
-  ApiResponse,
-} from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 import { PermissionGuard } from '../auth/permission.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
@@ -23,14 +10,8 @@ import { ConfigAsCodeService } from './config-as-code.service';
 interface AuthenticatedRequest extends Request {
   user: { userId: string; organizationId: string; email?: string };
 }
-import {
-  ExportConfigDto,
-  ExportConfigResponseDto,
-} from './dto/export-config.dto';
-import {
-  ImportConfigDto,
-  ImportConfigResponseDto,
-} from './dto/import-config.dto';
+import { ExportConfigDto, ExportConfigResponseDto } from './dto/export-config.dto';
+import { ImportConfigDto, ImportConfigResponseDto } from './dto/import-config.dto';
 
 @ApiTags('config-as-code')
 @ApiBearerAuth()
@@ -51,34 +32,24 @@ export class ConfigAsCodeController {
   @RequirePermission(Resource.SETTINGS, Action.UPDATE)
   async exportConfig(
     @Req() req: AuthenticatedRequest,
-    @Body() dto: ExportConfigDto,
+    @Body() dto: ExportConfigDto
   ): Promise<ExportConfigResponseDto> {
-    return this.configAsCodeService.exportConfig(
-      req.user.organizationId,
-      req.user.userId,
-      dto,
-    );
+    return this.configAsCodeService.exportConfig(req.user.organizationId, req.user.userId, dto);
   }
 
   @Post('import')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Import configuration and apply changes' })
-  @ApiResponse({
-    status: 200,
-    description: 'Configuration imported successfully',
-    type: ImportConfigResponseDto,
+  @ApiOperation({
+    summary: 'Legacy generic import endpoint',
+    deprecated: true,
   })
+  @ApiResponse({ status: 501, description: 'Use config files preview/apply instead' })
   @ApiResponse({ status: 400, description: 'Invalid configuration format' })
   @RequirePermission(Resource.SETTINGS, Action.UPDATE)
   async importConfig(
     @Req() req: AuthenticatedRequest,
-    @Body() dto: ImportConfigDto,
+    @Body() dto: ImportConfigDto
   ): Promise<ImportConfigResponseDto> {
-    return this.configAsCodeService.importConfig(
-      req.user.organizationId,
-      req.user.userId,
-      dto,
-    );
+    return this.configAsCodeService.importConfig(req.user.organizationId, req.user.userId, dto);
   }
 }
-

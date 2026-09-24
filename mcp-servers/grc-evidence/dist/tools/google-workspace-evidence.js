@@ -1,4 +1,66 @@
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import * as path from 'path';
+import { useExplicitDemoFallback } from '../demo-mode.js';
+/**
+ * Path Traversal Protection: Validates that a file path is safe to read.
+ * Blocks path traversal sequences and ensures path is within allowed directories.
+ */
+function isValidServiceAccountPath(filePath) {
+    // Block path traversal sequences
+    if (filePath.includes('..')) {
+        return false;
+    }
+    // Block null bytes (path injection)
+    if (filePath.includes('\0')) {
+        return false;
+    }
+    // Normalize the path to resolve any . or redundant separators
+    const normalizedPath = path.normalize(filePath);
+    // Re-check for traversal after normalization
+    if (normalizedPath.includes('..')) {
+        return false;
+    }
+    // Define allowed directories for service account keys
+    const allowedDirs = [
+        '/app/credentials/',
+        '/app/config/',
+        '/config/',
+        '/credentials/',
+        process.cwd(),
+        process.env.HOME ? path.join(process.env.HOME, '.config') : null,
+        process.env.GOOGLE_APPLICATION_CREDENTIALS
+            ? path.dirname(process.env.GOOGLE_APPLICATION_CREDENTIALS)
+            : null,
+    ].filter(Boolean);
+    // For absolute paths, verify they're within allowed directories
+    if (path.isAbsolute(normalizedPath)) {
+        const resolvedPath = path.resolve(normalizedPath);
+        const isAllowed = allowedDirs.some((dir) => {
+            const resolvedDir = path.resolve(dir);
+            return resolvedPath.startsWith(resolvedDir + path.sep) || resolvedPath === resolvedDir;
+        });
+        if (!isAllowed) {
+            return false;
+        }
+    }
+    // Block access to sensitive system directories
+    const blockedPatterns = [
+        /^\/etc\//,
+        /^\/proc\//,
+        /^\/sys\//,
+        /^\/dev\//,
+        /^\/root\//,
+        /^\/var\/log\//,
+        /^\/var\/run\//,
+        /^~\//, // Home directory shorthand
+        /^\$\{/, // Variable expansion attempts
+    ];
+    for (const pattern of blockedPatterns) {
+        if (pattern.test(normalizedPath)) {
+            return false;
+        }
+    }
+    return true;
+}
 let googleAPIs = null;
 async function loadGoogleAPIs() {
     if (googleAPIs)
@@ -22,8 +84,8 @@ export async function collectGoogleWorkspaceEvidence(params) {
     const adminEmail = process.env.GOOGLE_ADMIN_EMAIL;
     const customerId = process.env.GOOGLE_CUSTOMER_ID || 'my_customer';
     if (!serviceAccountKey || !adminEmail) {
-        console.warn('Google Workspace credentials not configured - running in demo mode');
-        return {
+        const reason = 'Google Workspace credentials not configured. Set GOOGLE_SERVICE_ACCOUNT_KEY and GOOGLE_ADMIN_EMAIL.';
+        return useExplicitDemoFallback(reason, () => ({
             service: 'google_workspace',
             collectedAt: new Date().toISOString(),
             findings: getDemoFindings(checks),
@@ -33,14 +95,19 @@ export async function collectGoogleWorkspaceEvidence(params) {
                 warnings: 0,
             },
             isMockMode: true,
-            mockModeReason: 'Google Workspace credentials not configured. Set GOOGLE_SERVICE_ACCOUNT_KEY (JSON string or path), GOOGLE_ADMIN_EMAIL (delegated admin), and optionally GOOGLE_CUSTOMER_ID.',
-            requiredCredentials: ['GOOGLE_SERVICE_ACCOUNT_KEY', 'GOOGLE_ADMIN_EMAIL', 'GOOGLE_CUSTOMER_ID (optional)'],
-        };
+            mockModeReason: reason,
+            requiredCredentials: [
+                'GOOGLE_SERVICE_ACCOUNT_KEY',
+                'GOOGLE_ADMIN_EMAIL',
+                'GOOGLE_CUSTOMER_ID (optional)',
+            ],
+        }));
     }
     // Load Google APIs
     const apis = await loadGoogleAPIs();
     if (!apis) {
-        return {
+        const reason = 'googleapis package not installed. Run: npm install googleapis';
+        return useExplicitDemoFallback(reason, () => ({
             service: 'google_workspace',
             collectedAt: new Date().toISOString(),
             findings: getDemoFindings(checks),
@@ -50,9 +117,9 @@ export async function collectGoogleWorkspaceEvidence(params) {
                 warnings: 0,
             },
             isMockMode: true,
-            mockModeReason: 'googleapis package not installed. Run: npm install googleapis',
+            mockModeReason: reason,
             requiredCredentials: ['googleapis npm package'],
-        };
+        }));
     }
     try {
         // Parse service account credentials
@@ -61,7 +128,11 @@ export async function collectGoogleWorkspaceEvidence(params) {
             credentials = JSON.parse(serviceAccountKey);
         }
         catch {
-            // Might be a file path
+            // Might be a file path - validate before reading
+            if (!isValidServiceAccountPath(serviceAccountKey)) {
+                throw new Error('Invalid service account key path: Path traversal or access to unauthorized directories is not allowed. ' +
+                    'Ensure the path is within allowed credential directories and does not contain ".." sequences.');
+            }
             const fs = await import('fs');
             const credentialsFile = fs.readFileSync(serviceAccountKey, 'utf-8');
             credentials = JSON.parse(credentialsFile);
@@ -143,21 +214,24 @@ export async function collectGoogleWorkspaceEvidence(params) {
     }
     catch (error) {
         console.error('Google Workspace evidence collection failed:', error);
-        return {
+        const reason = `Google Workspace API error: ${error instanceof Error ? error.message : String(error)}`;
+        return useExplicitDemoFallback(reason, () => ({
             service: 'google_workspace',
             collectedAt: new Date().toISOString(),
-            findings: [{
+            findings: [
+                {
                     error: error instanceof Error ? error.message : 'Unknown error',
-                    suggestion: 'Verify service account has domain-wide delegation enabled and the admin email has appropriate permissions.'
-                }],
+                    suggestion: 'Verify service account has domain-wide delegation enabled and the admin email has appropriate permissions.',
+                },
+            ],
             summary: {
                 totalEvents: 0,
                 criticalFindings: 0,
                 warnings: 0,
             },
             isMockMode: true,
-            mockModeReason: `API Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        };
+            mockModeReason: reason,
+        }));
     }
 }
 async function collectAdminAuditLogs(reports, timeRange) {
@@ -194,9 +268,9 @@ async function collectAdminAuditLogs(reports, timeRange) {
     const categorizedEvents = activities.map((activity) => {
         const act = activity;
         const events = act.events || [];
-        const eventNames = events.map(e => e.name).filter(Boolean);
-        const isCritical = eventNames.some(name => criticalEventTypes.includes(name || ''));
-        const isWarning = eventNames.some(name => warningEventTypes.includes(name || ''));
+        const eventNames = events.map((e) => e.name).filter(Boolean);
+        const isCritical = eventNames.some((name) => criticalEventTypes.includes(name || ''));
+        const isWarning = eventNames.some((name) => warningEventTypes.includes(name || ''));
         if (isCritical)
             criticalCount++;
         else if (isWarning)
@@ -213,11 +287,13 @@ async function collectAdminAuditLogs(reports, timeRange) {
         totalEvents: activities.length,
         criticalCount,
         warningCount,
-        eventTypes: [...new Set(activities.flatMap((a) => {
+        eventTypes: [
+            ...new Set(activities.flatMap((a) => {
                 const act = a;
                 const events = act.events || [];
-                return events.map(e => e.name).filter(Boolean);
-            }))],
+                return events.map((e) => e.name).filter(Boolean);
+            })),
+        ],
     };
 }
 async function collectLoginAuditLogs(reports, timeRange) {
@@ -246,7 +322,7 @@ async function collectLoginAuditLogs(reports, timeRange) {
                 suspiciousLogins++;
             }
             const params = event.parameters || [];
-            const isLegacy = params.some(p => p.name === 'is_second_factor' && p.value === 'false');
+            const isLegacy = params.some((p) => p.name === 'is_second_factor' && p.value === 'false');
             if (isLegacy)
                 legacyProtocolLogins++;
         }
@@ -277,15 +353,26 @@ async function collectDriveSharingSettings(drive) {
     const publicFiles = externallySharedResponse.data.files || [];
     // Categorize by risk
     const sensitivePatterns = [
-        /password/i, /credential/i, /secret/i, /key/i, /token/i,
-        /financial/i, /payroll/i, /salary/i, /ssn/i, /social.?security/i,
-        /hipaa/i, /pii/i, /confidential/i, /private/i,
+        /password/i,
+        /credential/i,
+        /secret/i,
+        /key/i,
+        /token/i,
+        /financial/i,
+        /payroll/i,
+        /salary/i,
+        /ssn/i,
+        /social.?security/i,
+        /hipaa/i,
+        /pii/i,
+        /confidential/i,
+        /private/i,
     ];
     let criticalCount = 0;
     let warningCount = 0;
-    const categorizedFiles = publicFiles.map(file => {
-        const isSensitive = sensitivePatterns.some(pattern => pattern.test(file.name || ''));
-        const hasAnyonePermission = file.permissions?.some(p => p.type === 'anyone');
+    const categorizedFiles = publicFiles.map((file) => {
+        const isSensitive = sensitivePatterns.some((pattern) => pattern.test(file.name || ''));
+        const hasAnyonePermission = file.permissions?.some((p) => p.type === 'anyone');
         if (isSensitive && hasAnyonePermission) {
             criticalCount++;
             return { ...file, risk: 'critical', reason: 'Sensitive file publicly accessible' };
@@ -319,7 +406,7 @@ async function collectMobileDeviceStatus(directory, customerId) {
     let compromisedDevices = 0;
     let criticalCount = 0;
     let warningCount = 0;
-    const categorizedDevices = devices.map(device => {
+    const categorizedDevices = devices.map((device) => {
         const isManaged = device.status === 'APPROVED';
         const isEncrypted = device.encryptionStatus === 'ENCRYPTED';
         const isCompromised = device.deviceCompromisedStatus === 'COMPROMISED';
@@ -378,7 +465,7 @@ async function collectUserSecurityStatus(directory, customerId) {
     let suspended = 0;
     let criticalCount = 0;
     let warningCount = 0;
-    const categorizedUsers = users.map(user => {
+    const categorizedUsers = users.map((user) => {
         if (user.isEnrolledIn2Sv)
             with2FA++;
         if (user.isEnforcedIn2Sv)
@@ -422,7 +509,7 @@ async function collectUserSecurityStatus(directory, customerId) {
     };
 }
 function getDemoFindings(checks) {
-    return checks.map(check => ({
+    return checks.map((check) => ({
         type: check,
         events: [],
         status: 'demo_mode',

@@ -18,7 +18,7 @@ export class ApiKeysService {
 
   constructor(
     private prisma: PrismaService,
-    private auditService: AuditService,
+    private auditService: AuditService
   ) {}
 
   /**
@@ -28,7 +28,7 @@ export class ApiKeysService {
     organizationId: string,
     filters: ApiKeyFilterDto,
     page: number = 1,
-    limit: number = 50,
+    limit: number = 50
   ): Promise<ApiKeyListResponseDto> {
     const where: Prisma.ApiKeyWhereInput = { organizationId };
 
@@ -58,7 +58,7 @@ export class ApiKeysService {
     ]);
 
     return {
-      keys: keys.map(key => this.toResponseDto(key)),
+      keys: keys.map((key) => this.toResponseDto(key)),
       total,
       page,
       limit,
@@ -83,6 +83,30 @@ export class ApiKeysService {
     return this.toResponseDto(key);
   }
 
+  async findForUser(organizationId: string, userId: string): Promise<ApiKeyResponseDto[]> {
+    const keys = await this.prisma.apiKey.findMany({
+      where: { organizationId, createdBy: userId, isActive: true },
+      include: { apiKeyScopes: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    return keys.map((key) => this.toResponseDto(key));
+  }
+
+  async revokeForUser(
+    id: string,
+    organizationId: string,
+    userId: string,
+    userEmail?: string
+  ): Promise<void> {
+    const key = await this.prisma.apiKey.findFirst({
+      where: { id, organizationId, createdBy: userId },
+    });
+    if (!key) {
+      throw new NotFoundException('API key not found');
+    }
+    await this.revoke(id, organizationId, userId, userEmail);
+  }
+
   /**
    * Create a new API key
    * Returns the full key only once - it cannot be retrieved again
@@ -91,7 +115,7 @@ export class ApiKeysService {
     organizationId: string,
     dto: CreateApiKeyDto,
     actorId: string,
-    actorEmail?: string,
+    actorEmail?: string
   ): Promise<ApiKeyWithSecretResponseDto> {
     // Generate the API key
     const { key, hash, prefix } = generateApiKey();
@@ -116,7 +140,7 @@ export class ApiKeysService {
     // Create scope records if provided
     if (dto.scopes && dto.scopes.length > 0) {
       await this.prisma.apiKeyScope.createMany({
-        data: dto.scopes.map(scope => ({
+        data: dto.scopes.map((scope) => ({
           apiKeyId: apiKey.id,
           scope,
         })),
@@ -151,7 +175,7 @@ export class ApiKeysService {
     organizationId: string,
     dto: UpdateApiKeyDto,
     actorId?: string,
-    actorEmail?: string,
+    actorEmail?: string
   ): Promise<ApiKeyResponseDto> {
     const existing = await this.prisma.apiKey.findFirst({
       where: { id, organizationId },
@@ -186,7 +210,7 @@ export class ApiKeysService {
       // Create new scopes
       if (dto.scopes.length > 0) {
         await this.prisma.apiKeyScope.createMany({
-          data: dto.scopes.map(scope => ({
+          data: dto.scopes.map((scope) => ({
             apiKeyId: id,
             scope,
           })),
@@ -222,7 +246,7 @@ export class ApiKeysService {
     id: string,
     organizationId: string,
     actorId?: string,
-    actorEmail?: string,
+    actorEmail?: string
   ): Promise<void> {
     const existing = await this.prisma.apiKey.findFirst({
       where: { id, organizationId },
@@ -260,7 +284,7 @@ export class ApiKeysService {
     id: string,
     organizationId: string,
     actorId?: string,
-    actorEmail?: string,
+    actorEmail?: string
   ): Promise<ApiKeyWithSecretResponseDto> {
     const existing = await this.prisma.apiKey.findFirst({
       where: { id, organizationId },
@@ -316,7 +340,7 @@ export class ApiKeysService {
     id: string,
     organizationId: string,
     actorId?: string,
-    actorEmail?: string,
+    actorEmail?: string
   ): Promise<void> {
     const existing = await this.prisma.apiKey.findFirst({
       where: { id, organizationId },
@@ -378,13 +402,12 @@ export class ApiKeysService {
   /**
    * Convert API key entity to response DTO
    */
-  private toResponseDto(key: Prisma.ApiKeyGetPayload<{ include: { apiKeyScopes: true } }>): ApiKeyResponseDto {
+  private toResponseDto(
+    key: Prisma.ApiKeyGetPayload<{ include: { apiKeyScopes: true } }>
+  ): ApiKeyResponseDto {
     // Merge scopes from both the legacy array field and the relation
     const scopes = [
-      ...new Set([
-        ...(key.scopes || []),
-        ...(key.apiKeyScopes?.map((s) => s.scope) || []),
-      ]),
+      ...new Set([...(key.scopes || []), ...(key.apiKeyScopes?.map((s) => s.scope) || [])]),
     ];
 
     return {

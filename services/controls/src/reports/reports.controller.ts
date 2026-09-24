@@ -36,6 +36,13 @@ export class ReportsController {
     return this.reportsService.getReportTypes();
   }
 
+  @Get('mapping-gaps')
+  @ApiOperation({ summary: 'Aggregate requirement, control evidence, and approval gaps' })
+  @RequirePermission(Resource.REPORTS, Action.READ)
+  getMappingGaps(@CurrentUser() user: UserContext) {
+    return this.reportsService.getMappingGaps(user.organizationId);
+  }
+
   @Post('generate')
   @ApiOperation({ summary: 'Generate a compliance report' })
   @ApiResponse({ status: 200, description: 'PDF report generated successfully' })

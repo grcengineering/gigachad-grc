@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { CheckBadgeIcon } from '@heroicons/react/24/outline';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { ArrowPathIcon, CheckBadgeIcon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import {
   Badge,
@@ -11,176 +12,216 @@ import {
   CardHeader,
   CardTitle,
   PageHeader,
+  Skeleton,
   Textarea,
 } from '@/components/ui';
 
-interface ConfigAsCodePayload {
-  yaml: string;
-  schema?: Record<string, unknown> | null;
+interface ExportResponse {
+  content: string;
+  filename: string;
+  resourceCount: number;
+  resourceBreakdown: Record<string, number>;
 }
 
-interface ValidationResult {
-  valid: boolean;
-  errors?: string[];
+interface PreviewResponse {
+  toCreate: number;
+  toUpdate: number;
+  toDelete: number;
+  noChange: number;
+  hasConflicts: boolean;
+  conflictCount: number;
+  warnings: string[];
+  errors: string[];
 }
 
-function diffLines(
-  before: string,
-  after: string
-): { type: 'add' | 'remove' | 'same'; text: string }[] {
+function diffLines(before: string, after: string) {
   const beforeLines = before.split('\n');
   const afterLines = after.split('\n');
-  const result: { type: 'add' | 'remove' | 'same'; text: string }[] = [];
+  const result: Array<{ type: 'add' | 'remove' | 'same'; text: string }> = [];
   const max = Math.max(beforeLines.length, afterLines.length);
-  for (let i = 0; i < max; i += 1) {
-    const b = beforeLines[i];
-    const a = afterLines[i];
-    if (b === a) {
-      if (b !== undefined) result.push({ type: 'same', text: b });
+  for (let index = 0; index < max; index += 1) {
+    const previous = beforeLines[index];
+    const next = afterLines[index];
+    if (previous === next) {
+      if (previous !== undefined) result.push({ type: 'same', text: previous });
     } else {
-      if (b !== undefined) result.push({ type: 'remove', text: b });
-      if (a !== undefined) result.push({ type: 'add', text: a });
+      if (previous !== undefined) result.push({ type: 'remove', text: previous });
+      if (next !== undefined) result.push({ type: 'add', text: next });
     }
   }
   return result;
 }
 
-export default function ConfigAsCode() {
-  const queryClient = useQueryClient();
-  const [yaml, setYaml] = useState('');
-  const [validation, setValidation] = useState<ValidationResult | null>(null);
+const FILE_PATH = 'config-as-code.tf';
 
-  const { data, isLoading } = useQuery<ConfigAsCodePayload>({
-    queryKey: ['config-as-code'],
-    queryFn: async () => {
-      const res = await api.get('/api/config-as-code');
-      const payload = res.data?.data ?? res.data;
-      return {
-        yaml: typeof payload?.yaml === 'string' ? payload.yaml : '',
-        schema: payload?.schema ?? null,
-      };
-    },
+export default function ConfigAsCode() {
+  const [content, setContent] = useState('');
+  const [preview, setPreview] = useState<PreviewResponse | null>(null);
+
+  const {
+    data,
+    isLoading,
+    refetch: refreshExport,
+  } = useQuery<ExportResponse>({
+    queryKey: ['config-as-code', 'terraform-export'],
+    queryFn: () =>
+      api
+        .post<ExportResponse>('/api/config-as-code/export', { format: 'terraform' })
+        .then((response) => response.data),
   });
 
   useEffect(() => {
-    if (data) setYaml(data.yaml);
+    if (data) {
+      setContent(data.content);
+      setPreview(null);
+    }
   }, [data]);
 
-  const saveMutation = useMutation({
-    mutationFn: (next: string) => api.put('/api/config-as-code', { yaml: next }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['config-as-code'] }),
+  const previewMutation = useMutation({
+    mutationFn: () =>
+      api
+        .post<PreviewResponse>('/api/config-as-code/files/preview', {
+          path: FILE_PATH,
+          content,
+          format: 'terraform',
+        })
+        .then((response) => response.data),
+    onSuccess: setPreview,
+    onError: () => toast.error('Unable to preview configuration changes'),
   });
 
-  const validateMutation = useMutation<ValidationResult, unknown, string>({
-    mutationFn: async (next: string) => {
-      try {
-        const res = await api.post('/api/config-as-code/validate', { yaml: next });
-        const payload = res.data?.data ?? res.data;
-        return {
-          valid: payload?.valid ?? true,
-          errors: payload?.errors ?? [],
-        };
-      } catch {
-        return { valid: false, errors: ['Unable to validate against server.'] };
-      }
+  const applyMutation = useMutation({
+    mutationFn: () =>
+      api.post('/api/config-as-code/files/apply', {
+        path: FILE_PATH,
+        content,
+        format: 'terraform',
+        commitMessage: 'Applied from Config as Code editor',
+        conflictResolution: 'abort',
+      }),
+    onSuccess: async () => {
+      toast.success('Configuration applied');
+      await refreshExport();
     },
-    onSuccess: (result) => setValidation(result),
+    onError: () => toast.error('Configuration was not applied'),
   });
 
-  const isDirty = useMemo(() => yaml !== (data?.yaml ?? ''), [yaml, data]);
+  const isDirty = content !== (data?.content ?? '');
   const diff = useMemo(
-    () => (isDirty ? diffLines(data?.yaml ?? '', yaml) : []),
-    [isDirty, data, yaml]
+    () => (isDirty ? diffLines(data?.content ?? '', content) : []),
+    [content, data?.content, isDirty]
   );
-
-  const schemaText = useMemo(() => {
-    if (!data?.schema) return '# No schema returned by the server.';
-    try {
-      return JSON.stringify(data.schema, null, 2);
-    } catch {
-      return '# Schema could not be serialized.';
-    }
-  }, [data?.schema]);
+  const canApply =
+    isDirty &&
+    !!preview &&
+    preview.errors.length === 0 &&
+    !preview.hasConflicts &&
+    !previewMutation.isPending;
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Config as Code"
-        description="Manage GRC configuration as YAML. Validate and save changes from this editor."
+        description="Export, preview, and apply the platform's Terraform configuration."
         actions={
           <div className="flex items-center gap-2">
             <Button
-              variant="secondary"
-              loading={validateMutation.isPending}
-              onClick={() => validateMutation.mutate(yaml)}
+              variant="ghost"
+              leftIcon={<ArrowPathIcon className="h-4 w-4" />}
+              onClick={() => refreshExport()}
             >
-              Validate
+              Refresh
             </Button>
             <Button
-              loading={saveMutation.isPending}
-              disabled={!isDirty || isLoading}
-              onClick={() => saveMutation.mutate(yaml)}
+              variant="secondary"
+              loading={previewMutation.isPending}
+              disabled={!isDirty}
+              onClick={() => previewMutation.mutate()}
             >
-              Save
+              Preview changes
+            </Button>
+            <Button
+              loading={applyMutation.isPending}
+              disabled={!canApply}
+              onClick={() => applyMutation.mutate()}
+            >
+              Apply
             </Button>
           </div>
         }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card density="cozy">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card density="cozy" className="lg:col-span-2">
           <CardHeader className="px-0 pt-0">
             <div>
-              <CardTitle>YAML configuration</CardTitle>
-              <CardDescription>Edit the configuration. Click Save to apply.</CardDescription>
+              <CardTitle>Terraform configuration</CardTitle>
+              <CardDescription>
+                Edit the live export, preview the plan, then apply conflict-checked changes.
+              </CardDescription>
             </div>
-            {validation && (
-              <Badge variant={validation.valid ? 'success' : 'danger'} dot>
-                {validation.valid ? 'Valid' : 'Invalid'}
-              </Badge>
-            )}
+            <Badge variant={isDirty ? 'warning' : 'success'} dot>
+              {isDirty ? 'Modified' : 'Current'}
+            </Badge>
           </CardHeader>
-          <CardBody density="cozy" className="px-0 pb-0 space-y-3">
-            <Textarea
-              value={yaml}
-              onChange={(e) => setYaml(e.target.value)}
-              placeholder="# Paste or edit your YAML here"
-              rows={24}
-              className="font-mono text-small min-h-[420px]"
-              spellCheck={false}
-            />
-            {validation &&
-              !validation.valid &&
-              validation.errors &&
-              validation.errors.length > 0 && (
-                <div className="rounded-md border border-red-200 bg-red-50 p-3 text-small text-red-800">
-                  <p className="font-medium flex items-center gap-1.5">
-                    <CheckBadgeIcon className="h-4 w-4" />
-                    Validation errors
-                  </p>
-                  <ul className="mt-1 list-disc list-inside space-y-0.5">
-                    {validation.errors.map((err, i) => (
-                      <li key={i} className="font-mono text-xs">
-                        {err}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+          <CardBody density="cozy" className="px-0 pb-0">
+            {isLoading ? (
+              <Skeleton className="h-[520px]" />
+            ) : (
+              <Textarea
+                value={content}
+                onChange={(event) => {
+                  setContent(event.target.value);
+                  setPreview(null);
+                }}
+                rows={30}
+                className="font-mono text-small min-h-[520px]"
+                spellCheck={false}
+              />
+            )}
           </CardBody>
         </Card>
 
         <Card density="cozy">
           <CardHeader className="px-0 pt-0">
             <div>
-              <CardTitle>Schema</CardTitle>
-              <CardDescription>Read-only view of the expected configuration shape.</CardDescription>
+              <CardTitle>Change plan</CardTitle>
+              <CardDescription>Server-side preview of the current editor content.</CardDescription>
             </div>
           </CardHeader>
-          <CardBody density="cozy" className="px-0 pb-0">
-            <pre className="rounded-md border border-surface-200 bg-white p-3 font-mono text-xs text-surface-800 overflow-auto min-h-[420px] max-h-[600px]">
-              {schemaText}
-            </pre>
+          <CardBody density="cozy" className="px-0 pb-0 space-y-4">
+            {preview ? (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <PlanStat label="Create" value={preview.toCreate} />
+                  <PlanStat label="Update" value={preview.toUpdate} />
+                  <PlanStat label="Delete" value={preview.toDelete} />
+                  <PlanStat label="Unchanged" value={preview.noChange} />
+                </div>
+                <Badge variant={preview.hasConflicts ? 'danger' : 'success'} dot>
+                  {preview.hasConflicts ? `${preview.conflictCount} conflicts` : 'Safe to apply'}
+                </Badge>
+                {[...preview.errors, ...preview.warnings].length > 0 && (
+                  <ul className="list-disc list-inside text-small text-surface-700 space-y-1">
+                    {[...preview.errors, ...preview.warnings].map((message) => (
+                      <li key={message}>{message}</li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <CheckBadgeIcon className="h-8 w-8 mx-auto text-surface-500" />
+                <p className="text-small text-surface-600 mt-2">
+                  Edit the configuration and preview changes to enable Apply.
+                </p>
+              </div>
+            )}
+            {data && (
+              <p className="text-xs text-surface-500">
+                Exported {data.resourceCount} resources from the backend.
+              </p>
+            )}
           </CardBody>
         </Card>
       </div>
@@ -190,51 +231,43 @@ export default function ConfigAsCode() {
           <div>
             <CardTitle>Diff vs current</CardTitle>
             <CardDescription>
-              {isDirty ? 'Pending changes are highlighted below.' : 'No pending changes.'}
+              {isDirty ? 'Pending editor changes.' : 'No pending changes.'}
             </CardDescription>
           </div>
         </CardHeader>
         <CardBody density="cozy" className="px-0 pb-0">
           {isDirty ? (
-            <div className="rounded-md border border-surface-200 bg-white overflow-hidden">
-              <div className="font-mono text-xs">
-                {diff.map((line, idx) => {
-                  if (line.type === 'add') {
-                    return (
-                      <div
-                        key={idx}
-                        className="px-3 py-0.5 bg-emerald-50 text-emerald-800 whitespace-pre-wrap"
-                      >
-                        + {line.text}
-                      </div>
-                    );
+            <div className="rounded-md border border-surface-200 bg-white overflow-hidden font-mono text-xs">
+              {diff.map((line, index) => (
+                <div
+                  key={`${index}-${line.type}`}
+                  className={
+                    line.type === 'add'
+                      ? 'px-3 py-0.5 bg-emerald-50 text-emerald-800 whitespace-pre-wrap'
+                      : line.type === 'remove'
+                        ? 'px-3 py-0.5 bg-red-50 text-red-800 whitespace-pre-wrap'
+                        : 'px-3 py-0.5 text-surface-700 whitespace-pre-wrap'
                   }
-                  if (line.type === 'remove') {
-                    return (
-                      <div
-                        key={idx}
-                        className="px-3 py-0.5 bg-red-50 text-red-800 whitespace-pre-wrap"
-                      >
-                        - {line.text}
-                      </div>
-                    );
-                  }
-                  return (
-                    <div key={idx} className="px-3 py-0.5 text-surface-700 whitespace-pre-wrap">
-                      {'  '}
-                      {line.text}
-                    </div>
-                  );
-                })}
-              </div>
+                >
+                  {line.type === 'add' ? '+ ' : line.type === 'remove' ? '- ' : '  '}
+                  {line.text}
+                </div>
+              ))}
             </div>
           ) : (
-            <p className="text-small text-surface-600">
-              Edit the YAML above to see a diff against the saved configuration.
-            </p>
+            <p className="text-small text-surface-600">The editor matches the current export.</p>
           )}
         </CardBody>
       </Card>
+    </div>
+  );
+}
+
+function PlanStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-md bg-surface-100 p-3 text-center">
+      <p className="text-h2 text-surface-900">{value}</p>
+      <p className="text-xs text-surface-600">{label}</p>
     </div>
   );
 }

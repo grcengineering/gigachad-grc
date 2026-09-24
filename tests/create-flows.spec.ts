@@ -168,13 +168,7 @@ test.describe('Contracts — New Contract navigation', () => {
 });
 
 test.describe('Audits — New Audit navigation', () => {
-  // KNOWN PRE-EXISTING APP BUG: App.tsx has no `audits/new` or `audits/:id` route,
-  // so clicking "New Audit" silently falls through to the catch-all and lands on /dashboard.
-  // Same probably holds for /audit-requests/new and /audit-findings/new.
-  // Skipping until the route is added.
-  test.skip('"New Audit" link navigates to /audits/new (BLOCKED: missing route)', async ({
-    page,
-  }) => {
+  test('"New Audit" link navigates to /audits/new', async ({ page }) => {
     await page.goto('/audits');
     await page
       .getByRole('link', { name: /new audit/i })
@@ -190,8 +184,7 @@ test.describe('Audits — New Audit navigation', () => {
       .getByRole('link', { name: /new audit/i })
       .first()
       .click();
-    // Tolerates either landing on /audits/new (correct behavior) OR /dashboard (current broken behavior)
-    await page.waitForLoadState('domcontentloaded');
+    await expect(page).toHaveURL(/\/audits\/new$/);
     await expectPageHealthy(page, errs);
   });
 });

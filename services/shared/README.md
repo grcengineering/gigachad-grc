@@ -150,21 +150,21 @@ Shared TypeScript interfaces and DTOs.
 
 ## Prisma Schema
 
-The unified database schema is at `prisma/schema.prisma`. All services share this schema.
+The unified database schema is at `services/shared/prisma/schema.prisma` from
+the repository root. All services share this schema.
 
 ```bash
-# Generate Prisma client after schema changes
-npx prisma generate
+# Generate service clients after schema changes
+npm run db:generate
 
-# Create a migration
-npx prisma migrate dev --name your_migration_name
-
-# Apply migrations (production)
-npx prisma migrate deploy
-
-# Reset database (destroys all data)
-npx prisma migrate reset --force
+# Synchronize a disposable development database
+npm --workspace @gigachad-grc/controls run prisma:push
 ```
+
+In Docker, the controls entrypoint owns schema synchronization with `prisma db
+push` and then applies the BC/DR SQL migration. Do not run independent
+migrations from every service. The current repository does not yet provide a
+complete versioned migration chain for unattended production upgrades.
 
 For schema documentation, see [Database Schema Reference](../../docs/DATABASE_SCHEMA.md).
 

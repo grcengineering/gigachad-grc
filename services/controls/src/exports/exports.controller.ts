@@ -80,15 +80,13 @@ export class ExportsController {
       id,
     );
 
-    const buffer = Buffer.from(content, 'base64');
-    
     res.set({
       'Content-Type': contentType,
       'Content-Disposition': `attachment; filename="${fileName}"`,
-      'Content-Length': buffer.length,
+      'Content-Length': content.length,
     });
 
-    res.send(buffer);
+    res.send(content);
   }
 
   @Delete(':id')
@@ -97,6 +95,6 @@ export class ExportsController {
     @CurrentUser() user: UserContext,
     @Param('id') id: string,
   ): Promise<void> {
-    return this.exportsService.cancelExportJob(user.organizationId, id);
+    return this.exportsService.cancelExportJob(user.organizationId, user.userId, id);
   }
 }

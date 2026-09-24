@@ -43,28 +43,23 @@ rm -rf storage/
 
 ## Current Credentials in Platform
 
-### Default Development Credentials
+### Generated Development Credentials
 
-These credentials are included for development ONLY and are visible in the code:
-
-| Service | Username/Key | Password/Secret | Location |
-|---------|--------------|-----------------|----------|
-| **PostgreSQL** | `grc` | `grc_secret` | docker-compose.yml |
-| **Redis** | N/A | `redis_secret` | docker-compose.yml |
-| **Keycloak Admin** | `admin` | `admin` | docker-compose.yml |
-| **RustFS** | `rustfsadmin` | `rustfsadminpassword` | docker-compose.yml |
+`./start.sh` generates per-installation values in `.env`. There are no shared
+development passwords in `docker-compose.yml`. Treat the generated file as
+sensitive and rotate all credentials before sharing an environment.
 
 ### Where Credentials Are Stored
 
-1. **docker-compose.yml** - Uses environment variables with fallback to default values
-2. **.env.example** - Template file with placeholders
-3. **.env** - Your actual credentials (NOT in git, create from .env.example)
+1. **docker-compose.yml** - Requires selected environment variables
+2. **.env.example** - Template file with non-runnable placeholders
+3. **.env** - Generated local credentials (not committed)
 
 ### Credential Security Status
 
 ✅ **GOOD:**
 - All credentials use environment variables
-- Default values are only fallbacks for development
+- Required Compose values have no shared password fallback
 - .env files are in .gitignore
 - No hardcoded credentials in source code
 - Credentials can be overridden via .env file

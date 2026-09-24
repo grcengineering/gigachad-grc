@@ -1,291 +1,65 @@
-# FieldGuide Integration
+# FieldGuide integration
 
-Synchronize audit data between GigaChad GRC and FieldGuide.
+## Current availability
 
-## Overview
-
-The FieldGuide integration enables:
-- Bi-directional sync of audit data
-- Automatic request mapping
-- Evidence sharing between platforms
-- Real-time webhook updates
+FieldGuide support is API-only on this revision. The backend contains connection, sync, mapping, history, and webhook routes, but the frontend does not expose a FieldGuide settings page or OAuth redirect flow.
 
 ## Prerequisites
 
-Before connecting:
-- Active FieldGuide subscription
-- FieldGuide Admin access
-- OAuth application configured in FieldGuide
-- Network access to FieldGuide API
+- Active FieldGuide account and API access
+- FieldGuide API key
+- Optional custom instance/API URL
+- FieldGuide organization identifier where required
+- Outbound HTTPS from the audit service
+- Admin, compliance-manager, or auditor role
 
-## Connecting to FieldGuide
+## Authentication model
 
-### 1. Navigate to Integration Settings
+`POST /api/fieldguide/connect` accepts an API key configuration and tests it against the FieldGuide API. It is not an interactive browser OAuth flow.
 
-Go to **Settings → Integrations → FieldGuide**
+Use the audit service Swagger document for the current request schema:
 
-### 2. Start OAuth Connection
+```text
+http://localhost:3007/api/docs
+```
 
-Click **Connect to FieldGuide**
+## Implemented routes
 
-### 3. Authorize Access
+```text
+POST   /api/fieldguide/connect
+POST   /api/fieldguide/disconnect
+GET    /api/fieldguide/status
+POST   /api/fieldguide/sync
+GET    /api/fieldguide/sync/history
+GET    /api/fieldguide/mappings
+POST   /api/fieldguide/mappings
+DELETE /api/fieldguide/mappings/:auditId
+POST   /api/fieldguide/webhook
+```
 
-1. Redirected to FieldGuide login
-2. Enter FieldGuide credentials
-3. Review requested permissions
-4. Click **Authorize**
-5. Redirected back to GigaChad GRC
+## Operational requirements
 
-### 4. Confirm Connection
+Before production use:
 
-Verify connection status shows:
-- ✅ Connected
-- Organization name
-- Last sync time
+1. verify the FieldGuide API contract and API-key scopes;
+2. test pull and push directions separately;
+3. compare synchronized audits, requests, evidence, and findings;
+4. configure and verify webhook signing;
+5. monitor sync history and audit-service logs; and
+6. document conflict and deletion behavior.
 
-## Sync Configuration
-
-### Sync Direction
-
-Choose how data flows:
-
-| Option | Description |
-|--------|-------------|
-| **GigaChad → FieldGuide** | Push data to FieldGuide |
-| **FieldGuide → GigaChad** | Pull data from FieldGuide |
-| **Bi-directional** | Sync both directions |
-
-### Data Mapping
-
-Map GigaChad fields to FieldGuide:
-
-| GigaChad Field | FieldGuide Field |
-|----------------|------------------|
-| Audit Name | Engagement Name |
-| Request | Request |
-| Finding | Issue |
-| Evidence | Document |
-| Status | Status |
-
-### Sync Schedule
-
-Configure sync frequency:
-- **Real-time**: Webhook-based instant sync
-- **Hourly**: Every hour
-- **Daily**: Once per day
-- **Manual**: On-demand only
-
-## Syncing Audits
-
-### Initial Sync
-
-When first connecting:
-1. Choose sync direction
-2. Select audits to sync
-3. Map existing data (optional)
-4. Start initial sync
-5. Review sync results
-
-### Ongoing Sync
-
-After initial sync:
-- Changes sync automatically
-- Conflicts handled per settings
-- Errors logged and notified
-
-### Manual Sync
-
-Trigger sync on-demand:
-1. Go to integration settings
-2. Click **Sync Now**
-3. Select what to sync
-4. Confirm and start
-5. View sync progress
-
-## Request Synchronization
-
-### Request Mapping
-
-Map request statuses:
-
-| GigaChad Status | FieldGuide Status |
-|-----------------|-------------------|
-| Open | Open |
-| In Progress | In Progress |
-| Submitted | Pending Review |
-| Under Review | Under Review |
-| Approved | Closed - Received |
-
-### Evidence Sync
-
-When syncing evidence:
-- Files transferred between platforms
-- Metadata preserved
-- Links maintained
-- Versions tracked
-
-## Webhook Configuration
-
-### Setting Up Webhooks
-
-1. In FieldGuide, create webhook
-2. Use GigaChad webhook URL:
-   ```
-   https://your-domain.com/api/fieldguide/webhooks
-   ```
-3. Select events to receive
-4. Copy webhook secret
-5. Enter secret in GigaChad
-
-### Supported Events
-
-| Event | Description |
-|-------|-------------|
-| `request.created` | New request in FieldGuide |
-| `request.updated` | Request status changed |
-| `document.uploaded` | Evidence uploaded |
-| `issue.created` | New finding |
-| `comment.created` | New comment |
-
-## Conflict Resolution
-
-### Conflict Types
-
-When same item edited in both:
-- Status conflicts
-- Content conflicts
-- Assignment conflicts
-
-### Resolution Strategies
-
-| Strategy | Behavior |
-|----------|----------|
-| **GigaChad Wins** | GigaChad version kept |
-| **FieldGuide Wins** | FieldGuide version kept |
-| **Latest Wins** | Most recent edit kept |
-| **Manual** | Prompt user to choose |
-
-### Conflict Log
-
-View conflicts:
-1. Go to integration settings
-2. Click **Conflict Log**
-3. Review unresolved conflicts
-4. Resolve manually if needed
-
-## Data Mapping
-
-### Audit Mapping
-
-| GigaChad | FieldGuide |
-|----------|------------|
-| `audit.name` | `engagement.name` |
-| `audit.type` | `engagement.type` |
-| `audit.startDate` | `engagement.start_date` |
-| `audit.endDate` | `engagement.end_date` |
-| `audit.framework` | `engagement.standard` |
-
-### Finding Mapping
-
-| GigaChad | FieldGuide |
-|----------|------------|
-| `finding.title` | `issue.title` |
-| `finding.severity` | `issue.rating` |
-| `finding.description` | `issue.description` |
-| `finding.remediation` | `issue.recommendation` |
-
-## Sync History
-
-### Viewing History
-
-Track all sync activities:
-1. Go to integration settings
-2. Click **Sync History**
-3. View chronological log
-
-### History Details
-
-Each entry shows:
-- Sync timestamp
-- Direction
-- Items synced
-- Errors (if any)
-- Duration
-
-### Export History
-
-Export for audit purposes:
-- CSV format
-- Date range filter
-- Include/exclude errors
+Do not claim real-time or complete bidirectional sync until those tests pass for the provider version in use.
 
 ## Troubleshooting
 
-### Connection Failed
+### No FieldGuide menu exists
 
-1. Verify OAuth credentials
-2. Check FieldGuide service status
-3. Review network connectivity
-4. Re-authorize if needed
+That is expected on this revision. Use the API/Swagger routes.
 
-### Sync Errors
+### Connection fails
 
-1. Check error messages
-2. Verify data mapping
-3. Review field requirements
-4. Check for conflicts
+Verify API key, API URL, organization identifier, egress, proxy, and CA trust.
 
-### Missing Data
+### Sync is partial
 
-1. Verify sync direction
-2. Check item was saved
-3. Review sync schedule
-4. Trigger manual sync
-
-### Webhook Failures
-
-1. Verify webhook URL
-2. Check webhook secret
-3. Review FieldGuide logs
-4. Test with sample event
-
-## Security Considerations
-
-### Data Protection
-
-- OAuth tokens encrypted
-- Data transmitted via HTTPS
-- Access logged
-- Tokens rotatable
-
-### Permissions
-
-- Separate sync service account
-- Minimum required permissions
-- Regular access review
-- Audit trail maintained
-
-## Disconnecting
-
-### Temporary Disconnect
-
-Pause integration:
-1. Go to integration settings
-2. Toggle **Enabled** off
-3. Sync paused, data retained
-
-### Permanent Disconnect
-
-Remove integration:
-1. Go to integration settings
-2. Click **Disconnect**
-3. Confirm disconnection
-4. Local data retained
-5. FieldGuide data unaffected
-
-## Related Topics
-
-- [Audit Management](audits.md)
-- [Audit Requests](requests.md)
-- [Auditor Portal](auditor-portal.md)
-
+Review the sync result and audit-service logs. Unlinked remote audits are not automatically created as local audits.

@@ -40,6 +40,31 @@ export class ConfigFilesService {
     private readonly stateService: ConfigStateService
   ) {}
 
+  private async requireWorkspace(
+    organizationId: string,
+    workspaceId?: string,
+    userId?: string
+  ) {
+    if (!workspaceId) return;
+    const user = userId
+      ? await this.prisma.user.findFirst({
+          where: { id: userId, organizationId, status: 'active' },
+          select: { role: true },
+        })
+      : null;
+    const workspace = await this.prisma.workspace.findFirst({
+      where: {
+        id: workspaceId,
+        organizationId,
+        ...(userId && user?.role !== 'admin' && { members: { some: { userId } } }),
+      },
+      select: { id: true },
+    });
+    if (!workspace) {
+      throw new NotFoundException('Workspace not found');
+    }
+  }
+
   /**
    * Initialize default Terraform files from current platform state
    */
@@ -48,6 +73,8 @@ export class ConfigFilesService {
     userId: string,
     workspaceId?: string
   ): Promise<void> {
+    await this.requireWorkspace(organizationId, workspaceId, userId);
+
     this.logger.log(
       `Initializing default config files for organization ${organizationId}, user ${userId}, workspace ${workspaceId || 'none'}`
     );
@@ -252,6 +279,8 @@ export class ConfigFilesService {
     userId: string,
     workspaceId?: string
   ): Promise<{ message: string; filesUpdated: number }> {
+    await this.requireWorkspace(organizationId, workspaceId, userId);
+
     const startTime = Date.now();
     this.logger.log(`Refreshing config files from database for org ${organizationId}`);
 
@@ -516,6 +545,8 @@ export class ConfigFilesService {
     path: string,
     workspaceId?: string
   ): Promise<ConfigFileResponseDto> {
+    await this.requireWorkspace(organizationId, workspaceId);
+
     const where: Prisma.ConfigFileWhereInput = {
       organizationId,
       path,
@@ -542,6 +573,8 @@ export class ConfigFilesService {
     userId: string,
     dto: CreateConfigFileDto
   ): Promise<ConfigFileResponseDto> {
+    await this.requireWorkspace(organizationId, dto.workspaceId, userId);
+
     // Check if file already exists
     const existing = await this.prisma.configFile.findFirst({
       where: {

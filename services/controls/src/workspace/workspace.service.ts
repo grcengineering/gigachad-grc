@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { WorkspaceStatus, WorkspaceRole, UserRole } from '@prisma/client';
 import {
@@ -12,6 +17,32 @@ import {
 @Injectable()
 export class WorkspaceService {
   constructor(private prisma: PrismaService) {}
+
+  private async requireWorkspaceAccess(
+    id: string,
+    organizationId: string,
+    userId: string,
+    userRole: UserRole
+  ) {
+    const workspace = await this.prisma.workspace.findFirst({
+      where: { id, organizationId },
+      include: {
+        members: {
+          where: { userId, user: { organizationId } },
+          select: { userId: true, role: true },
+        },
+      },
+    });
+
+    if (!workspace) {
+      throw new NotFoundException('Workspace not found');
+    }
+    if (userRole !== UserRole.admin && workspace.members.length === 0) {
+      throw new ForbiddenException('You do not have access to this workspace');
+    }
+
+    return workspace;
+  }
 
   /**
    * Generate a URL-safe slug from a name
@@ -57,7 +88,7 @@ export class WorkspaceService {
     if (!enabled && activeWorkspaceCount > 1) {
       throw new BadRequestException(
         'Cannot disable multi-workspace mode when more than one workspace exists. ' +
-        'Please archive or delete other workspaces first.'
+          'Please archive or delete other workspaces first.'
       );
     }
 
@@ -96,7 +127,7 @@ export class WorkspaceService {
     });
 
     await this.prisma.workspaceMember.createMany({
-      data: orgUsers.map(user => ({
+      data: orgUsers.map((user) => ({
         workspaceId: workspace.id,
         userId: user.id,
         role: user.role === UserRole.admin ? WorkspaceRole.owner : WorkspaceRole.contributor,
@@ -145,7 +176,12 @@ export class WorkspaceService {
   /**
    * List workspaces for an organization (filtered by user access if not admin)
    */
-  async findAll(organizationId: string, userId: string, userRole: UserRole, filters?: WorkspaceFilterDto) {
+  async findAll(
+    organizationId: string,
+    userId: string,
+    userRole: UserRole,
+    filters?: WorkspaceFilterDto
+  ) {
     // Org admins can see all workspaces
     if (userRole === UserRole.admin) {
       const workspaces = await this.prisma.workspace.findMany({
@@ -161,7 +197,7 @@ export class WorkspaceService {
         orderBy: { name: 'asc' },
       });
 
-      return workspaces.map(w => ({
+      return workspaces.map((w) => ({
         ...w,
         memberCount: w._count.members,
       }));
@@ -184,7 +220,7 @@ export class WorkspaceService {
       orderBy: { name: 'asc' },
     });
 
-    return workspaces.map(w => ({
+    return workspaces.map((w) => ({
       ...w,
       memberCount: w._count.members,
     }));
@@ -198,6 +234,7 @@ export class WorkspaceService {
       where: { id, organizationId },
       include: {
         members: {
+          where: { user: { organizationId } },
           include: {
             user: {
               select: {
@@ -229,7 +266,7 @@ export class WorkspaceService {
 
     // Check access for non-admins
     if (userRole !== UserRole.admin) {
-      const isMember = workspace.members.some(m => m.userId === userId);
+      const isMember = workspace.members.some((m) => m.userId === userId);
       if (!isMember) {
         throw new ForbiddenException('You do not have access to this workspace');
       }
@@ -242,6 +279,14 @@ export class WorkspaceService {
    * Create a new workspace
    */
   async create(organizationId: string, userId: string, dto: CreateWorkspaceDto) {
+    const creator = await this.prisma.user.findFirst({
+      where: { id: userId, organizationId, status: 'active' },
+      select: { id: true },
+    });
+    if (!creator) {
+      throw new NotFoundException('User not found in organization');
+    }
+
     // Generate slug if not provided
     const slug = dto.slug || this.generateSlug(dto.name);
 
@@ -281,14 +326,14 @@ export class WorkspaceService {
   /**
    * Update a workspace
    */
-  async update(id: string, organizationId: string, dto: UpdateWorkspaceDto) {
-    const workspace = await this.prisma.workspace.findFirst({
-      where: { id, organizationId },
-    });
-
-    if (!workspace) {
-      throw new NotFoundException('Workspace not found');
-    }
+  async update(
+    id: string,
+    organizationId: string,
+    userId: string,
+    userRole: UserRole,
+    dto: UpdateWorkspaceDto
+  ) {
+    await this.requireWorkspaceAccess(id, organizationId, userId, userRole);
 
     // Extract settings and handle JSON serialization
     const { settings, ...restDto } = dto;
@@ -304,14 +349,8 @@ export class WorkspaceService {
   /**
    * Delete (archive) a workspace
    */
-  async remove(id: string, organizationId: string) {
-    const workspace = await this.prisma.workspace.findFirst({
-      where: { id, organizationId },
-    });
-
-    if (!workspace) {
-      throw new NotFoundException('Workspace not found');
-    }
+  async remove(id: string, organizationId: string, userId: string, userRole: UserRole) {
+    const workspace = await this.requireWorkspaceAccess(id, organizationId, userId, userRole);
 
     // Check if this is the last active workspace
     const activeCount = await this.prisma.workspace.count({
@@ -332,14 +371,19 @@ export class WorkspaceService {
   /**
    * Add a member to a workspace
    */
-  async addMember(workspaceId: string, organizationId: string, dto: AddWorkspaceMemberDto) {
-    const workspace = await this.prisma.workspace.findFirst({
-      where: { id: workspaceId, organizationId },
-    });
-
-    if (!workspace) {
-      throw new NotFoundException('Workspace not found');
-    }
+  async addMember(
+    workspaceId: string,
+    organizationId: string,
+    requestingUserId: string,
+    requestingUserRole: UserRole,
+    dto: AddWorkspaceMemberDto
+  ) {
+    await this.requireWorkspaceAccess(
+      workspaceId,
+      organizationId,
+      requestingUserId,
+      requestingUserRole
+    );
 
     // Verify user belongs to same organization
     const user = await this.prisma.user.findFirst({
@@ -387,21 +431,26 @@ export class WorkspaceService {
   /**
    * Update a member's role
    */
-  async updateMember(workspaceId: string, userId: string, organizationId: string, dto: UpdateWorkspaceMemberDto) {
-    const workspace = await this.prisma.workspace.findFirst({
-      where: { id: workspaceId, organizationId },
-    });
+  async updateMember(
+    workspaceId: string,
+    userId: string,
+    organizationId: string,
+    requestingUserId: string,
+    requestingUserRole: UserRole,
+    dto: UpdateWorkspaceMemberDto
+  ) {
+    await this.requireWorkspaceAccess(
+      workspaceId,
+      organizationId,
+      requestingUserId,
+      requestingUserRole
+    );
 
-    if (!workspace) {
-      throw new NotFoundException('Workspace not found');
-    }
-
-    const member = await this.prisma.workspaceMember.findUnique({
+    const member = await this.prisma.workspaceMember.findFirst({
       where: {
-        workspaceId_userId: {
-          workspaceId,
-          userId,
-        },
+        workspaceId,
+        userId,
+        user: { organizationId },
       },
     });
 
@@ -429,21 +478,25 @@ export class WorkspaceService {
   /**
    * Remove a member from a workspace
    */
-  async removeMember(workspaceId: string, userId: string, organizationId: string) {
-    const workspace = await this.prisma.workspace.findFirst({
-      where: { id: workspaceId, organizationId },
-    });
+  async removeMember(
+    workspaceId: string,
+    userId: string,
+    organizationId: string,
+    requestingUserId: string,
+    requestingUserRole: UserRole
+  ) {
+    await this.requireWorkspaceAccess(
+      workspaceId,
+      organizationId,
+      requestingUserId,
+      requestingUserRole
+    );
 
-    if (!workspace) {
-      throw new NotFoundException('Workspace not found');
-    }
-
-    const member = await this.prisma.workspaceMember.findUnique({
+    const member = await this.prisma.workspaceMember.findFirst({
       where: {
-        workspaceId_userId: {
-          workspaceId,
-          userId,
-        },
+        workspaceId,
+        userId,
+        user: { organizationId },
       },
     });
 
@@ -470,7 +523,12 @@ export class WorkspaceService {
   /**
    * Get workspace dashboard stats
    */
-  async getDashboard(workspaceId: string, organizationId: string, userId: string, userRole: UserRole) {
+  async getDashboard(
+    workspaceId: string,
+    organizationId: string,
+    userId: string,
+    userRole: UserRole
+  ) {
     const workspace = await this.findOne(workspaceId, organizationId, userId, userRole);
 
     const [
@@ -489,7 +547,9 @@ export class WorkspaceService {
       this.prisma.risk.count({
         where: {
           workspaceId,
-          status: { in: ['risk_identified', 'actual_risk', 'risk_analysis_in_progress', 'risk_analyzed'] },
+          status: {
+            in: ['risk_identified', 'actual_risk', 'risk_analysis_in_progress', 'risk_analyzed'],
+          },
         },
       }),
       this.prisma.evidence.count({ where: { workspaceId } }),
@@ -498,9 +558,8 @@ export class WorkspaceService {
       this.prisma.asset.count({ where: { workspaceId } }),
     ]);
 
-    const complianceScore = totalControls > 0 
-      ? Math.round((implementedControls / totalControls) * 100) 
-      : 0;
+    const complianceScore =
+      totalControls > 0 ? Math.round((implementedControls / totalControls) * 100) : 0;
 
     return {
       workspace,
@@ -543,9 +602,10 @@ export class WorkspaceService {
           where: { workspaceId: ws.id, status: 'implemented' },
         });
 
-        const complianceScore = ws._count.implementations > 0
-          ? Math.round((implementedCount / ws._count.implementations) * 100)
-          : 0;
+        const complianceScore =
+          ws._count.implementations > 0
+            ? Math.round((implementedCount / ws._count.implementations) * 100)
+            : 0;
 
         return {
           id: ws.id,
@@ -575,9 +635,12 @@ export class WorkspaceService {
       { controls: 0, evidence: 0, risks: 0, vendors: 0, assets: 0 }
     );
 
-    const avgComplianceScore = workspaceStats.length > 0
-      ? Math.round(workspaceStats.reduce((sum, ws) => sum + ws.complianceScore, 0) / workspaceStats.length)
-      : 0;
+    const avgComplianceScore =
+      workspaceStats.length > 0
+        ? Math.round(
+            workspaceStats.reduce((sum, ws) => sum + ws.complianceScore, 0) / workspaceStats.length
+          )
+        : 0;
 
     return {
       workspaces: workspaceStats,
@@ -589,25 +652,31 @@ export class WorkspaceService {
   /**
    * Check if user has access to a workspace
    */
-  async checkAccess(workspaceId: string, userId: string, userRole: UserRole): Promise<WorkspaceRole | null> {
+  async checkAccess(
+    workspaceId: string,
+    organizationId: string,
+    userId: string,
+    userRole: UserRole
+  ): Promise<WorkspaceRole | null> {
+    const workspace = await this.prisma.workspace.findFirst({
+      where: { id: workspaceId, organizationId },
+      select: { id: true },
+    });
+    if (!workspace) return null;
+
     // Org admins have implicit owner access
     if (userRole === UserRole.admin) {
       return WorkspaceRole.owner;
     }
 
-    const member = await this.prisma.workspaceMember.findUnique({
+    const member = await this.prisma.workspaceMember.findFirst({
       where: {
-        workspaceId_userId: {
-          workspaceId,
-          userId,
-        },
+        workspaceId,
+        userId,
+        user: { organizationId },
       },
     });
 
     return member?.role ?? null;
   }
 }
-
-
-
-

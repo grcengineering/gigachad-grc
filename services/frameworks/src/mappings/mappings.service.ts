@@ -52,8 +52,104 @@ export class MappingsService {
     @Inject(STORAGE_PROVIDER) private storage: StorageProvider
   ) {}
 
-  async findAll(frameworkId?: string, controlId?: string) {
-    const where: { frameworkId?: string; controlId?: string } = {};
+  private mappingAccessWhere(
+    organizationId: string,
+    requireTenantOwnedResource = false
+  ): Prisma.ControlMappingWhereInput {
+    const where: Prisma.ControlMappingWhereInput = {
+      AND: [
+        {
+          framework: {
+            deletedAt: null,
+            OR: [{ organizationId }, { organizationId: null }],
+          },
+        },
+        {
+          control: {
+            deletedAt: null,
+            OR: [{ organizationId }, { organizationId: null }],
+          },
+        },
+      ],
+    };
+
+    if (requireTenantOwnedResource) {
+      (where.AND as Prisma.ControlMappingWhereInput[]).push({
+        OR: [{ framework: { organizationId } }, { control: { organizationId } }],
+      });
+    }
+
+    return where;
+  }
+
+  private async validateMappingResources(
+    organizationId: string,
+    dto: CreateMappingDto,
+    requireTenantOwnedResource = true
+  ) {
+    const [framework, requirement, control] = await Promise.all([
+      this.prisma.framework.findFirst({
+        where: {
+          id: dto.frameworkId,
+          deletedAt: null,
+          OR: [{ organizationId }, { organizationId: null }],
+        },
+        select: { id: true, organizationId: true },
+      }),
+      this.prisma.frameworkRequirement.findFirst({
+        where: { id: dto.requirementId, frameworkId: dto.frameworkId },
+        select: { id: true },
+      }),
+      this.prisma.control.findFirst({
+        where: {
+          id: dto.controlId,
+          deletedAt: null,
+          OR: [{ organizationId }, { organizationId: null }],
+        },
+        select: { id: true, organizationId: true },
+      }),
+    ]);
+
+    if (!framework || !requirement || !control) {
+      throw new NotFoundException('Framework, requirement, or control not found');
+    }
+
+    // A global-to-global mapping is shared template data. Tenant callers may
+    // consume it, but may not create or mutate it.
+    if (
+      requireTenantOwnedResource &&
+      framework.organizationId === null &&
+      control.organizationId === null
+    ) {
+      throw new NotFoundException('Framework, requirement, or control not found');
+    }
+  }
+
+  async findAll(organizationId: string, frameworkId?: string, controlId?: string) {
+    if (frameworkId) {
+      const framework = await this.prisma.framework.findFirst({
+        where: {
+          id: frameworkId,
+          deletedAt: null,
+          OR: [{ organizationId }, { organizationId: null }],
+        },
+        select: { id: true },
+      });
+      if (!framework) throw new NotFoundException(`Framework with ID ${frameworkId} not found`);
+    }
+    if (controlId) {
+      const control = await this.prisma.control.findFirst({
+        where: {
+          id: controlId,
+          deletedAt: null,
+          OR: [{ organizationId }, { organizationId: null }],
+        },
+        select: { id: true },
+      });
+      if (!control) throw new NotFoundException(`Control with ID ${controlId} not found`);
+    }
+
+    const where = this.mappingAccessWhere(organizationId);
     if (frameworkId) where.frameworkId = frameworkId;
     if (controlId) where.controlId = controlId;
 
@@ -64,9 +160,22 @@ export class MappingsService {
     });
   }
 
-  async findByControl(controlId: string) {
+  async findByControl(controlId: string, organizationId: string) {
+    const control = await this.prisma.control.findFirst({
+      where: {
+        id: controlId,
+        deletedAt: null,
+        OR: [{ organizationId }, { organizationId: null }],
+      },
+      select: { id: true },
+    });
+    if (!control) throw new NotFoundException(`Control with ID ${controlId} not found`);
+
     return this.prisma.controlMapping.findMany({
-      where: { controlId },
+      where: {
+        ...this.mappingAccessWhere(organizationId),
+        controlId,
+      },
       include: {
         framework: { select: { id: true, name: true, type: true } },
         requirement: { select: { id: true, reference: true, title: true } },
@@ -74,9 +183,26 @@ export class MappingsService {
     });
   }
 
-  async findByRequirement(requirementId: string) {
+  async findByRequirement(requirementId: string, organizationId: string) {
+    const requirement = await this.prisma.frameworkRequirement.findFirst({
+      where: {
+        id: requirementId,
+        framework: {
+          deletedAt: null,
+          OR: [{ organizationId }, { organizationId: null }],
+        },
+      },
+      select: { id: true },
+    });
+    if (!requirement) {
+      throw new NotFoundException(`Requirement with ID ${requirementId} not found`);
+    }
+
     return this.prisma.controlMapping.findMany({
-      where: { requirementId },
+      where: {
+        ...this.mappingAccessWhere(organizationId),
+        requirementId,
+      },
       include: {
         control: { select: { id: true, controlId: true, title: true, category: true } },
       },
@@ -84,6 +210,8 @@ export class MappingsService {
   }
 
   async create(userId: string, organizationId: string, dto: CreateMappingDto) {
+    await this.validateMappingResources(organizationId, dto);
+
     // Check for existing mapping
     const existing = await this.prisma.controlMapping.findFirst({
       where: {
@@ -131,11 +259,8 @@ export class MappingsService {
   async update(id: string, dto: UpdateMappingDto, userId: string, organizationId: string) {
     const existing = await this.prisma.controlMapping.findFirst({
       where: {
+        ...this.mappingAccessWhere(organizationId, true),
         id,
-        OR: [
-          { control: { OR: [{ organizationId }, { organizationId: null }] } },
-          { framework: { OR: [{ organizationId }, { organizationId: null }] } },
-        ],
       },
       include: MAPPING_INCLUDE,
     });
@@ -189,11 +314,8 @@ export class MappingsService {
   ) {
     const existing = await this.prisma.controlMapping.findFirst({
       where: {
+        ...this.mappingAccessWhere(organizationId, true),
         id,
-        OR: [
-          { control: { OR: [{ organizationId }, { organizationId: null }] } },
-          { framework: { OR: [{ organizationId }, { organizationId: null }] } },
-        ],
       },
       include: MAPPING_INCLUDE,
     });
@@ -258,11 +380,8 @@ export class MappingsService {
   async delete(id: string, userId: string, organizationId: string) {
     const mapping = await this.prisma.controlMapping.findFirst({
       where: {
+        ...this.mappingAccessWhere(organizationId, true),
         id,
-        OR: [
-          { control: { OR: [{ organizationId }, { organizationId: null }] } },
-          { framework: { OR: [{ organizationId }, { organizationId: null }] } },
-        ],
       },
       include: MAPPING_INCLUDE,
     });
@@ -357,9 +476,12 @@ export class MappingsService {
           { OR: [{ organizationId: null }, { organizationId }] },
         ],
       },
-      select: { id: true, type: true, version: true },
+      select: { id: true, type: true, version: true, organizationId: true },
     });
-    const frameworkByCode = new Map<string, { id: string; type: string; version: string }>();
+    const frameworkByCode = new Map<
+      string,
+      { id: string; type: string; version: string; organizationId: string | null }
+    >();
     for (const fw of frameworks) {
       frameworkByCode.set(`${fw.type}:${fw.version}`, fw);
     }
@@ -387,10 +509,13 @@ export class MappingsService {
             OR: [{ organizationId: null }, { organizationId }],
             deletedAt: null,
           },
-          select: { id: true, controlId: true },
+          select: { id: true, controlId: true, organizationId: true },
         })
       : [];
-    const controlByCode = new Map<string, { id: string; controlId: string }>();
+    const controlByCode = new Map<
+      string,
+      { id: string; controlId: string; organizationId: string | null }
+    >();
     for (const ctl of controls) {
       controlByCode.set(ctl.controlId, ctl);
     }
@@ -531,13 +656,18 @@ export class MappingsService {
       const r = perRowResolved[idx];
       if (!r.ok) continue;
       try {
-        await this.createForBulk(userId, organizationId, {
-          frameworkId: r.frameworkId,
-          requirementId: r.requirementId,
-          controlId: r.controlId,
-          mappingType: r.mappingType as 'primary' | 'supporting',
-          notes: r.notes ?? undefined,
-        });
+        await this.createForBulk(
+          userId,
+          organizationId,
+          {
+            frameworkId: r.frameworkId,
+            requirementId: r.requirementId,
+            controlId: r.controlId,
+            mappingType: r.mappingType as 'primary' | 'supporting',
+            notes: r.notes ?? undefined,
+          },
+          true
+        );
         actuallyCreated++;
       } catch (error: unknown) {
         if (error instanceof ConflictException) {
@@ -591,9 +721,12 @@ export class MappingsService {
 
   private resolveRow(
     raw: RawMappingRow,
-    frameworkByCode: Map<string, { id: string; type: string; version: string }>,
+    frameworkByCode: Map<
+      string,
+      { id: string; type: string; version: string; organizationId: string | null }
+    >,
     requirementByKey: Map<string, { id: string; frameworkId: string; reference: string }>,
-    controlByCode: Map<string, { id: string; controlId: string }>
+    controlByCode: Map<string, { id: string; controlId: string; organizationId: string | null }>
   ):
     | {
         ok: true;
@@ -628,6 +761,9 @@ export class MappingsService {
 
     const ctl = controlByCode.get(controlCode);
     if (!ctl) return { ok: false, message: `unknown control code: ${controlCode}` };
+    if (fw.organizationId === null && ctl.organizationId === null) {
+      return { ok: false, message: 'global template mappings cannot be modified' };
+    }
 
     const mappingTypeNormalized = mappingTypeRaw.toLowerCase();
     if (mappingTypeNormalized !== 'primary' && mappingTypeNormalized !== 'supporting') {
@@ -674,7 +810,16 @@ export class MappingsService {
     }
   }
 
-  private async createForBulk(userId: string, organizationId: string, dto: CreateMappingDto) {
+  private async createForBulk(
+    userId: string,
+    organizationId: string,
+    dto: CreateMappingDto,
+    resourcesValidated = false
+  ) {
+    if (!resourcesValidated) {
+      await this.validateMappingResources(organizationId, dto);
+    }
+
     const existing = await this.prisma.controlMapping.findFirst({
       where: {
         frameworkId: dto.frameworkId,
@@ -746,6 +891,12 @@ export class MappingsService {
       },
       include: {
         mappings: {
+          where: {
+            framework: {
+              deletedAt: null,
+              OR: [{ organizationId }, { organizationId: null }],
+            },
+          },
           include: {
             framework: { select: { id: true, name: true } },
           },
@@ -778,11 +929,30 @@ export class MappingsService {
     };
   }
 
-  async getRequirementCoverage(frameworkId: string) {
+  async getRequirementCoverage(frameworkId: string, organizationId: string) {
+    const framework = await this.prisma.framework.findFirst({
+      where: {
+        id: frameworkId,
+        deletedAt: null,
+        OR: [{ organizationId }, { organizationId: null }],
+      },
+      select: { id: true },
+    });
+    if (!framework) {
+      throw new NotFoundException(`Framework with ID ${frameworkId} not found`);
+    }
+
     const requirements = await this.prisma.frameworkRequirement.findMany({
       where: { frameworkId, isCategory: false },
       include: {
-        mappings: true,
+        mappings: {
+          where: {
+            control: {
+              deletedAt: null,
+              OR: [{ organizationId }, { organizationId: null }],
+            },
+          },
+        },
       },
     });
 
@@ -808,6 +978,16 @@ export class MappingsService {
     type?: GapType
   ): Promise<MappingGapRow[]> {
     const tenantClause = { OR: [{ organizationId }, { organizationId: null }] };
+
+    if (frameworkId && type !== 'unused-controls') {
+      const framework = await this.prisma.framework.findFirst({
+        where: { id: frameworkId, deletedAt: null, ...tenantClause },
+        select: { id: true },
+      });
+      if (!framework) {
+        throw new NotFoundException(`Framework with ID ${frameworkId} not found`);
+      }
+    }
 
     const fetchNoControls = async (): Promise<MappingGapRow[]> => {
       const reqs = await this.prisma.frameworkRequirement.findMany({
@@ -896,7 +1076,13 @@ export class MappingsService {
     }
 
     const mappings = await this.prisma.controlMapping.findMany({
-      where: { frameworkId: framework.id },
+      where: {
+        frameworkId: framework.id,
+        control: {
+          deletedAt: null,
+          OR: [{ organizationId }, { organizationId: null }],
+        },
+      },
       include: {
         framework: { select: { type: true, version: true } },
         requirement: { select: { reference: true, order: true } },

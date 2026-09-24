@@ -210,38 +210,9 @@ const tools = [
     },
 ];
 // Define available resources
-const resources = [
-    {
-        uri: 'evidence://aws/s3/buckets',
-        name: 'AWS S3 Bucket Configurations',
-        description: 'S3 bucket security configurations and policies',
-        mimeType: 'application/json',
-    },
-    {
-        uri: 'evidence://aws/iam/policies',
-        name: 'AWS IAM Policies',
-        description: 'IAM policies and user configurations',
-        mimeType: 'application/json',
-    },
-    {
-        uri: 'evidence://github/{org}/{repo}/security',
-        name: 'GitHub Repository Security',
-        description: 'Security settings for a GitHub repository',
-        mimeType: 'application/json',
-    },
-    {
-        uri: 'evidence://compliance/{framework}/requirements',
-        name: 'Framework Requirements',
-        description: 'Compliance requirements for a specific framework',
-        mimeType: 'application/json',
-    },
-    {
-        uri: 'evidence://scans/latest',
-        name: 'Latest Vulnerability Scans',
-        description: 'Results from the most recent vulnerability scans',
-        mimeType: 'application/json',
-    },
-];
+// Evidence is collected on demand through tools. Do not advertise resource
+// URIs until a durable evidence-resource store is implemented.
+const resources = [];
 // Handle list tools request
 server.setRequestHandler(ListToolsRequestSchema, async () => {
     return { tools };
@@ -310,24 +281,7 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
 // Handle read resource request
 server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     const { uri } = request.params;
-    // Parse the URI and return appropriate data
-    // For now, return placeholder data - actual implementation would fetch from cache/database
-    const resourceData = {
-        uri,
-        fetchedAt: new Date().toISOString(),
-        data: {
-            message: 'Resource data would be fetched from evidence store',
-        },
-    };
-    return {
-        contents: [
-            {
-                uri,
-                mimeType: 'application/json',
-                text: JSON.stringify(resourceData, null, 2),
-            },
-        ],
-    };
+    throw new Error(`Evidence resource is not available: ${uri}. Use an evidence collection tool.`);
 });
 // Start the server
 async function main() {

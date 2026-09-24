@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import * as crypto from 'crypto';
+import { UserDelegation } from '@prisma/client';
+import { auditMutation } from '../common/audit-mutation';
 import {
   CreateDelegationDto,
   UpdateDelegationDto,
@@ -28,9 +29,6 @@ interface DelegationRecord {
   updatedAt: Date;
   revokedAt?: Date;
 }
-
-// In-memory store
-const delegationStore = new Map<string, DelegationRecord>();
 
 @Injectable()
 export class DelegationService {
@@ -62,46 +60,57 @@ export class DelegationService {
     }
 
     // Check if delegatee exists in same org
-    const delegatee = await this.prisma.user.findFirst({
-      where: { id: dto.delegateeId, organizationId },
-    });
-
-    if (!delegatee) {
+    const [delegator, delegatee] = await Promise.all([
+      this.prisma.user.findFirst({ where: { id: delegatorId, organizationId } }),
+      this.prisma.user.findFirst({ where: { id: dto.delegateeId, organizationId } }),
+    ]);
+    if (!delegator || !delegatee) {
       throw new NotFoundException('Delegatee not found in your organization');
     }
 
-    // Check for overlapping delegations
-    const existing = Array.from(delegationStore.values()).find(d => 
-      d.organizationId === organizationId &&
-      d.delegatorId === delegatorId &&
-      d.delegateeId === dto.delegateeId &&
-      !d.revokedAt &&
-      d.endDate > now &&
-      this.hasOverlappingScopes(d.scopes, dto.scopes || [DelegationScope.ALL])
+    const candidates = await this.prisma.userDelegation.findMany({
+      where: {
+        organizationId,
+        delegatorId,
+        delegateId: dto.delegateeId,
+        revokedAt: null,
+        endDate: { gt: now },
+      },
+    });
+    const scopes = dto.scopes || [DelegationScope.ALL];
+    const existing = candidates.find((candidate) =>
+      this.hasOverlappingScopes(candidate.entityTypes as DelegationScope[], scopes),
     );
 
     if (existing) {
       throw new BadRequestException('Overlapping delegation already exists');
     }
 
-    const id = crypto.randomUUID();
-    const delegation: DelegationRecord = {
-      id,
+    const created = await this.prisma.userDelegation.create({
+      data: {
+        organizationId,
+        delegatorId,
+        delegatorName: delegator.displayName,
+        delegateId: dto.delegateeId,
+        delegateName: delegatee.displayName,
+        startDate,
+        endDate,
+        scope: scopes.includes(DelegationScope.ALL) ? DelegationScope.ALL : 'specific',
+        entityTypes: scopes,
+        reason: dto.notes,
+        status: startDate > now ? DelegationStatus.PENDING : DelegationStatus.ACTIVE,
+      },
+    });
+    await auditMutation(this.prisma, {
       organizationId,
-      delegatorId,
-      delegateeId: dto.delegateeId,
-      startDate,
-      endDate,
-      scopes: dto.scopes || [DelegationScope.ALL],
-      notes: dto.notes,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    delegationStore.set(id, delegation);
-    this.logger.log(`Created delegation ${id} from ${delegatorId} to ${dto.delegateeId}`);
-
-    return this.toDto(delegation);
+      userId: delegatorId,
+      action: 'CREATE',
+      entityType: 'UserDelegation',
+      entityId: created.id,
+      description: `Created delegation to ${dto.delegateeId}`,
+    });
+    this.logger.log(`Created delegation ${created.id} from ${delegatorId} to ${dto.delegateeId}`);
+    return this.toDto(this.toRecord(created));
   }
 
   async updateDelegation(
@@ -110,8 +119,10 @@ export class DelegationService {
     delegationId: string,
     dto: UpdateDelegationDto,
   ): Promise<DelegationDto> {
-    const delegation = delegationStore.get(delegationId);
-    if (!delegation || delegation.organizationId !== organizationId) {
+    const delegation = await this.prisma.userDelegation.findFirst({
+      where: { id: delegationId, organizationId },
+    });
+    if (!delegation) {
       throw new NotFoundException(`Delegation ${delegationId} not found`);
     }
 
@@ -124,16 +135,26 @@ export class DelegationService {
       throw new BadRequestException('Cannot update revoked delegation');
     }
 
-    const updated: DelegationRecord = {
-      ...delegation,
-      endDate: dto.endDate ? new Date(dto.endDate) : delegation.endDate,
-      scopes: dto.scopes ?? delegation.scopes,
-      notes: dto.notes ?? delegation.notes,
-      updatedAt: new Date(),
-    };
-
-    delegationStore.set(delegationId, updated);
-    return this.toDto(updated);
+    const updated = await this.prisma.userDelegation.update({
+      where: { id: delegationId },
+      data: {
+        endDate: dto.endDate ? new Date(dto.endDate) : undefined,
+        entityTypes: dto.scopes,
+        scope: dto.scopes
+          ? dto.scopes.includes(DelegationScope.ALL) ? DelegationScope.ALL : 'specific'
+          : undefined,
+        reason: dto.notes,
+      },
+    });
+    await auditMutation(this.prisma, {
+      organizationId,
+      userId,
+      action: 'UPDATE',
+      entityType: 'UserDelegation',
+      entityId: delegationId,
+      description: `Updated delegation ${delegationId}`,
+    });
+    return this.toDto(this.toRecord(updated));
   }
 
   async revokeDelegation(
@@ -141,8 +162,10 @@ export class DelegationService {
     userId: string,
     delegationId: string,
   ): Promise<void> {
-    const delegation = delegationStore.get(delegationId);
-    if (!delegation || delegation.organizationId !== organizationId) {
+    const delegation = await this.prisma.userDelegation.findFirst({
+      where: { id: delegationId, organizationId },
+    });
+    if (!delegation) {
       throw new NotFoundException(`Delegation ${delegationId} not found`);
     }
 
@@ -151,9 +174,22 @@ export class DelegationService {
       throw new ForbiddenException('Only the delegator can revoke this delegation');
     }
 
-    delegation.revokedAt = new Date();
-    delegation.updatedAt = new Date();
-    delegationStore.set(delegationId, delegation);
+    await this.prisma.userDelegation.update({
+      where: { id: delegationId },
+      data: {
+        revokedAt: new Date(),
+        revokedBy: userId,
+        status: DelegationStatus.REVOKED,
+      },
+    });
+    await auditMutation(this.prisma, {
+      organizationId,
+      userId,
+      action: 'REVOKE',
+      entityType: 'UserDelegation',
+      entityId: delegationId,
+      description: `Revoked delegation ${delegationId}`,
+    });
 
     this.logger.log(`Revoked delegation ${delegationId}`);
   }
@@ -162,11 +198,13 @@ export class DelegationService {
     organizationId: string,
     delegationId: string,
   ): Promise<DelegationDto> {
-    const delegation = delegationStore.get(delegationId);
-    if (!delegation || delegation.organizationId !== organizationId) {
+    const delegation = await this.prisma.userDelegation.findFirst({
+      where: { id: delegationId, organizationId },
+    });
+    if (!delegation) {
       throw new NotFoundException(`Delegation ${delegationId} not found`);
     }
-    return this.toDto(delegation);
+    return this.toDto(this.toRecord(delegation));
   }
 
   async listDelegations(
@@ -179,27 +217,19 @@ export class DelegationService {
       limit: query.limit,
     });
 
-    let delegations = Array.from(delegationStore.values())
-      .filter(d => d.organizationId === organizationId);
+    const roleFilter = query.asDelegator && !query.asDelegatee
+      ? { delegatorId: userId }
+      : query.asDelegatee && !query.asDelegator
+        ? { delegateId: userId }
+        : { OR: [{ delegatorId: userId }, { delegateId: userId }] };
+    let delegations = (await this.prisma.userDelegation.findMany({
+      where: { organizationId, ...roleFilter },
+      orderBy: { createdAt: 'desc' },
+    })).map((delegation) => this.toRecord(delegation));
 
-    // Filter by role
-    if (query.asDelegator && !query.asDelegatee) {
-      delegations = delegations.filter(d => d.delegatorId === userId);
-    } else if (query.asDelegatee && !query.asDelegator) {
-      delegations = delegations.filter(d => d.delegateeId === userId);
-    } else {
-      // Show both by default
-      delegations = delegations.filter(d => 
-        d.delegatorId === userId || d.delegateeId === userId
-      );
-    }
-
-    // Filter by status
     if (query.status) {
       delegations = delegations.filter(d => this.getStatus(d) === query.status);
     }
-
-    delegations.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     const total = delegations.length;
     const offset = (pagination.page - 1) * pagination.limit;
@@ -218,13 +248,15 @@ export class DelegationService {
   ): Promise<ActiveDelegationsDto> {
     const now = new Date();
 
-    const allDelegations = Array.from(delegationStore.values())
-      .filter(d => 
-        d.organizationId === organizationId &&
-        !d.revokedAt &&
-        d.startDate <= now &&
-        d.endDate > now
-      );
+    const allDelegations = (await this.prisma.userDelegation.findMany({
+      where: {
+        organizationId,
+        revokedAt: null,
+        startDate: { lte: now },
+        endDate: { gt: now },
+        OR: [{ delegatorId: userId }, { delegateId: userId }],
+      },
+    })).map((delegation) => this.toRecord(delegation));
 
     const outgoing = await Promise.all(
       allDelegations
@@ -249,17 +281,21 @@ export class DelegationService {
   ): Promise<boolean> {
     const now = new Date();
 
-    const delegation = Array.from(delegationStore.values()).find(d =>
-      d.organizationId === organizationId &&
-      d.delegatorId === delegatorId &&
-      d.delegateeId === delegateeId &&
-      !d.revokedAt &&
-      d.startDate <= now &&
-      d.endDate > now &&
-      (d.scopes.includes(DelegationScope.ALL) || d.scopes.includes(scope))
-    );
-
-    return !!delegation;
+    const delegations = await this.prisma.userDelegation.findMany({
+      where: {
+        organizationId,
+        delegatorId,
+        delegateId: delegateeId,
+        revokedAt: null,
+        startDate: { lte: now },
+        endDate: { gt: now },
+      },
+      select: { entityTypes: true },
+    });
+    return delegations.some((delegation) => {
+      const scopes = delegation.entityTypes as DelegationScope[];
+      return scopes.includes(DelegationScope.ALL) || scopes.includes(scope);
+    });
   }
 
   private getStatus(delegation: DelegationRecord): DelegationStatus {
@@ -285,6 +321,22 @@ export class DelegationService {
       return true;
     }
     return scopes1.some(s => scopes2.includes(s));
+  }
+
+  private toRecord(delegation: UserDelegation): DelegationRecord {
+    return {
+      id: delegation.id,
+      organizationId: delegation.organizationId,
+      delegatorId: delegation.delegatorId,
+      delegateeId: delegation.delegateId,
+      startDate: delegation.startDate,
+      endDate: delegation.endDate,
+      scopes: delegation.entityTypes as DelegationScope[],
+      notes: delegation.reason ?? undefined,
+      createdAt: delegation.createdAt,
+      updatedAt: delegation.updatedAt,
+      revokedAt: delegation.revokedAt ?? undefined,
+    };
   }
 
   private async toDto(delegation: DelegationRecord): Promise<DelegationDto> {
