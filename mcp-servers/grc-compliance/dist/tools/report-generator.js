@@ -1,23 +1,71 @@
+import { requireExplicitDemoMode } from '../demo-mode.js';
 // Framework control structures
 const frameworkStructures = {
     SOC2: {
-        domains: ['CC1 - Control Environment', 'CC2 - Communication & Information', 'CC3 - Risk Assessment', 'CC4 - Monitoring Activities', 'CC5 - Control Activities', 'CC6 - Logical & Physical Access', 'CC7 - System Operations', 'CC8 - Change Management', 'CC9 - Risk Mitigation'],
+        domains: [
+            'CC1 - Control Environment',
+            'CC2 - Communication & Information',
+            'CC3 - Risk Assessment',
+            'CC4 - Monitoring Activities',
+            'CC5 - Control Activities',
+            'CC6 - Logical & Physical Access',
+            'CC7 - System Operations',
+            'CC8 - Change Management',
+            'CC9 - Risk Mitigation',
+        ],
         controlsPerDomain: 8,
     },
     ISO27001: {
-        domains: ['A.5 - Information Security Policies', 'A.6 - Organization of Information Security', 'A.7 - Human Resource Security', 'A.8 - Asset Management', 'A.9 - Access Control', 'A.10 - Cryptography', 'A.11 - Physical Security', 'A.12 - Operations Security', 'A.13 - Communications Security', 'A.14 - System Development', 'A.15 - Supplier Relationships', 'A.16 - Incident Management', 'A.17 - Business Continuity', 'A.18 - Compliance'],
+        domains: [
+            'A.5 - Information Security Policies',
+            'A.6 - Organization of Information Security',
+            'A.7 - Human Resource Security',
+            'A.8 - Asset Management',
+            'A.9 - Access Control',
+            'A.10 - Cryptography',
+            'A.11 - Physical Security',
+            'A.12 - Operations Security',
+            'A.13 - Communications Security',
+            'A.14 - System Development',
+            'A.15 - Supplier Relationships',
+            'A.16 - Incident Management',
+            'A.17 - Business Continuity',
+            'A.18 - Compliance',
+        ],
         controlsPerDomain: 6,
     },
     HIPAA: {
-        domains: ['Administrative Safeguards', 'Physical Safeguards', 'Technical Safeguards', 'Privacy Rule', 'Breach Notification'],
+        domains: [
+            'Administrative Safeguards',
+            'Physical Safeguards',
+            'Technical Safeguards',
+            'Privacy Rule',
+            'Breach Notification',
+        ],
         controlsPerDomain: 10,
     },
     GDPR: {
-        domains: ['Lawfulness & Transparency', 'Purpose Limitation', 'Data Minimization', 'Accuracy', 'Storage Limitation', 'Security', 'Accountability', 'Data Subject Rights'],
+        domains: [
+            'Lawfulness & Transparency',
+            'Purpose Limitation',
+            'Data Minimization',
+            'Accuracy',
+            'Storage Limitation',
+            'Security',
+            'Accountability',
+            'Data Subject Rights',
+        ],
         controlsPerDomain: 5,
     },
     'PCI-DSS': {
-        domains: ['Build & Maintain Secure Network', 'Protect Cardholder Data', 'Maintain Vulnerability Management', 'Implement Access Controls', 'Monitor & Test Networks', 'Information Security Policy'],
+        domains: [
+            'Build & Maintain Secure Network',
+            'Protect Cardholder Data',
+            'Maintain Vulnerability Management',
+            'Implement Access Controls',
+            'Monitor & Test Networks',
+            'Information Security Policy',
+        ],
         controlsPerDomain: 12,
     },
     'NIST-CSF': {
@@ -26,6 +74,7 @@ const frameworkStructures = {
     },
 };
 export async function generateComplianceReport(params) {
+    requireExplicitDemoMode('Compliance report generation');
     const { framework, reportType, includeEvidence = false, dateRange } = params;
     const reportId = `report-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const now = new Date();
@@ -34,7 +83,10 @@ export async function generateComplianceReport(params) {
         end: now.toISOString(),
     };
     // Get framework structure
-    const structure = frameworkStructures[framework] || { domains: ['General'], controlsPerDomain: 10 };
+    const structure = frameworkStructures[framework] || {
+        domains: ['General'],
+        controlsPerDomain: 10,
+    };
     // Generate simulated compliance data
     const sections = [];
     let totalControls = 0;
@@ -104,15 +156,23 @@ export async function generateComplianceReport(params) {
             title: domain,
             description: `${framework} ${domain} controls`,
             score: Math.round(domainScore / structure.controlsPerDomain),
-            status: domainScore / structure.controlsPerDomain >= 80 ? 'Compliant' : domainScore / structure.controlsPerDomain >= 50 ? 'Partial' : 'Non-Compliant',
+            status: domainScore / structure.controlsPerDomain >= 80
+                ? 'Compliant'
+                : domainScore / structure.controlsPerDomain >= 50
+                    ? 'Partial'
+                    : 'Non-Compliant',
             items: reportType === 'summary' ? [] : items,
         });
     }
     // Calculate overall score
-    const overallScore = Math.round(((implementedControls * 100 + partiallyImplementedControls * 60) / totalControls));
+    const overallScore = Math.round((implementedControls * 100 + partiallyImplementedControls * 60) / totalControls);
     const summary = {
         overallScore,
-        status: overallScore >= 80 ? 'compliant' : overallScore >= 50 ? 'partially_compliant' : 'non_compliant',
+        status: overallScore >= 80
+            ? 'compliant'
+            : overallScore >= 50
+                ? 'partially_compliant'
+                : 'non_compliant',
         totalControls,
         implementedControls,
         partiallyImplementedControls,
@@ -189,10 +249,12 @@ export async function generateComplianceReport(params) {
             ];
             break;
         case 'gap-analysis':
-            finalSections = sections.map((s) => ({
+            finalSections = sections
+                .map((s) => ({
                 ...s,
                 items: s.items.filter((item) => item.status !== 'Implemented'),
-            })).filter((s) => s.items.length > 0);
+            }))
+                .filter((s) => s.items.length > 0);
             break;
         // 'detailed' uses all sections as-is
     }

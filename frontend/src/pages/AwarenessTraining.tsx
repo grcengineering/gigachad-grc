@@ -167,7 +167,7 @@ export default function AwarenessTraining() {
                       {trainingModule.isBuiltIn
                         ? 'Built-in'
                         : trainingModule.scormPath
-                          ? 'SCORM ready'
+                          ? 'SCORM stored'
                           : 'Content pending'}
                     </Badge>
                   </div>

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ConflictException, Logger, Inject } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { serializeQueryResult } from './serialize-query-result';
 import { AuditService } from '../audit/audit.service';
 import { STORAGE_PROVIDER, StorageProvider, sanitizeFilename } from '@gigachad-grc/shared';
 import {
@@ -500,6 +501,6 @@ export class BCDRPlansService {
         AND deleted_at IS NULL
     `;
 
-    return stats[0];
+    return serializeQueryResult(stats[0]);
   }
 }

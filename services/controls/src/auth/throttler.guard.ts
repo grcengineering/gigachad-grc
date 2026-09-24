@@ -28,7 +28,7 @@ interface ThrottlerRequest {
  */
 @Injectable()
 export class CustomThrottlerGuard extends ThrottlerGuard {
-  private readonly logger = new Logger(CustomThrottlerGuard.name);
+  protected readonly logger = new Logger(CustomThrottlerGuard.name);
 
   /**
    * Get a unique identifier for the requesting client

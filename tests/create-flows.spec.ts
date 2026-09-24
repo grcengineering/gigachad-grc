@@ -26,9 +26,6 @@ test.describe('Risks — create flow', () => {
   test('Add Risk dialog opens, accepts input, and the submit click does not crash', async ({
     page,
   }) => {
-    // NOTE: Risk creation API has a pre-existing schema mismatch — backend rejects
-    // category/likelihood/impact fields that the frontend sends. This test verifies the
-    // UI flow doesn't crash; the dialog may stay open due to that 400 response.
     const errs = trackPageErrors(page);
     await page.goto('/risks');
     await page
@@ -38,15 +35,21 @@ test.describe('Risks — create flow', () => {
     const dialog = page.getByRole('heading', { name: /create new risk/i });
     await expect(dialog).toBeVisible();
 
-    await page.getByLabel('Title').fill(`Test Risk ${SUFFIX}`);
+    const title = `Test Risk ${SUFFIX}`;
+    await page.getByLabel('Title').fill(title);
     await page.getByLabel('Description').fill('Created by automated test');
 
+    const responsePromise = page.waitForResponse(
+      (response) => response.url().endsWith('/api/risks') && response.request().method() === 'POST'
+    );
     const submit = page.getByRole('button', { name: /^create risk$/i });
     await expect(submit).toBeEnabled();
     await submit.click();
 
-    // The click should not throw; the page must remain mounted whether the API succeeded or 400'd
-    await page.waitForTimeout(1000);
+    const response = await responsePromise;
+    expect(response.status()).toBe(201);
+    await expect(dialog).toBeHidden();
+    await expect(page.getByText(title).first()).toBeVisible();
     await expectPageHealthy(page, errs);
   });
 

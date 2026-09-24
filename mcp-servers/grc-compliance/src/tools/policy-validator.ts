@@ -197,13 +197,18 @@ export async function validatePolicyCompliance(
   params: PolicyValidationParams
 ): Promise<ValidationResult> {
   const { policyId, policyContent, framework, requirements } = params;
+  if (!policyContent?.trim()) {
+    throw new Error(
+      'Policy content is required; the standalone Compliance MCP server cannot retrieve a policy by ID.'
+    );
+  }
 
   const actualPolicyId = policyId || `policy-${Date.now()}`;
-  const content = policyContent || '';
+  const content = policyContent;
 
   // Get applicable requirements
   let applicableRequirements: string[] = [];
-  
+
   if (requirements && requirements.length > 0) {
     applicableRequirements = requirements;
   } else {
@@ -255,8 +260,8 @@ export async function validatePolicyCompliance(
         status === 'not_met'
           ? `Add section addressing: ${requirement}`
           : status === 'partially_met'
-          ? `Enhance coverage of: ${requirement}`
-          : undefined,
+            ? `Enhance coverage of: ${requirement}`
+            : undefined,
     });
   }
 
@@ -275,7 +280,7 @@ export async function validatePolicyCompliance(
 
   // Generate recommendations
   const recommendations: string[] = [];
-  
+
   if (missingElements.length > 0) {
     recommendations.push(
       `Add the following missing elements: ${missingElements.slice(0, 5).join(', ')}${
@@ -309,7 +314,3 @@ export async function validatePolicyCompliance(
     recommendations,
   };
 }
-
-
-
-

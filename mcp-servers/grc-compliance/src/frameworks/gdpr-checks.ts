@@ -1,3 +1,5 @@
+import { requireExplicitDemoMode } from '../demo-mode.js';
+
 interface GDPRCheckParams {
   articles?: string[];
   dataProcessingActivities?: string[];
@@ -107,6 +109,7 @@ const gdprArticles: Record<string, { title: string; articles: { id: string; name
 };
 
 export async function checkGDPRControls(params: GDPRCheckParams): Promise<GDPRCheckResult> {
+  requireExplicitDemoMode('GDPR automated compliance checking');
   const { articles: specificArticles, dataProcessingActivities } = params;
 
   const chapterResults: ChapterResult[] = [];
@@ -183,15 +186,15 @@ export async function checkGDPRControls(params: GDPRCheckParams): Promise<GDPRCh
       });
     }
 
-    const avgChapterScore = articlesToCheck.length > 0
-      ? Math.round(chapterScore / articlesToCheck.length)
-      : 0;
+    const avgChapterScore =
+      articlesToCheck.length > 0 ? Math.round(chapterScore / articlesToCheck.length) : 0;
 
     chapterResults.push({
       chapter: chapterKey,
       title: chapter.title,
       score: avgChapterScore,
-      status: avgChapterScore >= 80 ? 'Compliant' : avgChapterScore >= 50 ? 'Partial' : 'Non-Compliant',
+      status:
+        avgChapterScore >= 80 ? 'Compliant' : avgChapterScore >= 50 ? 'Partial' : 'Non-Compliant',
       articles: articleResults,
     });
 
@@ -261,10 +264,14 @@ export async function checkGDPRControls(params: GDPRCheckParams): Promise<GDPRCh
   const highFindings = findings.filter((f) => f.severity === 'high');
 
   if (criticalFindings.length > 0) {
-    recommendations.push(`URGENT: Address ${criticalFindings.length} critical finding(s) - significant fine risk`);
+    recommendations.push(
+      `URGENT: Address ${criticalFindings.length} critical finding(s) - significant fine risk`
+    );
   }
   if (highFindings.length > 0) {
-    recommendations.push(`HIGH: Remediate ${highFindings.length} high-priority finding(s) within 30 days`);
+    recommendations.push(
+      `HIGH: Remediate ${highFindings.length} high-priority finding(s) within 30 days`
+    );
   }
 
   // Specific recommendations based on chapter scores
@@ -285,7 +292,9 @@ export async function checkGDPRControls(params: GDPRCheckParams): Promise<GDPRCh
 
   if (overallScore < 80) {
     recommendations.push('Consider appointing or consulting with a DPO');
-    recommendations.push('Conduct Data Protection Impact Assessment (DPIA) for high-risk processing');
+    recommendations.push(
+      'Conduct Data Protection Impact Assessment (DPIA) for high-risk processing'
+    );
   }
 
   return {
@@ -293,12 +302,13 @@ export async function checkGDPRControls(params: GDPRCheckParams): Promise<GDPRCh
     checkedAt: new Date().toISOString(),
     chapters: chapterResults,
     overallScore,
-    status: overallScore >= 80 ? 'compliant' : overallScore >= 50 ? 'partially_compliant' : 'non_compliant',
+    status:
+      overallScore >= 80
+        ? 'compliant'
+        : overallScore >= 50
+          ? 'partially_compliant'
+          : 'non_compliant',
     findings,
     recommendations,
   };
 }
-
-
-
-

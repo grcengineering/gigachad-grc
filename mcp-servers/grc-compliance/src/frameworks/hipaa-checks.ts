@@ -1,3 +1,5 @@
+import { requireExplicitDemoMode } from '../demo-mode.js';
+
 interface HIPAACheckParams {
   ruleTypes?: ('privacy' | 'security' | 'breach_notification')[];
   safeguards?: ('administrative' | 'physical' | 'technical')[];
@@ -37,13 +39,20 @@ interface HIPAAFinding {
 }
 
 // HIPAA Requirements by Rule Type
-const hipaaRequirements: Record<string, { description: string; requirements: { id: string; name: string; safeguard?: string }[] }> = {
+const hipaaRequirements: Record<
+  string,
+  { description: string; requirements: { id: string; name: string; safeguard?: string }[] }
+> = {
   security: {
     description: 'HIPAA Security Rule - Administrative, Physical, and Technical Safeguards',
     requirements: [
       // Administrative Safeguards (45 CFR 164.308)
       { id: '164.308(a)(1)', name: 'Security Management Process', safeguard: 'administrative' },
-      { id: '164.308(a)(2)', name: 'Assigned Security Responsibility', safeguard: 'administrative' },
+      {
+        id: '164.308(a)(2)',
+        name: 'Assigned Security Responsibility',
+        safeguard: 'administrative',
+      },
       { id: '164.308(a)(3)', name: 'Workforce Security', safeguard: 'administrative' },
       { id: '164.308(a)(4)', name: 'Information Access Management', safeguard: 'administrative' },
       { id: '164.308(a)(5)', name: 'Security Awareness and Training', safeguard: 'administrative' },
@@ -51,13 +60,13 @@ const hipaaRequirements: Record<string, { description: string; requirements: { i
       { id: '164.308(a)(7)', name: 'Contingency Plan', safeguard: 'administrative' },
       { id: '164.308(a)(8)', name: 'Evaluation', safeguard: 'administrative' },
       { id: '164.308(b)(1)', name: 'Business Associate Contracts', safeguard: 'administrative' },
-      
+
       // Physical Safeguards (45 CFR 164.310)
       { id: '164.310(a)(1)', name: 'Facility Access Controls', safeguard: 'physical' },
       { id: '164.310(b)', name: 'Workstation Use', safeguard: 'physical' },
       { id: '164.310(c)', name: 'Workstation Security', safeguard: 'physical' },
       { id: '164.310(d)(1)', name: 'Device and Media Controls', safeguard: 'physical' },
-      
+
       // Technical Safeguards (45 CFR 164.312)
       { id: '164.312(a)(1)', name: 'Access Control', safeguard: 'technical' },
       { id: '164.312(b)', name: 'Audit Controls', safeguard: 'technical' },
@@ -100,10 +109,8 @@ const hipaaRequirements: Record<string, { description: string; requirements: { i
 };
 
 export async function checkHIPAAControls(params: HIPAACheckParams): Promise<HIPAACheckResult> {
-  const {
-    ruleTypes = ['security', 'privacy', 'breach_notification'],
-    safeguards,
-  } = params;
+  requireExplicitDemoMode('HIPAA automated compliance checking');
+  const { ruleTypes = ['security', 'privacy', 'breach_notification'], safeguards } = params;
 
   const ruleResults: RuleResult[] = [];
   const findings: HIPAAFinding[] = [];
@@ -121,7 +128,9 @@ export async function checkHIPAAControls(params: HIPAACheckParams): Promise<HIPA
     let requirementsToCheck = rule.requirements;
     if (safeguards && safeguards.length > 0 && ruleType === 'security') {
       requirementsToCheck = rule.requirements.filter(
-        (r) => r.safeguard && safeguards.includes(r.safeguard as 'administrative' | 'physical' | 'technical')
+        (r) =>
+          r.safeguard &&
+          safeguards.includes(r.safeguard as 'administrative' | 'physical' | 'technical')
       );
     }
 
@@ -179,9 +188,8 @@ export async function checkHIPAAControls(params: HIPAACheckParams): Promise<HIPA
       });
     }
 
-    const avgRuleScore = requirementsToCheck.length > 0
-      ? Math.round(ruleScore / requirementsToCheck.length)
-      : 0;
+    const avgRuleScore =
+      requirementsToCheck.length > 0 ? Math.round(ruleScore / requirementsToCheck.length) : 0;
 
     ruleResults.push({
       rule: ruleType,
@@ -203,16 +211,20 @@ export async function checkHIPAAControls(params: HIPAACheckParams): Promise<HIPA
   const highFindings = findings.filter((f) => f.severity === 'high');
 
   if (criticalFindings.length > 0) {
-    recommendations.push(`URGENT: Address ${criticalFindings.length} critical finding(s) - PHI at risk`);
+    recommendations.push(
+      `URGENT: Address ${criticalFindings.length} critical finding(s) - PHI at risk`
+    );
   }
   if (highFindings.length > 0) {
-    recommendations.push(`HIGH: Remediate ${highFindings.length} high-priority finding(s) within 30 days`);
+    recommendations.push(
+      `HIGH: Remediate ${highFindings.length} high-priority finding(s) within 30 days`
+    );
   }
   if (overallScore < 80) {
     recommendations.push('Conduct comprehensive HIPAA risk assessment');
     recommendations.push('Consider engaging HIPAA compliance consultant');
   }
-  
+
   const securityRule = ruleResults.find((r) => r.rule === 'security');
   if (securityRule && securityRule.score < 70) {
     recommendations.push('Prioritize Security Rule compliance - focus on technical safeguards');
@@ -223,12 +235,13 @@ export async function checkHIPAAControls(params: HIPAACheckParams): Promise<HIPA
     checkedAt: new Date().toISOString(),
     rules: ruleResults,
     overallScore,
-    status: overallScore >= 80 ? 'compliant' : overallScore >= 50 ? 'partially_compliant' : 'non_compliant',
+    status:
+      overallScore >= 80
+        ? 'compliant'
+        : overallScore >= 50
+          ? 'partially_compliant'
+          : 'non_compliant',
     findings,
     recommendations,
   };
 }
-
-
-
-

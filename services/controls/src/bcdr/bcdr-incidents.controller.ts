@@ -1,21 +1,6 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { CurrentUser, UserContext } from '@gigachad-grc/shared';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { BCDRIncidentsService } from './bcdr-incidents.service';
 import {
   DeclareIncidentDto,
@@ -47,10 +32,7 @@ export class BCDRIncidentsController {
   @Get()
   @ApiOperation({ summary: 'List BC/DR incidents' })
   @ApiResponse({ status: 200, description: 'Paginated incident list' })
-  async listIncidents(
-    @Query() filters: IncidentFilterDto,
-    @CurrentUser() user: UserContext,
-  ) {
+  async listIncidents(@Query() filters: IncidentFilterDto, @CurrentUser() user: UserContext) {
     return this.incidentsService.findAll(user.organizationId, filters);
   }
 
@@ -82,10 +64,7 @@ export class BCDRIncidentsController {
   @ApiParam({ name: 'id', description: 'Incident ID' })
   @ApiResponse({ status: 200, description: 'Incident details' })
   @ApiResponse({ status: 404, description: 'Incident not found' })
-  async getIncident(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  async getIncident(@Param('id') id: string, @CurrentUser() user: UserContext) {
     return this.incidentsService.findOne(id, user.organizationId);
   }
 
@@ -95,16 +74,13 @@ export class BCDRIncidentsController {
   @Post()
   @ApiOperation({ summary: 'Declare new BC/DR incident' })
   @ApiResponse({ status: 201, description: 'Incident declared' })
-  async declareIncident(
-    @Body() dto: DeclareIncidentDto,
-    @CurrentUser() user: UserContext,
-  ) {
+  async declareIncident(@Body() dto: DeclareIncidentDto, @CurrentUser() user: UserContext) {
     return this.incidentsService.declareIncident(
       user.organizationId,
       user.userId,
       dto,
       user.email,
-      user.name,
+      user.name
     );
   }
 
@@ -118,7 +94,7 @@ export class BCDRIncidentsController {
   async updateStatus(
     @Param('id') id: string,
     @Body() dto: UpdateIncidentStatusDto,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
     return this.incidentsService.updateStatus(
       id,
@@ -126,7 +102,7 @@ export class BCDRIncidentsController {
       user.userId,
       dto,
       user.email,
-      user.name,
+      user.name
     );
   }
 
@@ -140,7 +116,7 @@ export class BCDRIncidentsController {
   async addTimelineEntry(
     @Param('id') id: string,
     @Body() dto: AddTimelineEntryDto,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
     return this.incidentsService.addTimelineEntry(
       id,
@@ -148,7 +124,7 @@ export class BCDRIncidentsController {
       user.userId,
       dto,
       user.email,
-      user.name,
+      user.name
     );
   }
 
@@ -162,7 +138,7 @@ export class BCDRIncidentsController {
   async activatePlan(
     @Param('id') id: string,
     @Body() dto: ActivatePlanDto,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
     return this.incidentsService.activatePlan(
       id,
@@ -170,7 +146,7 @@ export class BCDRIncidentsController {
       user.userId,
       dto,
       user.email,
-      user.name,
+      user.name
     );
   }
 
@@ -184,7 +160,7 @@ export class BCDRIncidentsController {
   async activateTeam(
     @Param('id') id: string,
     @Body() dto: ActivateTeamDto,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
     return this.incidentsService.activateTeam(
       id,
@@ -192,7 +168,7 @@ export class BCDRIncidentsController {
       user.userId,
       dto,
       user.email,
-      user.name,
+      user.name
     );
   }
 
@@ -206,7 +182,7 @@ export class BCDRIncidentsController {
   async closeIncident(
     @Param('id') id: string,
     @Body() dto: CloseIncidentDto,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
     return this.incidentsService.closeIncident(
       id,
@@ -214,7 +190,7 @@ export class BCDRIncidentsController {
       user.userId,
       dto,
       user.email,
-      user.name,
+      user.name
     );
   }
 }

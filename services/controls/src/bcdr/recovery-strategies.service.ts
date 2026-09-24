@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { serializeQueryResult } from './serialize-query-result';
 import { AuditService } from '../audit/audit.service';
 import { CreateRecoveryStrategyDto } from './dto/bcdr.dto';
 
@@ -302,6 +303,6 @@ export class RecoveryStrategiesService {
         AND deleted_at IS NULL
     `;
 
-    return stats[0];
+    return serializeQueryResult(stats[0]);
   }
 }

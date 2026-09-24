@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger, Inject } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, UserRole } from '@prisma/client';
 import {
@@ -16,13 +16,17 @@ import {
   TrainingStatus,
   AssignmentStatus,
 } from './dto/training.dto';
-import { sanitizeFilename, isValidUuid } from '@gigachad-grc/shared';
+import {
+  sanitizeFilename,
+  isValidUuid,
+  STORAGE_PROVIDER,
+  StorageProvider,
+} from '@gigachad-grc/shared';
 import { DOMParser } from '@xmldom/xmldom';
 import JSZip from 'jszip';
 import PDFDocument from 'pdfkit';
 import * as path from 'path';
 import * as crypto from 'crypto';
-import { persistScormPackage, removeScormPackage } from './scorm-storage';
 
 // Static module IDs from frontend catalog
 const VALID_MODULE_IDS = [
@@ -41,7 +45,10 @@ const MAX_SCORM_EXPANDED_BYTES = 500 * 1024 * 1024;
 export class TrainingService {
   private readonly logger = new Logger(TrainingService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(STORAGE_PROVIDER) private readonly storage: StorageProvider
+  ) {}
 
   // ==========================================
   // Progress Management
@@ -870,7 +877,9 @@ export class TrainingService {
       throw new NotFoundException(`Custom module ${moduleId} not found`);
     }
 
-    await removeScormPackage(path.resolve(process.cwd(), 'uploads', 'training'), module.scormPath);
+    if (module.scormPath?.startsWith(`training/${organizationId}/${moduleId}/`)) {
+      await this.storage.delete(module.scormPath);
+    }
 
     return this.prisma.customTrainingModule.delete({
       where: { id: moduleId },
@@ -1018,24 +1027,21 @@ export class TrainingService {
       );
     }
 
-    const folderName = `${moduleId}-${crypto.randomBytes(4).toString('hex')}`;
-    const uploadsBasePath = path.resolve(process.cwd(), 'uploads', 'training');
+    const objectKey = `training/${organizationId}/${moduleId}/${crypto.randomBytes(8).toString('hex')}.zip`;
     const safeFilename = sanitizeFilename(file.originalname);
     if (safeFilename.includes('..') || safeFilename.includes('\0')) {
       throw new BadRequestException('Invalid filename');
     }
 
     try {
-      const resolvedUploadDir = await persistScormPackage(entries, uploadsBasePath, folderName, {
-        version: scormVersion,
-        launchPath,
-        originalFileName: safeFilename,
+      await this.storage.upload(file.buffer, objectKey, {
+        contentType: 'application/zip',
       });
 
       const updated = await this.prisma.customTrainingModule.update({
         where: { id: moduleId },
         data: {
-          scormPath: folderName,
+          scormPath: objectKey,
           originalFileName: safeFilename,
         },
         include: {
@@ -1050,14 +1056,121 @@ export class TrainingService {
         },
       });
 
-      await removeScormPackage(uploadsBasePath, module.scormPath, resolvedUploadDir);
+      if (
+        module.scormPath?.startsWith(`training/${organizationId}/${moduleId}/`) &&
+        module.scormPath !== objectKey
+      ) {
+        await this.storage.delete(module.scormPath);
+      }
 
       this.logger.log(`Validated ${scormVersion} package uploaded for module ${moduleId}`);
       return { ...updated, scorm: { version: scormVersion, launchPath } };
     } catch (error) {
-      await removeScormPackage(uploadsBasePath, folderName);
+      await this.storage.delete(objectKey).catch(() => undefined);
       throw error;
     }
+  }
+
+  async getScormAsset(
+    organizationId: string,
+    moduleId: string,
+    requestedPath?: string
+  ): Promise<{ content: Buffer; contentType: string; path: string }> {
+    const module = await this.prisma.customTrainingModule.findFirst({
+      where: { id: moduleId, organizationId, isActive: true },
+      select: { scormPath: true },
+    });
+    if (
+      !module?.scormPath ||
+      !module.scormPath.startsWith(`training/${organizationId}/${moduleId}/`)
+    ) {
+      throw new NotFoundException('SCORM package not found');
+    }
+
+    const stream = await this.storage.download(module.scormPath);
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) {
+      chunks.push(Buffer.from(chunk));
+    }
+    const zip = await JSZip.loadAsync(Buffer.concat(chunks), {
+      checkCRC32: true,
+      createFolders: true,
+    });
+
+    const assetPath = requestedPath
+      ? this.validateScormAssetPath(requestedPath)
+      : await this.getScormLaunchPath(zip);
+    const entry = zip.file(assetPath);
+    if (!entry || entry.dir) {
+      throw new NotFoundException('SCORM asset not found');
+    }
+    return {
+      content: await entry.async('nodebuffer'),
+      contentType: this.getScormContentType(assetPath),
+      path: assetPath,
+    };
+  }
+
+  private validateScormAssetPath(requestedPath: string): string {
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(requestedPath);
+    } catch {
+      throw new BadRequestException('Invalid SCORM asset path');
+    }
+    const normalized = path.posix.normalize(decoded.replace(/\\/g, '/').replace(/^\/+/, ''));
+    const segments = normalized.split('/').filter(Boolean);
+    if (
+      !normalized ||
+      normalized === '..' ||
+      normalized.startsWith('../') ||
+      segments.some(
+        (segment) => segment === '.' || segment === '..' || !/^[A-Za-z0-9._ ()@+-]+$/.test(segment)
+      )
+    ) {
+      throw new BadRequestException('Invalid SCORM asset path');
+    }
+    return normalized;
+  }
+
+  private async getScormLaunchPath(zip: JSZip): Promise<string> {
+    const manifestEntry = zip.file('imsmanifest.xml');
+    if (!manifestEntry) throw new BadRequestException('SCORM manifest is missing');
+    const manifest = await manifestEntry.async('string');
+    const document = new DOMParser().parseFromString(manifest, 'application/xml');
+    const resources = [
+      ...Array.from(document.getElementsByTagName('resource')),
+      ...Array.from(document.getElementsByTagNameNS('*', 'resource')),
+    ];
+    const launchHref = resources
+      .map((resource) => resource.getAttribute('href'))
+      .find((href): href is string => Boolean(href));
+    if (!launchHref) throw new BadRequestException('SCORM launch resource is missing');
+    return this.validateScormAssetPath(launchHref.split(/[?#]/, 1)[0]);
+  }
+
+  private getScormContentType(assetPath: string): string {
+    const extension = path.extname(assetPath).toLowerCase();
+    const contentTypes: Record<string, string> = {
+      '.html': 'text/html; charset=utf-8',
+      '.htm': 'text/html; charset=utf-8',
+      '.js': 'application/javascript; charset=utf-8',
+      '.css': 'text/css; charset=utf-8',
+      '.json': 'application/json; charset=utf-8',
+      '.svg': 'image/svg+xml',
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.gif': 'image/gif',
+      '.webp': 'image/webp',
+      '.mp4': 'video/mp4',
+      '.webm': 'video/webm',
+      '.mp3': 'audio/mpeg',
+      '.wav': 'audio/wav',
+      '.pdf': 'application/pdf',
+      '.xml': 'application/xml',
+    };
+    return contentTypes[extension] || 'application/octet-stream';
   }
 
   /**
@@ -1097,6 +1210,7 @@ export class TrainingService {
       custom: customModules.map((m) => ({
         ...m,
         isBuiltIn: false,
+        scormLaunchUrl: m.scormPath ? `/api/training/modules/custom/${m.id}/scorm` : undefined,
       })),
     };
   }

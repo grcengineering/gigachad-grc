@@ -1,8 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import JSZip from 'jszip';
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
+import { Readable } from 'stream';
 import { TrainingService } from './training.service';
 
 describe('TrainingService security and artifacts', () => {
@@ -24,7 +22,12 @@ describe('TrainingService security and artifacts', () => {
       },
       ...prismaOverrides,
     };
-    return { service: new TrainingService(prisma as never), prisma };
+    const storage = {
+      upload: jest.fn().mockResolvedValue('stored'),
+      download: jest.fn(),
+      delete: jest.fn().mockResolvedValue(undefined),
+    };
+    return { service: new TrainingService(prisma as never, storage as never), prisma, storage };
   }
 
   it('never includes answer keys in quiz question responses', async () => {
@@ -80,52 +83,44 @@ describe('TrainingService security and artifacts', () => {
   });
 
   it('extracts and validates a supported SCORM package', async () => {
-    const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'grc-scorm-'));
-    const previousCwd = process.cwd();
-    process.chdir(temporaryDirectory);
-    try {
-      const zip = new JSZip();
-      zip.file(
-        'imsmanifest.xml',
-        `<?xml version="1.0"?>
+    const zip = new JSZip();
+    zip.file(
+      'imsmanifest.xml',
+      `<?xml version="1.0"?>
 <manifest xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2">
   <metadata><schemaversion>1.2</schemaversion></metadata>
   <resources><resource identifier="resource-1" href="index.html" /></resources>
 </manifest>`
-      );
-      zip.file('index.html', '<!doctype html><title>Training</title>');
-      const buffer = await zip.generateAsync({ type: 'nodebuffer' });
+    );
+    zip.file('index.html', '<!doctype html><title>Training</title>');
+    const buffer = await zip.generateAsync({ type: 'nodebuffer' });
 
-      const { service, prisma } = createService();
-      (prisma.customTrainingModule.findFirst as jest.Mock).mockResolvedValue({
-        id: moduleId,
-        organizationId,
-        scormPath: null,
-      });
-      (prisma.customTrainingModule.update as jest.Mock).mockResolvedValue({
-        id: moduleId,
-        name: 'Custom course',
-      });
+    const { service, prisma, storage } = createService();
+    (prisma.customTrainingModule.findFirst as jest.Mock).mockResolvedValue({
+      id: moduleId,
+      organizationId,
+      scormPath: null,
+    });
+    (prisma.customTrainingModule.update as jest.Mock).mockImplementation(({ data }) => ({
+      id: moduleId,
+      name: 'Custom course',
+      ...data,
+    }));
 
-      const result = await service.uploadScormPackage(organizationId, moduleId, {
-        buffer,
-        originalname: 'course.zip',
-      });
+    const result = await service.uploadScormPackage(organizationId, moduleId, {
+      buffer,
+      originalname: 'course.zip',
+    });
 
-      expect(result.scorm).toEqual({
-        version: 'SCORM 1.2',
-        launchPath: 'index.html',
-      });
-      const update = (prisma.customTrainingModule.update as jest.Mock).mock.calls[0][0];
-      expect(
-        fs.existsSync(
-          path.join(temporaryDirectory, 'uploads', 'training', update.data.scormPath, 'index.html')
-        )
-      ).toBe(true);
-    } finally {
-      process.chdir(previousCwd);
-      fs.rmSync(temporaryDirectory, { recursive: true, force: true });
-    }
+    expect(result.scorm).toEqual({
+      version: 'SCORM 1.2',
+      launchPath: 'index.html',
+    });
+    expect(storage.upload).toHaveBeenCalledWith(
+      buffer,
+      expect.stringMatching(new RegExp(`^training/${organizationId}/${moduleId}/[a-f0-9]+\\.zip$`)),
+      { contentType: 'application/zip' }
+    );
   });
 
   it('rejects ZIP files without a root SCORM manifest', async () => {
@@ -144,6 +139,30 @@ describe('TrainingService security and artifacts', () => {
         originalname: 'not-scorm.zip',
       })
     ).rejects.toThrow('imsmanifest.xml');
+  });
+
+  it('serves the launch file from durable object storage', async () => {
+    const zip = new JSZip();
+    zip.file(
+      'imsmanifest.xml',
+      `<manifest><metadata><schemaversion>1.2</schemaversion></metadata><resources><resource href="course/index.html" /></resources></manifest>`
+    );
+    zip.file('course/index.html', '<!doctype html><title>Durable course</title>');
+    const buffer = await zip.generateAsync({ type: 'nodebuffer' });
+    const { service, prisma, storage } = createService();
+    (prisma.customTrainingModule.findFirst as jest.Mock).mockResolvedValue({
+      id: moduleId,
+      organizationId,
+      isActive: true,
+      scormPath: `training/${organizationId}/${moduleId}/package.zip`,
+    });
+    storage.download.mockResolvedValue(Readable.from(buffer));
+
+    const asset = await service.getScormAsset(organizationId, moduleId);
+
+    expect(asset.path).toBe('course/index.html');
+    expect(asset.contentType).toContain('text/html');
+    expect(asset.content.toString()).toContain('Durable course');
   });
 
   it('renders a real PDF certificate for its owner', async () => {

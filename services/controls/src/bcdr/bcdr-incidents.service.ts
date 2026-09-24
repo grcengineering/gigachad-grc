@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { serializeQueryResult } from './serialize-query-result';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../notifications/dto/notification.dto';
@@ -521,6 +522,6 @@ export class BCDRIncidentsService {
       WHERE organization_id = ${organizationId}
     `;
 
-    return stats[0];
+    return serializeQueryResult(stats[0]);
   }
 }

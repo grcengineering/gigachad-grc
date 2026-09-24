@@ -27,21 +27,6 @@ import {
   Badge,
 } from '@/components/ui';
 
-// Synthetic trend generator — until backend exposes time-series.
-// Generates an array that ends at `current` with believable variance.
-function trend(current: number, points = 14, variance = 0.15): number[] {
-  if (current === 0) return Array.from({ length: points }, () => 0);
-  const result: number[] = [];
-  let val = Math.max(1, Math.round(current * (1 - Math.random() * variance)));
-  for (let i = 0; i < points - 1; i++) {
-    const delta = (Math.random() - 0.45) * current * (variance / points) * 3;
-    val = Math.max(0, val + delta);
-    result.push(Math.round(val));
-  }
-  result.push(current);
-  return result;
-}
-
 interface AttentionItem {
   icon: React.ReactNode;
   title: string;
@@ -68,6 +53,11 @@ export default function Dashboard() {
   const { data: policyStats, isLoading: policiesLoading } = useQuery({
     queryKey: ['policy-stats'],
     queryFn: () => policiesApi.getStats().then((res) => res.data),
+  });
+
+  const { data: complianceTrend = [] } = useQuery<Array<{ date: string; score: number }>>({
+    queryKey: ['dashboard-compliance-trend', 14],
+    queryFn: () => dashboardApi.getComplianceTrend(14).then((res) => res.data),
   });
 
   const isLoading = summaryLoading || frameworksLoading || policiesLoading;
@@ -105,6 +95,7 @@ export default function Dashboard() {
   const policyOverdue = policyStats?.overdueReview || 0;
   const totalPolicies = policyStats?.total || 0;
   const policiesPublished = policyStats?.published || 0;
+  const complianceTrendValues = complianceTrend.map((point) => point.score);
 
   const attentionItems: AttentionItem[] = [];
   if (controlsOverdue > 0) {
@@ -163,7 +154,7 @@ export default function Dashboard() {
           value={`${complianceScore}%`}
           icon={<Shield className="h-5 w-5" />}
           tone="brand"
-          trend={trend(complianceScore, 14, 0.08)}
+          trend={complianceTrendValues}
           caption={
             complianceScore >= 80
               ? 'On track'
@@ -178,7 +169,6 @@ export default function Dashboard() {
           value={implementedControls}
           icon={<CheckCircle2 className="h-5 w-5" />}
           tone="emerald"
-          trend={trend(implementedControls)}
           caption={`of ${totalControls} total`}
           onClick={() => navigate('/controls')}
         />
@@ -187,7 +177,6 @@ export default function Dashboard() {
           value={policiesPublished}
           icon={<FileText className="h-5 w-5" />}
           tone="accent"
-          trend={trend(policiesPublished)}
           caption={`of ${totalPolicies} total`}
           onClick={() => navigate('/policies')}
         />
@@ -196,7 +185,6 @@ export default function Dashboard() {
           value={evidenceTotal}
           icon={<Sparkles className="h-5 w-5" />}
           tone="purple"
-          trend={trend(evidenceTotal)}
           onClick={() => navigate('/evidence')}
         />
       </div>

@@ -1,3 +1,5 @@
+import { requireExplicitDemoMode } from '../demo-mode.js';
+
 interface ISO27001CheckParams {
   annexAControls?: string[];
   domains?: string[];
@@ -37,7 +39,10 @@ interface ISO27001Finding {
 }
 
 // ISO 27001:2022 Annex A Controls
-const annexAControls: Record<string, { description: string; controls: { id: string; name: string }[] }> = {
+const annexAControls: Record<
+  string,
+  { description: string; controls: { id: string; name: string }[] }
+> = {
   'A.5': {
     description: 'Organizational controls',
     controls: [
@@ -76,7 +81,10 @@ const annexAControls: Record<string, { description: string; controls: { id: stri
       { id: 'A.5.33', name: 'Protection of records' },
       { id: 'A.5.34', name: 'Privacy and protection of PII' },
       { id: 'A.5.35', name: 'Independent review of information security' },
-      { id: 'A.5.36', name: 'Compliance with policies, rules and standards for information security' },
+      {
+        id: 'A.5.36',
+        name: 'Compliance with policies, rules and standards for information security',
+      },
       { id: 'A.5.37', name: 'Documented operating procedures' },
     ],
   },
@@ -153,7 +161,10 @@ const annexAControls: Record<string, { description: string; controls: { id: stri
   },
 };
 
-export async function checkISO27001Controls(params: ISO27001CheckParams): Promise<ISO27001CheckResult> {
+export async function checkISO27001Controls(
+  params: ISO27001CheckParams
+): Promise<ISO27001CheckResult> {
+  requireExplicitDemoMode('ISO 27001 automated compliance checking');
   const { annexAControls: specificControls, domains: specificDomains } = params;
 
   const domainResults: DomainResult[] = [];
@@ -179,9 +190,7 @@ export async function checkISO27001Controls(params: ISO27001CheckParams): Promis
     // Filter controls if specific ones are requested
     let controlsToCheck = domain.controls;
     if (specificControls && specificControls.length > 0) {
-      controlsToCheck = domain.controls.filter((c) =>
-        specificControls.includes(c.id)
-      );
+      controlsToCheck = domain.controls.filter((c) => specificControls.includes(c.id));
     }
 
     for (const control of controlsToCheck) {
@@ -232,15 +241,15 @@ export async function checkISO27001Controls(params: ISO27001CheckParams): Promis
       });
     }
 
-    const avgDomainScore = controlsToCheck.length > 0
-      ? Math.round(domainScore / controlsToCheck.length)
-      : 0;
+    const avgDomainScore =
+      controlsToCheck.length > 0 ? Math.round(domainScore / controlsToCheck.length) : 0;
 
     domainResults.push({
       domain: domainKey,
       description: domain.description,
       score: avgDomainScore,
-      status: avgDomainScore >= 80 ? 'Compliant' : avgDomainScore >= 50 ? 'Partial' : 'Non-Compliant',
+      status:
+        avgDomainScore >= 80 ? 'Compliant' : avgDomainScore >= 50 ? 'Partial' : 'Non-Compliant',
       controls: controlResults,
     });
 
@@ -255,12 +264,14 @@ export async function checkISO27001Controls(params: ISO27001CheckParams): Promis
   const highFindings = findings.filter((f) => f.severity === 'high' || f.severity === 'critical');
 
   if (highFindings.length > 0) {
-    recommendations.push(`Address ${highFindings.length} high-priority finding(s) before certification audit`);
+    recommendations.push(
+      `Address ${highFindings.length} high-priority finding(s) before certification audit`
+    );
   }
   if (overallScore < 80) {
     recommendations.push('Engage ISO 27001 consultant for implementation guidance');
   }
-  
+
   const lowScoreDomains = domainResults.filter((d) => d.score < 50);
   if (lowScoreDomains.length > 0) {
     recommendations.push(`Focus on improving: ${lowScoreDomains.map((d) => d.domain).join(', ')}`);
@@ -271,12 +282,13 @@ export async function checkISO27001Controls(params: ISO27001CheckParams): Promis
     checkedAt: new Date().toISOString(),
     domains: domainResults,
     overallScore,
-    status: overallScore >= 80 ? 'compliant' : overallScore >= 50 ? 'partially_compliant' : 'non_compliant',
+    status:
+      overallScore >= 80
+        ? 'compliant'
+        : overallScore >= 50
+          ? 'partially_compliant'
+          : 'non_compliant',
     findings,
     recommendations,
   };
 }
-
-
-
-

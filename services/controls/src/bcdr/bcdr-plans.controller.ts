@@ -45,7 +45,7 @@ export const BCDR_PLAN_MAX_BYTES = 25 * 1024 * 1024;
 export function bcdrPlanFileFilter(
   _req: unknown,
   file: { mimetype: string },
-  cb: (err: Error | null, acceptFile: boolean) => void,
+  cb: (err: Error | null, acceptFile: boolean) => void
 ): void {
   if (BCDR_PLAN_MIME_ALLOWLIST.includes(file.mimetype)) {
     cb(null, true);
@@ -65,10 +65,7 @@ export class BCDRPlansController {
   @ApiOperation({ summary: 'List BC/DR plans' })
   @ApiResponse({ status: 200, description: 'List of BC/DR plans' })
   @RequirePermission(Resource.BCDR, Action.READ)
-  async findAll(
-    @CurrentUser() user: UserContext,
-    @Query() filters: BCDRPlanFilterDto,
-  ) {
+  async findAll(@CurrentUser() user: UserContext, @Query() filters: BCDRPlanFilterDto) {
     return this.plansService.findAll(user.organizationId, filters);
   }
 
@@ -83,10 +80,7 @@ export class BCDRPlansController {
   @ApiOperation({ summary: 'Get BC/DR plan details' })
   @ApiParam({ name: 'id', description: 'Plan ID' })
   @RequirePermission(Resource.BCDR, Action.READ)
-  async findOne(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  async findOne(@Param('id') id: string, @CurrentUser() user: UserContext) {
     return this.plansService.findOne(id, user.organizationId);
   }
 
@@ -94,17 +88,8 @@ export class BCDRPlansController {
   @ApiOperation({ summary: 'Create a BC/DR plan' })
   @ApiResponse({ status: 201, description: 'Plan created' })
   @RequirePermission(Resource.BCDR, Action.CREATE)
-  async create(
-    @CurrentUser() user: UserContext,
-    @Body() dto: CreateBCDRPlanDto,
-  ) {
-    return this.plansService.create(
-      user.organizationId,
-      user.userId,
-      dto,
-      user.email,
-      user.name,
-    );
+  async create(@CurrentUser() user: UserContext, @Body() dto: CreateBCDRPlanDto) {
+    return this.plansService.create(user.organizationId, user.userId, dto, user.email, user.name);
   }
 
   @Put(':id')
@@ -114,7 +99,7 @@ export class BCDRPlansController {
   async update(
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
-    @Body() dto: UpdateBCDRPlanDto,
+    @Body() dto: UpdateBCDRPlanDto
   ) {
     return this.plansService.update(
       id,
@@ -122,7 +107,7 @@ export class BCDRPlansController {
       user.userId,
       dto,
       user.email,
-      user.name,
+      user.name
     );
   }
 
@@ -133,7 +118,7 @@ export class BCDRPlansController {
   async partialUpdate(
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
-    @Body() dto: UpdateBCDRPlanDto,
+    @Body() dto: UpdateBCDRPlanDto
   ) {
     return this.plansService.update(
       id,
@@ -141,7 +126,7 @@ export class BCDRPlansController {
       user.userId,
       dto,
       user.email,
-      user.name,
+      user.name
     );
   }
 
@@ -149,17 +134,8 @@ export class BCDRPlansController {
   @ApiOperation({ summary: 'Delete a BC/DR plan' })
   @ApiParam({ name: 'id', description: 'Plan ID' })
   @RequirePermission(Resource.BCDR, Action.DELETE)
-  async delete(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
-    return this.plansService.delete(
-      id,
-      user.organizationId,
-      user.userId,
-      user.email,
-      user.name,
-    );
+  async delete(@Param('id') id: string, @CurrentUser() user: UserContext) {
+    return this.plansService.delete(id, user.organizationId, user.userId, user.email, user.name);
   }
 
   @Post(':id/upload')
@@ -167,7 +143,7 @@ export class BCDRPlansController {
     FileInterceptor('file', {
       limits: { fileSize: BCDR_PLAN_MAX_BYTES },
       fileFilter: bcdrPlanFileFilter,
-    }),
+    })
   )
   @ApiOperation({ summary: 'Upload plan document' })
   @ApiParam({ name: 'id', description: 'Plan ID' })
@@ -186,7 +162,7 @@ export class BCDRPlansController {
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
     @UploadedFile() file: Express.Multer.File,
-    @Body('versionNumber') versionNumber?: string,
+    @Body('versionNumber') versionNumber?: string
   ) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
@@ -197,7 +173,7 @@ export class BCDRPlansController {
       user.organizationId,
       user.userId,
       file,
-      versionNumber,
+      versionNumber
     );
   }
 
@@ -208,7 +184,7 @@ export class BCDRPlansController {
   async linkControl(
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
-    @Body() body: { controlId: string; notes?: string },
+    @Body() body: { controlId: string; notes?: string }
   ) {
     return this.plansService.linkControl(id, body.controlId, user.userId, body.notes);
   }
@@ -218,11 +194,7 @@ export class BCDRPlansController {
   @ApiParam({ name: 'id', description: 'Plan ID' })
   @ApiParam({ name: 'controlId', description: 'Control ID' })
   @RequirePermission(Resource.BCDR, Action.UPDATE)
-  async unlinkControl(
-    @Param('id') id: string,
-    @Param('controlId') controlId: string,
-  ) {
+  async unlinkControl(@Param('id') id: string, @Param('controlId') controlId: string) {
     return this.plansService.unlinkControl(id, controlId);
   }
 }
-

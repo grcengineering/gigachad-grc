@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ConflictException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { serializeQueryResult } from './serialize-query-result';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType, NotificationSeverity } from '../notifications/dto/notification.dto';
@@ -607,9 +608,9 @@ export class DRTestsService {
         AND f.remediation_status NOT IN ('resolved', 'accepted')
     `;
 
-    return {
+    return serializeQueryResult({
       ...stats[0],
       openFindingsCount: Number(openFindings[0]?.count || 0),
-    };
+    });
   }
 }

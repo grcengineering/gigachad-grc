@@ -62,6 +62,7 @@ COPY --from=builder /app/audit/package.json ./
 COPY --from=builder /app/shared/dist ./node_modules/@gigachad-grc/shared/dist
 COPY --from=builder /app/shared/package.json ./node_modules/@gigachad-grc/shared/
 COPY --from=builder /app/shared/node_modules ./node_modules/@gigachad-grc/shared/node_modules
+COPY --from=builder /app/shared/vendor ./node_modules/@gigachad-grc/shared/vendor
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs

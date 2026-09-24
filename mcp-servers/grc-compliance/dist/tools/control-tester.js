@@ -1,3 +1,4 @@
+import { requireExplicitDemoMode } from '../demo-mode.js';
 // Control test definitions
 const controlTests = {
     // Access Control Tests
@@ -185,6 +186,7 @@ const controlTests = {
     }),
 };
 export async function runControlTest(params) {
+    requireExplicitDemoMode('Automated control testing');
     const { controlId, controlType, testConfiguration } = params;
     const startTime = Date.now();
     const testId = `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;

@@ -1,3 +1,4 @@
+import { requireExplicitDemoMode } from '../demo-mode.js';
 // ISO 27001:2022 Annex A Controls
 const annexAControls = {
     'A.5': {
@@ -38,7 +39,10 @@ const annexAControls = {
             { id: 'A.5.33', name: 'Protection of records' },
             { id: 'A.5.34', name: 'Privacy and protection of PII' },
             { id: 'A.5.35', name: 'Independent review of information security' },
-            { id: 'A.5.36', name: 'Compliance with policies, rules and standards for information security' },
+            {
+                id: 'A.5.36',
+                name: 'Compliance with policies, rules and standards for information security',
+            },
             { id: 'A.5.37', name: 'Documented operating procedures' },
         ],
     },
@@ -115,6 +119,7 @@ const annexAControls = {
     },
 };
 export async function checkISO27001Controls(params) {
+    requireExplicitDemoMode('ISO 27001 automated compliance checking');
     const { annexAControls: specificControls, domains: specificDomains } = params;
     const domainResults = [];
     const findings = [];
@@ -183,9 +188,7 @@ export async function checkISO27001Controls(params) {
                 findings: controlFindings,
             });
         }
-        const avgDomainScore = controlsToCheck.length > 0
-            ? Math.round(domainScore / controlsToCheck.length)
-            : 0;
+        const avgDomainScore = controlsToCheck.length > 0 ? Math.round(domainScore / controlsToCheck.length) : 0;
         domainResults.push({
             domain: domainKey,
             description: domain.description,
@@ -215,7 +218,11 @@ export async function checkISO27001Controls(params) {
         checkedAt: new Date().toISOString(),
         domains: domainResults,
         overallScore,
-        status: overallScore >= 80 ? 'compliant' : overallScore >= 50 ? 'partially_compliant' : 'non_compliant',
+        status: overallScore >= 80
+            ? 'compliant'
+            : overallScore >= 50
+                ? 'partially_compliant'
+                : 'non_compliant',
         findings,
         recommendations,
     };

@@ -36,6 +36,15 @@ interface SearchResult {
   path: string;
 }
 
+interface ApiSearchResult {
+  id: string;
+  entityType: SearchResult['type'];
+  title: string;
+  description?: string;
+  identifier?: string;
+  url: string;
+}
+
 const SEARCH_ICONS = {
   control: ShieldCheckIcon,
   framework: CubeIcon,
@@ -77,10 +86,16 @@ export default function GlobalSearch() {
       if (!query || query.length < 2) return [];
 
       try {
-        const response = await api.get('/api/search/global', {
-          params: { q: query },
+        const response = await api.get('/api/search', {
+          params: { query },
         });
-        return response.data.data || [];
+        return (response.data.results || []).map((result: ApiSearchResult) => ({
+          type: result.entityType,
+          id: result.id,
+          title: result.title,
+          subtitle: result.identifier || result.description,
+          path: result.url,
+        }));
       } catch (error) {
         console.error('Search error:', error);
         return [];

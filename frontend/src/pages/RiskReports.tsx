@@ -110,7 +110,16 @@ export default function RiskReports() {
   const { data: risksData, isLoading } = useQuery({
     queryKey: ['risks', 'report', filters],
     queryFn: () =>
-      api.get('/api/risks/full', { params: { ...filters, limit: 1000 } }).then((r) => r.data),
+      api
+        .get('/api/risks/full', {
+          params: {
+            ...(filters.category && { category: filters.category }),
+            ...(filters.riskLevel && { riskLevel: filters.riskLevel }),
+            ...(filters.status && { status: filters.status }),
+            limit: 1000,
+          },
+        })
+        .then((r) => r.data),
     enabled: !!selectedReport,
   });
 

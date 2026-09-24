@@ -1,21 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { BusinessProcessesService } from './business-processes.service';
 import {
   CreateBusinessProcessDto,
@@ -37,10 +21,7 @@ export class BusinessProcessesController {
   @Get()
   @ApiOperation({ summary: 'List business processes' })
   @ApiResponse({ status: 200, description: 'List of business processes' })
-  async findAll(
-    @CurrentUser() user: UserContext,
-    @Query() filters: BusinessProcessFilterDto,
-  ) {
+  async findAll(@CurrentUser() user: UserContext, @Query() filters: BusinessProcessFilterDto) {
     return this.processesService.findAll(user.organizationId, filters);
   }
 
@@ -59,26 +40,20 @@ export class BusinessProcessesController {
   @Get(':id')
   @ApiOperation({ summary: 'Get business process details' })
   @ApiParam({ name: 'id', description: 'Business process ID' })
-  async findOne(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  async findOne(@Param('id') id: string, @CurrentUser() user: UserContext) {
     return this.processesService.findOne(id, user.organizationId);
   }
 
   @Post()
   @ApiOperation({ summary: 'Create a business process' })
   @ApiResponse({ status: 201, description: 'Business process created' })
-  async create(
-    @CurrentUser() user: UserContext,
-    @Body() dto: CreateBusinessProcessDto,
-  ) {
+  async create(@CurrentUser() user: UserContext, @Body() dto: CreateBusinessProcessDto) {
     return this.processesService.create(
       user.organizationId,
       user.userId,
       dto,
       user.email,
-      user.name,
+      user.name
     );
   }
 
@@ -88,7 +63,7 @@ export class BusinessProcessesController {
   async update(
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
-    @Body() dto: UpdateBusinessProcessDto,
+    @Body() dto: UpdateBusinessProcessDto
   ) {
     return this.processesService.update(
       id,
@@ -96,33 +71,27 @@ export class BusinessProcessesController {
       user.userId,
       dto,
       user.email,
-      user.name,
+      user.name
     );
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a business process' })
   @ApiParam({ name: 'id', description: 'Business process ID' })
-  async delete(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  async delete(@Param('id') id: string, @CurrentUser() user: UserContext) {
     return this.processesService.delete(
       id,
       user.organizationId,
       user.userId,
       user.email,
-      user.name,
+      user.name
     );
   }
 
   @Post(':id/mark-reviewed')
   @ApiOperation({ summary: 'Mark process as reviewed' })
   @ApiParam({ name: 'id', description: 'Business process ID' })
-  async markReviewed(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  async markReviewed(@Param('id') id: string, @CurrentUser() user: UserContext) {
     return this.processesService.markReviewed(id, user.organizationId, user.userId);
   }
 
@@ -133,7 +102,7 @@ export class BusinessProcessesController {
   async addDependency(
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
-    @Body() dto: AddProcessDependencyDto,
+    @Body() dto: AddProcessDependencyDto
   ) {
     return this.processesService.addDependency(id, user.organizationId, user.userId, dto);
   }
@@ -142,10 +111,7 @@ export class BusinessProcessesController {
   @ApiOperation({ summary: 'Remove a dependency from a process' })
   @ApiParam({ name: 'id', description: 'Business process ID' })
   @ApiParam({ name: 'dependencyId', description: 'Dependency process ID' })
-  async removeDependency(
-    @Param('id') id: string,
-    @Param('dependencyId') dependencyId: string,
-  ) {
+  async removeDependency(@Param('id') id: string, @Param('dependencyId') dependencyId: string) {
     return this.processesService.removeDependency(id, dependencyId);
   }
 
@@ -156,7 +122,7 @@ export class BusinessProcessesController {
   async linkAsset(
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
-    @Body() dto: LinkProcessAssetDto,
+    @Body() dto: LinkProcessAssetDto
   ) {
     return this.processesService.linkAsset(id, user.organizationId, user.userId, dto);
   }
@@ -165,10 +131,7 @@ export class BusinessProcessesController {
   @ApiOperation({ summary: 'Unlink an asset from a process' })
   @ApiParam({ name: 'id', description: 'Business process ID' })
   @ApiParam({ name: 'assetId', description: 'Asset ID' })
-  async unlinkAsset(
-    @Param('id') id: string,
-    @Param('assetId') assetId: string,
-  ) {
+  async unlinkAsset(@Param('id') id: string, @Param('assetId') assetId: string) {
     return this.processesService.unlinkAsset(id, assetId);
   }
 
@@ -179,7 +142,7 @@ export class BusinessProcessesController {
   async linkRisk(
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
-    @Body() body: { riskId: string; notes?: string },
+    @Body() body: { riskId: string; notes?: string }
   ) {
     return this.processesService.linkRisk(id, body.riskId, user.userId, body.notes);
   }
@@ -188,11 +151,7 @@ export class BusinessProcessesController {
   @ApiOperation({ summary: 'Unlink a risk from a process' })
   @ApiParam({ name: 'id', description: 'Business process ID' })
   @ApiParam({ name: 'riskId', description: 'Risk ID' })
-  async unlinkRisk(
-    @Param('id') id: string,
-    @Param('riskId') riskId: string,
-  ) {
+  async unlinkRisk(@Param('id') id: string, @Param('riskId') riskId: string) {
     return this.processesService.unlinkRisk(id, riskId);
   }
 }
-

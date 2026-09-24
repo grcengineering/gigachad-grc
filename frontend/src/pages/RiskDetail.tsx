@@ -469,21 +469,23 @@ export default function RiskDetail() {
               <div className="flex justify-between items-center">
                 <span className="text-surface-600">Likelihood</span>
                 <span className="text-surface-900 capitalize">
-                  {risk.likelihood.replace('_', ' ')}
+                  {risk.likelihood ? risk.likelihood.replace('_', ' ') : 'Not assessed'}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-surface-600">Impact</span>
-                <span className="text-surface-900 capitalize">{risk.impact}</span>
+                <span className="text-surface-900 capitalize">{risk.impact || 'Not assessed'}</span>
               </div>
               <div className="flex justify-between items-center pt-2 border-t border-surface-300">
                 <span className="text-surface-600">Inherent Risk</span>
                 <div className="flex items-center gap-2">
-                  <span
-                    className={`w-3 h-3 rounded-full ${getRiskLevelColor(risk.inherentRisk)}`}
-                  />
+                  {risk.inherentRisk && (
+                    <span
+                      className={`w-3 h-3 rounded-full ${getRiskLevelColor(risk.inherentRisk)}`}
+                    />
+                  )}
                   <span className="text-surface-900 capitalize font-medium">
-                    {risk.inherentRisk}
+                    {risk.inherentRisk || 'Not assessed'}
                   </span>
                 </div>
               </div>

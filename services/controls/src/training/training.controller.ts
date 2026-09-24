@@ -325,6 +325,46 @@ export class TrainingController {
     });
   }
 
+  @Get('modules/custom/:id/scorm')
+  @ApiOperation({ summary: 'Launch the persisted SCORM package' })
+  async launchScormPackage(
+    @CurrentUser() user: AuthUser,
+    @Param('id') moduleId: string,
+    @Res() response: Response
+  ) {
+    return this.sendScormAsset(user.organizationId, moduleId, undefined, response);
+  }
+
+  @Get('modules/custom/:id/scorm/*assetPath')
+  @ApiOperation({ summary: 'Serve an asset from the persisted SCORM package' })
+  async getScormAsset(
+    @CurrentUser() user: AuthUser,
+    @Param('id') moduleId: string,
+    @Param('assetPath') assetPath: string | string[],
+    @Res() response: Response
+  ) {
+    const requestedPath = Array.isArray(assetPath) ? assetPath.join('/') : assetPath;
+    return this.sendScormAsset(user.organizationId, moduleId, requestedPath, response);
+  }
+
+  private async sendScormAsset(
+    organizationId: string,
+    moduleId: string,
+    requestedPath: string | undefined,
+    response: Response
+  ) {
+    const asset = await this.trainingService.getScormAsset(organizationId, moduleId, requestedPath);
+    response.set({
+      'Content-Type': asset.contentType,
+      'Content-Length': asset.content.length.toString(),
+      'Content-Disposition': 'inline',
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Security-Policy':
+        "sandbox allow-scripts allow-forms; default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:",
+    });
+    response.send(asset.content);
+  }
+
   // ==========================================
   // User Role Targeting
   // ==========================================

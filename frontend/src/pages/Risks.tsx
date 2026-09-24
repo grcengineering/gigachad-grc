@@ -70,11 +70,6 @@ const STATUS_OPTS = [
   { value: 'actual_risk', label: 'Validated' },
   { value: 'risk_analysis_in_progress', label: 'Analysis In Progress' },
   { value: 'risk_analyzed', label: 'Analyzed' },
-  { value: 'open', label: 'Open' },
-  { value: 'in_treatment', label: 'In Treatment' },
-  { value: 'accepted', label: 'Accepted' },
-  { value: 'mitigated', label: 'Mitigated' },
-  { value: 'closed', label: 'Closed' },
 ];
 
 const RISK_LEVEL_OPTS = [
@@ -95,20 +90,21 @@ const RISK_LEVEL_DOT: Record<string, string> = {
   critical: 'bg-red-500',
 };
 
-const LIKELIHOOD_OPTS = [
-  { value: 'rare', label: 'Rare' },
-  { value: 'unlikely', label: 'Unlikely' },
-  { value: 'possible', label: 'Possible' },
-  { value: 'likely', label: 'Likely' },
-  { value: 'almost_certain', label: 'Almost Certain' },
+const SOURCE_OPTS = [
+  { value: 'employee_reporting', label: 'Employee Reporting' },
+  { value: 'internal_security_reviews', label: 'Internal Security Review' },
+  { value: 'external_security_reviews', label: 'External Security Review' },
+  { value: 'ad_hoc_discovery', label: 'Ad Hoc Discovery' },
+  { value: 'incident_response', label: 'Incident Response' },
+  { value: 'policy_exception', label: 'Policy Exception' },
 ];
 
-const IMPACT_OPTS = [
-  { value: 'negligible', label: 'Negligible' },
-  { value: 'minor', label: 'Minor' },
-  { value: 'moderate', label: 'Moderate' },
-  { value: 'major', label: 'Major' },
-  { value: 'severe', label: 'Severe' },
+const INITIAL_SEVERITY_OPTS = [
+  { value: 'very_low', label: 'Very Low' },
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'very_high', label: 'Very High' },
 ];
 
 const STATUS_VARIANT: Record<
@@ -177,11 +173,8 @@ export default function Risks() {
   const [newRisk, setNewRisk] = useState({
     title: '',
     description: '',
-    category: 'security',
-    likelihood: 'possible',
-    impact: 'moderate',
-    likelihoodPct: undefined as number | undefined,
-    impactValue: undefined as number | undefined,
+    source: 'employee_reporting',
+    initialSeverity: 'medium',
     tags: [] as string[],
   });
   const [tagInput, setTagInput] = useState('');
@@ -240,11 +233,8 @@ export default function Risks() {
       setNewRisk({
         title: '',
         description: '',
-        category: 'security',
-        likelihood: 'possible',
-        impact: 'moderate',
-        likelihoodPct: undefined,
-        impactValue: undefined,
+        source: 'employee_reporting',
+        initialSeverity: 'medium',
         tags: [],
       });
     },
@@ -618,66 +608,21 @@ export default function Risks() {
             />
           </div>
 
-          <div>
-            <Label required>Category</Label>
-            <Select
-              value={newRisk.category}
-              onChange={(v) => setNewRisk((prev) => ({ ...prev, category: v }))}
-              options={CATEGORY_OPTS}
-            />
-          </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label required>Likelihood</Label>
+              <Label required>Source</Label>
               <Select
-                value={newRisk.likelihood}
-                onChange={(v) => setNewRisk((prev) => ({ ...prev, likelihood: v }))}
-                options={LIKELIHOOD_OPTS}
+                value={newRisk.source}
+                onChange={(v) => setNewRisk((prev) => ({ ...prev, source: v }))}
+                options={SOURCE_OPTS}
               />
             </div>
             <div>
-              <Label required>Impact</Label>
+              <Label required>Initial Severity</Label>
               <Select
-                value={newRisk.impact}
-                onChange={(v) => setNewRisk((prev) => ({ ...prev, impact: v }))}
-                options={IMPACT_OPTS}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="risk-lpct">Likelihood % (optional)</Label>
-              <Input
-                id="risk-lpct"
-                type="number"
-                min={0}
-                max={100}
-                value={newRisk.likelihoodPct ?? ''}
-                onChange={(e) =>
-                  setNewRisk((prev) => ({
-                    ...prev,
-                    likelihoodPct: e.target.value ? Number(e.target.value) : undefined,
-                  }))
-                }
-                placeholder="0–100"
-              />
-            </div>
-            <div>
-              <Label htmlFor="risk-impactv">Impact $ (optional)</Label>
-              <Input
-                id="risk-impactv"
-                type="number"
-                min={0}
-                value={newRisk.impactValue ?? ''}
-                onChange={(e) =>
-                  setNewRisk((prev) => ({
-                    ...prev,
-                    impactValue: e.target.value ? Number(e.target.value) : undefined,
-                  }))
-                }
-                placeholder="Dollar amount"
+                value={newRisk.initialSeverity}
+                onChange={(v) => setNewRisk((prev) => ({ ...prev, initialSeverity: v }))}
+                options={INITIAL_SEVERITY_OPTS}
               />
             </div>
           </div>
