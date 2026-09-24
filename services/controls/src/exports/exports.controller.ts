@@ -33,6 +33,7 @@ export class ExportsController {
   constructor(private readonly exportsService: ExportsService) {}
 
   @Get()
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'List export jobs' })
   async listExportJobs(
     @CurrentUser() user: UserContext,
@@ -42,6 +43,7 @@ export class ExportsController {
   }
 
   @Get(':id')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Get export job status' })
   @ApiResponse({ status: 200, type: ExportJobDto })
   async getExportJob(
@@ -68,6 +70,7 @@ export class ExportsController {
   }
 
   @Get(':id/download')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @EndpointRateLimit(ENDPOINT_RATE_LIMITS.EXPORT)
   @ApiOperation({ summary: 'Download export file' })
   async downloadExport(
@@ -90,6 +93,7 @@ export class ExportsController {
   }
 
   @Delete(':id')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Cancel an export job' })
   async cancelExportJob(
     @CurrentUser() user: UserContext,

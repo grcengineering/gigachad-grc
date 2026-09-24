@@ -217,7 +217,8 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     for (const job of pendingJobs) {
       try {
         // Mark as active
-        await this.jobsService.markJobActive(job.id);
+        const claimed = await this.jobsService.markJobActive(job.id);
+        if (!claimed) continue;
 
         // Execute the job
         const result = await this.executeJob(job);
@@ -494,6 +495,9 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
    */
   private async cleanupOldAuditLogs(data: any): Promise<JobResult> {
     const { retentionDays = 365, organizationId } = data;
+    if (!organizationId) {
+      throw new Error('organizationId is required for audit-log cleanup');
+    }
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
@@ -501,10 +505,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
       timestamp: { lt: cutoffDate },
     };
 
-    // If organizationId is provided, scope to that org
-    if (organizationId) {
-      whereClause.organizationId = organizationId;
-    }
+    whereClause.organizationId = organizationId;
 
     const result = await this.prisma.auditLog.deleteMany({
       where: whereClause,

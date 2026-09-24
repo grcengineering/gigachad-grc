@@ -85,16 +85,23 @@
       "rootUrl": "http://localhost:3000",
       "baseUrl": "/",
       "redirectUris": [
+        "https://${APP_DOMAIN}/*",
         "http://localhost:3000/*",
         "http://localhost/*",
         "https://localhost/*"
       ],
-      "webOrigins": ["http://localhost:3000", "http://localhost", "https://localhost", "+"],
+      "webOrigins": [
+        "https://${APP_DOMAIN}",
+        "http://localhost:3000",
+        "http://localhost",
+        "https://localhost",
+        "+"
+      ],
       "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "email"],
       "optionalClientScopes": ["address", "phone", "offline_access"],
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:3000/*##https://localhost/*"
+        "post.logout.redirect.uris": "https://${APP_DOMAIN}/*##http://localhost:3000/*##https://localhost/*"
       },
       "protocolMappers": [
         {
@@ -172,7 +179,16 @@
       "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "email"]
     }
   ],
-  "users": [],
+  "users": [
+    {
+      "username": "service-account-grc-services",
+      "enabled": true,
+      "serviceAccountClientId": "grc-services",
+      "clientRoles": {
+        "realm-management": ["manage-users", "view-users"]
+      }
+    }
+  ],
   "browserSecurityHeaders": {
     "contentSecurityPolicyReportOnly": "",
     "xContentTypeOptions": "nosniff",

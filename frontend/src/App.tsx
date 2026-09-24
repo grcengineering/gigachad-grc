@@ -39,6 +39,8 @@ import KnowledgeBaseDetail from './pages/KnowledgeBaseDetail';
 import TrustCenter from './pages/TrustCenter';
 import Audits from './pages/Audits';
 import AuditRequests from './pages/AuditRequests';
+import AuditRequestNew from './pages/AuditRequestNew';
+import AuditRequestDetail from './pages/AuditRequestDetail';
 import AuditFindings from './pages/AuditFindings';
 import AuditDetail from './pages/AuditDetail';
 import AuditNew from './pages/AuditNew';
@@ -73,6 +75,7 @@ import FrameworkLibrary from './pages/FrameworkLibrary';
 import HelpCenter from './pages/HelpCenter';
 import HelpArticle from './pages/HelpArticle';
 import CustomDashboards from './pages/CustomDashboards';
+import CustomDashboardDetail from './pages/CustomDashboardDetail';
 import DisabledModulePage from './pages/DisabledModulePage';
 import ComplianceCalendarPage from './pages/ComplianceCalendarPage';
 import AssetDetail from './pages/AssetDetail';
@@ -96,8 +99,11 @@ import RecoveryTeamDetail from './pages/RecoveryTeamDetail';
 import CommunicationPlans from './pages/CommunicationPlans';
 import CommunicationPlanDetail from './pages/CommunicationPlanDetail';
 import ExerciseTemplates from './pages/ExerciseTemplates';
+import BCDRRecordForm from './pages/BCDRRecordForm';
+import BCDRAuxiliaryForm from './pages/BCDRAuxiliaryForm';
 import Login from './pages/Login';
 import Loading from './components/Loading';
+import NotFound from './pages/NotFound';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -186,6 +192,8 @@ export default function App() {
         <Route path="audits/new" element={<AuditNew />} />
         <Route path="audits/:id" element={<AuditDetail />} />
         <Route path="audit-requests" element={<AuditRequests />} />
+        <Route path="audit-requests/new" element={<AuditRequestNew />} />
+        <Route path="audit-requests/:id" element={<AuditRequestDetail />} />
         <Route path="audit-findings" element={<AuditFindings />} />
         <Route path="audit-templates" element={<AuditTemplates />} />
         <Route path="audit-workpapers" element={<AuditWorkpapers />} />
@@ -208,20 +216,52 @@ export default function App() {
         {/* BCDR */}
         <Route path="bcdr" element={<BCDRDashboard />} />
         <Route path="bcdr/plans" element={<BCDRPlans />} />
+        <Route path="bcdr/plans/new" element={<BCDRRecordForm kind="plans" />} />
         <Route path="bcdr/plans/:id" element={<BCDRPlanDetail />} />
         <Route path="bcdr/incidents" element={<BCDRIncidents />} />
+        <Route path="bcdr/incidents/new" element={<BCDRAuxiliaryForm kind="incidents" />} />
         <Route path="bcdr/incidents/:id" element={<BCDRIncidentDetail />} />
         <Route path="bcdr/tests" element={<DRTests />} />
+        <Route path="bcdr/tests/new" element={<BCDRRecordForm kind="tests" />} />
+        <Route path="bcdr/tests/:id/edit" element={<BCDRRecordForm kind="tests" edit />} />
         <Route path="bcdr/tests/:id" element={<DRTestDetail />} />
         <Route path="bcdr/runbooks" element={<Runbooks />} />
+        <Route path="bcdr/runbooks/new" element={<BCDRRecordForm kind="runbooks" />} />
+        <Route path="bcdr/runbooks/:id/edit" element={<BCDRRecordForm kind="runbooks" edit />} />
         <Route path="bcdr/runbooks/:id" element={<RunbookDetail />} />
         <Route path="bcdr/processes" element={<BusinessProcesses />} />
+        <Route path="bcdr/processes/new" element={<BCDRRecordForm kind="processes" />} />
+        <Route path="bcdr/processes/:id/edit" element={<BCDRRecordForm kind="processes" edit />} />
         <Route path="bcdr/processes/:id" element={<BusinessProcessDetail />} />
         <Route path="bcdr/recovery-teams" element={<RecoveryTeams />} />
+        <Route
+          path="bcdr/recovery-teams/new"
+          element={<BCDRAuxiliaryForm kind="recovery-teams" />}
+        />
+        <Route
+          path="bcdr/recovery-teams/:id/edit"
+          element={<BCDRAuxiliaryForm kind="recovery-teams" edit />}
+        />
         <Route path="bcdr/recovery-teams/:id" element={<RecoveryTeamDetail />} />
         <Route path="bcdr/communication" element={<CommunicationPlans />} />
+        <Route
+          path="bcdr/communication/new"
+          element={<BCDRAuxiliaryForm kind="communication" />}
+        />
+        <Route
+          path="bcdr/communication/:id/edit"
+          element={<BCDRAuxiliaryForm kind="communication" edit />}
+        />
         <Route path="bcdr/communication/:id" element={<CommunicationPlanDetail />} />
         <Route path="bcdr/exercise-templates" element={<ExerciseTemplates />} />
+        <Route
+          path="bcdr/exercise-templates/new"
+          element={<BCDRAuxiliaryForm kind="exercise-templates" />}
+        />
+        <Route
+          path="bcdr/exercise-templates/:id/edit"
+          element={<BCDRAuxiliaryForm kind="exercise-templates" edit />}
+        />
 
         {/* People / Training */}
         <Route path="people" element={<Employees />} />
@@ -242,6 +282,7 @@ export default function App() {
 
         {/* One-offs */}
         <Route path="dashboards" element={<CustomDashboards />} />
+        <Route path="dashboards/:id" element={<CustomDashboardDetail />} />
         <Route path="calendar" element={<ComplianceCalendarPage />} />
         <Route path="framework-library" element={<FrameworkLibrary />} />
         <Route path="reports/mapping-gaps" element={<MappingGaps />} />
@@ -253,8 +294,8 @@ export default function App() {
         <Route path="help" element={<HelpCenter />} />
         <Route path="help/:category/:article" element={<HelpArticle />} />
         <Route path="module-disabled" element={<DisabledModulePage />} />
+        <Route path="*" element={<NotFound />} />
       </Route>
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }

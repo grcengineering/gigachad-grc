@@ -79,6 +79,9 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
+            - name: init-scripts
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
       {{- with .Values.postgresql.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -91,6 +94,15 @@ spec:
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      volumes:
+        - name: init-scripts
+          configMap:
+            name: {{ include "gigachad-grc.fullname" . }}-postgresql-init
+            defaultMode: 0555
+        {{- if not .Values.postgresql.persistence.enabled }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
   {{- if .Values.postgresql.persistence.enabled }}
   volumeClaimTemplates:
     - metadata:
@@ -104,10 +116,6 @@ spec:
         resources:
           requests:
             storage: {{ .Values.postgresql.persistence.size }}
-  {{- else }}
-      volumes:
-        - name: data
-          emptyDir: {}
   {{- end }}
 ---
 apiVersion: v1

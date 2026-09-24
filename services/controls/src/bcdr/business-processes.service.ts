@@ -185,13 +185,13 @@ export class BusinessProcessesService {
       `,
     ]);
 
-    return {
+    return serializeQueryResult({
       data: processes,
       total: Number(total[0]?.count || 0),
       page,
       limit,
       totalPages: Math.ceil(Number(total[0]?.count || 0) / limit),
-    };
+    });
   }
 
   async findOne(id: string, organizationId: string) {

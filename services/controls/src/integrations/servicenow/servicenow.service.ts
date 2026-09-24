@@ -514,9 +514,7 @@ export class ServiceNowService {
     dto: ServiceNowConnectionConfigDto
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      let auth: string;
-
-      auth = `Basic ${Buffer.from(`${dto.username}:${dto.password}`).toString('base64')}`;
+      const auth = `Basic ${Buffer.from(`${dto.username}:${dto.password}`).toString('base64')}`;
 
       // SECURITY: Use safeFetch to prevent SSRF via malicious instanceUrl
       const response = await safeFetch(

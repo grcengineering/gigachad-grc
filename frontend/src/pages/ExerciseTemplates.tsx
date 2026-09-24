@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { Plus, Search, Clock, FileText, Layers } from 'lucide-react';
 import api from '@/lib/api';
 import {
@@ -73,6 +74,7 @@ function toTitle(s: string) {
 }
 
 export default function ExerciseTemplates() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const filters = {
@@ -126,6 +128,17 @@ export default function ExerciseTemplates() {
     },
   });
 
+  const cloneTemplate = useMutation({
+    mutationFn: async (id: string) =>
+      (await api.post(`/api/bcdr/exercise-templates/${id}/clone`)).data,
+    onSuccess: (copy) => {
+      toast.success('Exercise template cloned');
+      navigate(`/bcdr/exercise-templates/${copy.id}/edit`);
+    },
+    onError: (error: any) =>
+      toast.error(error?.response?.data?.message || 'Unable to clone exercise template'),
+  });
+
   const { data: categories = [] } = useQuery<CategoryStat[]>({
     queryKey: ['exercise-template-categories'],
     queryFn: async () => {
@@ -168,7 +181,11 @@ export default function ExerciseTemplates() {
         title="Exercise Templates"
         description="Pre-built tabletop scenarios for BC/DR drills and DR testing."
         actions={
-          <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+          <Button
+            size="sm"
+            leftIcon={<Plus className="h-4 w-4" />}
+            onClick={() => navigate('/bcdr/exercise-templates/new')}
+          >
             Create Template
           </Button>
         }
@@ -219,7 +236,11 @@ export default function ExerciseTemplates() {
                     Clear filters
                   </Button>
                 ) : (
-                  <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+                  <Button
+                    size="sm"
+                    leftIcon={<Plus className="h-4 w-4" />}
+                    onClick={() => navigate('/bcdr/exercise-templates/new')}
+                  >
                     Create Template
                   </Button>
                 )
@@ -245,7 +266,7 @@ export default function ExerciseTemplates() {
             const isGlobal = pick(tpl.isGlobal, tpl.is_global);
 
             return (
-              <Card key={tpl.id} interactive>
+              <Card key={tpl.id}>
                 <CardBody density="comfy" className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
@@ -286,6 +307,18 @@ export default function ExerciseTemplates() {
                       {scenarioCount} {scenarioCount === 1 ? 'scenario' : 'scenarios'}
                     </span>
                   </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      isGlobal
+                        ? cloneTemplate.mutate(tpl.id)
+                        : navigate(`/bcdr/exercise-templates/${tpl.id}/edit`)
+                    }
+                    loading={cloneTemplate.isPending && cloneTemplate.variables === tpl.id}
+                  >
+                    {isGlobal ? 'Clone to Edit' : 'Edit Template'}
+                  </Button>
                 </CardBody>
               </Card>
             );

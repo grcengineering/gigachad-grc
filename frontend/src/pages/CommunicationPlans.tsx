@@ -262,7 +262,11 @@ export default function CommunicationPlans() {
         title="Communication Plans"
         description="Emergency contact lists, stakeholder messaging, and escalation paths."
         actions={
-          <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+          <Button
+            size="sm"
+            leftIcon={<Plus className="h-4 w-4" />}
+            onClick={() => navigate('/bcdr/communication/new')}
+          >
             Create Plan
           </Button>
         }
@@ -310,7 +314,11 @@ export default function CommunicationPlans() {
                   Clear filters
                 </Button>
               ) : (
-                <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+                <Button
+                  size="sm"
+                  leftIcon={<Plus className="h-4 w-4" />}
+                  onClick={() => navigate('/bcdr/communication/new')}
+                >
                   Create Plan
                 </Button>
               )

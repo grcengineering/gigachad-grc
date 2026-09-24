@@ -46,6 +46,7 @@ BACKUP_FILE="${1:-}"
 
 # Temporary restore directory
 RESTORE_DIR="/tmp/grc-restore-$$"
+RESTORE_PORTS_FILE="${RESTORE_DIR}/restore-ports.yml"
 
 # Docker Compose settings - only used for service lifecycle (up/down/restart)
 COMPOSE_FILE="${PROJECT_DIR}/docker-compose.prod.yml"
@@ -255,6 +256,24 @@ validate_backup() {
     log_success "Backup validation completed"
 }
 
+# Production deliberately keeps data services on an internal Docker network.
+# During a host-operated restore, publish loopback-only ports through a
+# temporary Compose override so the required host clients can reach them.
+create_restore_ports_override() {
+    cat > "$RESTORE_PORTS_FILE" << EOF
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT}:5432"
+  redis:
+    ports:
+      - "127.0.0.1:${REDIS_PORT}:6379"
+  rustfs:
+    ports:
+      - "127.0.0.1:9000:9000"
+EOF
+}
+
 # Stop services
 stop_services() {
     log_step "Stopping GigaChad GRC services..."
@@ -331,7 +350,8 @@ restore_database() {
 
     # Start only PostgreSQL service
     log_info "Starting PostgreSQL service..."
-    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d postgres \
+    docker compose -f "$COMPOSE_FILE" -f "$RESTORE_PORTS_FILE" \
+        --env-file "$ENV_FILE" up -d postgres \
         || error_exit "Failed to start PostgreSQL service"
 
     # Wait for PostgreSQL to be ready (TCP poll via pg_isready)
@@ -429,7 +449,8 @@ restore_object_storage() {
 
     # Start RustFS service
     log_info "Starting object storage service..."
-    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d rustfs \
+    docker compose -f "$COMPOSE_FILE" -f "$RESTORE_PORTS_FILE" \
+        --env-file "$ENV_FILE" up -d rustfs \
         || error_exit "Failed to start RustFS service"
 
     # Wait for service to be ready
@@ -535,7 +556,8 @@ restore_redis() {
 start_services() {
     log_step "Starting all GigaChad GRC services..."
 
-    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d \
+    docker compose -f "$COMPOSE_FILE" -f "$RESTORE_PORTS_FILE" \
+        --env-file "$ENV_FILE" up -d \
         || error_exit "Failed to start services"
 
     log_info "Waiting for services to be healthy..."
@@ -578,6 +600,13 @@ verify_restoration() {
     log_success "Verification completed"
 }
 
+remove_restore_port_overrides() {
+    log_step "Removing temporary loopback restore ports..."
+    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" \
+        up -d --force-recreate postgres redis rustfs \
+        || log_warning "Could not remove temporary restore port mappings automatically"
+}
+
 # ==============================================================================
 # Main Execution
 # ==============================================================================
@@ -608,11 +637,13 @@ main() {
     validate_backup
     stop_services
     restore_configurations
+    create_restore_ports_override
     restore_database
     restore_object_storage
     restore_redis
     start_services
     verify_restoration
+    remove_restore_port_overrides
 
     # Cleanup
     cleanup_temp_files

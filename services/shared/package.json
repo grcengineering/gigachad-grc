@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
-    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config jest.config.js --runInBand src/auth/jwt.guard.spec.ts src/auth/application-auth.guard.spec.ts src/watermark/watermark.service.spec.ts",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --config jest.config.js --runInBand src/auth/jwt.guard.spec.ts src/auth/application-auth.guard.spec.ts src/watermark/watermark.service.spec.ts src/health/prisma.health.spec.ts",
     "test:auth": "npm test",
     "clean": "rm -rf dist",
     "prepublish": "npm run build"

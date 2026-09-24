@@ -203,7 +203,7 @@ export class BCDRDashboardService {
     // Get overdue test findings
     const overdueFindings = await this.prisma.$queryRaw<OverdueItem[]>`
       SELECT f.id, f.title, 'test_finding' as entity_type, f.remediation_due_date as due_date,
-             t.test_id, t.name as test_name
+             t.id as test_uuid, t.test_id, t.name as test_name
       FROM bcdr.dr_test_findings f
       JOIN bcdr.dr_tests t ON f.test_id = t.id
       WHERE t.organization_id = ${organizationId}

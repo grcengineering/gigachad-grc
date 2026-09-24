@@ -195,8 +195,17 @@ export class RequestsService {
       authorType: string;
       authorId?: string;
       authorName: string;
-    }
+    },
+    organizationId: string
   ) {
+    const request = await this.prisma.auditRequest.findFirst({
+      where: { id: requestId, organizationId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!request) {
+      throw new NotFoundException(`Request with ID ${requestId} not found`);
+    }
+
     // SECURITY: Explicit field mapping to prevent mass assignment vulnerabilities
     return this.prisma.auditRequestComment.create({
       data: {

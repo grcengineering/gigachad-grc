@@ -1,0 +1,94 @@
+{{- if and .Values.migrations.enabled .Values.controls.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "gigachad-grc.fullname" . }}-migrate-{{ .Release.Revision }}
+  labels:
+    {{- include "gigachad-grc.labels" . | nindent 4 }}
+    {{- include "gigachad-grc.selectorLabels" (dict "context" . "component" "migration") | nindent 4 }}
+spec:
+  backoffLimit: {{ .Values.migrations.backoffLimit }}
+  template:
+    metadata:
+      labels:
+        {{- include "gigachad-grc.selectorLabels" (dict "context" . "component" "migration") | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ include "gigachad-grc.serviceAccountName" . }}
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+      {{- if and .Values.postgresql.enabled .Values.keycloak.enabled }}
+        - name: keycloak-database
+          image: "{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}"
+          imagePullPolicy: {{ include "gigachad-grc.imagePullPolicy" .Values.postgresql.image }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              until pg_isready -h {{ include "gigachad-grc.postgresql.host" . }} -U "$POSTGRES_USER"; do sleep 2; done
+              if ! psql -h {{ include "gigachad-grc.postgresql.host" . }} -U "$POSTGRES_USER" -d postgres -tAc \
+                "SELECT 1 FROM pg_database WHERE datname='{{ .Values.postgresql.auth.keycloakDatabase }}'" | grep -q 1; then
+                createdb -h {{ include "gigachad-grc.postgresql.host" . }} -U "$POSTGRES_USER" \
+                  {{ .Values.postgresql.auth.keycloakDatabase | quote }}
+              fi
+          env:
+            - name: POSTGRES_USER
+              value: {{ .Values.postgresql.auth.username | quote }}
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "gigachad-grc.secretName" . }}
+                  key: postgresql-password
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+      {{- end }}
+        - name: database-prerequisites
+          image: "{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}"
+          imagePullPolicy: {{ include "gigachad-grc.imagePullPolicy" .Values.postgresql.image }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              until psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c \
+                'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; CREATE EXTENSION IF NOT EXISTS "pg_trgm";'; do
+                sleep 2
+              done
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "gigachad-grc.secretName" . }}
+                  key: database-url
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+      containers:
+        - name: migrate
+          image: {{ include "gigachad-grc.image" (dict "image" .Values.controls.image "global" .Values.global) }}
+          imagePullPolicy: {{ include "gigachad-grc.imagePullPolicy" .Values.controls.image }}
+          args:
+            - /bin/true
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "gigachad-grc.secretName" . }}
+                  key: database-url
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+{{- end }}

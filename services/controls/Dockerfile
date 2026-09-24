@@ -138,7 +138,10 @@ RUN chmod +x /docker-entrypoint.sh /app/deploy/prisma-migrate-safe.sh
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001 && \
     mkdir -p /app/uploads && \
-    chown -R nestjs:nodejs /app
+    chown -R nestjs:nodejs \
+      /app/uploads \
+      /app/node_modules/@prisma \
+      /app/node_modules/.prisma
 
 USER nestjs
 

@@ -4,89 +4,92 @@
 # SECURITY NOTE: security_opt is inherited from docker-compose.yml base file.
 # These overrides only add development-specific configurations.
 
-version: '3.8'
-
 services:
   # Development mode for services with hot reload
   controls:
     build:
-      context: ./services/controls
-      dockerfile: Dockerfile.dev
-    # SECURITY: Prevent privilege escalation even in development
-    security_opt:
-      - no-new-privileges:true
+      context: .
+      dockerfile: deploy/Dockerfile.service-dev
+      args:
+        SERVICE: controls
     volumes:
-      - ./services/controls/src:/app/src
-      - ./services/shared:/app/shared
+      - ./services/controls/src:/app/services/controls/src
+      - ./services/shared/src:/app/services/shared/src
       - /app/node_modules
     environment:
       NODE_ENV: development
 
   frameworks:
     build:
-      context: ./services/frameworks
-      dockerfile: Dockerfile.dev
-    # SECURITY: Prevent privilege escalation even in development
-    security_opt:
-      - no-new-privileges:true
+      context: .
+      dockerfile: deploy/Dockerfile.service-dev
+      args:
+        SERVICE: frameworks
     volumes:
-      - ./services/frameworks/src:/app/src
-      - ./services/shared:/app/shared
-      - /app/node_modules
-    environment:
-      NODE_ENV: development
-
-  integrations:
-    build:
-      context: ./services/integrations
-      dockerfile: Dockerfile.dev
-    # SECURITY: Prevent privilege escalation even in development
-    security_opt:
-      - no-new-privileges:true
-    volumes:
-      - ./services/integrations/src:/app/src
-      - ./services/shared:/app/shared
+      - ./services/frameworks/src:/app/services/frameworks/src
+      - ./services/shared/src:/app/services/shared/src
       - /app/node_modules
     environment:
       NODE_ENV: development
 
   policies:
     build:
-      context: ./services/policies
-      dockerfile: Dockerfile.dev
-    # SECURITY: Prevent privilege escalation even in development
-    security_opt:
-      - no-new-privileges:true
+      context: .
+      dockerfile: deploy/Dockerfile.service-dev
+      args:
+        SERVICE: policies
     volumes:
-      - ./services/policies/src:/app/src
-      - ./services/shared:/app/shared
+      - ./services/policies/src:/app/services/policies/src
+      - ./services/shared/src:/app/services/shared/src
       - /app/node_modules
     environment:
       NODE_ENV: development
 
-  mcp:
+  tprm:
     build:
-      context: ./services/mcp
-      dockerfile: Dockerfile.dev
-    # SECURITY: Prevent privilege escalation even in development
-    security_opt:
-      - no-new-privileges:true
+      context: .
+      dockerfile: deploy/Dockerfile.service-dev
+      args:
+        SERVICE: tprm
     volumes:
-      - ./services/mcp/src:/app/src
-      - ./services/shared:/app/shared
+      - ./services/tprm/src:/app/services/tprm/src
+      - ./services/shared/src:/app/services/shared/src
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+
+  trust:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.service-dev
+      args:
+        SERVICE: trust
+    volumes:
+      - ./services/trust/src:/app/services/trust/src
+      - ./services/shared/src:/app/services/shared/src
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+
+  audit:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.service-dev
+      args:
+        SERVICE: audit
+    volumes:
+      - ./services/audit/src:/app/services/audit/src
+      - ./services/shared/src:/app/services/shared/src
       - /app/node_modules
     environment:
       NODE_ENV: development
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    # SECURITY: Prevent privilege escalation even in development
-    security_opt:
-      - no-new-privileges:true
+      context: .
+      dockerfile: frontend/Dockerfile.dev
     volumes:
-      - ./frontend/src:/app/src
+      - ./frontend/src:/app/frontend/src
       - /app/node_modules
     environment:
       NODE_ENV: development

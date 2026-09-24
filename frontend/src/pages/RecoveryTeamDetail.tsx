@@ -303,9 +303,11 @@ export default function RecoveryTeamDetail() {
           </>
         }
         actions={
-          <Button variant="outline" size="sm" leftIcon={<Edit2 className="h-4 w-4" />}>
-            Edit
-          </Button>
+          <Link to={`/bcdr/recovery-teams/${team.id}/edit`}>
+            <Button variant="outline" size="sm" leftIcon={<Edit2 className="h-4 w-4" />}>
+              Edit
+            </Button>
+          </Link>
         }
       />
 

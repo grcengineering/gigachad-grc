@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type Theme } from '@/contexts/ThemeContext';
@@ -13,7 +14,8 @@ import {
   PaintBrushIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
-import { Button, Badge, Input, Select, Textarea } from '@/components/ui';
+import { Button, Input, Select, Textarea } from '@/components/ui';
+import ScimSettings from '@/components/settings/ScimSettings';
 
 const TABS = [
   { id: 'profile', label: 'Profile', icon: UserIcon },
@@ -21,6 +23,7 @@ const TABS = [
   { id: 'notifications', label: 'Notifications', icon: BellIcon },
   { id: 'security', label: 'Security', icon: ShieldCheckIcon },
   { id: 'api', label: 'API Keys', icon: KeyIcon },
+  { id: 'scim', label: 'SCIM', icon: ShieldCheckIcon },
   { id: 'appearance', label: 'Appearance', icon: PaintBrushIcon },
 ];
 
@@ -47,7 +50,7 @@ export default function Settings() {
         {/* Tabs */}
         <div className="lg:w-64 flex-shrink-0">
           <nav className="card p-2 space-y-1">
-            {TABS.map((tab) => (
+            {TABS.filter((tab) => tab.id !== 'scim' || user?.role === 'admin').map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
@@ -72,6 +75,7 @@ export default function Settings() {
           {activeTab === 'notifications' && <NotificationSettings />}
           {activeTab === 'security' && <SecuritySettings />}
           {activeTab === 'api' && <ApiSettings />}
+          {activeTab === 'scim' && <ScimSettings />}
           {activeTab === 'appearance' && <AppearanceSettings />}
         </div>
       </div>
@@ -80,7 +84,6 @@ export default function Settings() {
 }
 
 function ProfileSettings({ user }: { user: any }) {
-  const [name, setName] = useState<string>(user?.name || '');
   const { data: organization, isLoading: isOrganizationLoading } = useOrganizationProfile();
 
   return (
@@ -93,13 +96,12 @@ function ProfileSettings({ user }: { user: any }) {
             {user?.name?.charAt(0)?.toUpperCase() || 'U'}
           </span>
         </div>
-        <Button variant="secondary">Change Avatar</Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="label">Full Name</label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} className="mt-1" />
+          <Input value={user?.name || ''} disabled className="mt-1 opacity-50" />
         </div>
         <div>
           <label className="label">Email</label>
@@ -129,7 +131,9 @@ function ProfileSettings({ user }: { user: any }) {
       </div>
 
       <div className="flex justify-end pt-4 border-t border-surface-200">
-        <Button>Save Changes</Button>
+        <Link to="/account">
+          <Button>Manage Account</Button>
+        </Link>
       </div>
     </div>
   );
@@ -230,41 +234,12 @@ function NotificationSettings() {
   return (
     <div className="card p-6 space-y-6">
       <h2 className="text-lg font-semibold text-surface-900">Notification Preferences</h2>
-
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-surface-900">Email Notifications</p>
-            <p className="text-sm text-surface-500">Receive email alerts</p>
-          </div>
-          <input type="checkbox" defaultChecked className="w-5 h-5" />
-        </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-surface-900">Slack Notifications</p>
-            <p className="text-sm text-surface-500">Receive Slack alerts</p>
-          </div>
-          <input type="checkbox" className="w-5 h-5" />
-        </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-surface-900">Compliance Drift Alerts</p>
-            <p className="text-sm text-surface-500">Alert when controls fall out of compliance</p>
-          </div>
-          <input type="checkbox" defaultChecked className="w-5 h-5" />
-        </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-surface-900">Evidence Expiration Reminders</p>
-            <p className="text-sm text-surface-500">Remind before evidence expires</p>
-          </div>
-          <input type="checkbox" defaultChecked className="w-5 h-5" />
-        </div>
-      </div>
-
-      <div className="flex justify-end pt-4 border-t border-surface-200">
-        <Button>Save Changes</Button>
-      </div>
+      <p className="text-sm text-surface-600">
+        Configure persisted in-app and email preferences on the dedicated notifications page.
+      </p>
+      <Link to="/settings/notifications">
+        <Button>Open Notification Settings</Button>
+      </Link>
     </div>
   );
 }
@@ -273,30 +248,13 @@ function SecuritySettings() {
   return (
     <div className="card p-6 space-y-6">
       <h2 className="text-lg font-semibold text-surface-900">Security Settings</h2>
-
-      <div className="space-y-4">
-        <div>
-          <h3 className="text-surface-800 font-medium mb-2">Two-Factor Authentication</h3>
-          <p className="text-sm text-surface-500 mb-3">
-            Add an extra layer of security to your account
-          </p>
-          <Button variant="secondary">Enable 2FA</Button>
-        </div>
-
-        <div className="pt-4 border-t border-surface-200">
-          <h3 className="text-surface-800 font-medium mb-2">Active Sessions</h3>
-          <p className="text-sm text-surface-500 mb-3">
-            Manage your active sessions across devices
-          </p>
-          <div className="p-3 bg-surface-100 rounded-lg flex items-center justify-between">
-            <div>
-              <p className="text-sm text-surface-800">Current Session</p>
-              <p className="text-xs text-surface-500">Chrome on macOS • Active now</p>
-            </div>
-            <Badge variant="success">Current</Badge>
-          </div>
-        </div>
-      </div>
+      <p className="text-sm text-surface-600">
+        Manage password changes, two-factor authentication, and persisted sessions from your
+        account.
+      </p>
+      <Link to="/account">
+        <Button variant="secondary">Open Account Security</Button>
+      </Link>
     </div>
   );
 }
@@ -309,21 +267,14 @@ function ApiSettings() {
         Generate API keys for programmatic access to the GRC platform
       </p>
 
-      <div className="space-y-3">
-        <div className="p-4 bg-surface-100 rounded-lg flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-surface-800">Production Key</p>
-            <code className="text-xs text-surface-500">grc_prod_****...****</code>
-          </div>
-          <Button variant="ghost" className="text-red-600 hover:text-red-700">
-            Revoke
-          </Button>
-        </div>
-      </div>
-
-      <Button variant="secondary" leftIcon={<KeyIcon className="w-4 h-4" />}>
-        Generate New Key
-      </Button>
+      <p className="text-sm text-surface-600">
+        Create, scope, rotate, and revoke persisted API keys from your account settings.
+      </p>
+      <Link to="/account">
+        <Button variant="secondary" leftIcon={<KeyIcon className="w-4 h-4" />}>
+          Manage API Keys
+        </Button>
+      </Link>
     </div>
   );
 }

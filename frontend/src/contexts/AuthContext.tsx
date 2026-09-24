@@ -24,8 +24,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const defaultKeycloakUrl =
+  typeof window !== 'undefined' && !import.meta.env.DEV
+    ? `${window.location.origin}/auth`
+    : 'http://localhost:8080';
+
 const keycloakConfig = {
-  url: import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8080',
+  url: import.meta.env.VITE_KEYCLOAK_URL || defaultKeycloakUrl,
   realm: import.meta.env.VITE_KEYCLOAK_REALM || 'gigachad-grc',
   clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'grc-frontend',
 };

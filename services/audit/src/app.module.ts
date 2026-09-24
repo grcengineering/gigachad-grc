@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { PrismaModule } from './prisma/prisma.module';
+import { PrismaService } from './prisma/prisma.service';
 import { AuditsModule } from './audits/audits.module';
 import { RequestsModule } from './requests/requests.module';
 import { FindingsModule } from './findings/findings.module';
@@ -17,6 +18,7 @@ import { PlanningModule } from './planning/planning.module';
 import { ReportsModule } from './reports/reports.module';
 import { PortalModule } from './portal/portal.module';
 import { AuthModule } from './auth/auth.module';
+import { HealthModule, createPrismaHealthProvider } from '@gigachad-grc/shared';
 
 @Module({
   imports: [
@@ -31,7 +33,7 @@ import { AuthModule } from './auth/auth.module';
       },
     ]),
     PrismaModule,
-    AuthModule,
+    HealthModule,
     AuditsModule,
     RequestsModule,
     FindingsModule,
@@ -47,6 +49,7 @@ import { AuthModule } from './auth/auth.module';
     PortalModule,
   ],
   providers: [
+    createPrismaHealthProvider(PrismaService),
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

@@ -1,4 +1,4 @@
-import { Fragment, useState, useMemo } from 'react';
+import { Fragment, useState, useMemo, type ReactNode } from 'react';
 import { Combobox, Listbox, Transition } from '@headlessui/react';
 import { Check, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -11,6 +11,8 @@ export interface SelectOption {
 }
 
 export interface SelectProps {
+  label?: ReactNode;
+  required?: boolean;
   value: string;
   onChange: (value: string) => void;
   options: SelectOption[];
@@ -32,6 +34,8 @@ const sizes = {
 };
 
 export function Select({
+  label,
+  required,
   value,
   onChange,
   options,
@@ -67,9 +71,21 @@ export function Select({
     fullWidth ? 'w-full' : 'w-auto',
     className
   );
+  const withLabel = (control: ReactNode) =>
+    label ? (
+      <label className="block space-y-1.5 text-sm font-medium text-surface-700">
+        <span>
+          {label}
+          {required && <span className="ml-1 text-red-600">*</span>}
+        </span>
+        {control}
+      </label>
+    ) : (
+      control
+    );
 
   if (searchable) {
-    return (
+    return withLabel(
       <Combobox value={value} onChange={(v) => onChange(v ?? '')} disabled={disabled}>
         <div className={cn('relative', !fullWidth && 'inline-block')}>
           <div className={cn(triggerBase, 'flex items-center')}>
@@ -147,7 +163,7 @@ export function Select({
     );
   }
 
-  return (
+  return withLabel(
     <Listbox value={value} onChange={onChange} disabled={disabled}>
       <div className={cn('relative', !fullWidth && 'inline-block')}>
         <Listbox.Button className={triggerBase}>

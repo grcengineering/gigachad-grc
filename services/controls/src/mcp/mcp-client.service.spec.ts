@@ -2,10 +2,12 @@ import { ConfigService } from '@nestjs/config';
 import { MCPClientService } from './mcp-client.service';
 
 describe('MCPClientService process contracts', () => {
+  const credentials = { getCredentials: jest.fn().mockResolvedValue(null) } as any;
+
   it('rejects immediately when a child exits before MCP initialization', async () => {
     const previousNodeEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'test';
-    const service = new MCPClientService(new ConfigService());
+    const service = new MCPClientService(new ConfigService(), credentials);
     await service.onModuleInit();
 
     const state = service.getServerStatus('grc-evidence')!;
@@ -29,7 +31,7 @@ describe('MCPClientService process contracts', () => {
   });
 
   it('turns MCP isError tool responses into thrown failures', () => {
-    const service = new MCPClientService(new ConfigService());
+    const service = new MCPClientService(new ConfigService(), credentials);
 
     expect(() =>
       (service as any).normalizeToolResult('server', 'tool', {

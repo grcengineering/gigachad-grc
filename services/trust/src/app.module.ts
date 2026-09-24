@@ -9,8 +9,13 @@ import { TrustConfigModule } from './config/trust-config.module';
 import { TemplatesModule } from './templates/templates.module';
 import { TrustAiModule } from './ai/trust-ai.module';
 import { AuditService } from './common/audit.service';
-import { CacheModule } from '@gigachad-grc/shared';
+import {
+  CacheModule,
+  HealthModule,
+  createPrismaHealthProvider,
+} from '@gigachad-grc/shared';
 import { AuthModule } from './auth/auth.module';
+import { PrismaService } from './common/prisma.service';
 
 @Module({
   imports: [
@@ -37,7 +42,7 @@ import { AuthModule } from './auth/auth.module';
       },
     ]),
     CacheModule.forRoot({ defaultTtl: 300 }), // 5-minute cache for dashboard widgets
-    AuthModule,
+    HealthModule,
     QuestionnairesModule,
     KnowledgeBaseModule,
     TrustCenterModule,
@@ -46,6 +51,7 @@ import { AuthModule } from './auth/auth.module';
     TrustAiModule,
   ],
   providers: [
+    createPrismaHealthProvider(PrismaService),
     AuditService,
     // Global rate limiting guard
     {

@@ -92,13 +92,13 @@ export class DRTestsService {
         AND deleted_at IS NULL
     `;
 
-    return {
+    return serializeQueryResult({
       data: tests,
       total: Number(total[0]?.count || 0),
       page,
       limit,
       totalPages: Math.ceil(Number(total[0]?.count || 0) / limit),
-    };
+    });
   }
 
   async findOne(id: string, organizationId: string) {

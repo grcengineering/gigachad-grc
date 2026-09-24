@@ -185,4 +185,18 @@ test.describe.serial('clean stack release gate', () => {
     );
     expect(viewerCanRead.id).toBe(created.id);
   });
+
+  test('prevents viewers from mutating tasks and assets', async ({ request }) => {
+    const task = await request.post(`${CONTROLS_URL}/api/tasks`, {
+      headers: asUser(VIEWER_A),
+      data: { title: 'Unauthorized task mutation' },
+    });
+    expect(task.status()).toBe(403);
+
+    const asset = await request.post(`${CONTROLS_URL}/api/assets`, {
+      headers: asUser(VIEWER_A),
+      data: { name: 'Unauthorized asset mutation', assetType: 'server' },
+    });
+    expect(asset.status()).toBe(403);
+  });
 });

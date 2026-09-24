@@ -220,13 +220,84 @@ jobs:
         env:
           DOCKER_BUILDKIT: 1
 
+  deployment-contracts:
+    name: Production Deployment Contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Render production Compose configuration
+        env:
+          POSTGRES_USER: grc
+          POSTGRES_PASSWORD: ci-postgres-password
+          POSTGRES_DB: gigachad_grc
+          REDIS_PASSWORD: ci-redis-password
+          MINIO_ROOT_USER: rustfsadmin
+          MINIO_ROOT_PASSWORD: ci-rustfs-password
+          KEYCLOAK_ADMIN: admin
+          KEYCLOAK_ADMIN_PASSWORD: ci-keycloak-password
+          KEYCLOAK_HOSTNAME: auth.example.test
+          KEYCLOAK_REALM: gigachad-grc
+          APP_DOMAIN: grc.example.test
+          ACME_EMAIL: security@example.test
+          GRC_SERVICES_SECRET: ci-services-secret-not-real
+          GRC_MCP_SECRET: ci-mcp-secret-not-real
+          GRAFANA_ADMIN_USER: admin
+          GRAFANA_ADMIN_PASSWORD: ci-grafana-password
+          ENCRYPTION_KEY: ci-fixture-encryption-key-not-a-real-secret-padding-padding
+          JWT_SECRET: ci-jwt-secret-not-real-padding-padding-padding
+          SESSION_SECRET: ci-session-secret-not-real-padding-padding
+          PHISHING_TRACKING_SECRET: ci-phishing-secret-not-real-padding
+        run: docker compose -f docker-compose.prod.yml config --quiet
+
+      - name: Render development override
+        env:
+          POSTGRES_USER: grc
+          POSTGRES_PASSWORD: ci-postgres-password
+          POSTGRES_DB: gigachad_grc
+          REDIS_PASSWORD: ci-redis-password
+          MINIO_ROOT_USER: rustfsadmin
+          MINIO_ROOT_PASSWORD: ci-rustfs-password
+          KEYCLOAK_ADMIN: admin
+          KEYCLOAK_ADMIN_PASSWORD: ci-keycloak-password
+          GRAFANA_ADMIN_USER: admin
+          GRAFANA_ADMIN_PASSWORD: ci-grafana-password
+          ENCRYPTION_KEY: ci-fixture-encryption-key-not-a-real-secret-padding-padding
+          PHISHING_TRACKING_SECRET: ci-phishing-secret-not-real-padding
+        run: docker compose -f docker-compose.yml -f docker-compose.dev.yml config --quiet
+
+      - name: Lint Helm chart
+        run: |
+          docker run --rm -v "$PWD:/apps" alpine/helm:3.19.0 lint /apps/helm \
+            --set controls.image.tag=test \
+            --set frameworks.image.tag=test \
+            --set policies.image.tag=test \
+            --set tprm.image.tag=test \
+            --set trust.image.tag=test \
+            --set audit.image.tag=test \
+            --set frontend.image.tag=test \
+            --set rustfs.image.tag=test \
+            --set postgresql.auth.password=test-postgres \
+            --set redis.auth.password=test-redis \
+            --set rustfs.auth.rootPassword=test-rustfs \
+            --set keycloak.auth.adminPassword=test-keycloak
+
+      - name: Validate restore script syntax
+        run: bash -n deploy/restore.sh
+
   # Blocking clean-stack checks for routing, persistence, tenant isolation,
   # and role-based API enforcement.
   clean-stack-gate:
     name: Clean Stack API, Tenant & RBAC Gate
     runs-on: ubuntu-latest
     needs: [frontend]
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     env:
       # Throwaway secrets for the ephemeral CI stack. These are NOT real
@@ -347,6 +418,12 @@ jobs:
       - name: Run clean-stack release gate
         run: npx playwright test --config=playwright.clean-stack.config.ts
 
+      - name: Run full browser functionality suite
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+          PLAYWRIGHT_IGNORE_HTTPS_ERRORS: 'true'
+        run: npx playwright test --project=chromium --grep-invert "clean stack release gate"
+
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -374,7 +451,7 @@ jobs:
   status:
     name: Validation Status
     runs-on: ubuntu-latest
-    needs: [frontend, backend, security, docker, clean-stack-gate]
+    needs: [documentation, frontend, backend, security, docker, deployment-contracts, clean-stack-gate]
     if: always()
     steps:
       - name: Harden the runner (Audit all outbound calls)
@@ -384,12 +461,14 @@ jobs:
 
       - name: Check all jobs status
         run: |
-          if [ "${{ needs.frontend.result }}" != "success" ] || \
+          if [ "${{ needs.documentation.result }}" != "success" ] || \
+             [ "${{ needs.frontend.result }}" != "success" ] || \
              [ "${{ needs.backend.result }}" != "success" ] || \
              [ "${{ needs.security.result }}" != "success" ] || \
              [ "${{ needs.docker.result }}" != "success" ] || \
+             [ "${{ needs.deployment-contracts.result }}" != "success" ] || \
              [ "${{ needs.clean-stack-gate.result }}" != "success" ]; then
             echo "Required checks failed"
             exit 1
           fi
-          echo "All required checks passed (frontend, backend, security, docker, clean-stack)"
+          echo "All required checks passed (frontend, backend, security, docker, deployment, clean-stack)"

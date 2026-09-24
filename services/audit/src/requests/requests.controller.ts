@@ -113,7 +113,7 @@ export class RequestsController {
       authorType: 'internal_user',
       authorId: req.user.userId,
       authorName: req.user.email,
-    });
+    }, req.user.organizationId);
   }
 
   @Get(':id/comments')

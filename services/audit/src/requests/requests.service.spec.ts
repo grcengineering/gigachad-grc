@@ -3,7 +3,10 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RequestsService } from './requests.service';
 
 describe('RequestsService tenant isolation', () => {
-  const prisma = { auditRequest: { findFirst: jest.fn() } };
+  const prisma = {
+    auditRequest: { findFirst: jest.fn() },
+    auditRequestComment: { create: jest.fn() },
+  };
   let service: RequestsService;
 
   beforeEach(() => {
@@ -25,5 +28,21 @@ describe('RequestsService tenant isolation', () => {
         },
       })
     );
+  });
+
+  it('does not add a comment to another tenant request', async () => {
+    prisma.auditRequest.findFirst.mockResolvedValue(null);
+    await expect(
+      service.addComment(
+        'other-tenant-request',
+        {
+          content: 'cross-tenant comment',
+          authorType: 'internal_user',
+          authorName: 'auditor@example.com',
+        },
+        'org-a'
+      )
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(prisma.auditRequestComment.create).not.toHaveBeenCalled();
   });
 });

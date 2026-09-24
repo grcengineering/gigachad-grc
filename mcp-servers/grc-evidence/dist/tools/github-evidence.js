@@ -3,17 +3,7 @@ export async function collectGitHubEvidence(params) {
     const { organization, repositories: specificRepos, checks = ['branch-protection', 'secrets-scanning', 'dependabot', 'code-scanning'], } = params;
     const token = process.env.GITHUB_TOKEN;
     if (!token) {
-        return {
-            service: 'github',
-            collectedAt: new Date().toISOString(),
-            organization,
-            findings: [{ error: 'GITHUB_TOKEN environment variable not set' }],
-            summary: {
-                totalRepositories: 0,
-                compliantRepositories: 0,
-                nonCompliantRepositories: 0,
-            },
-        };
+        throw new Error('GITHUB_TOKEN environment variable not set');
     }
     const octokit = new Octokit({ auth: token });
     const findings = [];

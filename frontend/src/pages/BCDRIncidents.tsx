@@ -283,7 +283,11 @@ export default function BCDRIncidents() {
         title="BC/DR Incidents"
         description="Track and manage business continuity and disaster recovery incidents."
         actions={
-          <Button size="sm" leftIcon={<AlertTriangle className="h-4 w-4" />}>
+          <Button
+            size="sm"
+            leftIcon={<AlertTriangle className="h-4 w-4" />}
+            onClick={() => navigate('/bcdr/incidents/new')}
+          >
             Declare Incident
           </Button>
         }

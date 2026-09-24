@@ -23,7 +23,10 @@ const mockMembershipCreate = jest.fn();
 const mockMembershipCreateMany = jest.fn();
 const mockMembershipDeleteMany = jest.fn();
 const mockScimConfigFindFirst = jest.fn();
+const mockScimConfigFindUnique = jest.fn();
 const mockScimConfigCount = jest.fn();
+const mockScimConfigUpsert = jest.fn();
+const mockScimConfigUpdate = jest.fn();
 
 const mockPrisma = {
   user: {
@@ -51,7 +54,10 @@ const mockPrisma = {
   },
   scimProviderConfig: {
     findFirst: mockScimConfigFindFirst,
+    findUnique: mockScimConfigFindUnique,
     count: mockScimConfigCount,
+    upsert: mockScimConfigUpsert,
+    update: mockScimConfigUpdate,
   },
 };
 
@@ -132,6 +138,32 @@ describe('ScimService', () => {
 
       await expect(service.authenticateToken('unknown')).resolves.toBeNull();
       await expect(service.isConfigured()).resolves.toBe(false);
+    });
+  });
+
+  describe('provider administration', () => {
+    it('rotates a token without persisting its plaintext value', async () => {
+      mockScimConfigUpsert.mockImplementation(async ({ create }) => ({
+        id: 'config-1',
+        provider: create.provider,
+        enabled: create.enabled,
+        defaultRole: create.defaultRole,
+        updatedAt: new Date(),
+      }));
+
+      const result = await service.rotateProviderToken(mockOrganizationId, 'okta', 'viewer');
+      expect(result.token).toMatch(/^grc_scim_/);
+      const call = mockScimConfigUpsert.mock.calls[0][0];
+      expect(call.create.tokenHash).toBe(ScimService.hashToken(result.token));
+      expect(JSON.stringify(call)).not.toContain(result.token);
+    });
+
+    it('refuses to enable a provider that has not been configured', async () => {
+      mockScimConfigFindUnique.mockResolvedValue(null);
+      await expect(service.setProviderEnabled(mockOrganizationId, true)).rejects.toBeInstanceOf(
+        NotFoundException
+      );
+      expect(mockScimConfigUpdate).not.toHaveBeenCalled();
     });
   });
 
@@ -312,6 +344,35 @@ describe('ScimService', () => {
           }),
         }),
       );
+    });
+
+    it('applies configured default role and tenant-valid default groups', async () => {
+      mockUserFindFirst.mockResolvedValue(null);
+      mockScimConfigFindUnique.mockResolvedValue({
+        defaultRole: 'auditor',
+        defaultGroupIds: ['group-123', 'cross-tenant-group'],
+      });
+      mockUserCreate.mockResolvedValue({ ...mockUser, id: 'new-user-123', role: 'auditor' });
+      mockGroupFindMany.mockResolvedValue([{ id: 'group-123' }]);
+
+      await service.createUser(mockOrganizationId, createDto);
+
+      expect(mockUserCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ role: 'auditor' }),
+        })
+      );
+      expect(mockGroupFindMany).toHaveBeenCalledWith({
+        where: {
+          id: { in: ['group-123', 'cross-tenant-group'] },
+          organizationId: mockOrganizationId,
+        },
+        select: { id: true },
+      });
+      expect(mockMembershipCreateMany).toHaveBeenCalledWith({
+        data: [{ userId: 'new-user-123', groupId: 'group-123' }],
+        skipDuplicates: true,
+      });
     });
 
     it('should use primary email from emails array', async () => {

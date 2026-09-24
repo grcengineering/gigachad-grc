@@ -1,4 +1,7 @@
 {{- if .Values.keycloak.enabled }}
+{{- if not .Values.postgresql.enabled }}
+{{- fail "keycloak.enabled=true currently requires postgresql.enabled=true; disable built-in Keycloak when using an external database/identity provider" }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -22,6 +25,32 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "gigachad-grc.serviceAccountName" . }}
+      initContainers:
+        - name: initialize-keycloak-database
+          image: "{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}"
+          imagePullPolicy: {{ include "gigachad-grc.imagePullPolicy" .Values.postgresql.image }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              until pg_isready -h {{ include "gigachad-grc.postgresql.host" . }} -U "$POSTGRES_USER"; do sleep 2; done
+              if ! psql -h {{ include "gigachad-grc.postgresql.host" . }} -U "$POSTGRES_USER" -d postgres -tAc \
+                "SELECT 1 FROM pg_database WHERE datname='{{ .Values.postgresql.auth.keycloakDatabase }}'" | grep -q 1; then
+                createdb -h {{ include "gigachad-grc.postgresql.host" . }} -U "$POSTGRES_USER" \
+                  {{ .Values.postgresql.auth.keycloakDatabase | quote }}
+              fi
+          env:
+            - name: POSTGRES_USER
+              value: {{ .Values.postgresql.auth.username | quote }}
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "gigachad-grc.secretName" . }}
+                  key: postgresql-password
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
       securityContext:
         runAsNonRoot: true
       containers:
@@ -56,17 +85,19 @@ spec:
                 secretKeyRef:
                   name: {{ include "gigachad-grc.secretName" . }}
                   key: postgresql-password
+            - name: KC_HTTP_RELATIVE_PATH
+              value: /auth
             {{- if eq .Values.keycloak.mode "production" }}
-            {{- if .Values.keycloak.hostname }}
             - name: KC_HOSTNAME
-              value: {{ .Values.keycloak.hostname | quote }}
-            {{- end }}
+              value: {{ required "keycloak.hostname is required when keycloak.mode=production" .Values.keycloak.hostname | quote }}
             - name: KC_HOSTNAME_STRICT
               value: "true"
             - name: KC_HOSTNAME_STRICT_HTTPS
               value: "true"
+            - name: KC_PROXY_HEADERS
+              value: xforwarded
             - name: KC_HTTP_ENABLED
-              value: "false"
+              value: "true"
             {{- else }}
             - name: KC_HOSTNAME_STRICT
               value: "false"
@@ -82,22 +113,35 @@ spec:
                 secretKeyRef:
                   name: {{ include "gigachad-grc.secretName" . }}
                   key: keycloak-admin-password
+            - name: GRC_SERVICES_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "gigachad-grc.secretName" . }}
+                  key: keycloak-services-client-secret
           readinessProbe:
             httpGet:
-              path: /realms/master
+              path: /auth/realms/master
               port: http
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
           livenessProbe:
             httpGet:
-              path: /realms/master
+              path: /auth/realms/master
               port: http
             initialDelaySeconds: 60
             periodSeconds: 30
             timeoutSeconds: 5
           resources:
             {{- toYaml .Values.keycloak.resources | nindent 12 }}
+          volumeMounts:
+            - name: realm-import
+              mountPath: /opt/keycloak/data/import
+              readOnly: true
+      volumes:
+        - name: realm-import
+          configMap:
+            name: {{ include "gigachad-grc.fullname" . }}-keycloak-realm
       {{- with .Values.keycloak.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

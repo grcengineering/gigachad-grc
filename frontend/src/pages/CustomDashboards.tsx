@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Copy, LayoutDashboard, Plus, Trash2, User as UserIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Copy, Eye, LayoutDashboard, Plus, Trash2, User as UserIcon } from 'lucide-react';
 import api from '@/lib/api';
 import {
   Badge,
@@ -26,6 +27,7 @@ interface CustomDashboard {
   ownerId?: string;
   ownerName?: string;
   ownerAvatarUrl?: string;
+  isTemplate?: boolean;
 }
 
 interface DashboardApiRecord {
@@ -38,6 +40,7 @@ interface DashboardApiRecord {
   lastEditedAt?: string;
   userId?: string;
   creator?: { id: string; displayName?: string; email?: string };
+  isTemplate?: boolean;
 }
 
 function formatDate(value?: string) {
@@ -80,6 +83,7 @@ export default function CustomDashboards() {
         lastEditedAt: record.lastEditedAt ?? record.updatedAt,
         ownerId: record.userId ?? record.creator?.id,
         ownerName: record.creator?.displayName ?? record.creator?.email,
+        isTemplate: record.isTemplate,
       }));
     },
   });
@@ -220,6 +224,15 @@ export default function CustomDashboards() {
                 </div>
               </CardBody>
               <div className="flex items-center justify-end gap-1 px-4 py-2 border-t border-surface-200 bg-surface-50/40">
+                <Link to={`/dashboards/${d.id}`}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    leftIcon={<Eye className="h-3.5 w-3.5" />}
+                  >
+                    Open
+                  </Button>
+                </Link>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -229,15 +242,17 @@ export default function CustomDashboards() {
                 >
                   Duplicate
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  leftIcon={<Trash2 className="h-3.5 w-3.5" />}
-                  onClick={() => handleDelete(d)}
-                  disabled={deleteMutation.isPending}
-                >
-                  Delete
-                </Button>
+                {!d.isTemplate && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    leftIcon={<Trash2 className="h-3.5 w-3.5" />}
+                    onClick={() => handleDelete(d)}
+                    disabled={deleteMutation.isPending}
+                  >
+                    Delete
+                  </Button>
+                )}
               </div>
             </Card>
           ))}

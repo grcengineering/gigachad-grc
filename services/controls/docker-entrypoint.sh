@@ -11,6 +11,11 @@ echo "================================================"
 echo "GigaChad GRC - Controls Service Starting"
 echo "================================================"
 
+if [ "${SKIP_MIGRATIONS:-false}" = "true" ]; then
+  echo "Database migrations are managed by the deployment migration job."
+  exec "$@"
+fi
+
 # Give the database a moment to be fully ready
 echo "[1/3] Waiting for database..."
 sleep 5

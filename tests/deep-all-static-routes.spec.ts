@@ -23,6 +23,7 @@ const ROUTES = [
   '/audits',
   '/audits/new',
   '/audit-requests',
+  '/audit-requests/new',
   '/audit-findings',
   '/audit-templates',
   '/audit-workpapers',
@@ -42,13 +43,21 @@ const ROUTES = [
   '/design-system',
   '/bcdr',
   '/bcdr/plans',
+  '/bcdr/plans/new',
   '/bcdr/incidents',
+  '/bcdr/incidents/new',
   '/bcdr/tests',
+  '/bcdr/tests/new',
   '/bcdr/runbooks',
+  '/bcdr/runbooks/new',
   '/bcdr/processes',
+  '/bcdr/processes/new',
   '/bcdr/recovery-teams',
+  '/bcdr/recovery-teams/new',
   '/bcdr/communication',
+  '/bcdr/communication/new',
   '/bcdr/exercise-templates',
+  '/bcdr/exercise-templates/new',
   '/people',
   '/people/training',
   '/settings/employee-compliance',
@@ -120,4 +129,10 @@ test('public login routes render without crashes', async ({ page }) => {
     await page.waitForTimeout(250);
     expect(errors, route).toEqual([]);
   }
+});
+
+test('unknown routes render an explicit not-found page', async ({ page }) => {
+  await page.goto('/this-route-does-not-exist');
+  await expect(page.getByText('Page not found')).toBeVisible();
+  await expect(page).toHaveURL(/this-route-does-not-exist/);
 });

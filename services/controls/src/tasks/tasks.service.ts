@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType, NotificationSeverity } from '../notifications/dto/notification.dto';
@@ -10,6 +10,35 @@ export class TasksService {
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
   ) {}
+
+  private async requireAssignee(organizationId: string, assigneeId?: string | null) {
+    if (!assigneeId) return;
+    const assignee = await this.prisma.user.findFirst({
+      where: { id: assigneeId, organizationId, status: 'active' },
+      select: { id: true },
+    });
+    if (!assignee) throw new NotFoundException('Assignee not found');
+  }
+
+  private async requireEntity(organizationId: string, entityType: string, entityId: string) {
+    if (entityType === 'control') {
+      const control = await this.prisma.controlImplementation.findFirst({
+        where: { id: entityId, organizationId },
+        select: { id: true },
+      });
+      if (!control) throw new NotFoundException('Task entity not found');
+      return;
+    }
+    if (entityType === 'requirement') {
+      const requirement = await this.prisma.frameworkRequirement.findFirst({
+        where: { id: entityId, framework: { organizationId } },
+        select: { id: true },
+      });
+      if (!requirement) throw new NotFoundException('Task entity not found');
+      return;
+    }
+    throw new BadRequestException(`Unsupported task entity type: ${entityType}`);
+  }
 
   async findByEntity(
     organizationId: string,
@@ -101,6 +130,10 @@ export class TasksService {
       dueDate?: string;
     },
   ) {
+    await Promise.all([
+      this.requireEntity(organizationId, data.entityType, data.entityId),
+      this.requireAssignee(organizationId, data.assigneeId),
+    ]);
     const task = await this.prisma.task.create({
       data: {
         organizationId,
@@ -168,6 +201,7 @@ export class TasksService {
     if (!task) {
       throw new NotFoundException('Task not found');
     }
+    await this.requireAssignee(organizationId, data.assigneeId);
 
     const updateData: {
       title?: string;

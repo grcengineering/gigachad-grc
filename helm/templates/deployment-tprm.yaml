@@ -22,6 +22,8 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "gigachad-grc.serviceAccountName" . }}
+      initContainers:
+        {{- include "gigachad-grc.waitForMigrations" . | nindent 8 }}
       securityContext:
         runAsNonRoot: true
       containers:
@@ -47,14 +49,14 @@ spec:
             {{- end }}
           readinessProbe:
             httpGet:
-              path: /api/health
+              path: /health
               port: http
             initialDelaySeconds: 15
             periodSeconds: 10
             timeoutSeconds: 5
           livenessProbe:
             httpGet:
-              path: /api/health
+              path: /health
               port: http
             initialDelaySeconds: 30
             periodSeconds: 30
