@@ -86,8 +86,15 @@ FROM node:22-alpine@sha256:e58326d0d441090181ac150dc2078d3e2cf6a0d42e809aebba3ef
 
 # Patch OS-level CVEs, install OpenSSL for Prisma and Chromium for the evidence
 # screenshot tool, then remove npm (the packaged MCP servers execute with node).
-RUN apk upgrade --no-cache && \
-    apk add --no-cache "openssl>=3.5.8-r0" libcrypto3 libssl3 chromium nss freetype harfbuzz ca-certificates && \
+RUN set -eux; \
+    for attempt in 1 2 3; do \
+      if apk upgrade --no-cache && \
+        apk add --no-cache "openssl>=3.5.8-r0" libcrypto3 libssl3 chromium nss freetype harfbuzz ca-certificates; then \
+        break; \
+      fi; \
+      if [ "$attempt" = 3 ]; then exit 1; fi; \
+      sleep $((attempt * 5)); \
+    done; \
     rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 
 WORKDIR /app
@@ -101,6 +108,7 @@ COPY --from=builder /app/controls/package.json ./
 COPY --from=builder /app/shared/dist ./node_modules/@gigachad-grc/shared/dist
 COPY --from=builder /app/shared/package.json ./node_modules/@gigachad-grc/shared/
 COPY --from=builder /app/shared/node_modules ./node_modules/@gigachad-grc/shared/node_modules
+COPY --from=builder /app/shared/vendor ./node_modules/@gigachad-grc/shared/vendor
 
 # Copy the built MCP servers and their isolated production dependencies.
 COPY --from=builder /app/mcp-servers/grc-evidence/package.json ./mcp-servers/grc-evidence/
