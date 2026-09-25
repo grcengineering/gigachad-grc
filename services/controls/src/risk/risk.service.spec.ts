@@ -11,6 +11,7 @@ import {
   RiskCategory,
   RiskSource,
   InitialSeverity,
+  RiskIntakeStatus,
 } from './dto/risk.dto';
 import { CacheService } from '@gigachad-grc/shared';
 
@@ -155,7 +156,7 @@ describe('RiskService', () => {
     });
 
     it('should filter risks by status', async () => {
-      const filters: RiskFilterDto = { status: 'risk_identified' };
+      const filters: RiskFilterDto = { status: RiskIntakeStatus.RISK_IDENTIFIED };
       mockPrismaService.risk.findMany.mockResolvedValue([]);
       mockPrismaService.risk.count.mockResolvedValue(0);
 

@@ -44,12 +44,12 @@ spec:
               name: console
               protocol: TCP
           env:
-            - name: RUSTFS_ROOT_USER
+            - name: RUSTFS_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ include "gigachad-grc.secretName" . }}
                   key: s3-access-key
-            - name: RUSTFS_ROOT_PASSWORD
+            - name: RUSTFS_SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ include "gigachad-grc.secretName" . }}

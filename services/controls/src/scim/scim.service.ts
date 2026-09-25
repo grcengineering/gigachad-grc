@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as crypto from 'crypto';
+import { UserRole } from '@prisma/client';
 import {
   ScimUserResource,
   ScimGroupResource,
@@ -53,6 +54,74 @@ export class ScimService {
     });
 
     return config?.organizationId || null;
+  }
+
+  async getProviderConfig(organizationId: string) {
+    const config = await this.prisma.scimProviderConfig.findUnique({
+      where: { organizationId },
+      select: {
+        id: true,
+        provider: true,
+        enabled: true,
+        defaultRole: true,
+        defaultGroupIds: true,
+        lastSyncAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    return { configured: Boolean(config), config };
+  }
+
+  async rotateProviderToken(
+    organizationId: string,
+    provider: string,
+    defaultRole?: string
+  ) {
+    const token = `grc_scim_${crypto.randomBytes(32).toString('base64url')}`;
+    const config = await this.prisma.scimProviderConfig.upsert({
+      where: { organizationId },
+      create: {
+        organizationId,
+        provider,
+        tokenHash: ScimService.hashToken(token),
+        defaultRole,
+        enabled: true,
+      },
+      update: {
+        provider,
+        tokenHash: ScimService.hashToken(token),
+        defaultRole,
+        enabled: true,
+      },
+      select: {
+        id: true,
+        provider: true,
+        enabled: true,
+        defaultRole: true,
+        updatedAt: true,
+      },
+    });
+    return { config, token };
+  }
+
+  async setProviderEnabled(organizationId: string, enabled: boolean) {
+    const existing = await this.prisma.scimProviderConfig.findUnique({
+      where: { organizationId },
+      select: { id: true },
+    });
+    if (!existing) throw new NotFoundException('SCIM provider is not configured');
+    return this.prisma.scimProviderConfig.update({
+      where: { organizationId },
+      data: { enabled },
+      select: {
+        id: true,
+        provider: true,
+        enabled: true,
+        defaultRole: true,
+        updatedAt: true,
+      },
+    });
   }
 
   // ==================== Users ====================
@@ -140,6 +209,15 @@ export class ScimService {
 
     const [firstName, ...lastNameParts] = displayName.split(' ');
     const lastName = lastNameParts.join(' ') || 'User';
+    const providerConfig = await this.prisma.scimProviderConfig.findUnique({
+      where: { organizationId },
+      select: { defaultRole: true, defaultGroupIds: true },
+    });
+    const defaultRole =
+      providerConfig?.defaultRole &&
+      Object.values(UserRole).includes(providerConfig.defaultRole as UserRole)
+        ? (providerConfig.defaultRole as UserRole)
+        : UserRole.viewer;
 
     const user = await this.prisma.user.create({
       data: {
@@ -150,7 +228,7 @@ export class ScimService {
         lastName: lastName,
         keycloakId: `scim-${crypto.randomUUID()}`,
         status: dto.active !== false ? 'active' : 'inactive',
-        role: 'viewer',
+        role: defaultRole,
         scimExternalId: dto.externalId
           ? {
               create: {
@@ -162,6 +240,22 @@ export class ScimService {
       },
       include: { scimExternalId: true },
     });
+
+    const configuredGroupIds = Array.isArray(providerConfig?.defaultGroupIds)
+      ? providerConfig.defaultGroupIds.filter((id): id is string => typeof id === 'string')
+      : [];
+    if (configuredGroupIds.length) {
+      const groups = await this.prisma.permissionGroup.findMany({
+        where: { id: { in: configuredGroupIds }, organizationId },
+        select: { id: true },
+      });
+      if (groups.length) {
+        await this.prisma.userGroupMembership.createMany({
+          data: groups.map((group) => ({ userId: user.id, groupId: group.id })),
+          skipDuplicates: true,
+        });
+      }
+    }
 
     this.logger.log(`SCIM: Created user ${user.id} (${user.email})`);
     return this.toScimUser(user);

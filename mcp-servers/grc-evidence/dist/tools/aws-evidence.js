@@ -1,7 +1,7 @@
-import { S3Client, ListBucketsCommand, GetBucketPolicyCommand, GetBucketEncryptionCommand, GetPublicAccessBlockCommand } from '@aws-sdk/client-s3';
-import { IAMClient, ListUsersCommand, ListPoliciesCommand, GetAccountPasswordPolicyCommand, ListMFADevicesCommand } from '@aws-sdk/client-iam';
-import { EC2Client, DescribeSecurityGroupsCommand, DescribeVpcsCommand, DescribeSubnetsCommand } from '@aws-sdk/client-ec2';
-import { ConfigServiceClient, DescribeConfigRulesCommand, GetComplianceDetailsByConfigRuleCommand } from '@aws-sdk/client-config-service';
+import { S3Client, ListBucketsCommand, GetBucketPolicyCommand, GetBucketEncryptionCommand, GetPublicAccessBlockCommand, } from '@aws-sdk/client-s3';
+import { IAMClient, ListUsersCommand, ListPoliciesCommand, GetAccountPasswordPolicyCommand, ListMFADevicesCommand, } from '@aws-sdk/client-iam';
+import { EC2Client, DescribeSecurityGroupsCommand, DescribeVpcsCommand, DescribeSubnetsCommand, } from '@aws-sdk/client-ec2';
+import { ConfigServiceClient, DescribeConfigRulesCommand, GetComplianceDetailsByConfigRuleCommand, } from '@aws-sdk/client-config-service';
 export async function collectAWSEvidence(params) {
     const { services, region = 'us-east-1', includeConfigurations = true } = params;
     const results = [];
@@ -23,24 +23,13 @@ export async function collectAWSEvidence(params) {
                     evidence = await collectConfigEvidence(region);
                     break;
                 default:
-                    evidence = {
-                        service,
-                        collectedAt: new Date().toISOString(),
-                        region,
-                        findings: [{ error: `Unsupported service: ${service}` }],
-                        summary: { totalResources: 0, compliantResources: 0, nonCompliantResources: 0 },
-                    };
+                    throw new Error(`Unsupported AWS service: ${service}`);
             }
             results.push(evidence);
         }
         catch (error) {
-            results.push({
-                service,
-                collectedAt: new Date().toISOString(),
-                region,
-                findings: [{ error: error instanceof Error ? error.message : 'Unknown error' }],
-                summary: { totalResources: 0, compliantResources: 0, nonCompliantResources: 0 },
-            });
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            throw new Error(`AWS ${service} evidence collection failed: ${message}`);
         }
     }
     return results;
@@ -248,10 +237,8 @@ async function collectEC2Evidence(region) {
         const sgResponse = await client.send(new DescribeSecurityGroupsCommand({}));
         const securityGroups = sgResponse.SecurityGroups || [];
         for (const sg of securityGroups) {
-            const hasOpenSSH = sg.IpPermissions?.some((p) => p.FromPort === 22 &&
-                p.IpRanges?.some((r) => r.CidrIp === '0.0.0.0/0'));
-            const hasOpenRDP = sg.IpPermissions?.some((p) => p.FromPort === 3389 &&
-                p.IpRanges?.some((r) => r.CidrIp === '0.0.0.0/0'));
+            const hasOpenSSH = sg.IpPermissions?.some((p) => p.FromPort === 22 && p.IpRanges?.some((r) => r.CidrIp === '0.0.0.0/0'));
+            const hasOpenRDP = sg.IpPermissions?.some((p) => p.FromPort === 3389 && p.IpRanges?.some((r) => r.CidrIp === '0.0.0.0/0'));
             findings.push({
                 type: 'security_group',
                 groupId: sg.GroupId,
@@ -306,8 +293,10 @@ async function collectConfigEvidence(region) {
                 ConfigRuleName: ruleName,
                 ComplianceTypes: ['NON_COMPLIANT', 'COMPLIANT'],
             }));
-            const compliant = complianceResponse.EvaluationResults?.filter((r) => r.ComplianceType === 'COMPLIANT').length || 0;
-            const nonCompliant = complianceResponse.EvaluationResults?.filter((r) => r.ComplianceType === 'NON_COMPLIANT').length || 0;
+            const compliant = complianceResponse.EvaluationResults?.filter((r) => r.ComplianceType === 'COMPLIANT')
+                .length || 0;
+            const nonCompliant = complianceResponse.EvaluationResults?.filter((r) => r.ComplianceType === 'NON_COMPLIANT')
+                .length || 0;
             findings.push({
                 type: 'config_rule',
                 ruleName,

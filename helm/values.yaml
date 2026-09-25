@@ -10,6 +10,11 @@ global:
   # -- Storage class for all PVCs (empty = cluster default)
   storageClass: ''
 
+migrations:
+  # -- Run the controls image migration entrypoint as a release-scoped Job.
+  enabled: true
+  backoffLimit: 3
+
 # =============================================================================
 # Backend Services
 # =============================================================================
@@ -53,6 +58,12 @@ controls:
     sessionSecret:
     # -- Phishing tracking secret. Auto-generated if not set.
     phishingTrackingSecret:
+    # -- Confidential Keycloak client secret used for account security actions.
+    # Auto-generated once and preserved across Helm upgrades if unset.
+    keycloakAdminClientSecret:
+    # -- Public application origin used in phishing tracking links.
+    # Defaults to https://ingress.host when ingress is enabled.
+    phishingTrackingBaseUrl: ''
     backupRetentionDays: '30'
     drRemoteBackupEnabled: 'false'
     drRemoteBackupS3Bucket: ''
@@ -381,7 +392,7 @@ grafana:
 # =============================================================================
 
 ingress:
-  enabled: false
+  enabled: true
   className: nginx
   annotations: {}
     # cert-manager.io/cluster-issuer: letsencrypt-prod

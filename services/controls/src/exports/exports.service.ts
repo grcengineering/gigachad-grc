@@ -1,4 +1,12 @@
-import { Injectable, Logger, NotFoundException, BadRequestException, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  OnModuleInit,
+  Inject,
+  Optional,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
@@ -13,9 +21,11 @@ import {
   ExportEntityType,
   ExportStatus,
 } from './dto/export.dto';
-import { 
-  parsePaginationParams, 
+import {
+  parsePaginationParams,
   createPaginatedResponse,
+  STORAGE_PROVIDER,
+  StorageProvider,
 } from '@gigachad-grc/shared';
 
 interface ExportJobRecord {
@@ -30,6 +40,7 @@ interface ExportJobRecord {
   fileName?: string;
   fileSize?: number;
   fileContent?: Buffer;
+  storagePath?: string;
   expiresAt?: Date;
   errorMessage?: string;
   recordCount?: number;
@@ -42,11 +53,24 @@ interface ExportJobRecord {
 export class ExportsService implements OnModuleInit {
   private readonly logger = new Logger(ExportsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() @Inject(STORAGE_PROVIDER) private readonly storage?: StorageProvider
+  ) {}
 
   async onModuleInit(): Promise<void> {
+    await this.prisma.exportJob.updateMany({
+      where: {
+        status: ExportStatus.PROCESSING,
+        updatedAt: { lt: new Date(Date.now() - 5 * 60 * 1000) },
+      },
+      data: {
+        status: ExportStatus.FAILED,
+        errorMessage: 'Export processing was interrupted; create a new export',
+      },
+    });
     const interrupted = await this.prisma.exportJob.findMany({
-      where: { status: { in: [ExportStatus.PENDING, ExportStatus.PROCESSING] } },
+      where: { status: ExportStatus.PENDING },
       select: { id: true, organizationId: true },
     });
     for (const job of interrupted) {
@@ -59,7 +83,7 @@ export class ExportsService implements OnModuleInit {
   async createExportJob(
     organizationId: string,
     userId: string,
-    dto: CreateExportJobDto,
+    dto: CreateExportJobDto
   ): Promise<ExportJobDto> {
     if (dto.format === ExportFormat.PPTX) {
       throw new BadRequestException('PPTX export is not supported; use PDF, XLSX, CSV, or JSON');
@@ -90,7 +114,7 @@ export class ExportsService implements OnModuleInit {
     this.logger.log(`Created export job ${created.id} for ${dto.entityType}`);
 
     // Process asynchronously
-    this.processExportJob(created.id, organizationId).catch(err => {
+    this.processExportJob(created.id, organizationId).catch((err) => {
       this.logger.error(`Export job ${created.id} failed: ${err.message}`);
     });
 
@@ -105,10 +129,7 @@ export class ExportsService implements OnModuleInit {
     return this.toDto(this.toRecord(job));
   }
 
-  async listExportJobs(
-    organizationId: string,
-    query: ExportJobListQueryDto,
-  ) {
+  async listExportJobs(organizationId: string, query: ExportJobListQueryDto) {
     const pagination = parsePaginationParams({
       page: query.page,
       limit: query.limit,
@@ -130,15 +151,15 @@ export class ExportsService implements OnModuleInit {
     ]);
 
     return createPaginatedResponse(
-      jobs.map(j => this.toDto(this.toRecord(j))),
+      jobs.map((j) => this.toDto(this.toRecord(j))),
       total,
-      pagination,
+      pagination
     );
   }
 
   async downloadExport(
     organizationId: string,
-    id: string,
+    id: string
   ): Promise<{ content: Buffer; contentType: string; fileName: string }> {
     const row = await this.prisma.exportJob.findFirst({ where: { id, organizationId } });
     if (!row) {
@@ -153,11 +174,23 @@ export class ExportsService implements OnModuleInit {
     if (job.expiresAt && job.expiresAt < new Date()) {
       throw new BadRequestException('Export has expired');
     }
+    let content = job.fileContent;
+    if (!content?.length && job.storagePath && this.storage) {
+      const stream = await this.storage.download(job.storagePath);
+      const chunks: Buffer[] = [];
+      for await (const chunk of stream) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      }
+      content = Buffer.concat(chunks);
+    }
+    if (!content?.length) {
+      throw new BadRequestException('Completed export has no file content');
+    }
 
     const contentType = this.getContentType(job.format);
-    
+
     return {
-      content: job.fileContent || Buffer.alloc(0),
+      content,
       contentType,
       fileName: job.fileName || `export.${job.format}`,
     };
@@ -201,21 +234,29 @@ export class ExportsService implements OnModuleInit {
     const job = this.toRecord(row);
 
     try {
-      await this.prisma.exportJob.update({
-        where: { id },
+      const claimed = await this.prisma.exportJob.updateMany({
+        where: { id, status: ExportStatus.PENDING },
         data: { status: ExportStatus.PROCESSING, errorMessage: null },
       });
+      if (claimed.count !== 1) return;
 
       const data = await this.fetchData(job);
       const content = await this.formatData(data, job.format);
       const fileName = `${job.entityType}_export_${new Date().toISOString().split('T')[0]}.${job.format}`;
       const recordCount = Array.isArray(data) ? data.length : 1;
+      const storagePath = `exports/${job.organizationId}/${job.id}/${fileName}`;
+      if (this.storage) {
+        await this.storage.upload(content, storagePath, {
+          contentType: this.getContentType(job.format),
+        });
+      }
       await this.prisma.exportJob.update({
         where: { id },
         data: {
           status: ExportStatus.COMPLETED,
           progress: 100,
-          fileContent: content,
+          fileContent: this.storage ? null : content,
+          storagePath: this.storage ? storagePath : null,
           fileName,
           fileSize: content.length,
           recordCount,
@@ -260,50 +301,57 @@ export class ExportsService implements OnModuleInit {
         return this.prisma.control.findMany({
           where: {
             ...filters,
-            OR: [
-              { organizationId: null },
-              { organizationId },
-            ],
+            OR: [{ organizationId: null }, { organizationId }],
             deletedAt: null,
           },
-          include: includeRelations ? {
-            implementations: { where: { organizationId } },
-            mappings: true,
-          } : undefined,
+          include: includeRelations
+            ? {
+                implementations: { where: { organizationId } },
+                mappings: true,
+              }
+            : undefined,
         });
 
       case ExportEntityType.Policies:
         return this.prisma.policy.findMany({
           where: { ...filters, organizationId, deletedAt: null },
-          include: includeRelations ? {
-            versions: true,
-            controlLinks: true,
-          } : undefined,
+          include: includeRelations
+            ? {
+                versions: true,
+                controlLinks: true,
+              }
+            : undefined,
         });
 
       case ExportEntityType.Risks:
         return this.prisma.risk.findMany({
           where: { ...filters, organizationId, deletedAt: null },
-          include: includeRelations ? {
-            controls: true,
-            assessment: true,
-          } : undefined,
+          include: includeRelations
+            ? {
+                controls: true,
+                assessment: true,
+              }
+            : undefined,
         });
 
       case ExportEntityType.Evidence:
         return this.prisma.evidence.findMany({
           where: { ...filters, organizationId, deletedAt: null },
-          include: includeRelations ? {
-            controlLinks: true,
-          } : undefined,
+          include: includeRelations
+            ? {
+                controlLinks: true,
+              }
+            : undefined,
         });
 
       case ExportEntityType.Tasks:
         return this.prisma.task.findMany({
           where: { ...filters, organizationId },
-          include: includeRelations ? {
-            assignee: { select: { id: true, displayName: true, email: true } },
-          } : undefined,
+          include: includeRelations
+            ? {
+                assignee: { select: { id: true, displayName: true, email: true } },
+              }
+            : undefined,
         });
 
       case ExportEntityType.AuditLogs:
@@ -331,14 +379,13 @@ export class ExportsService implements OnModuleInit {
         return this.prisma.framework.findMany({
           where: {
             ...filters,
-            OR: [
-              { organizationId: null },
-              { organizationId },
-            ],
+            OR: [{ organizationId: null }, { organizationId }],
           },
-          include: includeRelations ? {
-            requirements: true,
-          } : undefined,
+          include: includeRelations
+            ? {
+                requirements: true,
+              }
+            : undefined,
         });
 
       case ExportEntityType.FullOrg: {
@@ -399,23 +446,25 @@ export class ExportsService implements OnModuleInit {
    */
   private formatAsCsv(data: any[]): string {
     if (data.length === 0) return '';
-    
-    const flatData = data.map(row => this.flattenObject(row));
+
+    const flatData = data.map((row) => this.flattenObject(row));
     const headers = Object.keys(flatData[0]);
-    
-    const rows = flatData.map(row => 
-      headers.map(h => {
-        const val = row[h];
-        if (val === null || val === undefined) return '';
-        if (typeof val === 'object') return `"${JSON.stringify(val).replace(/"/g, '""')}"`;
-        const strVal = String(val);
-        if (strVal.includes(',') || strVal.includes('"') || strVal.includes('\n')) {
-          return `"${strVal.replace(/"/g, '""')}"`;
-        }
-        return strVal;
-      }).join(',')
+
+    const rows = flatData.map((row) =>
+      headers
+        .map((h) => {
+          const val = row[h];
+          if (val === null || val === undefined) return '';
+          if (typeof val === 'object') return `"${JSON.stringify(val).replace(/"/g, '""')}"`;
+          const strVal = String(val);
+          if (strVal.includes(',') || strVal.includes('"') || strVal.includes('\n')) {
+            return `"${strVal.replace(/"/g, '""')}"`;
+          }
+          return strVal;
+        })
+        .join(',')
     );
-    
+
     return [headers.join(','), ...rows].join('\n');
   }
 
@@ -432,7 +481,7 @@ export class ExportsService implements OnModuleInit {
     if (data.length === 0) {
       worksheet.addRow(['No data to export']);
     } else {
-      const flatData = data.map(row => this.flattenObject(row));
+      const flatData = data.map((row) => this.flattenObject(row));
       const headers = Object.keys(flatData[0]);
 
       // Add header row with styling
@@ -449,8 +498,8 @@ export class ExportsService implements OnModuleInit {
       });
 
       // Add data rows
-      flatData.forEach(row => {
-        const values = headers.map(h => {
+      flatData.forEach((row) => {
+        const values = headers.map((h) => {
           const val = row[h];
           if (val === null || val === undefined) return '';
           if (typeof val === 'object') return JSON.stringify(val);
@@ -462,7 +511,7 @@ export class ExportsService implements OnModuleInit {
       // Auto-fit columns
       worksheet.columns.forEach((column, i) => {
         let maxLength = headers[i].length;
-        flatData.forEach(row => {
+        flatData.forEach((row) => {
           const val = row[headers[i]];
           const len = val ? String(val).length : 0;
           if (len > maxLength) maxLength = Math.min(len, 50);
@@ -524,7 +573,7 @@ export class ExportsService implements OnModuleInit {
         doc.fontSize(12).fillColor('#333333');
         doc.text('No data to export.', { align: 'center' });
       } else {
-        const flatData = data.map(row => this.flattenObject(row));
+        const flatData = data.map((row) => this.flattenObject(row));
         const headers = Object.keys(flatData[0]).slice(0, 8); // Limit columns for PDF
 
         // Table header
@@ -535,12 +584,10 @@ export class ExportsService implements OnModuleInit {
         // Header row
         doc.font('Helvetica-Bold');
         headers.forEach((header, i) => {
-          doc.text(
-            this.truncateText(header, 12),
-            50 + i * colWidth,
-            yPos,
-            { width: colWidth - 5, ellipsis: true }
-          );
+          doc.text(this.truncateText(header, 12), 50 + i * colWidth, yPos, {
+            width: colWidth - 5,
+            ellipsis: true,
+          });
         });
 
         doc.font('Helvetica');
@@ -551,7 +598,7 @@ export class ExportsService implements OnModuleInit {
         // Data rows
         doc.fontSize(8).fillColor('#333333');
         const maxRows = 50; // Limit rows for PDF
-        
+
         flatData.slice(0, maxRows).forEach((row, rowIndex) => {
           if (yPos > doc.page.height - 100) {
             doc.addPage();
@@ -561,12 +608,10 @@ export class ExportsService implements OnModuleInit {
           headers.forEach((header, i) => {
             const val = row[header];
             const displayVal = val === null || val === undefined ? '' : String(val);
-            doc.text(
-              this.truncateText(displayVal, 15),
-              50 + i * colWidth,
-              yPos,
-              { width: colWidth - 5, ellipsis: true }
-            );
+            doc.text(this.truncateText(displayVal, 15), 50 + i * colWidth, yPos, {
+              width: colWidth - 5,
+              ellipsis: true,
+            });
           });
 
           yPos += 15;
@@ -581,7 +626,9 @@ export class ExportsService implements OnModuleInit {
         if (data.length > maxRows) {
           doc.moveDown(2);
           doc.fontSize(10).fillColor('#666666');
-          doc.text(`... and ${data.length - maxRows} more records (truncated for PDF)`, { align: 'center' });
+          doc.text(`... and ${data.length - maxRows} more records (truncated for PDF)`, {
+            align: 'center',
+          });
         }
       }
 
@@ -590,12 +637,10 @@ export class ExportsService implements OnModuleInit {
       const pageCount = doc.bufferedPageRange().count;
       for (let i = 0; i < pageCount; i++) {
         doc.switchToPage(i);
-        doc.text(
-          `Page ${i + 1} of ${pageCount} | Confidential`,
-          50,
-          doc.page.height - 30,
-          { align: 'center', width: doc.page.width - 100 }
-        );
+        doc.text(`Page ${i + 1} of ${pageCount} | Confidential`, 50, doc.page.height - 30, {
+          align: 'center',
+          width: doc.page.width - 100,
+        });
       }
 
       doc.end();
@@ -635,7 +680,10 @@ export class ExportsService implements OnModuleInit {
       doc.fontSize(24).fillColor('#9ca3af');
       doc.text('Data Export Report', 40, 250, { width: 880, align: 'center' });
       doc.fontSize(14).fillColor('#6b7280');
-      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 40, 320, { width: 880, align: 'center' });
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 40, 320, {
+        width: 880,
+        align: 'center',
+      });
       doc.text(`Total Records: ${data.length}`, 40, 350, { width: 880, align: 'center' });
 
       // Summary slide
@@ -648,7 +696,7 @@ export class ExportsService implements OnModuleInit {
       doc.text(`This export contains ${data.length} records.`, 40, 100);
 
       if (data.length > 0) {
-        const flatData = data.map(row => this.flattenObject(row));
+        const flatData = data.map((row) => this.flattenObject(row));
         const headers = Object.keys(flatData[0]);
 
         doc.fontSize(14).fillColor('#4b5563');
@@ -672,7 +720,7 @@ export class ExportsService implements OnModuleInit {
         doc.fontSize(10).fillColor('#4b5563');
         doc.text('First 5 records:', 40, 80);
 
-        const flatData = data.slice(0, 5).map(row => this.flattenObject(row));
+        const flatData = data.slice(0, 5).map((row) => this.flattenObject(row));
         const headers = Object.keys(flatData[0]).slice(0, 4);
         const colWidth = 200;
 
@@ -766,6 +814,7 @@ export class ExportsService implements OnModuleInit {
       fileName: job.fileName ?? job.name ?? undefined,
       fileSize: job.fileSize ?? undefined,
       fileContent: job.fileContent ? Buffer.from(job.fileContent) : undefined,
+      storagePath: job.storagePath ?? undefined,
       expiresAt: job.expiresAt ?? undefined,
       errorMessage: job.errorMessage ?? undefined,
       recordCount: job.recordCount ?? undefined,
@@ -783,7 +832,8 @@ export class ExportsService implements OnModuleInit {
       status: job.status,
       fileName: job.fileName,
       fileSize: job.fileSize,
-      downloadUrl: job.status === ExportStatus.COMPLETED ? `/api/exports/${job.id}/download` : undefined,
+      downloadUrl:
+        job.status === ExportStatus.COMPLETED ? `/api/exports/${job.id}/download` : undefined,
       expiresAt: job.expiresAt,
       errorMessage: job.errorMessage,
       recordCount: job.recordCount,

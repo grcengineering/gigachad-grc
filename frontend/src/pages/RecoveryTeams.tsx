@@ -153,7 +153,11 @@ export default function RecoveryTeams() {
         title="Recovery Teams"
         description="Define and manage teams responsible for BC/DR incident response."
         actions={
-          <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+          <Button
+            size="sm"
+            leftIcon={<Plus className="h-4 w-4" />}
+            onClick={() => navigate('/bcdr/recovery-teams/new')}
+          >
             Create Team
           </Button>
         }
@@ -224,7 +228,11 @@ export default function RecoveryTeams() {
                     Clear filters
                   </Button>
                 ) : (
-                  <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+                  <Button
+                    size="sm"
+                    leftIcon={<Plus className="h-4 w-4" />}
+                    onClick={() => navigate('/bcdr/recovery-teams/new')}
+                  >
                     Create Team
                   </Button>
                 )

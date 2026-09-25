@@ -158,12 +158,12 @@ export class ControlFilterDto {
   @Min(1)
   page?: number;
 
-  @ApiPropertyOptional({ default: 25, minimum: 1, maximum: 100 })
+  @ApiPropertyOptional({ default: 25, minimum: 1, maximum: 500 })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  @Max(100)
+  @Max(500)
   limit?: number;
 
   @ApiPropertyOptional({ default: 'controlId' })

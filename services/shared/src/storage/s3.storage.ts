@@ -5,6 +5,8 @@ import {
   GetObjectCommand,
   DeleteObjectCommand,
   HeadObjectCommand,
+  HeadBucketCommand,
+  CreateBucketCommand,
   ListObjectsV2Command,
   CopyObjectCommand,
 } from '@aws-sdk/client-s3';
@@ -29,9 +31,12 @@ import { StorageProvider, UploadOptions, FileMetadata, StorageConfig } from './s
 export class S3StorageProvider implements StorageProvider {
   private client: S3Client;
   private bucket: string;
+  private readonly shouldEnsureBucket: boolean;
+  private bucketReady?: Promise<void>;
 
   constructor(config: StorageConfig) {
     this.bucket = config.bucket || 'grc-storage';
+    this.shouldEnsureBucket = Boolean(config.endpoint);
 
     const clientConfig: {
       region: string;
@@ -59,6 +64,32 @@ export class S3StorageProvider implements StorageProvider {
     }
 
     this.client = new S3Client(clientConfig);
+  }
+
+  private async ensureBucket(): Promise<void> {
+    if (!this.shouldEnsureBucket) return;
+    if (!this.bucketReady) {
+      this.bucketReady = (async () => {
+        try {
+          await this.client.send(new HeadBucketCommand({ Bucket: this.bucket }));
+        } catch {
+          try {
+            await this.client.send(new CreateBucketCommand({ Bucket: this.bucket }));
+          } catch (error: any) {
+            if (
+              error?.name !== 'BucketAlreadyExists' &&
+              error?.name !== 'BucketAlreadyOwnedByYou'
+            ) {
+              throw error;
+            }
+          }
+        }
+      })().catch((error) => {
+        this.bucketReady = undefined;
+        throw error;
+      });
+    }
+    await this.bucketReady;
   }
 
   /**
@@ -98,6 +129,7 @@ export class S3StorageProvider implements StorageProvider {
   }
 
   async upload(file: Buffer | Readable, path: string, options?: UploadOptions): Promise<string> {
+    await this.ensureBucket();
     // SECURITY: Validate path to prevent path traversal
     const safePath = this.validatePath(path);
     let body: Buffer;

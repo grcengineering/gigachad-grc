@@ -176,6 +176,8 @@ export class PhishingService {
 
     const id = randomUUID();
     const now = new Date();
+    const spreadWindowStart = dto.scheduledAt ? new Date(dto.scheduledAt) : now;
+    const spreadWindowMs = (dto.spreadOverHours || 0) * 60 * 60 * 1000;
 
     // Store campaign in organization settings
     const org = await this.prisma.organization.findUnique({
@@ -196,6 +198,10 @@ export class PhishingService {
         ...t,
         trackingToken: this.generateTrackingToken(id, t.userId),
         status: TargetStatus.PENDING,
+        scheduledSendAt:
+          spreadWindowMs > 0
+            ? new Date(spreadWindowStart.getTime() + Math.floor(Math.random() * spreadWindowMs))
+            : null,
       })),
       targetCount: dto.targets.length,
       sentCount: 0,
@@ -254,6 +260,51 @@ export class PhishingService {
     return campaigns.find((c) => c.id === campaignId) || null;
   }
 
+  async runDueCampaigns(): Promise<{ started: number; completed: number; failed: number }> {
+    const organizations = await this.prisma.organization.findMany({
+      where: { status: 'active' },
+      select: { id: true, settings: true },
+    });
+    const now = new Date();
+    let started = 0;
+    let completed = 0;
+    let failed = 0;
+
+    for (const organization of organizations) {
+      const settings = (organization.settings as Record<string, unknown>) || {};
+      const campaigns = (settings.phishingCampaigns as Array<Record<string, unknown>>) || [];
+      for (const campaign of campaigns) {
+        const scheduledAt = campaign.scheduledAt ? new Date(campaign.scheduledAt as string) : null;
+        const endsAt = campaign.endsAt ? new Date(campaign.endsAt as string) : null;
+        try {
+          if (
+            campaign.status === CampaignStatus.SCHEDULED &&
+            scheduledAt &&
+            scheduledAt <= now
+          ) {
+            await this.startCampaign(organization.id, campaign.id as string);
+            started++;
+          } else if (campaign.status === CampaignStatus.ACTIVE) {
+            await this.deliverDueCampaignEmails(organization.id, campaign.id as string, now);
+            if (endsAt && endsAt <= now) {
+              await this.completeCampaign(organization.id, campaign.id as string);
+              completed++;
+            }
+          }
+        } catch (error) {
+          failed++;
+          this.logger.error(
+            `Scheduled phishing campaign ${campaign.id} failed: ${
+              error instanceof Error ? error.message : String(error)
+            }`
+          );
+        }
+      }
+    }
+
+    return { started, completed, failed };
+  }
+
   async startCampaign(organizationId: string, campaignId: string): Promise<CampaignDto> {
     const campaign = await this.getCampaign(organizationId, campaignId);
     if (!campaign) {
@@ -274,9 +325,10 @@ export class PhishingService {
 
     campaign.status = CampaignStatus.ACTIVE;
     campaign.startedAt = new Date();
+    await this.updateCampaign(organizationId, campaign);
 
     try {
-      await this.sendCampaignEmails(organizationId, campaign, template);
+      await this.sendCampaignEmails(campaign, template, new Date());
       await this.updateCampaign(organizationId, campaign);
     } catch (error) {
       campaign.status = CampaignStatus.PAUSED;
@@ -285,6 +337,25 @@ export class PhishingService {
     }
 
     return this.toCampaignDto(campaign);
+  }
+
+  private async deliverDueCampaignEmails(
+    organizationId: string,
+    campaignId: string,
+    dueBefore: Date
+  ): Promise<void> {
+    const campaign = await this.getCampaign(organizationId, campaignId);
+    if (!campaign || campaign.status !== CampaignStatus.ACTIVE) return;
+    const template = await this.getTemplate(organizationId, campaign.templateId as string);
+    if (!template) throw new BadRequestException('Campaign template not found');
+    if (!this.emailService.getStatus().isConfigured) {
+      throw new BadRequestException('Email delivery must be configured for scheduled campaigns');
+    }
+    try {
+      await this.sendCampaignEmails(campaign, template, dueBefore);
+    } finally {
+      await this.updateCampaign(organizationId, campaign);
+    }
   }
 
   async pauseCampaign(organizationId: string, campaignId: string): Promise<CampaignDto> {
@@ -668,43 +739,98 @@ export class PhishingService {
     organizationId: string,
     campaign: Record<string, unknown>
   ): Promise<void> {
-    const org = await this.prisma.organization.findUnique({
-      where: { id: organizationId },
-      select: { settings: true },
-    });
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM organizations WHERE id = ${organizationId} FOR UPDATE`;
+      const org = await tx.organization.findUnique({
+        where: { id: organizationId },
+        select: { settings: true },
+      });
+      const settings = (org?.settings as Record<string, unknown>) || {};
+      const campaigns = (settings.phishingCampaigns as Array<Record<string, unknown>>) || [];
+      const index = campaigns.findIndex((item) => item.id === campaign.id);
+      if (index === -1) return;
 
-    const settings = (org?.settings as Record<string, unknown>) || {};
-    const campaigns = (settings.phishingCampaigns as Array<Record<string, unknown>>) || [];
-
-    const index = campaigns.findIndex((c) => c.id === campaign.id);
-    if (index !== -1) {
-      campaigns[index] = campaign;
-    }
-
-    await this.prisma.organization.update({
-      where: { id: organizationId },
-      data: {
-        settings: {
-          ...settings,
-          phishingCampaigns: campaigns,
-        } as unknown as Prisma.InputJsonValue,
-      },
+      campaigns[index] = this.mergeCampaignUpdates(campaigns[index], campaign);
+      await tx.organization.update({
+        where: { id: organizationId },
+        data: {
+          settings: {
+            ...settings,
+            phishingCampaigns: campaigns,
+          } as unknown as Prisma.InputJsonValue,
+        },
+      });
     });
   }
 
+  private mergeCampaignUpdates(
+    current: Record<string, unknown>,
+    incoming: Record<string, unknown>
+  ): Record<string, unknown> {
+    const currentTargets = (current.targets as Array<Record<string, unknown>>) || [];
+    const incomingTargets = (incoming.targets as Array<Record<string, unknown>>) || [];
+    const currentByUser = new Map(currentTargets.map((target) => [target.userId, target]));
+    const mergedTargets = incomingTargets.map((target) => {
+      const merged = { ...(currentByUser.get(target.userId) || {}), ...target };
+      merged.status = merged.credentialsEnteredAt
+        ? TargetStatus.CREDENTIALS_ENTERED
+        : merged.reportedAt
+          ? TargetStatus.REPORTED
+          : merged.clickedAt
+            ? TargetStatus.CLICKED
+            : merged.openedAt
+              ? TargetStatus.OPENED
+              : merged.sentAt
+                ? TargetStatus.SENT
+                : merged.status;
+      return merged;
+    });
+    for (const target of currentTargets) {
+      if (!mergedTargets.some((candidate) => candidate.userId === target.userId)) {
+        mergedTargets.push(target);
+      }
+    }
+
+    return {
+      ...current,
+      ...incoming,
+      status:
+        current.status === CampaignStatus.COMPLETED ? current.status : incoming.status,
+      targets: mergedTargets,
+      targetCount: mergedTargets.length,
+      sentCount: mergedTargets.filter((target) => target.sentAt).length,
+      openedCount: mergedTargets.filter((target) => target.openedAt).length,
+      clickedCount: mergedTargets.filter((target) => target.clickedAt).length,
+      reportedCount: mergedTargets.filter((target) => target.reportedAt).length,
+      credentialsEnteredCount: mergedTargets.filter((target) => target.credentialsEnteredAt)
+        .length,
+    };
+  }
+
   private async sendCampaignEmails(
-    organizationId: string,
     campaign: Record<string, unknown>,
-    template: PhishingTemplateDto
+    template: PhishingTemplateDto,
+    dueBefore: Date
   ): Promise<void> {
-    const trackingDomain = process.env.PHISHING_TRACKING_DOMAIN || 'localhost:3001';
+    const configuredBaseUrl = process.env.PHISHING_TRACKING_BASE_URL;
+    if (process.env.NODE_ENV === 'production' && !configuredBaseUrl) {
+      throw new BadRequestException(
+        'PHISHING_TRACKING_BASE_URL must be configured before sending phishing campaigns'
+      );
+    }
+    const trackingBaseUrl = (configuredBaseUrl || 'http://localhost:3001').replace(/\/$/, '');
     const targetsArray = campaign.targets as Array<Record<string, unknown>>;
 
     let failed = 0;
-    for (const target of targetsArray) {
+    const dueTargets = targetsArray.filter((target) => {
+      if (target.status !== TargetStatus.PENDING) return false;
+      if (!target.scheduledSendAt) return true;
+      return new Date(target.scheduledSendAt as string) <= dueBefore;
+    });
+    for (const target of dueTargets) {
       try {
-        const trackingUrl = `http://${trackingDomain}/api/phishing/track/click?t=${target.trackingToken}`;
-        const openTrackingUrl = `http://${trackingDomain}/api/phishing/track/open?t=${target.trackingToken}`;
+        const trackingUrl = `${trackingBaseUrl}/api/phishing/track/click?t=${target.trackingToken}`;
+        const openTrackingUrl = `${trackingBaseUrl}/api/phishing/track/open?t=${target.trackingToken}`;
 
         const htmlBody =
           template.htmlBody

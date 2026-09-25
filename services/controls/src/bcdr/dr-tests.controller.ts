@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -38,10 +28,7 @@ export class DRTestsController {
   @Get()
   @ApiOperation({ summary: 'List DR tests' })
   @ApiResponse({ status: 200, description: 'List of DR tests' })
-  async findAll(
-    @CurrentUser() user: UserContext,
-    @Query() filters: DRTestFilterDto,
-  ) {
+  async findAll(@CurrentUser() user: UserContext, @Query() filters: DRTestFilterDto) {
     return this.testsService.findAll(user.organizationId, filters);
   }
 
@@ -54,37 +41,22 @@ export class DRTestsController {
   @Get('upcoming')
   @ApiOperation({ summary: 'Get upcoming DR tests' })
   @ApiQuery({ name: 'days', required: false, type: Number })
-  async getUpcoming(
-    @CurrentUser() user: UserContext,
-    @Query('days') days?: number,
-  ) {
+  async getUpcoming(@CurrentUser() user: UserContext, @Query('days') days?: number) {
     return this.testsService.getUpcomingTests(user.organizationId, days || 30);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get DR test details' })
   @ApiParam({ name: 'id', description: 'Test ID' })
-  async findOne(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  async findOne(@Param('id') id: string, @CurrentUser() user: UserContext) {
     return this.testsService.findOne(id, user.organizationId);
   }
 
   @Post()
   @ApiOperation({ summary: 'Create a DR test' })
   @ApiResponse({ status: 201, description: 'Test created' })
-  async create(
-    @CurrentUser() user: UserContext,
-    @Body() dto: CreateDRTestDto,
-  ) {
-    return this.testsService.create(
-      user.organizationId,
-      user.userId,
-      dto,
-      user.email,
-      user.name,
-    );
+  async create(@CurrentUser() user: UserContext, @Body() dto: CreateDRTestDto) {
+    return this.testsService.create(user.organizationId, user.userId, dto, user.email, user.name);
   }
 
   @Put(':id')
@@ -93,7 +65,7 @@ export class DRTestsController {
   async update(
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
-    @Body() dto: UpdateDRTestDto,
+    @Body() dto: UpdateDRTestDto
   ) {
     return this.testsService.update(
       id,
@@ -101,17 +73,14 @@ export class DRTestsController {
       user.userId,
       dto,
       user.email,
-      user.name,
+      user.name
     );
   }
 
   @Post(':id/start')
   @ApiOperation({ summary: 'Start a DR test' })
   @ApiParam({ name: 'id', description: 'Test ID' })
-  async startTest(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  async startTest(@Param('id') id: string, @CurrentUser() user: UserContext) {
     return this.testsService.startTest(id, user.organizationId, user.userId);
   }
 
@@ -121,7 +90,7 @@ export class DRTestsController {
   async recordResults(
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
-    @Body() dto: RecordTestResultDto,
+    @Body() dto: RecordTestResultDto
   ) {
     return this.testsService.recordResults(
       id,
@@ -129,7 +98,7 @@ export class DRTestsController {
       user.userId,
       dto,
       user.email,
-      user.name,
+      user.name
     );
   }
 
@@ -139,7 +108,7 @@ export class DRTestsController {
   async addFinding(
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
-    @Body() dto: CreateTestFindingDto,
+    @Body() dto: CreateTestFindingDto
   ) {
     return this.testsService.addFinding(id, user.organizationId, user.userId, dto);
   }
@@ -152,7 +121,11 @@ export class DRTestsController {
     @Param('id') id: string,
     @Param('findingId') findingId: string,
     @CurrentUser() user: UserContext,
-    @Body() updates: Partial<CreateTestFindingDto> & { remediationStatus?: string; remediationNotes?: string },
+    @Body()
+    updates: Partial<CreateTestFindingDto> & {
+      remediationStatus?: string;
+      remediationNotes?: string;
+    }
   ) {
     return this.testsService.updateFinding(id, findingId, user.userId, updates);
   }
@@ -160,17 +133,7 @@ export class DRTestsController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a DR test' })
   @ApiParam({ name: 'id', description: 'Test ID' })
-  async delete(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
-    return this.testsService.delete(
-      id,
-      user.organizationId,
-      user.userId,
-      user.email,
-      user.name,
-    );
+  async delete(@Param('id') id: string, @CurrentUser() user: UserContext) {
+    return this.testsService.delete(id, user.organizationId, user.userId, user.email, user.name);
   }
 }
-

@@ -1,3 +1,5 @@
+import { requireExplicitDemoMode } from '../demo-mode.js';
+
 interface ControlTestParams {
   controlId: string;
   controlType: 'technical' | 'administrative' | 'physical';
@@ -55,7 +57,10 @@ interface BatchTestResult {
 }
 
 // Control test definitions
-const controlTests: Record<string, (config?: ControlTestParams['testConfiguration']) => Promise<Partial<TestResult>>> = {
+const controlTests: Record<
+  string,
+  (config?: ControlTestParams['testConfiguration']) => Promise<Partial<TestResult>>
+> = {
   // Access Control Tests
   'AC-001': async () => ({
     findings: [
@@ -70,7 +75,7 @@ const controlTests: Record<string, (config?: ControlTestParams['testConfiguratio
     maxScore: 100,
     status: 'passed',
   }),
-  
+
   'AC-002': async () => ({
     findings: [
       {
@@ -251,6 +256,7 @@ const controlTests: Record<string, (config?: ControlTestParams['testConfiguratio
 };
 
 export async function runControlTest(params: ControlTestParams): Promise<TestResult> {
+  requireExplicitDemoMode('Automated control testing');
   const { controlId, controlType, testConfiguration } = params;
   const startTime = Date.now();
   const testId = `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -258,9 +264,9 @@ export async function runControlTest(params: ControlTestParams): Promise<TestRes
   try {
     // Check if we have a specific test for this control
     const testFn = controlTests[controlId];
-    
+
     let testResult: Partial<TestResult>;
-    
+
     if (testFn) {
       testResult = await testFn(testConfiguration);
     } else {
@@ -448,7 +454,3 @@ export async function runBatchControlTests(params: BatchTestParams): Promise<Bat
     results,
   };
 }
-
-
-
-

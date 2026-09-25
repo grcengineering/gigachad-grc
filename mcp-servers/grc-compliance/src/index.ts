@@ -155,7 +155,13 @@ const tools: Tool[] = [
           type: 'array',
           items: {
             type: 'string',
-            enum: ['security', 'availability', 'processing_integrity', 'confidentiality', 'privacy'],
+            enum: [
+              'security',
+              'availability',
+              'processing_integrity',
+              'confidentiality',
+              'privacy',
+            ],
           },
           description: 'Trust service categories to check',
         },
@@ -266,6 +272,16 @@ const resources: Resource[] = [
   },
 ];
 
+const DEMO_ONLY_TOOLS = new Set([
+  'run_control_test',
+  'run_batch_tests',
+  'generate_compliance_report',
+  'check_soc2_controls',
+  'check_iso27001_controls',
+  'check_hipaa_controls',
+  'check_gdpr_controls',
+]);
+
 // Handle list tools request
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return { tools };
@@ -288,16 +304,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         result = await runBatchControlTests(toolArgs as Parameters<typeof runBatchControlTests>[0]);
         break;
       case 'validate_policy_compliance':
-        result = await validatePolicyCompliance(toolArgs as Parameters<typeof validatePolicyCompliance>[0]);
+        result = await validatePolicyCompliance(
+          toolArgs as Parameters<typeof validatePolicyCompliance>[0]
+        );
         break;
       case 'generate_compliance_report':
-        result = await generateComplianceReport(toolArgs as Parameters<typeof generateComplianceReport>[0]);
+        result = await generateComplianceReport(
+          toolArgs as Parameters<typeof generateComplianceReport>[0]
+        );
         break;
       case 'check_soc2_controls':
         result = await checkSOC2Controls(toolArgs as Parameters<typeof checkSOC2Controls>[0]);
         break;
       case 'check_iso27001_controls':
-        result = await checkISO27001Controls(toolArgs as Parameters<typeof checkISO27001Controls>[0]);
+        result = await checkISO27001Controls(
+          toolArgs as Parameters<typeof checkISO27001Controls>[0]
+        );
         break;
       case 'check_hipaa_controls':
         result = await checkHIPAAControls(toolArgs as Parameters<typeof checkHIPAAControls>[0]);
@@ -307,6 +329,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         break;
       default:
         throw new Error(`Unknown tool: ${name}`);
+    }
+
+    if (DEMO_ONLY_TOOLS.has(name)) {
+      result = {
+        demoMode: true,
+        warning: 'Synthetic demonstration output; do not use as compliance evidence.',
+        result,
+      };
     }
 
     return {
@@ -368,4 +398,3 @@ async function main() {
 }
 
 main().catch(console.error);
-

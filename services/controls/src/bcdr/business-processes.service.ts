@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ConflictException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { serializeQueryResult } from './serialize-query-result';
 import { AuditService } from '../audit/audit.service';
 import {
   CreateBusinessProcessDto,
@@ -184,13 +185,13 @@ export class BusinessProcessesService {
       `,
     ]);
 
-    return {
+    return serializeQueryResult({
       data: processes,
       total: Number(total[0]?.count || 0),
       page,
       limit,
       totalPages: Math.ceil(Number(total[0]?.count || 0) / limit),
-    };
+    });
   }
 
   async findOne(id: string, organizationId: string) {
@@ -659,7 +660,7 @@ export class BusinessProcessesService {
         AND deleted_at IS NULL
     `;
 
-    return stats[0];
+    return serializeQueryResult(stats[0]);
   }
 
   // ===========================================

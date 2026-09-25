@@ -2,11 +2,15 @@ import {
   Controller,
   Get,
   Post,
+  Put,
+  Delete,
   Body,
   Param,
   UseGuards,
   HttpCode,
   HttpStatus,
+  NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,18 +21,23 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { MCPClientService } from './mcp-client.service';
+import { MCPCredentialsService } from './mcp-credentials.service';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 import { PermissionGuard } from '../auth/permission.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { Resource, Action } from '../permissions/dto/permission.dto';
 import { CallToolDto, GetPromptDto, ReadResourceDto } from './dto/mcp.dto';
+import { CurrentUser, UserContext } from '@gigachad-grc/shared';
 
 @ApiTags('MCP Servers')
 @ApiBearerAuth()
 @Controller('api/mcp')
 @UseGuards(DevAuthGuard, PermissionGuard)
 export class MCPController {
-  constructor(private readonly mcpClient: MCPClientService) {}
+  constructor(
+    private readonly mcpClient: MCPClientService,
+    private readonly credentialsService: MCPCredentialsService
+  ) {}
 
   // ============================================
   // Server Management
@@ -53,18 +62,21 @@ export class MCPController {
     },
   })
   @RequirePermission(Resource.INTEGRATIONS, Action.READ)
-  getServers() {
-    return this.mcpClient.getServers();
+  getServers(@CurrentUser() user: UserContext) {
+    return this.mcpClient.getServers(user.organizationId);
   }
 
   @Get('servers/:serverId/status')
   @ApiOperation({ summary: 'Get detailed status of an MCP server' })
   @ApiParam({ name: 'serverId', description: 'Server ID' })
   @RequirePermission(Resource.INTEGRATIONS, Action.READ)
-  getServerStatus(@Param('serverId') serverId: string) {
-    const status = this.mcpClient.getServerStatus(serverId);
+  getServerStatus(
+    @Param('serverId') serverId: string,
+    @CurrentUser() user: UserContext
+  ) {
+    const status = this.mcpClient.getServerStatus(serverId, user.organizationId);
     if (!status) {
-      return { error: 'Server not found' };
+      throw new NotFoundException('MCP server not found');
     }
     return {
       id: status.config.id,
@@ -82,8 +94,11 @@ export class MCPController {
   @ApiOperation({ summary: 'Start an MCP server' })
   @ApiParam({ name: 'serverId', description: 'Server ID' })
   @RequirePermission(Resource.INTEGRATIONS, Action.UPDATE)
-  async startServer(@Param('serverId') serverId: string) {
-    await this.mcpClient.startServer(serverId);
+  async startServer(
+    @Param('serverId') serverId: string,
+    @CurrentUser() user: UserContext
+  ) {
+    await this.mcpClient.startServer(serverId, user.organizationId);
     return { success: true, message: `Server ${serverId} started` };
   }
 
@@ -92,8 +107,11 @@ export class MCPController {
   @ApiOperation({ summary: 'Stop an MCP server' })
   @ApiParam({ name: 'serverId', description: 'Server ID' })
   @RequirePermission(Resource.INTEGRATIONS, Action.UPDATE)
-  async stopServer(@Param('serverId') serverId: string) {
-    await this.mcpClient.stopServer(serverId);
+  async stopServer(
+    @Param('serverId') serverId: string,
+    @CurrentUser() user: UserContext
+  ) {
+    await this.mcpClient.stopServer(serverId, user.organizationId);
     return { success: true, message: `Server ${serverId} stopped` };
   }
 
@@ -102,9 +120,87 @@ export class MCPController {
   @ApiOperation({ summary: 'Restart an MCP server' })
   @ApiParam({ name: 'serverId', description: 'Server ID' })
   @RequirePermission(Resource.INTEGRATIONS, Action.UPDATE)
-  async restartServer(@Param('serverId') serverId: string) {
-    await this.mcpClient.restartServer(serverId);
+  async restartServer(
+    @Param('serverId') serverId: string,
+    @CurrentUser() user: UserContext
+  ) {
+    await this.mcpClient.restartServer(serverId, user.organizationId);
     return { success: true, message: `Server ${serverId} restarted` };
+  }
+
+  @Get('servers/:serverId/credentials')
+  @ApiOperation({ summary: 'Get masked organization credentials for an MCP server' })
+  @RequirePermission(Resource.INTEGRATIONS, Action.READ)
+  async getCredentials(
+    @Param('serverId') serverId: string,
+    @CurrentUser() user: UserContext
+  ) {
+    if (!this.mcpClient.getServerStatus(serverId, user.organizationId)) {
+      throw new NotFoundException('MCP server not found');
+    }
+    return {
+      configured: Boolean(
+        await this.credentialsService.getCredentials(user.organizationId, serverId)
+      ),
+      env: await this.credentialsService.getMaskedCredentials(user.organizationId, serverId),
+    };
+  }
+
+  @Put('servers/:serverId/credentials')
+  @ApiOperation({ summary: 'Store encrypted organization credentials for an MCP server' })
+  @RequirePermission(Resource.INTEGRATIONS, Action.UPDATE)
+  async storeCredentials(
+    @Param('serverId') serverId: string,
+    @Body()
+    body: {
+      env: Record<string, string>;
+      configuredIntegrations?: string[];
+    },
+    @CurrentUser() user: UserContext
+  ) {
+    const state = this.mcpClient.getServerStatus(serverId, user.organizationId);
+    if (!state) throw new NotFoundException('MCP server not found');
+    if (
+      !body.env ||
+      typeof body.env !== 'object' ||
+      Array.isArray(body.env) ||
+      Object.values(body.env).some((value) => typeof value !== 'string')
+    ) {
+      throw new BadRequestException('env must be an object containing string values');
+    }
+    await this.credentialsService.storeCredentials(
+      user.organizationId,
+      serverId,
+      serverId,
+      state.config.name,
+      body.env || {},
+      body.configuredIntegrations || [],
+      user.userId
+    );
+    if (state.status === 'running') {
+      await this.mcpClient.restartServer(serverId, user.organizationId);
+    }
+    return { success: true };
+  }
+
+  @Delete('servers/:serverId/credentials')
+  @ApiOperation({ summary: 'Delete organization credentials for an MCP server' })
+  @RequirePermission(Resource.INTEGRATIONS, Action.UPDATE)
+  async deleteCredentials(
+    @Param('serverId') serverId: string,
+    @CurrentUser() user: UserContext
+  ) {
+    const state = this.mcpClient.getServerStatus(serverId, user.organizationId);
+    if (!state) throw new NotFoundException('MCP server not found');
+    await this.credentialsService.deleteCredentials(
+      user.organizationId,
+      user.userId,
+      serverId
+    );
+    if (state.status === 'running') {
+      await this.mcpClient.restartServer(serverId, user.organizationId);
+    }
+    return { success: true };
   }
 
   // ============================================
@@ -115,15 +211,18 @@ export class MCPController {
   @ApiOperation({ summary: 'List available tools for a server' })
   @ApiParam({ name: 'serverId', description: 'Server ID' })
   @RequirePermission(Resource.INTEGRATIONS, Action.READ)
-  getServerTools(@Param('serverId') serverId: string) {
-    return this.mcpClient.getTools(serverId);
+  getServerTools(
+    @Param('serverId') serverId: string,
+    @CurrentUser() user: UserContext
+  ) {
+    return this.mcpClient.getTools(serverId, user.organizationId);
   }
 
   @Get('tools')
   @ApiOperation({ summary: 'List all available tools across all servers' })
   @RequirePermission(Resource.INTEGRATIONS, Action.READ)
-  getAllTools() {
-    return this.mcpClient.getAllTools();
+  getAllTools(@CurrentUser() user: UserContext) {
+    return this.mcpClient.getAllTools(user.organizationId);
   }
 
   @Post('servers/:serverId/tools/call')
@@ -134,9 +233,15 @@ export class MCPController {
   @RequirePermission(Resource.INTEGRATIONS, Action.CREATE)
   async callTool(
     @Param('serverId') serverId: string,
-    @Body() dto: CallToolDto
+    @Body() dto: CallToolDto,
+    @CurrentUser() user: UserContext
   ) {
-    const result = await this.mcpClient.callTool(serverId, dto.toolName, dto.params);
+    const result = await this.mcpClient.callTool(
+      serverId,
+      dto.toolName,
+      dto.params,
+      user.organizationId
+    );
     return { result };
   }
 
@@ -148,8 +253,11 @@ export class MCPController {
   @ApiOperation({ summary: 'List resources from an MCP server' })
   @ApiParam({ name: 'serverId', description: 'Server ID' })
   @RequirePermission(Resource.INTEGRATIONS, Action.READ)
-  async listResources(@Param('serverId') serverId: string) {
-    return this.mcpClient.listResources(serverId);
+  async listResources(
+    @Param('serverId') serverId: string,
+    @CurrentUser() user: UserContext
+  ) {
+    return this.mcpClient.listResources(serverId, user.organizationId);
   }
 
   @Post('servers/:serverId/resources/read')
@@ -160,9 +268,10 @@ export class MCPController {
   @RequirePermission(Resource.INTEGRATIONS, Action.READ)
   async readResource(
     @Param('serverId') serverId: string,
-    @Body() dto: ReadResourceDto
+    @Body() dto: ReadResourceDto,
+    @CurrentUser() user: UserContext
   ) {
-    return this.mcpClient.readResource(serverId, dto.uri);
+    return this.mcpClient.readResource(serverId, dto.uri, user.organizationId);
   }
 
   // ============================================
@@ -173,8 +282,11 @@ export class MCPController {
   @ApiOperation({ summary: 'List prompts from an MCP server' })
   @ApiParam({ name: 'serverId', description: 'Server ID' })
   @RequirePermission(Resource.AI, Action.READ)
-  async listPrompts(@Param('serverId') serverId: string) {
-    return this.mcpClient.listPrompts(serverId);
+  async listPrompts(
+    @Param('serverId') serverId: string,
+    @CurrentUser() user: UserContext
+  ) {
+    return this.mcpClient.listPrompts(serverId, user.organizationId);
   }
 
   @Post('servers/:serverId/prompts/get')
@@ -185,8 +297,9 @@ export class MCPController {
   @RequirePermission(Resource.AI, Action.READ)
   async getPrompt(
     @Param('serverId') serverId: string,
-    @Body() dto: GetPromptDto
+    @Body() dto: GetPromptDto,
+    @CurrentUser() user: UserContext
   ) {
-    return this.mcpClient.getPrompt(serverId, dto.name, dto.args);
+    return this.mcpClient.getPrompt(serverId, dto.name, dto.args, user.organizationId);
   }
 }

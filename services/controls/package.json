@@ -48,6 +48,7 @@
     "date-fns": "^4.1.0",
     "exceljs": "^4.4.0",
     "helmet": "^7.1.0",
+    "ioredis": "^5.10.1",
     "js-yaml": "^4.3.2",
     "jszip": "3.10.1",
     "libphonenumber-js": "^1.13.11",

@@ -452,8 +452,8 @@ export class RiskFilterDto {
   category?: RiskCategory;
 
   @IsOptional()
-  @IsString()
-  status?: string;
+  @IsEnum(RiskIntakeStatus)
+  status?: RiskIntakeStatus;
 
   @IsOptional()
   @IsEnum(RiskLevel)

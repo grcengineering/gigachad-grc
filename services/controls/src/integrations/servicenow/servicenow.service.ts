@@ -36,14 +36,20 @@ export class ServiceNowService {
     organizationId: string,
     dto: ServiceNowConnectionConfigDto
   ): Promise<ServiceNowConnectionResponseDto> {
-    // Validate connection
-    const testResult = await this.testConnection(dto);
-
-    if (!testResult.success) {
-      throw new BadRequestException(`Connection failed: ${testResult.error}`);
+    const requiresOAuth = dto.authType === ServiceNowAuthType.OAUTH;
+    if (requiresOAuth) {
+      if (!dto.clientId || !dto.clientSecret) {
+        throw new BadRequestException('OAuth client ID and client secret are required');
+      }
+    } else {
+      const testResult = await this.testConnection(dto);
+      if (!testResult.success) {
+        throw new BadRequestException(`Connection failed: ${testResult.error}`);
+      }
     }
 
-    // Store connection
+    // OAuth configuration is persisted as disconnected until the authorization
+    // callback exchanges a real code for provider tokens.
     const connection = await this.prisma.serviceNowConnection.upsert({
       where: { organizationId },
       create: {
@@ -51,20 +57,27 @@ export class ServiceNowService {
         instanceUrl: dto.instanceUrl,
         authType: dto.authType,
         credentials: JSON.stringify(this.encryptCredentials(dto)),
-        isConnected: true,
-        connectedAt: new Date(),
+        isConnected: !requiresOAuth,
+        connectedAt: requiresOAuth ? null : new Date(),
       },
       update: {
         instanceUrl: dto.instanceUrl,
         authType: dto.authType,
         credentials: JSON.stringify(this.encryptCredentials(dto)),
-        isConnected: true,
-        connectedAt: new Date(),
+        isConnected: !requiresOAuth,
+        connectedAt: requiresOAuth ? null : new Date(),
+        accessToken: requiresOAuth ? null : undefined,
+        refreshToken: requiresOAuth ? null : undefined,
+        tokenExpiresAt: requiresOAuth ? null : undefined,
         connectionError: null,
       },
     });
 
-    this.logger.log(`ServiceNow connected for org ${organizationId}`);
+    this.logger.log(
+      requiresOAuth
+        ? `ServiceNow OAuth configured for org ${organizationId}; authorization is pending`
+        : `ServiceNow connected for org ${organizationId}`
+    );
 
     return this.toConnectionResponse(connection);
   }
@@ -501,14 +514,7 @@ export class ServiceNowService {
     dto: ServiceNowConnectionConfigDto
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      let auth: string;
-
-      if (dto.authType === ServiceNowAuthType.BASIC) {
-        auth = `Basic ${Buffer.from(`${dto.username}:${dto.password}`).toString('base64')}`;
-      } else {
-        // For OAuth, we'd need to get a token first
-        return { success: true }; // Skip test for OAuth initial setup
-      }
+      const auth = `Basic ${Buffer.from(`${dto.username}:${dto.password}`).toString('base64')}`;
 
       // SECURITY: Use safeFetch to prevent SSRF via malicious instanceUrl
       const response = await safeFetch(

@@ -22,13 +22,16 @@ async function fillSelectByPlaceholder(page: Page, placeholder: string, optionLa
   await page.getByRole('option', { name: optionLabel }).first().click();
 }
 
+async function selectLabeled(page: Page, label: string, optionLabel: RegExp) {
+  const field = page.locator('label').filter({ hasText: new RegExp(`^${label}`) }).first();
+  await field.getByRole('button').click();
+  await page.getByRole('option', { name: optionLabel }).first().click();
+}
+
 test.describe('Risks — create flow', () => {
   test('Add Risk dialog opens, accepts input, and the submit click does not crash', async ({
     page,
   }) => {
-    // NOTE: Risk creation API has a pre-existing schema mismatch — backend rejects
-    // category/likelihood/impact fields that the frontend sends. This test verifies the
-    // UI flow doesn't crash; the dialog may stay open due to that 400 response.
     const errs = trackPageErrors(page);
     await page.goto('/risks');
     await page
@@ -38,15 +41,21 @@ test.describe('Risks — create flow', () => {
     const dialog = page.getByRole('heading', { name: /create new risk/i });
     await expect(dialog).toBeVisible();
 
-    await page.getByLabel('Title').fill(`Test Risk ${SUFFIX}`);
+    const title = `Test Risk ${SUFFIX}`;
+    await page.getByLabel('Title').fill(title);
     await page.getByLabel('Description').fill('Created by automated test');
 
+    const responsePromise = page.waitForResponse(
+      (response) => response.url().endsWith('/api/risks') && response.request().method() === 'POST'
+    );
     const submit = page.getByRole('button', { name: /^create risk$/i });
     await expect(submit).toBeEnabled();
     await submit.click();
 
-    // The click should not throw; the page must remain mounted whether the API succeeded or 400'd
-    await page.waitForTimeout(1000);
+    const response = await responsePromise;
+    expect(response.status()).toBe(201);
+    await expect(dialog).toBeHidden();
+    await expect(page.getByText(title).first()).toBeVisible();
     await expectPageHealthy(page, errs);
   });
 
@@ -263,6 +272,122 @@ test.describe('Evidence — Upload Evidence dialog form', () => {
     await expect(page.getByText(/drag and drop a file/i)).toBeVisible();
     await page.keyboard.press('Escape');
     await expectPageHealthy(page, errs);
+  });
+});
+
+test.describe('BC/DR — persisted create flows', () => {
+  const cases = [
+    {
+      path: '/bcdr/plans/new',
+      endpoint: '/api/bcdr/plans',
+      codeLabel: 'Plan ID',
+      code: `PLAN-${SUFFIX}`,
+      nameLabel: 'Title',
+      name: `Continuity Plan ${SUFFIX}`,
+      typeLabel: 'Plan Type',
+      type: /business continuity/i,
+      submit: /create bc\/dr plan/i,
+    },
+    {
+      path: '/bcdr/runbooks/new',
+      endpoint: '/api/bcdr/runbooks',
+      codeLabel: 'Runbook ID',
+      code: `RUN-${SUFFIX}`,
+      nameLabel: 'Title',
+      name: `Recovery Runbook ${SUFFIX}`,
+      typeLabel: 'Category',
+      type: /system recovery/i,
+      submit: /create runbook/i,
+    },
+    {
+      path: '/bcdr/tests/new',
+      endpoint: '/api/bcdr/tests',
+      codeLabel: 'Test ID',
+      code: `TEST-${SUFFIX}`,
+      nameLabel: 'Name',
+      name: `Tabletop Test ${SUFFIX}`,
+      typeLabel: 'Test Type',
+      type: /tabletop exercise/i,
+      submit: /schedule test/i,
+    },
+    {
+      path: '/bcdr/processes/new',
+      endpoint: '/api/bcdr/processes',
+      codeLabel: 'Process ID',
+      code: `PROC-${SUFFIX}`,
+      nameLabel: 'Name',
+      name: `Critical Process ${SUFFIX}`,
+      typeLabel: 'Criticality Tier',
+      type: /tier 1/i,
+      submit: /create business process/i,
+    },
+  ];
+
+  for (const record of cases) {
+    test(`${record.path} creates a durable record`, async ({ page }) => {
+      await page.goto(record.path);
+      await page.getByLabel(record.codeLabel).fill(record.code.slice(0, 48));
+      await page.getByLabel(record.nameLabel).fill(record.name);
+      await selectLabeled(page, record.typeLabel, record.type);
+      const responsePromise = page.waitForResponse(
+        (response) =>
+          response.url().endsWith(record.endpoint) && response.request().method() === 'POST'
+      );
+      await page.getByRole('button', { name: record.submit }).click();
+      const response = await responsePromise;
+      expect(response.status()).toBe(201);
+      await expect(page).toHaveURL(new RegExp(`${record.path.replace('/new', '')}/[^/]+$`));
+    });
+  }
+});
+
+test.describe('Audit Requests — real create surface', () => {
+  test('new request form creates and opens a request', async ({ page }) => {
+    await page.goto('/audit-requests/new');
+    await selectLabeled(page, 'Audit', /.+/);
+    await page.getByLabel('Title').fill(`Evidence Request ${SUFFIX}`);
+    await page.getByLabel('Description').fill('Provide the current access review evidence.');
+    const responsePromise = page.waitForResponse(
+      (response) =>
+        response.url().endsWith('/api/audit-requests') &&
+        response.request().method() === 'POST'
+    );
+    await page.getByRole('button', { name: /create request/i }).click();
+    const response = await responsePromise;
+    expect(response.status()).toBe(201);
+    await expect(page).toHaveURL(/\/audit-requests\/[^/]+$/);
+    await expect(page.getByText(`Evidence Request ${SUFFIX}`)).toBeVisible();
+  });
+});
+
+test.describe('Custom Dashboards — editor and live widgets', () => {
+  test('creates a dashboard and adds a live data widget', async ({ page }) => {
+    const dashboardName = `Operations Dashboard ${SUFFIX}`;
+    await page.goto('/dashboards');
+    await page.getByRole('button', { name: /create dashboard/i }).first().click();
+    await page.getByLabel('Name').fill(dashboardName);
+    const createResponse = page.waitForResponse(
+      (response) =>
+        response.url().endsWith('/api/dashboards') && response.request().method() === 'POST'
+    );
+    await page.getByRole('button', { name: /create dashboard/i }).last().click();
+    const response = await createResponse;
+    expect(response.status()).toBe(201);
+    const created = (await response.json()) as { id: string };
+    await page.locator(`a[href="/dashboards/${created.id}"]`).click();
+    await expect(page).toHaveURL(/\/dashboards\/[^/]+$/);
+
+    await page.getByRole('button', { name: /add widget/i }).first().click();
+    await page.getByLabel('Title').fill(`Control Count ${SUFFIX}`);
+    const widgetResponse = page.waitForResponse(
+      (response) =>
+        /\/api\/dashboards\/[^/]+\/widgets$/.test(new URL(response.url()).pathname) &&
+        response.request().method() === 'POST'
+    );
+    await page.getByRole('button', { name: /^add widget$/i }).last().click();
+    expect((await widgetResponse).status()).toBe(201);
+    await expect(page.getByText(`Control Count ${SUFFIX}`)).toBeVisible();
+    await expect(page.getByText('matching records')).toBeVisible();
   });
 });
 

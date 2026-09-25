@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
+
+export const HEALTH_PRISMA_CLIENT = Symbol('HEALTH_PRISMA_CLIENT');
 
 // Interface for any PrismaService implementation
 interface IPrismaClient {
@@ -15,6 +17,12 @@ export interface HealthIndicatorResult {
 @Injectable()
 export class PrismaHealthIndicator {
   private prisma: IPrismaClient | null = null;
+
+  constructor(
+    @Optional() @Inject(HEALTH_PRISMA_CLIENT) prisma?: IPrismaClient
+  ) {
+    this.prisma = prisma || null;
+  }
 
   /**
    * Set the Prisma client to use for health checks
@@ -42,8 +50,7 @@ export class PrismaHealthIndicator {
 
   async isHealthy(key: string): Promise<HealthIndicatorResult> {
     if (!this.prisma) {
-      // If no prisma client is set, assume healthy (for services without DB)
-      return this.getStatus(key, true, { message: 'No database configured' });
+      return this.getStatus(key, false, { message: 'Database health client is not configured' });
     }
 
     try {

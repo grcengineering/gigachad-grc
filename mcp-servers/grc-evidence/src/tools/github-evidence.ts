@@ -27,17 +27,7 @@ export async function collectGitHubEvidence(params: GitHubEvidenceParams): Promi
 
   const token = process.env.GITHUB_TOKEN;
   if (!token) {
-    return {
-      service: 'github',
-      collectedAt: new Date().toISOString(),
-      organization,
-      findings: [{ error: 'GITHUB_TOKEN environment variable not set' }],
-      summary: {
-        totalRepositories: 0,
-        compliantRepositories: 0,
-        nonCompliantRepositories: 0,
-      },
-    };
+    throw new Error('GITHUB_TOKEN environment variable not set');
   }
 
   const octokit = new Octokit({ auth: token });
@@ -60,7 +50,7 @@ export async function collectGitHubEvidence(params: GitHubEvidenceParams): Promi
 
     // Get repositories - use unknown[] to handle type differences between get and listForOrg
     let repos: unknown[];
-    
+
     if (specificRepos && specificRepos.length > 0) {
       const repoPromises = specificRepos.map((repo) =>
         octokit.repos.get({ owner: organization, repo }).then((r) => r.data)
@@ -170,9 +160,7 @@ export async function collectGitHubEvidence(params: GitHubEvidenceParams): Promi
           const criticalAlerts = alerts.filter(
             (a) => a.security_vulnerability?.severity === 'critical'
           );
-          const highAlerts = alerts.filter(
-            (a) => a.security_vulnerability?.severity === 'high'
-          );
+          const highAlerts = alerts.filter((a) => a.security_vulnerability?.severity === 'high');
 
           repoFindings.dependabot = {
             enabled: true,
@@ -255,4 +243,3 @@ export async function collectGitHubEvidence(params: GitHubEvidenceParams): Promi
     };
   }
 }
-

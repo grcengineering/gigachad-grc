@@ -133,7 +133,7 @@ Full REDIS_URL connection string.
 Keycloak internal URL.
 */}}
 {{- define "gigachad-grc.keycloak.url" -}}
-{{- printf "http://%s-keycloak:8080" (include "gigachad-grc.fullname" .) }}
+{{- printf "http://%s-keycloak:8080/auth" (include "gigachad-grc.fullname" .) }}
 {{- end }}
 
 {{/*
@@ -189,20 +189,16 @@ Common environment variables injected into all backend services.
 {{- define "gigachad-grc.backendEnv" -}}
 - name: NODE_ENV
   value: production
-- name: POSTGRES_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: {{ include "gigachad-grc.secretName" . }}
-      key: postgresql-password
 - name: DATABASE_URL
-  value: {{ include "gigachad-grc.databaseUrl" . }}
-- name: REDIS_PASSWORD
   valueFrom:
     secretKeyRef:
       name: {{ include "gigachad-grc.secretName" . }}
-      key: redis-password
+      key: database-url
 - name: REDIS_URL
-  value: {{ include "gigachad-grc.redisUrl" . }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "gigachad-grc.secretName" . }}
+      key: redis-url
 - name: S3_ENDPOINT
   value: {{ include "gigachad-grc.s3.endpoint" . }}
 - name: S3_PORT
@@ -241,4 +237,34 @@ Common environment variables injected into all backend services.
 - name: KEYCLOAK_REALM
   value: {{ .Values.keycloak.realm | quote }}
 {{- end }}
+{{- end }}
+
+{{/*
+Init container that blocks application startup until the release migration Job
+has created both the Prisma-managed public schema and the BC/DR schema.
+*/}}
+{{- define "gigachad-grc.waitForMigrations" -}}
+- name: wait-for-database-migrations
+  image: "{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}"
+  imagePullPolicy: {{ include "gigachad-grc.imagePullPolicy" .Values.postgresql.image }}
+  command:
+    - sh
+    - -ec
+    - |
+      until psql "$DATABASE_URL" -tAc \
+        "SELECT to_regclass('public.organizations') IS NOT NULL AND to_regclass('bcdr.bcdr_plans') IS NOT NULL" \
+        | grep -q t; do
+        sleep 2
+      done
+  env:
+    - name: DATABASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: {{ include "gigachad-grc.secretName" . }}
+          key: database-url
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
 {{- end }}

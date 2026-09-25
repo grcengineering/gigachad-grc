@@ -1,11 +1,11 @@
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { Link, useParams } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import {
   ArrowLeft,
   AlertTriangle,
   CheckCircle2,
   Clock,
-  Edit2,
   FileText,
   MessageSquare,
   Server,
@@ -114,7 +114,7 @@ function formatDateTime(v?: string) {
 
 export default function BCDRIncidentDetail() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: incident, isLoading } = useQuery<BCDRIncidentDetailData>({
     queryKey: ['bcdr-incident', id],
@@ -123,6 +123,18 @@ export default function BCDRIncidentDetail() {
       return res.data;
     },
     enabled: !!id,
+  });
+
+  const resolveIncident = useMutation({
+    mutationFn: async () =>
+      (await api.put(`/api/bcdr/incidents/${id}/status`, { status: 'resolved' })).data,
+    onSuccess: () => {
+      toast.success('Incident resolved');
+      queryClient.invalidateQueries({ queryKey: ['bcdr-incident', id] });
+      queryClient.invalidateQueries({ queryKey: ['bcdr-incidents'] });
+    },
+    onError: (error: any) =>
+      toast.error(error?.response?.data?.message || 'Unable to resolve incident'),
   });
 
   if (isLoading) {
@@ -384,20 +396,16 @@ export default function BCDRIncidentDetail() {
           </>
         }
         actions={
-          <>
-            <Button variant="outline" size="sm" leftIcon={<Edit2 className="h-4 w-4" />}>
-              Edit
+          !isResolved ? (
+            <Button
+              size="sm"
+              leftIcon={<CheckCircle2 className="h-4 w-4" />}
+              onClick={() => resolveIncident.mutate()}
+              loading={resolveIncident.isPending}
+            >
+              Resolve
             </Button>
-            {!isResolved && (
-              <Button
-                size="sm"
-                leftIcon={<CheckCircle2 className="h-4 w-4" />}
-                onClick={() => navigate(`/bcdr/incidents/${id}`)}
-              >
-                Resolve
-              </Button>
-            )}
-          </>
+          ) : undefined
         }
       />
 

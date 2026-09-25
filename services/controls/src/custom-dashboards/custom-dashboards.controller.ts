@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -91,6 +92,13 @@ export class CustomDashboardsController {
     @CurrentUser() user: UserContext,
     @Body() dto: CreateDashboardDto,
   ) {
+    if (
+      dto.isTemplate &&
+      user.role !== 'admin' &&
+      user.role !== 'compliance_manager'
+    ) {
+      throw new ForbiddenException('Only administrators can create organization templates');
+    }
     return this.dashboardsService.create(user.organizationId, user.userId, dto);
   }
 

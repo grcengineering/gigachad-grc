@@ -1,22 +1,6 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { CurrentUser, UserContext } from '@gigachad-grc/shared';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { RecoveryTeamsService } from './recovery-teams.service';
 import {
   CreateRecoveryTeamDto,
@@ -46,10 +30,7 @@ export class RecoveryTeamsController {
   @Get()
   @ApiOperation({ summary: 'List recovery teams' })
   @ApiResponse({ status: 200, description: 'Paginated team list' })
-  async listTeams(
-    @Query() filters: RecoveryTeamFilterDto,
-    @CurrentUser() user: UserContext,
-  ) {
+  async listTeams(@Query() filters: RecoveryTeamFilterDto, @CurrentUser() user: UserContext) {
     return this.teamsService.findAll(user.organizationId, filters);
   }
 
@@ -71,10 +52,7 @@ export class RecoveryTeamsController {
   @ApiParam({ name: 'id', description: 'Team ID' })
   @ApiResponse({ status: 200, description: 'Team details' })
   @ApiResponse({ status: 404, description: 'Team not found' })
-  async getTeam(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  async getTeam(@Param('id') id: string, @CurrentUser() user: UserContext) {
     return this.teamsService.findOne(id, user.organizationId);
   }
 
@@ -84,17 +62,8 @@ export class RecoveryTeamsController {
   @Post()
   @ApiOperation({ summary: 'Create recovery team' })
   @ApiResponse({ status: 201, description: 'Created team' })
-  async createTeam(
-    @Body() dto: CreateRecoveryTeamDto,
-    @CurrentUser() user: UserContext,
-  ) {
-    return this.teamsService.create(
-      user.organizationId,
-      user.userId,
-      dto,
-      user.email,
-      user.name,
-    );
+  async createTeam(@Body() dto: CreateRecoveryTeamDto, @CurrentUser() user: UserContext) {
+    return this.teamsService.create(user.organizationId, user.userId, dto, user.email, user.name);
   }
 
   /**
@@ -107,7 +76,7 @@ export class RecoveryTeamsController {
   async updateTeam(
     @Param('id') id: string,
     @Body() dto: UpdateRecoveryTeamDto,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
     return this.teamsService.update(
       id,
@@ -115,7 +84,7 @@ export class RecoveryTeamsController {
       user.userId,
       dto,
       user.email,
-      user.name,
+      user.name
     );
   }
 
@@ -126,17 +95,8 @@ export class RecoveryTeamsController {
   @ApiOperation({ summary: 'Delete recovery team' })
   @ApiParam({ name: 'id', description: 'Team ID' })
   @ApiResponse({ status: 200, description: 'Team deleted' })
-  async deleteTeam(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
-    return this.teamsService.delete(
-      id,
-      user.organizationId,
-      user.userId,
-      user.email,
-      user.name,
-    );
+  async deleteTeam(@Param('id') id: string, @CurrentUser() user: UserContext) {
+    return this.teamsService.delete(id, user.organizationId, user.userId, user.email, user.name);
   }
 
   /**
@@ -149,7 +109,7 @@ export class RecoveryTeamsController {
   async addMember(
     @Param('id') id: string,
     @Body() dto: AddTeamMemberDto,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
     return this.teamsService.addMember(
       id,
@@ -157,7 +117,7 @@ export class RecoveryTeamsController {
       user.userId,
       dto,
       user.email,
-      user.name,
+      user.name
     );
   }
 
@@ -173,14 +133,9 @@ export class RecoveryTeamsController {
     @Param('id') id: string,
     @Param('memberId') memberId: string,
     @Body() dto: Partial<AddTeamMemberDto>,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
-    return this.teamsService.updateMember(
-      id,
-      memberId,
-      user.organizationId,
-      dto,
-    );
+    return this.teamsService.updateMember(id, memberId, user.organizationId, dto);
   }
 
   /**
@@ -194,7 +149,7 @@ export class RecoveryTeamsController {
   async removeMember(
     @Param('id') id: string,
     @Param('memberId') memberId: string,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
     return this.teamsService.removeMember(
       id,
@@ -202,7 +157,7 @@ export class RecoveryTeamsController {
       user.organizationId,
       user.userId,
       user.email,
-      user.name,
+      user.name
     );
   }
 
@@ -217,7 +172,7 @@ export class RecoveryTeamsController {
   async linkToPlan(
     @Param('id') id: string,
     @Body() dto: LinkTeamToPlanDto,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
     return this.teamsService.linkToPlan(
       id,
@@ -225,7 +180,7 @@ export class RecoveryTeamsController {
       user.userId,
       dto,
       user.email,
-      user.name,
+      user.name
     );
   }
 
@@ -240,7 +195,7 @@ export class RecoveryTeamsController {
   async unlinkFromPlan(
     @Param('id') id: string,
     @Param('planId') planId: string,
-    @CurrentUser() user: UserContext,
+    @CurrentUser() user: UserContext
   ) {
     return this.teamsService.unlinkFromPlan(
       id,
@@ -248,7 +203,7 @@ export class RecoveryTeamsController {
       user.organizationId,
       user.userId,
       user.email,
-      user.name,
+      user.name
     );
   }
 
@@ -259,10 +214,7 @@ export class RecoveryTeamsController {
   @ApiOperation({ summary: 'Get teams for a plan' })
   @ApiParam({ name: 'planId', description: 'Plan ID' })
   @ApiResponse({ status: 200, description: 'Teams linked to plan' })
-  async getTeamsForPlan(
-    @Param('planId') planId: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  async getTeamsForPlan(@Param('planId') planId: string, @CurrentUser() user: UserContext) {
     return this.teamsService.getTeamsForPlan(planId, user.organizationId);
   }
 }

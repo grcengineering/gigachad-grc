@@ -1,3 +1,4 @@
+import { requireExplicitDemoMode } from '../demo-mode.js';
 // GDPR Articles organized by Chapter
 const gdprArticles = {
     'Chapter II': {
@@ -67,6 +68,7 @@ const gdprArticles = {
     },
 };
 export async function checkGDPRControls(params) {
+    requireExplicitDemoMode('GDPR automated compliance checking');
     const { articles: specificArticles, dataProcessingActivities } = params;
     const chapterResults = [];
     const findings = [];
@@ -136,9 +138,7 @@ export async function checkGDPRControls(params) {
                 findings: articleFindings,
             });
         }
-        const avgChapterScore = articlesToCheck.length > 0
-            ? Math.round(chapterScore / articlesToCheck.length)
-            : 0;
+        const avgChapterScore = articlesToCheck.length > 0 ? Math.round(chapterScore / articlesToCheck.length) : 0;
         chapterResults.push({
             chapter: chapterKey,
             title: chapter.title,
@@ -233,7 +233,11 @@ export async function checkGDPRControls(params) {
         checkedAt: new Date().toISOString(),
         chapters: chapterResults,
         overallScore,
-        status: overallScore >= 80 ? 'compliant' : overallScore >= 50 ? 'partially_compliant' : 'non_compliant',
+        status: overallScore >= 80
+            ? 'compliant'
+            : overallScore >= 50
+                ? 'partially_compliant'
+                : 'non_compliant',
         findings,
         recommendations,
     };

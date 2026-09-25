@@ -1,5 +1,18 @@
-import { Body, Controller, Post, UseGuards, Logger } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Post,
+  UseGuards,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiTags,
+  ApiProperty,
+  ApiPropertyOptional,
+} from '@nestjs/swagger';
 import { MCPWorkflowService } from './mcp-workflow.service';
 import { AIService } from '../ai/ai.service';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
@@ -80,7 +93,7 @@ export class AIController {
 
   constructor(
     private readonly workflows: MCPWorkflowService,
-    private readonly aiService: AIService,
+    private readonly aiService: AIService
   ) {}
 
   @Post('analyze-risk')
@@ -88,7 +101,7 @@ export class AIController {
   @RequirePermission(Resource.AI, Action.UPDATE)
   async analyzeRisk(
     @CurrentUser() user: UserContext,
-    @Body() body: AnalyzeRiskDto,
+    @Body() body: AnalyzeRiskDto
   ): Promise<AnalyzeRiskResponseDto> {
     this.logger.log(`Risk analysis requested for: ${body.title}`);
 
@@ -128,15 +141,7 @@ export class AIController {
     } catch (error: unknown) {
       const err = error as Error;
       this.logger.error(`Risk analysis failed: ${err.message}`, err.stack);
-      
-      // Return a graceful fallback response
-      return {
-        summary: 'Unable to complete AI analysis at this time.',
-        isMockMode: true,
-        mockModeReason: `Analysis failed: ${err.message}. Please configure AI provider or try again later.`,
-      };
+      throw new ServiceUnavailableException(`AI analysis failed: ${err.message}`);
     }
   }
 }
-
-

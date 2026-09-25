@@ -141,7 +141,13 @@ const tools = [
                     type: 'array',
                     items: {
                         type: 'string',
-                        enum: ['security', 'availability', 'processing_integrity', 'confidentiality', 'privacy'],
+                        enum: [
+                            'security',
+                            'availability',
+                            'processing_integrity',
+                            'confidentiality',
+                            'privacy',
+                        ],
                     },
                     description: 'Trust service categories to check',
                 },
@@ -250,6 +256,15 @@ const resources = [
         mimeType: 'application/json',
     },
 ];
+const DEMO_ONLY_TOOLS = new Set([
+    'run_control_test',
+    'run_batch_tests',
+    'generate_compliance_report',
+    'check_soc2_controls',
+    'check_iso27001_controls',
+    'check_hipaa_controls',
+    'check_gdpr_controls',
+]);
 // Handle list tools request
 server.setRequestHandler(ListToolsRequestSchema, async () => {
     return { tools };
@@ -288,6 +303,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 break;
             default:
                 throw new Error(`Unknown tool: ${name}`);
+        }
+        if (DEMO_ONLY_TOOLS.has(name)) {
+            result = {
+                demoMode: true,
+                warning: 'Synthetic demonstration output; do not use as compliance evidence.',
+                result,
+            };
         }
         return {
             content: [

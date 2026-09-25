@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ===========================================
   # API Gateway - Traefik (Official Docker Image)
@@ -24,13 +22,14 @@ services:
       # SECURITY: Let's Encrypt ACME for automatic TLS certificate management
       - '--certificatesresolvers.letsencrypt.acme.httpchallenge=true'
       - '--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web'
-      - '--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}'
+      - '--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:?ACME_EMAIL is required}'
       - '--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json'
       - '--log.level=${TRAEFIK_LOG_LEVEL:-WARN}'
       - '--log.format=json'
       - '--accesslog=true'
       - '--accesslog.format=json'
       - '--accesslog.filepath=/var/log/traefik/access.log'
+      - '--ping=true'
     ports:
       - '80:80'
       - '443:443'
@@ -207,6 +206,9 @@ services:
       KC_HEALTH_ENABLED: 'true'
       KC_METRICS_ENABLED: 'true'
       KC_HTTP_RELATIVE_PATH: /auth
+      APP_DOMAIN: ${APP_DOMAIN:?APP_DOMAIN is required}
+      GRC_SERVICES_SECRET: ${GRC_SERVICES_SECRET:?GRC_SERVICES_SECRET is required}
+      GRC_MCP_SECRET: ${GRC_MCP_SECRET:?GRC_MCP_SECRET is required}
     volumes:
       - ./auth/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
       - keycloak_data:/opt/keycloak/data
@@ -239,7 +241,7 @@ services:
       test:
         [
           'CMD-SHELL',
-          "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /auth/health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'",
+          "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'",
         ]
       interval: 30s
       timeout: 10s
@@ -267,8 +269,8 @@ services:
     image: rustfs/rustfs@sha256:8e467b32af3ff83e70c70dddb0c36b5e611f46e89a3075db8770aea4f30b2fe3
     container_name: grc-rustfs
     environment:
-      RUSTFS_ROOT_USER: ${MINIO_ROOT_USER}
-      RUSTFS_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      RUSTFS_ACCESS_KEY: ${MINIO_ROOT_USER}
+      RUSTFS_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       RUSTFS_DEFAULT_BUCKETS: ${S3_BUCKET:-grc-storage}
       RUSTFS_BROWSER: ${MINIO_BROWSER:-on}
       RUSTFS_PROMETHEUS_AUTH_TYPE: public
@@ -415,7 +417,13 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       KEYCLOAK_URL: http://keycloak:8080/auth
       KEYCLOAK_REALM: ${KEYCLOAK_REALM}
-      JWT_SECRET: ${JWT_SECRET}
+      KEYCLOAK_ADMIN_CLIENT_ID: grc-services
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${GRC_SERVICES_SECRET:?GRC_SERVICES_SECRET is required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
+      PHISHING_TRACKING_SECRET: ${PHISHING_TRACKING_SECRET:?PHISHING_TRACKING_SECRET is required}
+      PHISHING_TRACKING_BASE_URL: https://${APP_DOMAIN:?APP_DOMAIN is required}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
       RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
@@ -461,6 +469,10 @@ services:
       - 'traefik.http.routers.controls-bcdr.entrypoints=websecure'
       - 'traefik.http.routers.controls-bcdr.tls.certresolver=letsencrypt'
       - 'traefik.http.routers.controls-bcdr.middlewares=controls-ratelimit'
+      - 'traefik.http.routers.controls-scim.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/scim`)'
+      - 'traefik.http.routers.controls-scim.entrypoints=websecure'
+      - 'traefik.http.routers.controls-scim.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.controls-scim.middlewares=controls-ratelimit'
       - 'traefik.http.routers.controls-organization.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api/organization`)'
       - 'traefik.http.routers.controls-organization.entrypoints=websecure'
       - 'traefik.http.routers.controls-organization.tls.certresolver=letsencrypt'
@@ -758,9 +770,6 @@ services:
       - 'traefik.http.routers.tprm-config.middlewares=tprm-ratelimit'
       - 'traefik.http.routers.tprm-vendors.entrypoints=websecure'
       - 'traefik.http.routers.tprm-vendors.tls.certresolver=letsencrypt'
-      - 'traefik.http.routers.tprm-assessments.entrypoints=websecure'
-      - 'traefik.http.routers.tprm-assessments.tls.certresolver=letsencrypt'
-      - 'traefik.http.routers.tprm-assessments.middlewares=tprm-ratelimit'
       - 'traefik.http.routers.tprm-contracts.entrypoints=websecure'
       - 'traefik.http.routers.tprm-contracts.tls.certresolver=letsencrypt'
       - 'traefik.http.routers.tprm-contracts.middlewares=tprm-ratelimit'
@@ -815,7 +824,7 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       S3_ENDPOINT: rustfs
       S3_PORT: 9000
-      S3_USE_SSL: true
+      S3_USE_SSL: false
       S3_ACCESS_KEY: ${MINIO_ROOT_USER}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       MINIO_ENDPOINT: rustfs
@@ -914,7 +923,7 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       S3_ENDPOINT: rustfs
       S3_PORT: 9000
-      S3_USE_SSL: true
+      S3_USE_SSL: false
       S3_ACCESS_KEY: ${MINIO_ROOT_USER}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       MINIO_ENDPOINT: rustfs
@@ -1036,6 +1045,7 @@ services:
       args:
         VITE_API_URL: ''
         VITE_ENABLE_DEV_AUTH: 'false'
+        VITE_KEYCLOAK_URL: https://${KEYCLOAK_HOSTNAME}/auth
     image: grc-frontend:${IMAGE_TAG:-latest}
     container_name: grc-frontend
     depends_on:

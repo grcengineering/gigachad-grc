@@ -17,13 +17,7 @@ import { Request } from 'express';
 interface AuthenticatedRequest extends Request {
   user: { userId: string; organizationId: string; email?: string };
 }
-import {
-  ApiTags,
-  ApiBearerAuth,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { AssetsService } from './assets.service';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 import { PermissionGuard } from '../auth/permission.guard';
@@ -51,10 +45,7 @@ export class AssetsController {
   @ApiOperation({ summary: 'List all assets' })
   @ApiResponse({ status: 200, description: 'List of assets' })
   @RequirePermission(Resource.CONTROLS, Action.READ)
-  async findAll(
-    @Req() req: AuthenticatedRequest,
-    @Query() filters: AssetFilterDto
-  ) {
+  async findAll(@Req() req: AuthenticatedRequest, @Query() filters: AssetFilterDto) {
     return this.assetsService.findAll(req.user.organizationId, filters);
   }
 
@@ -72,10 +63,7 @@ export class AssetsController {
   @ApiResponse({ status: 200, description: 'Asset details' })
   @ApiResponse({ status: 404, description: 'Asset not found' })
   @RequirePermission(Resource.CONTROLS, Action.READ)
-  async findOne(
-    @Req() req: AuthenticatedRequest,
-    @Param('id') id: string
-  ) {
+  async findOne(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.assetsService.findOne(req.user.organizationId, id);
   }
 
@@ -83,15 +71,8 @@ export class AssetsController {
   @ApiOperation({ summary: 'Create new asset' })
   @ApiResponse({ status: 201, description: 'Asset created' })
   @RequirePermission(Resource.CONTROLS, Action.CREATE)
-  async create(
-    @Req() req: AuthenticatedRequest,
-    @Body() dto: CreateAssetDto
-  ) {
-    return this.assetsService.create(
-      req.user.organizationId,
-      dto,
-      req.user.userId
-    );
+  async create(@Req() req: AuthenticatedRequest, @Body() dto: CreateAssetDto) {
+    return this.assetsService.create(req.user.organizationId, dto, req.user.userId);
   }
 
   @Put(':id')
@@ -105,12 +86,7 @@ export class AssetsController {
     @Param('id') id: string,
     @Body() dto: UpdateAssetDto
   ) {
-    return this.assetsService.update(
-      req.user.organizationId,
-      id,
-      dto,
-      req.user.userId
-    );
+    return this.assetsService.update(req.user.organizationId, id, dto, req.user.userId);
   }
 
   @Delete(':id')
@@ -120,15 +96,8 @@ export class AssetsController {
   @ApiResponse({ status: 404, description: 'Asset not found' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermission(Resource.CONTROLS, Action.DELETE)
-  async delete(
-    @Req() req: AuthenticatedRequest,
-    @Param('id') id: string
-  ) {
-    return this.assetsService.delete(
-      req.user.organizationId,
-      id,
-      req.user.userId
-    );
+  async delete(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.assetsService.delete(req.user.organizationId, id, req.user.userId);
   }
 
   // ============================================
@@ -166,10 +135,6 @@ export class AssetsController {
     @Param('id') assetId: string,
     @Param('riskId') riskId: string
   ) {
-    await this.assetsService.unlinkFromRisk(
-      req.user.organizationId,
-      assetId,
-      riskId
-    );
+    await this.assetsService.unlinkFromRisk(req.user.organizationId, assetId, riskId);
   }
 }

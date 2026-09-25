@@ -24,6 +24,14 @@ export class PermissionsService {
 
   constructor(private prisma: PrismaService) {}
 
+  private async getUserOrganizationId(userId: string): Promise<string | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { organizationId: true },
+    });
+    return user?.organizationId ?? null;
+  }
+
   /**
    * Check if a user has permission to perform an action on a resource
    */
@@ -31,10 +39,10 @@ export class PermissionsService {
     userId: string,
     resource: Resource,
     action: Action,
-    resourceContext?: ResourceContext,
+    resourceContext?: ResourceContext
   ): Promise<PermissionCheckResultDto> {
     const effectivePermissions = await this.getEffectivePermissions(userId);
-    
+
     // Find matching permission
     for (const perm of effectivePermissions) {
       if (perm.resource !== resource) continue;
@@ -65,7 +73,7 @@ export class PermissionsService {
   private checkScope(
     scope: PermissionScopeDto,
     context: ResourceContext,
-    userId: string,
+    userId: string
   ): { allowed: boolean; reason?: string } {
     // Check ownership scope
     if (scope.ownership) {
@@ -86,7 +94,7 @@ export class PermissionsService {
 
     // Check tag scope
     if (scope.tags && scope.tags.length > 0 && context.tags) {
-      const hasMatchingTag = context.tags.some(tag => scope.tags!.includes(tag));
+      const hasMatchingTag = context.tags.some((tag) => scope.tags!.includes(tag));
       if (!hasMatchingTag) {
         return { allowed: false, reason: 'Resource tags do not match permission scope' };
       }
@@ -124,12 +132,12 @@ export class PermissionsService {
 
     // First, add all group permissions
     for (const membership of memberships) {
-      const groupPermissions = (membership.group.permissions as unknown) as PermissionDto[];
-      
+      const groupPermissions = membership.group.permissions as unknown as PermissionDto[];
+
       for (const perm of groupPermissions) {
         const key = perm.resource;
         const existing = permissionMap.get(key);
-        
+
         if (existing) {
           // Merge actions (union)
           const mergedActions = [...new Set([...existing.actions, ...perm.actions])];
@@ -151,11 +159,11 @@ export class PermissionsService {
     // Then, apply overrides
     for (const override of overrides) {
       const [resource, action] = override.permission.split(':') as [Resource, Action];
-      
+
       if (!resource || !action) continue;
 
       const existing = permissionMap.get(resource);
-      
+
       if (override.granted) {
         // Grant permission
         if (existing) {
@@ -171,14 +179,16 @@ export class PermissionsService {
           permissionMap.set(resource, {
             resource,
             actions: [action],
-            scope: (override.resourceScope as PermissionScopeDto) || { ownership: OwnershipScope.ALL },
+            scope: (override.resourceScope as PermissionScopeDto) || {
+              ownership: OwnershipScope.ALL,
+            },
             source: 'override',
           });
         }
       } else {
         // Deny permission (remove action)
         if (existing) {
-          existing.actions = existing.actions.filter(a => a !== action);
+          existing.actions = existing.actions.filter((a) => a !== action);
           if (existing.actions.length === 0) {
             permissionMap.delete(resource);
           }
@@ -234,12 +244,12 @@ export class PermissionsService {
 
     return {
       userId,
-      groups: memberships.map(m => ({
+      groups: memberships.map((m) => ({
         id: m.group.id,
         name: m.group.name,
       })),
       effectivePermissions,
-      overrides: overrides.map(o => ({
+      overrides: overrides.map((o) => ({
         permission: o.permission,
         granted: o.granted,
         resourceScope: o.resourceScope,
@@ -250,12 +260,19 @@ export class PermissionsService {
   /**
    * Check if user can access a specific control
    */
-  async canAccessControl(userId: string, controlId: string, action: Action): Promise<PermissionCheckResultDto> {
+  async canAccessControl(
+    userId: string,
+    controlId: string,
+    action: Action
+  ): Promise<PermissionCheckResultDto> {
+    const organizationId = await this.getUserOrganizationId(userId);
+    if (!organizationId) return { allowed: false, reason: 'Resource not found or inaccessible' };
     // Get control with implementation to check ownership
-    const control = await this.prisma.control.findUnique({
-      where: { id: controlId },
+    const control = await this.prisma.control.findFirst({
+      where: { id: controlId, OR: [{ organizationId: null }, { organizationId }] },
       include: {
         implementations: {
+          where: { organizationId },
           take: 1,
           select: { ownerId: true },
         },
@@ -263,7 +280,7 @@ export class PermissionsService {
     });
 
     if (!control) {
-      return { allowed: false, reason: 'Control not found' };
+      return { allowed: false, reason: 'Resource not found or inaccessible' };
     }
 
     return this.hasPermission(userId, Resource.CONTROLS, action, {
@@ -277,13 +294,19 @@ export class PermissionsService {
   /**
    * Check if user can access a specific evidence
    */
-  async canAccessEvidence(userId: string, evidenceId: string, action: Action): Promise<PermissionCheckResultDto> {
-    const evidence = await this.prisma.evidence.findUnique({
-      where: { id: evidenceId },
+  async canAccessEvidence(
+    userId: string,
+    evidenceId: string,
+    action: Action
+  ): Promise<PermissionCheckResultDto> {
+    const organizationId = await this.getUserOrganizationId(userId);
+    if (!organizationId) return { allowed: false, reason: 'Resource not found or inaccessible' };
+    const evidence = await this.prisma.evidence.findFirst({
+      where: { id: evidenceId, organizationId },
     });
 
     if (!evidence) {
-      return { allowed: false, reason: 'Evidence not found' };
+      return { allowed: false, reason: 'Resource not found or inaccessible' };
     }
 
     return this.hasPermission(userId, Resource.EVIDENCE, action, {
@@ -297,13 +320,19 @@ export class PermissionsService {
   /**
    * Check if user can access a specific policy
    */
-  async canAccessPolicy(userId: string, policyId: string, action: Action): Promise<PermissionCheckResultDto> {
-    const policy = await this.prisma.policy.findUnique({
-      where: { id: policyId },
+  async canAccessPolicy(
+    userId: string,
+    policyId: string,
+    action: Action
+  ): Promise<PermissionCheckResultDto> {
+    const organizationId = await this.getUserOrganizationId(userId);
+    if (!organizationId) return { allowed: false, reason: 'Resource not found or inaccessible' };
+    const policy = await this.prisma.policy.findFirst({
+      where: { id: policyId, organizationId },
     });
 
     if (!policy) {
-      return { allowed: false, reason: 'Policy not found' };
+      return { allowed: false, reason: 'Resource not found or inaccessible' };
     }
 
     return this.hasPermission(userId, Resource.POLICIES, action, {
@@ -319,8 +348,8 @@ export class PermissionsService {
    */
   async filterControls(userId: string, controlIds: string[]): Promise<string[]> {
     const effectivePermissions = await this.getEffectivePermissions(userId);
-    const controlPerm = effectivePermissions.find(p => p.resource === Resource.CONTROLS);
-    
+    const controlPerm = effectivePermissions.find((p) => p.resource === Resource.CONTROLS);
+
     if (!controlPerm || !controlPerm.actions.includes(Action.READ)) {
       return [];
     }
@@ -346,7 +375,7 @@ export class PermissionsService {
     });
 
     return controls
-      .filter(control => {
+      .filter((control) => {
         const context: ResourceContext = {
           id: control.id,
           ownerId: control.implementations[0]?.ownerId || undefined,
@@ -355,14 +384,14 @@ export class PermissionsService {
         };
         return this.checkScope(controlPerm.scope, context, userId).allowed;
       })
-      .map(c => c.id);
+      .map((c) => c.id);
   }
 
   /**
    * Get all available permissions for display in UI
    */
   getAvailablePermissions() {
-    return Object.values(Resource).map(resource => ({
+    return Object.values(Resource).map((resource) => ({
       resource,
       actions: Object.values(Action),
       description: this.getResourceDescription(resource),

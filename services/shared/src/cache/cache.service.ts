@@ -1,4 +1,5 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger, OnModuleDestroy } from '@nestjs/common';
+import Redis from 'ioredis';
 
 interface CacheEntry<T> {
   value: T;
@@ -18,13 +19,15 @@ const DEFAULT_MAX_MEMORY_MB = 100;
 const DEFAULT_MAX_SIZE = 1000;
 
 @Injectable()
-export class CacheService {
+export class CacheService implements OnModuleDestroy {
   private readonly logger = new Logger(CacheService.name);
   private cache = new Map<string, CacheEntry<unknown>>();
   private readonly options: CacheOptions;
   private currentMemoryBytes = 0;
   private hitCount = 0;
   private missCount = 0;
+  private readonly redis: Redis | null;
+  private readonly redisPrefix = 'grc-cache:';
 
   constructor(@Inject('CACHE_OPTIONS') options: CacheOptions) {
     this.options = {
@@ -32,14 +35,36 @@ export class CacheService {
       maxSize: options.maxSize || DEFAULT_MAX_SIZE,
       maxMemoryMB: options.maxMemoryMB || DEFAULT_MAX_MEMORY_MB,
     };
+    const redisUrl = process.env.REDIS_URL;
+    this.redis =
+      redisUrl && process.env.NODE_ENV !== 'test'
+        ? new Redis(redisUrl, {
+            lazyConnect: true,
+            maxRetriesPerRequest: 1,
+            enableOfflineQueue: false,
+          })
+        : null;
+    this.redis?.on('error', (error) =>
+      this.logger.warn(`Distributed cache unavailable: ${error.message}`)
+    );
 
     // Periodically clean expired entries
-    setInterval(() => this.cleanup(), 60000); // Every minute
+    const cleanupTimer = setInterval(() => this.cleanup(), 60000); // Every minute
+    cleanupTimer.unref();
 
     // Log cache stats every 5 minutes in debug mode
     if (this.options.debug) {
-      setInterval(() => this.logStats(), 5 * 60 * 1000);
+      const statsTimer = setInterval(() => this.logStats(), 5 * 60 * 1000);
+      statsTimer.unref();
     }
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    if (this.redis) await this.redis.quit().catch(() => this.redis?.disconnect());
+  }
+
+  private redisKey(key: string): string {
+    return `${this.redisPrefix}${key}`;
   }
 
   /**
@@ -60,6 +85,24 @@ export class CacheService {
    * Get a value from cache (LRU: updates last accessed time)
    */
   async get<T>(key: string): Promise<T | null> {
+    if (this.redis) {
+      try {
+        if (this.redis.status === 'wait') await this.redis.connect();
+        const raw = await this.redis.get(this.redisKey(key));
+        if (raw === null) {
+          this.missCount++;
+          return null;
+        }
+        this.hitCount++;
+        return JSON.parse(raw) as T;
+      } catch (error) {
+        this.missCount++;
+        this.logger.warn(
+          `Distributed cache read failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+        return null;
+      }
+    }
     const entry = this.cache.get(key);
 
     if (!entry) {
@@ -98,6 +141,17 @@ export class CacheService {
    */
   async set<T>(key: string, value: T, ttlSeconds?: number): Promise<void> {
     const ttl = ttlSeconds ?? this.options.defaultTtl;
+    if (this.redis) {
+      try {
+        if (this.redis.status === 'wait') await this.redis.connect();
+        await this.redis.set(this.redisKey(key), JSON.stringify(value), 'EX', ttl);
+      } catch (error) {
+        this.logger.warn(
+          `Distributed cache write failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+      return;
+    }
     const sizeBytes = this.estimateSizeBytes(value);
     const maxMemoryBytes = (this.options.maxMemoryMB || DEFAULT_MAX_MEMORY_MB) * 1024 * 1024;
 
@@ -146,6 +200,19 @@ export class CacheService {
    * Delete a key from cache
    */
   async del(key: string): Promise<void> {
+    if (this.redis) {
+      try {
+        if (this.redis.status === 'wait') await this.redis.connect();
+        await this.redis.del(this.redisKey(key));
+      } catch (error) {
+        this.logger.warn(
+          `Distributed cache delete failed: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      }
+      return;
+    }
     const entry = this.cache.get(key);
     if (entry) {
       this.currentMemoryBytes -= entry.sizeBytes;
@@ -160,6 +227,32 @@ export class CacheService {
    * Delete all keys matching a pattern (simple prefix matching)
    */
   async delPattern(pattern: string): Promise<number> {
+    if (this.redis) {
+      try {
+        if (this.redis.status === 'wait') await this.redis.connect();
+        let cursor = '0';
+        let count = 0;
+        do {
+          const [next, keys] = await this.redis.scan(
+            cursor,
+            'MATCH',
+            this.redisKey(pattern),
+            'COUNT',
+            200
+          );
+          cursor = next;
+          if (keys.length) count += await this.redis.del(...keys);
+        } while (cursor !== '0');
+        return count;
+      } catch (error) {
+        this.logger.warn(
+          `Distributed cache pattern delete failed: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+        return 0;
+      }
+    }
     let count = 0;
     // Use replaceAll to remove all wildcard characters, not just the first one
     // This prevents incomplete sanitization (CWE-116)
@@ -198,6 +291,12 @@ export class CacheService {
    * Clear all cache entries
    */
   async clear(): Promise<void> {
+    if (this.redis) {
+      await this.delPattern('*');
+      this.hitCount = 0;
+      this.missCount = 0;
+      return;
+    }
     this.cache.clear();
     this.currentMemoryBytes = 0;
     this.hitCount = 0;

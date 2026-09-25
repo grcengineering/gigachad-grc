@@ -1,23 +1,12 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { RunbooksService } from './runbooks.service';
-import { CreateRunbookDto, UpdateRunbookDto, CreateRunbookStepDto, RunbookStatus } from './dto/bcdr.dto';
+import {
+  CreateRunbookDto,
+  UpdateRunbookDto,
+  CreateRunbookStepDto,
+  RunbookStatus,
+} from './dto/bcdr.dto';
 import { CurrentUser, UserContext } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
@@ -36,9 +25,14 @@ export class RunbooksController {
     @Query('search') search?: string,
     @Query('category') category?: string,
     @Query('status') status?: RunbookStatus,
-    @Query('processId') processId?: string,
+    @Query('processId') processId?: string
   ) {
-    return this.runbooksService.findAll(user.organizationId, { search, category, status, processId });
+    return this.runbooksService.findAll(user.organizationId, {
+      search,
+      category,
+      status,
+      processId,
+    });
   }
 
   @Get('stats')
@@ -50,26 +44,20 @@ export class RunbooksController {
   @Get(':id')
   @ApiOperation({ summary: 'Get runbook details' })
   @ApiParam({ name: 'id', description: 'Runbook ID' })
-  async findOne(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  async findOne(@Param('id') id: string, @CurrentUser() user: UserContext) {
     return this.runbooksService.findOne(id, user.organizationId);
   }
 
   @Post()
   @ApiOperation({ summary: 'Create a runbook' })
   @ApiResponse({ status: 201, description: 'Runbook created' })
-  async create(
-    @CurrentUser() user: UserContext,
-    @Body() dto: CreateRunbookDto,
-  ) {
+  async create(@CurrentUser() user: UserContext, @Body() dto: CreateRunbookDto) {
     return this.runbooksService.create(
       user.organizationId,
       user.userId,
       dto,
       user.email,
-      user.name,
+      user.name
     );
   }
 
@@ -79,7 +67,7 @@ export class RunbooksController {
   async update(
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
-    @Body() dto: UpdateRunbookDto,
+    @Body() dto: UpdateRunbookDto
   ) {
     return this.runbooksService.update(
       id,
@@ -87,24 +75,15 @@ export class RunbooksController {
       user.userId,
       dto,
       user.email,
-      user.name,
+      user.name
     );
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a runbook' })
   @ApiParam({ name: 'id', description: 'Runbook ID' })
-  async delete(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
-    return this.runbooksService.delete(
-      id,
-      user.organizationId,
-      user.userId,
-      user.email,
-      user.name,
-    );
+  async delete(@Param('id') id: string, @CurrentUser() user: UserContext) {
+    return this.runbooksService.delete(id, user.organizationId, user.userId, user.email, user.name);
   }
 
   // Steps
@@ -114,7 +93,7 @@ export class RunbooksController {
   async addStep(
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
-    @Body() dto: CreateRunbookStepDto,
+    @Body() dto: CreateRunbookStepDto
   ) {
     return this.runbooksService.addStep(id, user.userId, dto);
   }
@@ -126,7 +105,7 @@ export class RunbooksController {
   async updateStep(
     @Param('id') id: string,
     @Param('stepNumber') stepNumber: number,
-    @Body() updates: Partial<CreateRunbookStepDto>,
+    @Body() updates: Partial<CreateRunbookStepDto>
   ) {
     return this.runbooksService.updateStep(id, stepNumber, updates);
   }
@@ -135,21 +114,14 @@ export class RunbooksController {
   @ApiOperation({ summary: 'Delete a runbook step' })
   @ApiParam({ name: 'id', description: 'Runbook ID' })
   @ApiParam({ name: 'stepNumber', description: 'Step number' })
-  async deleteStep(
-    @Param('id') id: string,
-    @Param('stepNumber') stepNumber: number,
-  ) {
+  async deleteStep(@Param('id') id: string, @Param('stepNumber') stepNumber: number) {
     return this.runbooksService.deleteStep(id, stepNumber);
   }
 
   @Put(':id/steps/reorder')
   @ApiOperation({ summary: 'Reorder runbook steps' })
   @ApiParam({ name: 'id', description: 'Runbook ID' })
-  async reorderSteps(
-    @Param('id') id: string,
-    @Body() body: { stepIds: string[] },
-  ) {
+  async reorderSteps(@Param('id') id: string, @Body() body: { stepIds: string[] }) {
     return this.runbooksService.reorderSteps(id, body.stepIds);
   }
 }
-

@@ -106,6 +106,15 @@ interface SearchResult {
   path: string;
 }
 
+interface ApiSearchResult {
+  id: string;
+  entityType: string;
+  title: string;
+  description?: string;
+  identifier?: string;
+  url: string;
+}
+
 const RECENT_KEY = 'gc-cmdk-recent';
 const MAX_RECENT = 6;
 
@@ -143,10 +152,16 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     queryFn: async () => {
       if (!query || query.length < 2) return [];
       try {
-        const res = await api.get('/api/search/global', {
-          params: { q: query },
+        const res = await api.get('/api/search', {
+          params: { query },
         });
-        return res.data?.data || [];
+        return (res.data?.results || []).map((result: ApiSearchResult) => ({
+          type: result.entityType,
+          id: result.id,
+          title: result.title,
+          subtitle: result.identifier || result.description,
+          path: result.url,
+        }));
       } catch {
         return [];
       }

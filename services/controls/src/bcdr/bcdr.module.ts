@@ -30,12 +30,7 @@ import { RecoveryTeamsService } from './recovery-teams.service';
 import { BCDRIncidentsService } from './bcdr-incidents.service';
 
 @Module({
-  imports: [
-    PrismaModule,
-    AuditModule,
-    NotificationsModule,
-    StorageModule.forRoot(),
-  ],
+  imports: [PrismaModule, AuditModule, NotificationsModule, StorageModule.forRoot()],
   controllers: [
     BusinessProcessesController,
     BCDRPlansController,
@@ -76,4 +71,3 @@ import { BCDRIncidentsService } from './bcdr-incidents.service';
   ],
 })
 export class BCDRModule {}
-

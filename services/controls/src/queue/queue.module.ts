@@ -1,7 +1,6 @@
 import { Module, Global, DynamicModule, Logger } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { QueueService } from './queue.service';
-import { JobProcessor } from './job.processor';
 
 export interface QueueModuleOptions {
   /**
@@ -82,9 +81,8 @@ export class QueueModule {
           inject: [ConfigService],
         },
         QueueService,
-        JobProcessor,
       ],
-      exports: [QueueService, JobProcessor],
+      exports: [QueueService],
     };
   }
 
@@ -102,9 +100,8 @@ export class QueueModule {
           inject: options.inject || [],
         },
         QueueService,
-        JobProcessor,
       ],
-      exports: [QueueService, JobProcessor],
+      exports: [QueueService],
     };
   }
 }

@@ -1,4 +1,10 @@
-import { Controller, Get, Optional, Inject } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Optional,
+  Inject,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { PrismaHealthIndicator } from './prisma.health';
 import { RedisHealthIndicator } from './redis.health';
 
@@ -64,12 +70,14 @@ export class HealthController {
 
     const isHealthy = memoryCheck.memory_heap.status === 'up';
 
-    return {
+    const response: HealthCheckResponse = {
       status: isHealthy ? 'ok' : 'error',
       info: isHealthy ? { memory_heap: memoryCheck.memory_heap } : undefined,
       error: !isHealthy ? { memory_heap: memoryCheck.memory_heap } : undefined,
       details: memoryCheck,
     };
+    if (!isHealthy) throw new ServiceUnavailableException(response);
+    return response;
   }
 
   /**
@@ -121,12 +129,14 @@ export class HealthController {
       error.memory_rss = memoryCheck.memory_rss;
     }
 
-    return {
+    const response: HealthCheckResponse = {
       status: isHealthy ? 'ok' : 'error',
       info: Object.keys(info).length > 0 ? info : undefined,
       error: Object.keys(error).length > 0 ? error : undefined,
       details: { ...dbCheck, ...redisCheck, ...memoryCheck },
     };
+    if (!isHealthy) throw new ServiceUnavailableException(response);
+    return response;
   }
 
   /**

@@ -4,6 +4,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
+import { PrismaService } from './prisma/prisma.service';
 import { ControlsModule } from './controls/controls.module';
 import { EvidenceModule } from './evidence/evidence.module';
 import { DashboardModule } from './dashboard/dashboard.module';
@@ -61,6 +62,7 @@ import {
   EventsModule,
   CacheModule,
   HealthModule,
+  createPrismaHealthProvider,
   SecretsModule,
 } from '@gigachad-grc/shared';
 
@@ -154,6 +156,7 @@ import {
   ],
   controllers: [ModulesController],
   providers: [
+    createPrismaHealthProvider(PrismaService),
     // Global rate limiting guard
     {
       provide: APP_GUARD,

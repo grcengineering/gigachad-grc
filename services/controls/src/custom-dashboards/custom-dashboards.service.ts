@@ -309,8 +309,7 @@ export class CustomDashboardsService {
       throw new NotFoundException('Dashboard not found');
     }
 
-    // Only owner or admin can update non-template dashboards
-    if (!existing.isTemplate && existing.userId !== userId) {
+    if (existing.isTemplate || existing.userId !== userId) {
       throw new ForbiddenException('You can only edit your own dashboards');
     }
 
@@ -369,8 +368,7 @@ export class CustomDashboardsService {
       throw new NotFoundException('Dashboard not found');
     }
 
-    // Only owner can delete their dashboard
-    if (!dashboard.isTemplate && dashboard.userId !== userId) {
+    if (dashboard.isTemplate || dashboard.userId !== userId) {
       throw new ForbiddenException('You can only delete your own dashboards');
     }
 
@@ -417,8 +415,13 @@ export class CustomDashboardsService {
   }
 
   async setDefault(id: string, organizationId: string, userId: string) {
-    // Verify dashboard exists and user has access
-    await this.findById(id, organizationId, userId);
+    const dashboardAccess = await this.prisma.dashboard.findFirst({
+      where: { id, organizationId, userId, isTemplate: false },
+      select: { id: true },
+    });
+    if (!dashboardAccess) {
+      throw new ForbiddenException('Duplicate a template before setting it as your default');
+    }
 
     // Unset other defaults
     await this.prisma.dashboard.updateMany({
@@ -449,8 +452,7 @@ export class CustomDashboardsService {
     userId: string,
     dto: CreateWidgetDto
   ) {
-    // Verify dashboard access
-    await this.findById(dashboardId, organizationId, userId);
+    await this.requireOwnedDashboard(dashboardId, organizationId, userId);
 
     const widget = await this.prisma.dashboardWidget.create({
       data: {
@@ -474,8 +476,7 @@ export class CustomDashboardsService {
     userId: string,
     dto: UpdateWidgetDto
   ) {
-    // Verify dashboard access
-    await this.findById(dashboardId, organizationId, userId);
+    await this.requireOwnedDashboard(dashboardId, organizationId, userId);
 
     const widget = await this.prisma.dashboardWidget.findFirst({
       where: { id: widgetId, dashboardId },
@@ -504,8 +505,7 @@ export class CustomDashboardsService {
     organizationId: string,
     userId: string
   ) {
-    // Verify dashboard access
-    await this.findById(dashboardId, organizationId, userId);
+    await this.requireOwnedDashboard(dashboardId, organizationId, userId);
 
     const widget = await this.prisma.dashboardWidget.findFirst({
       where: { id: widgetId, dashboardId },
@@ -950,5 +950,24 @@ export class CustomDashboardsService {
 
     const data = await this.executeQuery(organizationId, dataSource, false);
     return { data };
+  }
+
+  private async requireOwnedDashboard(
+    dashboardId: string,
+    organizationId: string,
+    userId: string
+  ): Promise<void> {
+    const dashboard = await this.prisma.dashboard.findFirst({
+      where: {
+        id: dashboardId,
+        organizationId,
+        userId,
+        isTemplate: false,
+      },
+      select: { id: true },
+    });
+    if (!dashboard) {
+      throw new ForbiddenException('You can only modify your own dashboards');
+    }
   }
 }

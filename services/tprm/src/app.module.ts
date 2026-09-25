@@ -10,8 +10,15 @@ import { TprmConfigModule } from './config/tprm-config.module';
 import { RiskAssessmentModule } from './risk-assessment/risk-assessment.module';
 import { SecurityScannerModule } from './security-scanner/security-scanner.module';
 import { AuditService } from './common/audit.service';
-import { StorageModule, CacheModule, EventsModule } from '@gigachad-grc/shared';
+import {
+  StorageModule,
+  CacheModule,
+  EventsModule,
+  HealthModule,
+  createPrismaHealthProvider,
+} from '@gigachad-grc/shared';
 import { AuthModule } from './auth/auth.module';
+import { PrismaService } from './common/prisma.service';
 
 @Global()
 @Module({
@@ -27,6 +34,7 @@ import { AuthModule } from './auth/auth.module';
       },
     ]),
     StorageModule.forRoot(),
+    HealthModule,
     EventsModule,
     CacheModule.forRoot({ defaultTtl: 300 }), // 5-minute cache for dashboard widgets
     // RiskAssessmentModule and SecurityScannerModule must be imported BEFORE VendorsModule
@@ -41,6 +49,7 @@ import { AuthModule } from './auth/auth.module';
     TprmConfigModule,
   ],
   providers: [
+    createPrismaHealthProvider(PrismaService),
     AuditService,
     {
       provide: APP_GUARD,

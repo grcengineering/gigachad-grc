@@ -52,7 +52,8 @@ export const EXERCISE_TEMPLATE_LIBRARY: ExerciseTemplateData[] = [
     id: 'lib-exercise-001',
     templateId: 'TTX-RANSOMWARE-001',
     title: 'Ransomware Attack Tabletop Exercise',
-    description: 'A simulated ransomware attack affecting critical business systems, requiring incident response, recovery decisions, and stakeholder communication.',
+    description:
+      'A simulated ransomware attack affecting critical business systems, requiring incident response, recovery decisions, and stakeholder communication.',
     category: 'ransomware',
     scenarioType: 'tabletop',
     scenarioNarrative: `It's Monday morning at 8:30 AM. Your IT team receives multiple alerts about unusual file activity across several servers. Within 15 minutes, employees report they cannot access shared drives and are seeing ransom notes on their screens.
@@ -70,31 +71,56 @@ The ransomware appears to have spread through a phishing email opened by an empl
         id: 'q1',
         question: 'What are the immediate actions we should take in the first 30 minutes?',
         category: 'Initial Response',
-        expectedResponses: ['Isolate affected systems', 'Preserve evidence', 'Notify incident response team', 'Assess scope of impact'],
+        expectedResponses: [
+          'Isolate affected systems',
+          'Preserve evidence',
+          'Notify incident response team',
+          'Assess scope of impact',
+        ],
       },
       {
         id: 'q2',
-        question: 'Who needs to be notified internally and externally? What is our communication strategy?',
+        question:
+          'Who needs to be notified internally and externally? What is our communication strategy?',
         category: 'Communication',
-        expectedResponses: ['Executive team', 'Legal counsel', 'Cyber insurance carrier', 'Law enforcement consideration'],
+        expectedResponses: [
+          'Executive team',
+          'Legal counsel',
+          'Cyber insurance carrier',
+          'Law enforcement consideration',
+        ],
       },
       {
         id: 'q3',
         question: 'Should we pay the ransom? What factors influence this decision?',
         category: 'Decision Making',
-        expectedResponses: ['Backup availability', 'Legal implications', 'Insurance coverage', 'Business impact of extended downtime'],
+        expectedResponses: [
+          'Backup availability',
+          'Legal implications',
+          'Insurance coverage',
+          'Business impact of extended downtime',
+        ],
       },
       {
         id: 'q4',
         question: 'How do we recover our systems? What is our priority order?',
         category: 'Recovery',
-        expectedResponses: ['Critical systems first', 'Verify backup integrity', 'Rebuild vs restore', 'Security hardening before restoration'],
+        expectedResponses: [
+          'Critical systems first',
+          'Verify backup integrity',
+          'Rebuild vs restore',
+          'Security hardening before restoration',
+        ],
       },
       {
         id: 'q5',
         question: 'What are our regulatory notification requirements?',
         category: 'Compliance',
-        expectedResponses: ['Breach notification timeline', 'Customer notification', 'Regulatory bodies to notify'],
+        expectedResponses: [
+          'Breach notification timeline',
+          'Customer notification',
+          'Regulatory bodies to notify',
+        ],
       },
     ],
     injects: [
@@ -102,22 +128,37 @@ The ransomware appears to have spread through a phishing email opened by an empl
         id: 'i1',
         timing: '30 minutes',
         title: 'Media Inquiry',
-        description: 'A local news outlet has received a tip about the attack and is asking for comment. Your PR team needs guidance on how to respond.',
-        expectedActions: ['Coordinate with legal', 'Prepare holding statement', 'Designate spokesperson'],
+        description:
+          'A local news outlet has received a tip about the attack and is asking for comment. Your PR team needs guidance on how to respond.',
+        expectedActions: [
+          'Coordinate with legal',
+          'Prepare holding statement',
+          'Designate spokesperson',
+        ],
       },
       {
         id: 'i2',
         timing: '1 hour',
         title: 'Backup Status',
-        description: 'Your IT team reports that while offline backups exist, the most recent backup is 5 days old. The last 5 days of data may be lost if you restore from backup.',
-        expectedActions: ['Assess data loss impact', 'Evaluate alternatives', 'Communicate with business units'],
+        description:
+          'Your IT team reports that while offline backups exist, the most recent backup is 5 days old. The last 5 days of data may be lost if you restore from backup.',
+        expectedActions: [
+          'Assess data loss impact',
+          'Evaluate alternatives',
+          'Communicate with business units',
+        ],
       },
       {
         id: 'i3',
         timing: '2 hours',
         title: 'Threat Actor Contact',
-        description: 'The threat actor reaches out offering to decrypt a sample file as proof of capability and reduces their demand to 30 Bitcoin if paid within 24 hours.',
-        expectedActions: ['Document communication', 'Consult with FBI/law enforcement', 'Continue recovery efforts'],
+        description:
+          'The threat actor reaches out offering to decrypt a sample file as proof of capability and reduces their demand to 30 Bitcoin if paid within 24 hours.',
+        expectedActions: [
+          'Document communication',
+          'Consult with FBI/law enforcement',
+          'Continue recovery efforts',
+        ],
       },
     ],
     expectedDecisions: [
@@ -137,12 +178,36 @@ The ransomware appears to have spread through a phishing email opened by an empl
 Allow participants to debate the ransom payment decision - there is no single correct answer. Focus on the process and considerations rather than the outcome.`,
     estimatedDuration: 120,
     participantRoles: [
-      { role: 'Executive Sponsor', description: 'Makes final decisions on major actions', required: true },
-      { role: 'IT Lead', description: 'Provides technical assessment and recovery options', required: true },
-      { role: 'Legal Counsel', description: 'Advises on regulatory and legal implications', required: true },
-      { role: 'Communications/PR', description: 'Manages internal and external messaging', required: true },
-      { role: 'Business Unit Leaders', description: 'Represent affected departments', required: false },
-      { role: 'HR Representative', description: 'Handles employee-related concerns', required: false },
+      {
+        role: 'Executive Sponsor',
+        description: 'Makes final decisions on major actions',
+        required: true,
+      },
+      {
+        role: 'IT Lead',
+        description: 'Provides technical assessment and recovery options',
+        required: true,
+      },
+      {
+        role: 'Legal Counsel',
+        description: 'Advises on regulatory and legal implications',
+        required: true,
+      },
+      {
+        role: 'Communications/PR',
+        description: 'Manages internal and external messaging',
+        required: true,
+      },
+      {
+        role: 'Business Unit Leaders',
+        description: 'Represent affected departments',
+        required: false,
+      },
+      {
+        role: 'HR Representative',
+        description: 'Handles employee-related concerns',
+        required: false,
+      },
     ],
     tags: ['ransomware', 'cyber', 'critical', 'incident-response'],
   },
@@ -154,7 +219,8 @@ Allow participants to debate the ransom payment decision - there is no single co
     id: 'lib-exercise-002',
     templateId: 'TTX-DATACENTER-001',
     title: 'Data Center / Cloud Region Failure',
-    description: 'A major cloud provider experiences a regional outage affecting your primary infrastructure. Tests cloud recovery procedures and multi-region failover capabilities.',
+    description:
+      'A major cloud provider experiences a regional outage affecting your primary infrastructure. Tests cloud recovery procedures and multi-region failover capabilities.',
     category: 'infrastructure',
     scenarioType: 'tabletop',
     scenarioNarrative: `At 2:00 PM on a Wednesday, your monitoring systems detect widespread service degradation. Within 10 minutes, your cloud provider (AWS/Azure/GCP) confirms a major incident affecting your primary region.
@@ -173,25 +239,43 @@ Customer impact is immediate - support calls are flooding in, and social media i
         id: 'q1',
         question: 'Do we failover to our DR region? What factors influence this decision?',
         category: 'Decision Making',
-        expectedResponses: ['Estimated outage duration', 'DR region readiness', 'Data consistency concerns', 'Cost of failover vs waiting'],
+        expectedResponses: [
+          'Estimated outage duration',
+          'DR region readiness',
+          'Data consistency concerns',
+          'Cost of failover vs waiting',
+        ],
       },
       {
         id: 'q2',
         question: 'What is our customer communication strategy during the outage?',
         category: 'Communication',
-        expectedResponses: ['Status page updates', 'Proactive customer notification', 'Social media response', 'Support team messaging'],
+        expectedResponses: [
+          'Status page updates',
+          'Proactive customer notification',
+          'Social media response',
+          'Support team messaging',
+        ],
       },
       {
         id: 'q3',
         question: 'What data might we lose or have inconsistencies with if we failover now?',
         category: 'Data Integrity',
-        expectedResponses: ['RPO assessment', 'Transaction reconciliation', 'Database replication lag'],
+        expectedResponses: [
+          'RPO assessment',
+          'Transaction reconciliation',
+          'Database replication lag',
+        ],
       },
       {
         id: 'q4',
         question: 'How do we handle SLA commitments and customer credits?',
         category: 'Business',
-        expectedResponses: ['SLA tracking', 'Credit calculation', 'Customer retention considerations'],
+        expectedResponses: [
+          'SLA tracking',
+          'Credit calculation',
+          'Customer retention considerations',
+        ],
       },
     ],
     injects: [
@@ -199,15 +283,25 @@ Customer impact is immediate - support calls are flooding in, and social media i
         id: 'i1',
         timing: '30 minutes',
         title: 'Cloud Provider Update',
-        description: 'Cloud provider updates their status page: "We have identified the root cause and are working on remediation. Estimated time to recovery: 4-6 hours."',
-        expectedActions: ['Reassess failover decision', 'Update stakeholders', 'Continue monitoring'],
+        description:
+          'Cloud provider updates their status page: "We have identified the root cause and are working on remediation. Estimated time to recovery: 4-6 hours."',
+        expectedActions: [
+          'Reassess failover decision',
+          'Update stakeholders',
+          'Continue monitoring',
+        ],
       },
       {
         id: 'i2',
         timing: '1 hour',
         title: 'Major Customer Escalation',
-        description: 'Your largest enterprise customer contacts their executive sponsor demanding an update. They are threatening contract termination.',
-        expectedActions: ['Executive-to-executive communication', 'Provide recovery timeline', 'Discuss compensation'],
+        description:
+          'Your largest enterprise customer contacts their executive sponsor demanding an update. They are threatening contract termination.',
+        expectedActions: [
+          'Executive-to-executive communication',
+          'Provide recovery timeline',
+          'Discuss compensation',
+        ],
       },
     ],
     expectedDecisions: [
@@ -224,9 +318,21 @@ Customer impact is immediate - support calls are flooding in, and social media i
 This exercise often reveals gaps in DR testing frequency and documentation.`,
     estimatedDuration: 90,
     participantRoles: [
-      { role: 'IT/Infrastructure Lead', description: 'Leads technical recovery decisions', required: true },
-      { role: 'Business Leader', description: 'Represents business impact and priorities', required: true },
-      { role: 'Customer Success/Support', description: 'Manages customer communication', required: true },
+      {
+        role: 'IT/Infrastructure Lead',
+        description: 'Leads technical recovery decisions',
+        required: true,
+      },
+      {
+        role: 'Business Leader',
+        description: 'Represents business impact and priorities',
+        required: true,
+      },
+      {
+        role: 'Customer Success/Support',
+        description: 'Manages customer communication',
+        required: true,
+      },
       { role: 'Executive Sponsor', description: 'Approves major decisions', required: true },
     ],
     tags: ['cloud', 'infrastructure', 'disaster-recovery', 'outage'],
@@ -239,7 +345,8 @@ This exercise often reveals gaps in DR testing frequency and documentation.`,
     id: 'lib-exercise-003',
     templateId: 'TTX-VENDOR-001',
     title: 'Critical Vendor/SaaS Outage',
-    description: 'A business-critical SaaS vendor experiences an extended outage, testing your vendor management and workaround procedures.',
+    description:
+      'A business-critical SaaS vendor experiences an extended outage, testing your vendor management and workaround procedures.',
     category: 'vendor_outage',
     scenarioType: 'tabletop',
     scenarioNarrative: `Your organization relies on a critical SaaS platform for core operations (e.g., Salesforce, Workday, ServiceNow). At 9:00 AM, the vendor's status page shows a major incident.
@@ -257,19 +364,32 @@ After 2 hours, the vendor updates: "We are experiencing a critical database issu
         id: 'q1',
         question: 'What manual workarounds can we implement for critical processes?',
         category: 'Continuity',
-        expectedResponses: ['Spreadsheet-based tracking', 'Email-based workflows', 'Phone/paper processes'],
+        expectedResponses: [
+          'Spreadsheet-based tracking',
+          'Email-based workflows',
+          'Phone/paper processes',
+        ],
       },
       {
         id: 'q2',
         question: 'How do we communicate with customers who are expecting updates from us?',
         category: 'Communication',
-        expectedResponses: ['Proactive outreach', 'Set expectations', 'Alternative contact methods'],
+        expectedResponses: [
+          'Proactive outreach',
+          'Set expectations',
+          'Alternative contact methods',
+        ],
       },
       {
         id: 'q3',
         question: 'What is our escalation path with the vendor? What leverage do we have?',
         category: 'Vendor Management',
-        expectedResponses: ['Executive contacts', 'Contract terms', 'SLA credits', 'Alternative vendor consideration'],
+        expectedResponses: [
+          'Executive contacts',
+          'Contract terms',
+          'SLA credits',
+          'Alternative vendor consideration',
+        ],
       },
     ],
     injects: [
@@ -277,8 +397,13 @@ After 2 hours, the vendor updates: "We are experiencing a critical database issu
         id: 'i1',
         timing: '3 hours',
         title: 'Potential Data Loss',
-        description: 'The vendor announces they may need to restore from backup. Data entered in the last 4 hours may be lost.',
-        expectedActions: ['Document recent entries', 'Prepare for data reconciliation', 'Communicate with affected users'],
+        description:
+          'The vendor announces they may need to restore from backup. Data entered in the last 4 hours may be lost.',
+        expectedActions: [
+          'Document recent entries',
+          'Prepare for data reconciliation',
+          'Communicate with affected users',
+        ],
       },
     ],
     expectedDecisions: [
@@ -294,7 +419,11 @@ After 2 hours, the vendor updates: "We are experiencing a critical database issu
 - Need for alternative vendor evaluation`,
     estimatedDuration: 75,
     participantRoles: [
-      { role: 'Business Process Owner', description: 'Knows the affected workflows', required: true },
+      {
+        role: 'Business Process Owner',
+        description: 'Knows the affected workflows',
+        required: true,
+      },
       { role: 'IT/Vendor Manager', description: 'Manages vendor relationship', required: true },
       { role: 'Operations Lead', description: 'Implements workarounds', required: true },
     ],
@@ -308,7 +437,8 @@ After 2 hours, the vendor updates: "We are experiencing a critical database issu
     id: 'lib-exercise-004',
     templateId: 'TTX-NATDISASTER-001',
     title: 'Natural Disaster - Facility Inaccessibility',
-    description: 'A natural disaster makes your primary facility inaccessible, requiring activation of remote work and alternate site procedures.',
+    description:
+      'A natural disaster makes your primary facility inaccessible, requiring activation of remote work and alternate site procedures.',
     category: 'natural_disaster',
     scenarioType: 'tabletop',
     scenarioNarrative: `A major storm system is forecast to impact your region. Weather services are predicting:
@@ -329,25 +459,45 @@ Current situation:
         id: 'q1',
         question: 'What actions should we take in the next 24 hours before the storm?',
         category: 'Preparation',
-        expectedResponses: ['Secure physical assets', 'Enable remote access', 'Back up critical data', 'Employee communication'],
+        expectedResponses: [
+          'Secure physical assets',
+          'Enable remote access',
+          'Back up critical data',
+          'Employee communication',
+        ],
       },
       {
         id: 'q2',
         question: 'How do we ensure all employees can work remotely?',
         category: 'Remote Work',
-        expectedResponses: ['Equipment distribution', 'VPN access', 'Communication tools', 'Home office setup'],
+        expectedResponses: [
+          'Equipment distribution',
+          'VPN access',
+          'Communication tools',
+          'Home office setup',
+        ],
       },
       {
         id: 'q3',
         question: 'What are our critical functions that must continue? How do we prioritize?',
         category: 'Prioritization',
-        expectedResponses: ['Customer-facing operations', 'Payroll/HR', 'Security monitoring', 'Critical deadlines'],
+        expectedResponses: [
+          'Customer-facing operations',
+          'Payroll/HR',
+          'Security monitoring',
+          'Critical deadlines',
+        ],
       },
       {
         id: 'q4',
         question: 'How do we account for employee safety and wellbeing?',
         category: 'Employee Care',
-        expectedResponses: ['Check-in procedures', 'Emergency contacts', 'Flexibility for those affected', 'Mental health support'],
+        expectedResponses: [
+          'Check-in procedures',
+          'Emergency contacts',
+          'Flexibility for those affected',
+          'Mental health support',
+        ],
       },
     ],
     injects: [
@@ -355,15 +505,21 @@ Current situation:
         id: 'i1',
         timing: 'Day 2',
         title: 'Building Damage Report',
-        description: 'Initial reports indicate water damage to the ground floor. Server room was affected. Extent of damage unknown.',
+        description:
+          'Initial reports indicate water damage to the ground floor. Server room was affected. Extent of damage unknown.',
         expectedActions: ['Assess data loss', 'Engage insurance', 'Plan extended remote work'],
       },
       {
         id: 'i2',
         timing: 'Day 3',
         title: 'Employee Emergency',
-        description: 'An employee reports they have been displaced from their home and cannot work. Two others report power outages with no timeline for restoration.',
-        expectedActions: ['Provide support', 'Adjust work expectations', 'Identify backup resources'],
+        description:
+          'An employee reports they have been displaced from their home and cannot work. Two others report power outages with no timeline for restoration.',
+        expectedActions: [
+          'Provide support',
+          'Adjust work expectations',
+          'Identify backup resources',
+        ],
       },
     ],
     expectedDecisions: [
@@ -397,7 +553,8 @@ This scenario works well for organizations in disaster-prone areas.`,
     id: 'lib-exercise-005',
     templateId: 'TTX-PANDEMIC-001',
     title: 'Pandemic / Workforce Unavailability',
-    description: 'A health crisis causes significant workforce unavailability, requiring extended remote operations and staffing contingencies.',
+    description:
+      'A health crisis causes significant workforce unavailability, requiring extended remote operations and staffing contingencies.',
     category: 'pandemic',
     scenarioType: 'tabletop',
     scenarioNarrative: `A new respiratory illness is spreading rapidly. Health authorities have issued guidance for organizations to prepare for:
@@ -416,13 +573,22 @@ Week 1:
         id: 'q1',
         question: 'What are our essential functions and minimum staffing requirements?',
         category: 'Critical Operations',
-        expectedResponses: ['Identify critical roles', 'Cross-training needs', 'Minimum viable operations'],
+        expectedResponses: [
+          'Identify critical roles',
+          'Cross-training needs',
+          'Minimum viable operations',
+        ],
       },
       {
         id: 'q2',
         question: 'How do we handle extended remote work for months rather than days?',
         category: 'Remote Operations',
-        expectedResponses: ['Technology needs', 'Collaboration tools', 'Performance management', 'Culture maintenance'],
+        expectedResponses: [
+          'Technology needs',
+          'Collaboration tools',
+          'Performance management',
+          'Culture maintenance',
+        ],
       },
       {
         id: 'q3',
@@ -436,8 +602,13 @@ Week 1:
         id: 'i1',
         timing: 'Week 2',
         title: 'Key Person Illness',
-        description: 'Your IT Director and two senior developers are all ill simultaneously. They hold critical knowledge about system maintenance.',
-        expectedActions: ['Activate succession plan', 'Document knowledge gaps', 'Prioritize recovery'],
+        description:
+          'Your IT Director and two senior developers are all ill simultaneously. They hold critical knowledge about system maintenance.',
+        expectedActions: [
+          'Activate succession plan',
+          'Document knowledge gaps',
+          'Prioritize recovery',
+        ],
       },
     ],
     expectedDecisions: [
@@ -469,7 +640,8 @@ Week 1:
     id: 'lib-exercise-006',
     templateId: 'TTX-BREACH-001',
     title: 'Data Breach - Customer Data Exposed',
-    description: 'Discovery of unauthorized access to customer data, requiring breach response, notification, and regulatory compliance.',
+    description:
+      'Discovery of unauthorized access to customer data, requiring breach response, notification, and regulatory compliance.',
     category: 'data_breach',
     scenarioType: 'tabletop',
     scenarioNarrative: `Your security team discovers evidence that an unauthorized party accessed your customer database approximately 2 weeks ago. Initial investigation reveals:
@@ -486,25 +658,43 @@ You are now 4 hours into the investigation. The extent may grow as investigation
         id: 'q1',
         question: 'What is our regulatory notification timeline and requirements?',
         category: 'Compliance',
-        expectedResponses: ['GDPR 72-hour requirement', 'State breach notification laws', 'Industry-specific requirements'],
+        expectedResponses: [
+          'GDPR 72-hour requirement',
+          'State breach notification laws',
+          'Industry-specific requirements',
+        ],
       },
       {
         id: 'q2',
         question: 'When and how do we notify affected customers?',
         category: 'Customer Communication',
-        expectedResponses: ['Timing considerations', 'Communication channels', 'Support resources', 'Identity protection offers'],
+        expectedResponses: [
+          'Timing considerations',
+          'Communication channels',
+          'Support resources',
+          'Identity protection offers',
+        ],
       },
       {
         id: 'q3',
         question: 'What immediate technical actions are needed?',
         category: 'Technical Response',
-        expectedResponses: ['Revoke compromised credentials', 'Preserve evidence', 'Assess attack vector', 'Patch vulnerabilities'],
+        expectedResponses: [
+          'Revoke compromised credentials',
+          'Preserve evidence',
+          'Assess attack vector',
+          'Patch vulnerabilities',
+        ],
       },
       {
         id: 'q4',
         question: 'What are our legal and liability considerations?',
         category: 'Legal',
-        expectedResponses: ['Cyber insurance notification', 'Legal counsel engagement', 'Documentation for defense'],
+        expectedResponses: [
+          'Cyber insurance notification',
+          'Legal counsel engagement',
+          'Documentation for defense',
+        ],
       },
     ],
     injects: [
@@ -512,15 +702,25 @@ You are now 4 hours into the investigation. The extent may grow as investigation
         id: 'i1',
         timing: 'Day 2',
         title: 'Expanded Scope',
-        description: 'Investigation reveals the breach is larger than initially thought. 150,000 records were accessed, and some included partial Social Security numbers.',
-        expectedActions: ['Update notification plans', 'Consider credit monitoring', 'Revise communications'],
+        description:
+          'Investigation reveals the breach is larger than initially thought. 150,000 records were accessed, and some included partial Social Security numbers.',
+        expectedActions: [
+          'Update notification plans',
+          'Consider credit monitoring',
+          'Revise communications',
+        ],
       },
       {
         id: 'i2',
         timing: 'Day 3',
         title: 'Media Coverage',
-        description: 'A security researcher has tweeted about the breach after finding exposed data on a dark web forum. Media inquiries are coming in.',
-        expectedActions: ['Coordinate response', 'Accelerate notifications', 'Prepare press statement'],
+        description:
+          'A security researcher has tweeted about the breach after finding exposed data on a dark web forum. Media inquiries are coming in.',
+        expectedActions: [
+          'Coordinate response',
+          'Accelerate notifications',
+          'Prepare press statement',
+        ],
       },
     ],
     expectedDecisions: [
@@ -539,9 +739,17 @@ You are now 4 hours into the investigation. The extent may grow as investigation
 Explore the tension between quick notification and complete information.`,
     estimatedDuration: 120,
     participantRoles: [
-      { role: 'Security Lead', description: 'Technical investigation and remediation', required: true },
+      {
+        role: 'Security Lead',
+        description: 'Technical investigation and remediation',
+        required: true,
+      },
       { role: 'Legal Counsel', description: 'Regulatory and legal guidance', required: true },
-      { role: 'Communications/PR', description: 'Customer and media communication', required: true },
+      {
+        role: 'Communications/PR',
+        description: 'Customer and media communication',
+        required: true,
+      },
       { role: 'Executive Sponsor', description: 'Final decisions and approvals', required: true },
       { role: 'Privacy Officer', description: 'Regulatory compliance', required: false },
     ],

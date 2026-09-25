@@ -10,19 +10,16 @@ describe('bcdrPlanFileFilter', () => {
   function runFilter(mimetype: string) {
     return new Promise<{ err: Error | null; accepted: boolean }>((resolve) => {
       bcdrPlanFileFilter({} as unknown, { mimetype }, (err, accepted) =>
-        resolve({ err, accepted }),
+        resolve({ err, accepted })
       );
     });
   }
 
-  it.each(BCDR_PLAN_MIME_ALLOWLIST)(
-    'accepts allowed MIME type: %s',
-    async (mime) => {
-      const { err, accepted } = await runFilter(mime);
-      expect(err).toBeNull();
-      expect(accepted).toBe(true);
-    },
-  );
+  it.each(BCDR_PLAN_MIME_ALLOWLIST)('accepts allowed MIME type: %s', async (mime) => {
+    const { err, accepted } = await runFilter(mime);
+    expect(err).toBeNull();
+    expect(accepted).toBe(true);
+  });
 
   it.each([
     'application/x-msdownload',

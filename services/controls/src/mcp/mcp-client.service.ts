@@ -11,6 +11,7 @@ import {
   MCPToolDefinition,
   getAutoStartServers,
 } from './mcp-servers.config';
+import { MCPCredentialsService } from './mcp-credentials.service';
 
 /**
  * Allowed commands for MCP servers to prevent command injection.
@@ -23,6 +24,7 @@ const ALLOWED_MCP_COMMANDS = ['node', 'npx', 'npm', 'python', 'python3'] as cons
  */
 interface MCPServerState {
   config: MCPServerConfig;
+  organizationId?: string;
   process: ChildProcess | null;
   status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error';
   lastError?: string;
@@ -71,12 +73,36 @@ export class MCPClientService implements OnModuleInit, OnModuleDestroy {
   private projectRoot: string;
   private mcpServersRoot: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly credentialsService: MCPCredentialsService
+  ) {
     // Works from both services/controls/src and services/controls/dist.
     this.projectRoot = resolve(__dirname, '../../../..');
     this.mcpServersRoot = resolve(
       this.configService.get<string>('MCP_SERVERS_ROOT') || join(this.projectRoot, 'mcp-servers')
     );
+  }
+
+  private serverKey(serverId: string, organizationId?: string): string {
+    return organizationId ? `${organizationId}:${serverId}` : serverId;
+  }
+
+  private getOrCreateState(serverId: string, organizationId?: string): MCPServerState | undefined {
+    const key = this.serverKey(serverId, organizationId);
+    const existing = this.servers.get(key);
+    if (existing) return existing;
+    const config = MCP_SERVERS.find((candidate) => candidate.id === serverId);
+    if (!config) return undefined;
+    const state: MCPServerState = {
+      config,
+      organizationId,
+      process: null,
+      status: 'stopped',
+      restartCount: 0,
+    };
+    this.servers.set(key, state);
+    return state;
   }
 
   async onModuleInit() {
@@ -111,9 +137,9 @@ export class MCPClientService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleDestroy() {
     // Stop all servers gracefully
-    const stopPromises = Array.from(this.servers.keys()).map((id) =>
-      this.stopServer(id).catch((err) =>
-        this.logger.error(`Error stopping server ${id}: ${err.message}`)
+    const stopPromises = Array.from(this.servers.values()).map((state) =>
+      this.stopServer(state.config.id, state.organizationId).catch((err) =>
+        this.logger.error(`Error stopping server ${state.config.id}: ${err.message}`)
       )
     );
     await Promise.all(stopPromises);
@@ -122,27 +148,32 @@ export class MCPClientService implements OnModuleInit, OnModuleDestroy {
   /**
    * Get all available servers and their status
    */
-  getServers(): Array<{ id: string; name: string; status: string; description: string }> {
-    return Array.from(this.servers.values()).map((state) => ({
-      id: state.config.id,
-      name: state.config.name,
-      status: state.status,
-      description: state.config.description,
+  getServers(organizationId?: string): Array<{
+    id: string;
+    name: string;
+    status: string;
+    description: string;
+  }> {
+    return MCP_SERVERS.map((config) => ({
+      id: config.id,
+      name: config.name,
+      status: this.getOrCreateState(config.id, organizationId)?.status || 'stopped',
+      description: config.description,
     }));
   }
 
   /**
    * Get server status
    */
-  getServerStatus(serverId: string): MCPServerState | undefined {
-    return this.servers.get(serverId);
+  getServerStatus(serverId: string, organizationId?: string): MCPServerState | undefined {
+    return this.getOrCreateState(serverId, organizationId);
   }
 
   /**
    * Start an MCP server
    */
-  async startServer(serverId: string): Promise<void> {
-    const state = this.servers.get(serverId);
+  async startServer(serverId: string, organizationId?: string): Promise<void> {
+    const state = this.getOrCreateState(serverId, organizationId);
     if (!state) {
       throw new Error(`Unknown MCP server: ${serverId}`);
     }
@@ -169,10 +200,15 @@ export class MCPClientService implements OnModuleInit, OnModuleDestroy {
         throw new Error(`MCP server directory does not exist: ${cwd}`);
       }
 
+      const storedCredentials = organizationId
+        ? await this.credentialsService.getCredentials(organizationId, serverId)
+        : null;
       const env = {
         ...process.env,
         ...config.env,
+        ...(storedCredentials || {}),
       };
+      const stateKey = this.serverKey(serverId, organizationId);
 
       this.logger.log(`Starting MCP server ${serverId} in ${cwd}`);
 
@@ -202,7 +238,7 @@ export class MCPClientService implements OnModuleInit, OnModuleDestroy {
       let buffer = '';
       child.stdout?.on('data', (data: Buffer) => {
         buffer += data.toString();
-        this.processBuffer(serverId, buffer, (remaining) => {
+        this.processBuffer(stateKey, buffer, (remaining) => {
           buffer = remaining;
         });
       });
@@ -225,7 +261,7 @@ export class MCPClientService implements OnModuleInit, OnModuleDestroy {
           state.lastError = `Process exited with code ${code}`;
         }
         this.rejectServerRequests(
-          serverId,
+          stateKey,
           new Error(state.lastError || `MCP server ${serverId} stopped`)
         );
 
@@ -239,7 +275,7 @@ export class MCPClientService implements OnModuleInit, OnModuleDestroy {
           this.logger.log(
             `Attempting restart ${state.restartCount}/${config.maxRetries} for ${serverId}`
           );
-          setTimeout(() => this.startServer(serverId), 5000);
+          setTimeout(() => this.startServer(serverId, organizationId), 5000);
         }
       });
 
@@ -248,11 +284,11 @@ export class MCPClientService implements OnModuleInit, OnModuleDestroy {
         state.process = null;
         state.status = 'error';
         state.lastError = error.message;
-        this.rejectServerRequests(serverId, error);
+        this.rejectServerRequests(stateKey, error);
       });
 
       // Wait for server to be ready (send initialize request)
-      await Promise.race([this.waitForReady(serverId, config.timeout || 10000), startupFailure]);
+      await Promise.race([this.waitForReady(stateKey, config.timeout || 10000), startupFailure]);
 
       state.status = 'running';
       state.startedAt = new Date();
@@ -264,7 +300,7 @@ export class MCPClientService implements OnModuleInit, OnModuleDestroy {
       }
       state.status = 'error';
       state.lastError = error instanceof Error ? error.message : String(error);
-      this.rejectServerRequests(serverId, new Error(state.lastError));
+      this.rejectServerRequests(this.serverKey(serverId, organizationId), new Error(state.lastError));
       throw error;
     }
   }
@@ -272,8 +308,8 @@ export class MCPClientService implements OnModuleInit, OnModuleDestroy {
   /**
    * Stop an MCP server
    */
-  async stopServer(serverId: string): Promise<void> {
-    const state = this.servers.get(serverId);
+  async stopServer(serverId: string, organizationId?: string): Promise<void> {
+    const state = this.servers.get(this.serverKey(serverId, organizationId));
     if (!state || !state.process) {
       return;
     }
@@ -306,38 +342,50 @@ export class MCPClientService implements OnModuleInit, OnModuleDestroy {
   /**
    * Restart an MCP server
    */
-  async restartServer(serverId: string): Promise<void> {
-    await this.stopServer(serverId);
-    await this.startServer(serverId);
+  async restartServer(serverId: string, organizationId?: string): Promise<void> {
+    await this.stopServer(serverId, organizationId);
+    await this.startServer(serverId, organizationId);
   }
 
   /**
    * Get available tools for a server
    */
-  getTools(serverId: string): unknown[] {
-    return this.servers.get(serverId)?.tools || MCP_TOOLS[serverId] || [];
+  getTools(serverId: string, organizationId?: string): unknown[] {
+    return (
+      this.servers.get(this.serverKey(serverId, organizationId))?.tools || MCP_TOOLS[serverId] || []
+    );
   }
 
   /**
    * Get all available tools across all servers
    */
-  getAllTools(): Array<{ serverId: string; tools: unknown[] }> {
-    return Array.from(this.servers.keys()).map((serverId) => ({
-      serverId,
-      tools: this.getTools(serverId),
+  getAllTools(organizationId?: string): Array<{ serverId: string; tools: unknown[] }> {
+    return MCP_SERVERS.map((config) => ({
+      serverId: config.id,
+      tools: this.getTools(config.id, organizationId),
     }));
   }
 
   /**
    * Call a tool on an MCP server
    */
-  async callTool(serverId: string, toolName: string, params: unknown): Promise<unknown> {
-    const state = this.servers.get(serverId);
+  async callTool(
+    serverId: string,
+    toolName: string,
+    params: unknown,
+    organizationId?: string
+  ): Promise<unknown> {
+    const stateKey = this.serverKey(serverId, organizationId);
+    let state = this.getOrCreateState(serverId, organizationId);
+    if (state && state.status !== 'running' && state.status !== 'starting') {
+      await this.startServer(serverId, organizationId);
+      state = this.servers.get(stateKey);
+    }
     if (!state || state.status !== 'running') {
       throw new Error(`MCP server ${serverId} is not running`);
     }
 
-    const result = await this.sendRequest(serverId, 'tools/call', {
+    const result = await this.sendRequest(stateKey, 'tools/call', {
       name: toolName,
       arguments: params,
     });
@@ -347,38 +395,41 @@ export class MCPClientService implements OnModuleInit, OnModuleDestroy {
   /**
    * List resources from an MCP server
    */
-  async listResources(serverId: string): Promise<unknown[]> {
-    const state = this.servers.get(serverId);
+  async listResources(serverId: string, organizationId?: string): Promise<unknown[]> {
+    const stateKey = this.serverKey(serverId, organizationId);
+    const state = this.servers.get(stateKey);
     if (!state || state.status !== 'running') {
       throw new Error(`MCP server ${serverId} is not running`);
     }
 
-    const result = await this.sendRequest(serverId, 'resources/list', {});
+    const result = await this.sendRequest(stateKey, 'resources/list', {});
     return ((result as Record<string, unknown>)?.resources as unknown[]) || [];
   }
 
   /**
    * Read a resource from an MCP server
    */
-  async readResource(serverId: string, uri: string): Promise<unknown> {
-    const state = this.servers.get(serverId);
+  async readResource(serverId: string, uri: string, organizationId?: string): Promise<unknown> {
+    const stateKey = this.serverKey(serverId, organizationId);
+    const state = this.servers.get(stateKey);
     if (!state || state.status !== 'running') {
       throw new Error(`MCP server ${serverId} is not running`);
     }
 
-    return this.sendRequest(serverId, 'resources/read', { uri });
+    return this.sendRequest(stateKey, 'resources/read', { uri });
   }
 
   /**
    * Get prompts from an MCP server
    */
-  async listPrompts(serverId: string): Promise<unknown[]> {
-    const state = this.servers.get(serverId);
+  async listPrompts(serverId: string, organizationId?: string): Promise<unknown[]> {
+    const stateKey = this.serverKey(serverId, organizationId);
+    const state = this.servers.get(stateKey);
     if (!state || state.status !== 'running') {
       throw new Error(`MCP server ${serverId} is not running`);
     }
 
-    const result = await this.sendRequest(serverId, 'prompts/list', {});
+    const result = await this.sendRequest(stateKey, 'prompts/list', {});
     return ((result as Record<string, unknown>)?.prompts as unknown[]) || [];
   }
 
@@ -388,14 +439,16 @@ export class MCPClientService implements OnModuleInit, OnModuleDestroy {
   async getPrompt(
     serverId: string,
     name: string,
-    args?: Record<string, unknown>
+    args?: Record<string, unknown>,
+    organizationId?: string
   ): Promise<unknown> {
-    const state = this.servers.get(serverId);
+    const stateKey = this.serverKey(serverId, organizationId);
+    const state = this.servers.get(stateKey);
     if (!state || state.status !== 'running') {
       throw new Error(`MCP server ${serverId} is not running`);
     }
 
-    return this.sendRequest(serverId, 'prompts/get', { name, arguments: args });
+    return this.sendRequest(stateKey, 'prompts/get', { name, arguments: args });
   }
 
   // ============================================

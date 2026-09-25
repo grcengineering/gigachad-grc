@@ -57,6 +57,17 @@ test('keeps user management on the controls catch-all', () => {
   assert.doesNotMatch(compose, /frameworks-users/);
 });
 
+test('routes the public SCIM protocol endpoint to controls in every deployment mode', () => {
+  assert.match(compose, /controls-scim\.rule=PathPrefix\(`\/scim`\)/);
+  assert.match(
+    productionCompose,
+    /controls-scim\.rule=Host\(`\$\{APP_DOMAIN\}`\) && PathPrefix\(`\/scim`\)/
+  );
+  assert.match(nginx, /location \/scim\//);
+  assert.ok(viteProxyBlock('/scim').includes("target: 'http://localhost:3001'"));
+  assert.match(ingressPathBlock('/scim'), /-controls/);
+});
+
 test('keeps tenant frameworks on the frameworks service', () => {
   assert.match(compose, /routers\.frameworks\.rule=PathPrefix\(`\/api\/frameworks`\)/);
   assert.match(compose, /services\.frameworks\.loadbalancer\.server\.port=3002/);

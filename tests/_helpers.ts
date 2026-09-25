@@ -78,14 +78,14 @@ export async function firstVendorId(req: APIRequestContext): Promise<string> {
 }
 
 export async function firstAssessmentId(req: APIRequestContext): Promise<string> {
-  const existing = extractFirstId(await getJson(req, '/api/assessments'));
+  const existing = extractFirstId(await getJson(req, '/api/vendor-assessments'));
   if (existing) return existing;
-  const frameworkId = await firstFrameworkId(req);
-  if (!frameworkId) return '';
-  const created = await postJson(req, '/api/assessments', {
-    frameworkId,
-    name: `Playwright assessment ${Date.now()}`,
-    description: 'Created by end-to-end detail coverage',
+  const vendorId = await firstVendorId(req);
+  if (!vendorId) return '';
+  const created = await postJson(req, '/api/vendor-assessments', {
+    vendorId,
+    assessmentType: 'annual_review',
+    status: 'pending',
   });
   return created?.id ?? '';
 }

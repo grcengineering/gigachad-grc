@@ -1,5 +1,9 @@
 import { IsString, IsOptional, IsEnum } from 'class-validator';
-import { AssetType as PrismaAssetType, AssetStatus as PrismaAssetStatus, AssetCriticality as PrismaAssetCriticality } from '@prisma/client';
+import {
+  AssetType as PrismaAssetType,
+  AssetStatus as PrismaAssetStatus,
+  AssetCriticality as PrismaAssetCriticality,
+} from '@prisma/client';
 
 // Local enums matching Prisma schema for class-validator compatibility
 export enum AssetType {
@@ -30,6 +34,14 @@ export type PrismaCompatibleAssetStatus = PrismaAssetStatus;
 export type PrismaCompatibleAssetCriticality = PrismaAssetCriticality;
 
 export class AssetFilterDto {
+  @IsOptional()
+  @IsString()
+  page?: string;
+
+  @IsOptional()
+  @IsString()
+  limit?: string;
+
   @IsOptional()
   @IsString()
   search?: string;
@@ -167,6 +179,3 @@ export class SyncResultDto {
   errors: string[];
   duration: number;
 }
-
-
-

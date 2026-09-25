@@ -1,3 +1,4 @@
+import { requireExplicitDemoMode } from '../demo-mode.js';
 // HIPAA Requirements by Rule Type
 const hipaaRequirements = {
     security: {
@@ -5,7 +6,11 @@ const hipaaRequirements = {
         requirements: [
             // Administrative Safeguards (45 CFR 164.308)
             { id: '164.308(a)(1)', name: 'Security Management Process', safeguard: 'administrative' },
-            { id: '164.308(a)(2)', name: 'Assigned Security Responsibility', safeguard: 'administrative' },
+            {
+                id: '164.308(a)(2)',
+                name: 'Assigned Security Responsibility',
+                safeguard: 'administrative',
+            },
             { id: '164.308(a)(3)', name: 'Workforce Security', safeguard: 'administrative' },
             { id: '164.308(a)(4)', name: 'Information Access Management', safeguard: 'administrative' },
             { id: '164.308(a)(5)', name: 'Security Awareness and Training', safeguard: 'administrative' },
@@ -59,7 +64,8 @@ const hipaaRequirements = {
     },
 };
 export async function checkHIPAAControls(params) {
-    const { ruleTypes = ['security', 'privacy', 'breach_notification'], safeguards, } = params;
+    requireExplicitDemoMode('HIPAA automated compliance checking');
+    const { ruleTypes = ['security', 'privacy', 'breach_notification'], safeguards } = params;
     const ruleResults = [];
     const findings = [];
     let totalScore = 0;
@@ -73,7 +79,8 @@ export async function checkHIPAAControls(params) {
         // Filter by safeguard type if specified (only applies to security rule)
         let requirementsToCheck = rule.requirements;
         if (safeguards && safeguards.length > 0 && ruleType === 'security') {
-            requirementsToCheck = rule.requirements.filter((r) => r.safeguard && safeguards.includes(r.safeguard));
+            requirementsToCheck = rule.requirements.filter((r) => r.safeguard &&
+                safeguards.includes(r.safeguard));
         }
         for (const requirement of requirementsToCheck) {
             // Simulate requirement check
@@ -128,9 +135,7 @@ export async function checkHIPAAControls(params) {
                 findings: reqFindings,
             });
         }
-        const avgRuleScore = requirementsToCheck.length > 0
-            ? Math.round(ruleScore / requirementsToCheck.length)
-            : 0;
+        const avgRuleScore = requirementsToCheck.length > 0 ? Math.round(ruleScore / requirementsToCheck.length) : 0;
         ruleResults.push({
             rule: ruleType,
             description: rule.description,
@@ -165,7 +170,11 @@ export async function checkHIPAAControls(params) {
         checkedAt: new Date().toISOString(),
         rules: ruleResults,
         overallScore,
-        status: overallScore >= 80 ? 'compliant' : overallScore >= 50 ? 'partially_compliant' : 'non_compliant',
+        status: overallScore >= 80
+            ? 'compliant'
+            : overallScore >= 50
+                ? 'partially_compliant'
+                : 'non_compliant',
         findings,
         recommendations,
     };

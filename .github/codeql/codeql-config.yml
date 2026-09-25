@@ -21,11 +21,6 @@ paths-ignore:
   - '**/*.d.ts'
   - '**/*.map'
   - '**/*.min.js'
-  # SCORM archive extraction uses strict segment allowlisting, ZIP size/CRC
-  # limits, symlink rejection, and two independent base-path containment
-  # checks. CodeQL cannot model the shared containment validator, so this
-  # narrow storage boundary is covered by dedicated traversal tests instead.
-  - 'services/controls/src/training/scorm-storage.ts'
 
   # Documentation
   - 'docs/**'

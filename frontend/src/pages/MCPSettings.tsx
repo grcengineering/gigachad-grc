@@ -7,6 +7,7 @@ import {
   PlayIcon,
 } from '@heroicons/react/24/outline';
 import { Pause } from 'lucide-react';
+import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import {
   Badge,
@@ -19,6 +20,7 @@ import {
   Dialog,
   PageHeader,
   StatCard,
+  Textarea,
   type DataTableColumn,
 } from '@/components/ui';
 
@@ -31,6 +33,11 @@ interface MCPServer {
   status: ServerStatus;
 }
 
+interface CredentialStatus {
+  configured: boolean;
+  env: Record<string, string> | null;
+}
+
 function statusToVariant(status: ServerStatus) {
   if (status === 'running') return 'success' as const;
   if (status === 'starting') return 'warning' as const;
@@ -41,6 +48,7 @@ function statusToVariant(status: ServerStatus) {
 export default function MCPSettings() {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [credentialJson, setCredentialJson] = useState('{}');
 
   const { data: servers = [], isLoading } = useQuery<MCPServer[]>({
     queryKey: ['mcp-servers'],
@@ -54,6 +62,43 @@ export default function MCPSettings() {
     mutationFn: ({ id, action }: { id: string; action: 'start' | 'stop' | 'restart' }) =>
       api.post(`/api/mcp/servers/${id}/${action}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['mcp-servers'] }),
+  });
+
+  const credentials = useQuery<CredentialStatus>({
+    queryKey: ['mcp-credentials', selectedId],
+    queryFn: async () =>
+      (await api.get(`/api/mcp/servers/${selectedId}/credentials`)).data,
+    enabled: Boolean(selectedId),
+  });
+
+  const saveCredentials = useMutation({
+    mutationFn: async () => {
+      const env = JSON.parse(credentialJson) as Record<string, string>;
+      return api.put(`/api/mcp/servers/${selectedId}/credentials`, { env });
+    },
+    onSuccess: () => {
+      toast.success('MCP credentials encrypted and applied');
+      setCredentialJson('{}');
+      queryClient.invalidateQueries({ queryKey: ['mcp-credentials', selectedId] });
+      queryClient.invalidateQueries({ queryKey: ['mcp-servers'] });
+    },
+    onError: (error: any) =>
+      toast.error(
+        error instanceof SyntaxError
+          ? 'Credentials must be a valid JSON object'
+          : error?.response?.data?.message || 'Unable to save MCP credentials'
+      ),
+  });
+
+  const deleteCredentials = useMutation({
+    mutationFn: async () => api.delete(`/api/mcp/servers/${selectedId}/credentials`),
+    onSuccess: () => {
+      toast.success('MCP credentials removed');
+      queryClient.invalidateQueries({ queryKey: ['mcp-credentials', selectedId] });
+      queryClient.invalidateQueries({ queryKey: ['mcp-servers'] });
+    },
+    onError: (error: any) =>
+      toast.error(error?.response?.data?.message || 'Unable to remove MCP credentials'),
   });
 
   const selected = servers.find((server) => server.id === selectedId) ?? null;
@@ -197,17 +242,69 @@ export default function MCPSettings() {
         description={selected?.description}
       >
         {selected && (
-          <Card density="cozy" elevated={false}>
-            <CardHeader className="px-0 py-0 border-b-0">
-              <CardTitle>Runtime status</CardTitle>
-            </CardHeader>
-            <CardBody density="compact" className="px-0 flex items-center justify-between">
-              <Badge variant={statusToVariant(selected.status)} dot>
-                {selected.status}
-              </Badge>
-              <span className="font-mono text-xs text-surface-600">{selected.id}</span>
-            </CardBody>
-          </Card>
+          <>
+            <Card density="cozy" elevated={false}>
+              <CardHeader className="px-0 py-0 border-b-0">
+                <CardTitle>Runtime status</CardTitle>
+              </CardHeader>
+              <CardBody density="compact" className="px-0 flex items-center justify-between">
+                <Badge variant={statusToVariant(selected.status)} dot>
+                  {selected.status}
+                </Badge>
+                <span className="font-mono text-xs text-surface-600">{selected.id}</span>
+              </CardBody>
+            </Card>
+            <Card density="cozy" elevated={false} className="mt-4">
+              <CardHeader className="px-0 py-0 border-b-0">
+                <CardTitle>Organization credentials</CardTitle>
+              </CardHeader>
+              <CardBody density="compact" className="px-0 space-y-3">
+              <p className="text-xs text-surface-600">
+                Sensitive environment values are encrypted at rest and isolated to this
+                organization. Existing values are masked and never returned in plaintext.
+              </p>
+              {credentials.data?.configured && credentials.data.env && (
+                <div className="rounded-md bg-surface-100 p-3 font-mono text-xs">
+                  {Object.entries(credentials.data.env).map(([key, value]) => (
+                    <div key={key}>
+                      {key}={value}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Textarea
+                label="Credential environment JSON"
+                value={credentialJson}
+                onChange={(event) => setCredentialJson(event.target.value)}
+                rows={5}
+                placeholder='{"GITHUB_TOKEN":"...","AWS_SECRET_ACCESS_KEY":"..."}'
+              />
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => saveCredentials.mutate()}
+                  loading={saveCredentials.isPending}
+                >
+                  Encrypt and Apply
+                </Button>
+                {credentials.data?.configured && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      if (window.confirm('Remove credentials for this MCP server?')) {
+                        deleteCredentials.mutate();
+                      }
+                    }}
+                    loading={deleteCredentials.isPending}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+              </CardBody>
+            </Card>
+          </>
         )}
       </Dialog>
     </div>

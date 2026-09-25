@@ -6,7 +6,7 @@ import {
   OnModuleInit,
   Optional,
 } from '@nestjs/common';
-import { randomBytes } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import type { Counter } from 'prom-client';
 import * as cronParser from 'cron-parser';
@@ -204,7 +204,7 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
           serverId: 'grc-ai-assistant',
           toolName: 'suggest_controls',
           arguments: {
-            risk: '${analyze-risk.output}',
+            risk: '${analyze-risk}',
             frameworks: ['SOC2', 'ISO27001'],
             maxSuggestions: 5,
           },
@@ -216,7 +216,7 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
           serverId: 'grc-ai-assistant',
           toolName: 'map_requirements',
           arguments: {
-            control: '${suggest-controls.output.suggestions[0]}',
+            control: '${suggest-controls.suggestions.0}',
             targetFrameworks: ['SOC2', 'ISO27001'],
           },
           dependsOn: ['suggest-controls'],
@@ -302,6 +302,7 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
           toolName: 'validate_policy_compliance',
           arguments: {
             policyId: '${input.policyId}',
+            policyContent: '${input.policyContent}',
             framework: '${input.framework}',
           },
         },
@@ -426,14 +427,21 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
                 })
               ).map((organization) => organization.id);
           await Promise.all(
-            organizationIds.map((organizationId) =>
-              this.executeWorkflow(organizationId, 'system-scheduler', workflow.id, undefined, {
-                trigger: {
-                  type: 'scheduled',
-                  scheduledAt: nextRun.toISOString(),
-                },
-              })
-            )
+            organizationIds.map((organizationId) => {
+              const scheduledAt = nextRun.toISOString();
+              const executionId = `scheduled-${createHash('sha256')
+                .update(`${organizationId}:${workflow.id}:${scheduledAt}`)
+                .digest('hex')
+                .slice(0, 32)}`;
+              return this.executeWorkflow(
+                organizationId,
+                'system-scheduler',
+                workflow.id,
+                undefined,
+                { trigger: { type: 'scheduled', scheduledAt } },
+                executionId
+              );
+            })
           );
         } catch (error) {
           this.logger.error(
@@ -506,14 +514,25 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
     userId: string,
     workflowId: string,
     input?: Record<string, unknown>,
-    variables?: Record<string, unknown>
+    variables?: Record<string, unknown>,
+    executionIdOverride?: string
   ): Promise<WorkflowExecution> {
     const workflow = await this.getWorkflow(organizationId, workflowId);
     if (!workflow) {
       throw new Error(`Workflow not found: ${workflowId}`);
     }
+    const organization = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { name: true, settings: true },
+    });
+    const organizationSettings = (organization?.settings || {}) as Record<string, unknown>;
+    const organizationVariables = {
+      ORG_NAME: organization?.name || 'Unnamed organization',
+      ORG_INDUSTRY: organizationSettings.industry || 'unspecified',
+      ORG_RISK_APPETITE: organizationSettings.riskAppetite || 'medium',
+    };
 
-    const executionId = `exec-${randomBytes(8).toString('hex')}`;
+    const executionId = executionIdOverride || `exec-${randomBytes(8).toString('hex')}`;
     const execution: WorkflowExecution = {
       id: executionId,
       workflowId,
@@ -525,18 +544,26 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
       })),
     };
 
-    await this.prisma.mcpWorkflowExecution.create({
-      data: {
-        id: executionId,
-        workflowId,
-        organizationId,
-        requestedBy: userId,
-        status: execution.status,
-        steps: execution.steps as unknown as Prisma.InputJsonValue,
-        input: input as Prisma.InputJsonValue | undefined,
-        variables: variables as Prisma.InputJsonValue | undefined,
-      },
-    });
+    try {
+      await this.prisma.mcpWorkflowExecution.create({
+        data: {
+          id: executionId,
+          workflowId,
+          organizationId,
+          requestedBy: userId,
+          status: execution.status,
+          steps: execution.steps as unknown as Prisma.InputJsonValue,
+          input: input as Prisma.InputJsonValue | undefined,
+          variables: variables as Prisma.InputJsonValue | undefined,
+        },
+      });
+    } catch (error) {
+      if (executionIdOverride && (error as { code?: string }).code === 'P2002') {
+        const existing = await this.getExecution(organizationId, executionId);
+        if (existing) return existing;
+      }
+      throw error;
+    }
     await auditMutation(this.prisma, {
       organizationId,
       userId,
@@ -550,6 +577,7 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
 
     // Execute workflow in background and record metrics
     this.runWorkflow(execution, workflow, {
+      ...organizationVariables,
       ...workflow.variables,
       ...variables,
       input,
@@ -625,7 +653,11 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
             const resolvedArgs = this.resolveArguments(step.arguments, context, stepOutputs);
 
             // Execute the step with optional retry policy
-            const result = await this.executeStepWithRetry(step, resolvedArgs);
+            const result = await this.executeStepWithRetry(
+              step,
+              resolvedArgs,
+              context.organizationId as string
+            );
 
             if (!result.success) {
               throw new Error(result.error || 'Step execution failed');
@@ -663,7 +695,8 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
 
   private async executeStepWithRetry(
     step: WorkflowStep,
-    args: Record<string, unknown>
+    args: Record<string, unknown>,
+    organizationId: string
   ): Promise<{ success: boolean; result?: unknown; error?: string }> {
     const maxAttempts = step.retryPolicy?.maxAttempts ?? 1;
     const baseDelayMs = step.retryPolicy?.delayMs ?? 1000;
@@ -674,7 +707,12 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
 
     while (attempt < maxAttempts) {
       try {
-        const result = await this.mcpClient.callTool(step.serverId, step.toolName, args);
+        const result = await this.mcpClient.callTool(
+          step.serverId,
+          step.toolName,
+          args,
+          organizationId
+        );
         return { success: true, result };
       } catch (error) {
         lastError = error;
@@ -743,6 +781,9 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
           value = (value as Record<string, unknown>)[parts[i]];
         }
       }
+      if (value === undefined || value === null) {
+        throw new Error(`Missing workflow variable: ${path}`);
+      }
       return value;
     }
 
@@ -754,8 +795,10 @@ export class MCPWorkflowService implements OnModuleInit, OnModuleDestroy {
       }
     }
 
-    // Return original if not resolved
-    return value ?? variable;
+    if (value === undefined || value === null) {
+      throw new Error(`Missing workflow variable: ${path}`);
+    }
+    return value;
   }
 
   // Get execution status

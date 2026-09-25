@@ -66,7 +66,7 @@ interface DashboardSummary {
     totalOverdue?: number;
     plans?: Array<{ id: string; title: string }>;
     processes?: Array<{ id: string; title?: string; name?: string }>;
-    findings?: Array<{ id: string; title: string; test_id?: string }>;
+    findings?: Array<{ id: string; title: string; test_uuid?: string; test_id?: string }>;
   };
 }
 
@@ -452,7 +452,7 @@ export default function BCDRDashboard() {
                 {overdueFindings.slice(0, 2).map((finding) => (
                   <Link
                     key={finding.id}
-                    to={finding.test_id ? `/bcdr/tests/${finding.test_id}` : '/bcdr'}
+                    to={finding.test_uuid ? `/bcdr/tests/${finding.test_uuid}` : '/bcdr'}
                     className="flex items-center gap-3 p-2.5 rounded-md bg-surface-50 hover:bg-surface-100 border border-surface-200 transition-colors"
                   >
                     <FlaskConical className="h-4 w-4 text-amber-700 shrink-0" />

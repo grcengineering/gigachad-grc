@@ -10,14 +10,15 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import { AssetsService } from './assets.service';
 import { AssetFilterDto, CreateAssetDto, UpdateAssetDto } from './dto/asset.dto';
 import { DevAuthGuard, User } from '../auth/dev-auth.guard';
-import type { UserContext } from '@gigachad-grc/shared';
+import { Roles, RolesGuard, type UserContext } from '@gigachad-grc/shared';
 
 @Controller('api/assets')
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 export class AssetsController {
   constructor(private readonly assetsService: AssetsService) {}
 
@@ -61,11 +62,13 @@ export class AssetsController {
   }
 
   @Post()
+  @Roles('admin', 'compliance_manager')
   async createAsset(@Body() dto: CreateAssetDto, @User() user: UserContext) {
     return this.assetsService.create(user.organizationId, dto, user.userId, user.email);
   }
 
   @Put(':id')
+  @Roles('admin', 'compliance_manager')
   async updateAsset(
     @Param('id') id: string,
     @Body() dto: UpdateAssetDto,
@@ -75,6 +78,7 @@ export class AssetsController {
   }
 
   @Delete(':id')
+  @Roles('admin', 'compliance_manager')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteAsset(@Param('id') id: string, @User() user: UserContext) {
     await this.assetsService.delete(id, user.organizationId, user.userId, user.email);
@@ -85,6 +89,7 @@ export class AssetsController {
   // ===========================
 
   @Post('sync/:source')
+  @Roles('admin', 'compliance_manager')
   async syncFromSource(
     @Param('source') source: string,
     @Body() body: { integrationId: string },
@@ -99,15 +104,6 @@ export class AssetsController {
       );
     }
 
-    return {
-      source,
-      error: `Unsupported source: ${source}`,
-      itemsProcessed: 0,
-      itemsCreated: 0,
-      itemsUpdated: 0,
-      itemsFailed: 0,
-      errors: [`Source "${source}" is not supported for asset sync`],
-      duration: 0,
-    };
+    throw new BadRequestException(`Source "${source}" is not supported for asset sync`);
   }
 }

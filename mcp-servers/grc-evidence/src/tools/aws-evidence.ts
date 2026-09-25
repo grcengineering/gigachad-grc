@@ -1,7 +1,28 @@
-import { S3Client, ListBucketsCommand, GetBucketPolicyCommand, GetBucketEncryptionCommand, GetPublicAccessBlockCommand } from '@aws-sdk/client-s3';
-import { IAMClient, ListUsersCommand, ListPoliciesCommand, GetAccountPasswordPolicyCommand, ListMFADevicesCommand } from '@aws-sdk/client-iam';
-import { EC2Client, DescribeSecurityGroupsCommand, DescribeVpcsCommand, DescribeSubnetsCommand } from '@aws-sdk/client-ec2';
-import { ConfigServiceClient, DescribeConfigRulesCommand, GetComplianceDetailsByConfigRuleCommand } from '@aws-sdk/client-config-service';
+import {
+  S3Client,
+  ListBucketsCommand,
+  GetBucketPolicyCommand,
+  GetBucketEncryptionCommand,
+  GetPublicAccessBlockCommand,
+} from '@aws-sdk/client-s3';
+import {
+  IAMClient,
+  ListUsersCommand,
+  ListPoliciesCommand,
+  GetAccountPasswordPolicyCommand,
+  ListMFADevicesCommand,
+} from '@aws-sdk/client-iam';
+import {
+  EC2Client,
+  DescribeSecurityGroupsCommand,
+  DescribeVpcsCommand,
+  DescribeSubnetsCommand,
+} from '@aws-sdk/client-ec2';
+import {
+  ConfigServiceClient,
+  DescribeConfigRulesCommand,
+  GetComplianceDetailsByConfigRuleCommand,
+} from '@aws-sdk/client-config-service';
 
 interface AWSEvidenceParams {
   services: string[];
@@ -44,31 +65,23 @@ export async function collectAWSEvidence(params: AWSEvidenceParams): Promise<Evi
           evidence = await collectConfigEvidence(region);
           break;
         default:
-          evidence = {
-            service,
-            collectedAt: new Date().toISOString(),
-            region,
-            findings: [{ error: `Unsupported service: ${service}` }],
-            summary: { totalResources: 0, compliantResources: 0, nonCompliantResources: 0 },
-          };
+          throw new Error(`Unsupported AWS service: ${service}`);
       }
 
       results.push(evidence);
     } catch (error) {
-      results.push({
-        service,
-        collectedAt: new Date().toISOString(),
-        region,
-        findings: [{ error: error instanceof Error ? error.message : 'Unknown error' }],
-        summary: { totalResources: 0, compliantResources: 0, nonCompliantResources: 0 },
-      });
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`AWS ${service} evidence collection failed: ${message}`);
     }
   }
 
   return results;
 }
 
-async function collectS3Evidence(region: string, includeConfigurations: boolean): Promise<EvidenceResult> {
+async function collectS3Evidence(
+  region: string,
+  includeConfigurations: boolean
+): Promise<EvidenceResult> {
   const client = new S3Client({ region });
   const findings: unknown[] = [];
   let compliantCount = 0;
@@ -90,7 +103,9 @@ async function collectS3Evidence(region: string, includeConfigurations: boolean)
       if (includeConfigurations) {
         // Check encryption
         try {
-          const encryption = await client.send(new GetBucketEncryptionCommand({ Bucket: bucketName }));
+          const encryption = await client.send(
+            new GetBucketEncryptionCommand({ Bucket: bucketName })
+          );
           bucketFindings.encryption = {
             enabled: true,
             rules: encryption.ServerSideEncryptionConfiguration?.Rules,
@@ -103,7 +118,9 @@ async function collectS3Evidence(region: string, includeConfigurations: boolean)
 
         // Check public access block
         try {
-          const publicAccess = await client.send(new GetPublicAccessBlockCommand({ Bucket: bucketName }));
+          const publicAccess = await client.send(
+            new GetPublicAccessBlockCommand({ Bucket: bucketName })
+          );
           bucketFindings.publicAccessBlock = publicAccess.PublicAccessBlockConfiguration;
           if (
             publicAccess.PublicAccessBlockConfiguration?.BlockPublicAcls &&
@@ -143,7 +160,9 @@ async function collectS3Evidence(region: string, includeConfigurations: boolean)
       },
     };
   } catch (error) {
-    throw new Error(`Failed to collect S3 evidence: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to collect S3 evidence: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -158,7 +177,7 @@ async function collectIAMEvidence(region: string): Promise<EvidenceResult> {
     try {
       const passwordPolicy = await client.send(new GetAccountPasswordPolicyCommand({}));
       const policy = passwordPolicy.PasswordPolicy;
-      
+
       findings.push({
         type: 'password_policy',
         policy,
@@ -238,7 +257,9 @@ async function collectIAMEvidence(region: string): Promise<EvidenceResult> {
       },
     };
   } catch (error) {
-    throw new Error(`Failed to collect IAM evidence: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to collect IAM evidence: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -291,14 +312,10 @@ async function collectEC2Evidence(region: string): Promise<EvidenceResult> {
 
     for (const sg of securityGroups) {
       const hasOpenSSH = sg.IpPermissions?.some(
-        (p) =>
-          p.FromPort === 22 &&
-          p.IpRanges?.some((r) => r.CidrIp === '0.0.0.0/0')
+        (p) => p.FromPort === 22 && p.IpRanges?.some((r) => r.CidrIp === '0.0.0.0/0')
       );
       const hasOpenRDP = sg.IpPermissions?.some(
-        (p) =>
-          p.FromPort === 3389 &&
-          p.IpRanges?.some((r) => r.CidrIp === '0.0.0.0/0')
+        (p) => p.FromPort === 3389 && p.IpRanges?.some((r) => r.CidrIp === '0.0.0.0/0')
       );
 
       findings.push({
@@ -334,7 +351,9 @@ async function collectEC2Evidence(region: string): Promise<EvidenceResult> {
       },
     };
   } catch (error) {
-    throw new Error(`Failed to collect EC2/VPC evidence: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to collect EC2/VPC evidence: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -361,12 +380,12 @@ async function collectConfigEvidence(region: string): Promise<EvidenceResult> {
         })
       );
 
-      const compliant = complianceResponse.EvaluationResults?.filter(
-        (r) => r.ComplianceType === 'COMPLIANT'
-      ).length || 0;
-      const nonCompliant = complianceResponse.EvaluationResults?.filter(
-        (r) => r.ComplianceType === 'NON_COMPLIANT'
-      ).length || 0;
+      const compliant =
+        complianceResponse.EvaluationResults?.filter((r) => r.ComplianceType === 'COMPLIANT')
+          .length || 0;
+      const nonCompliant =
+        complianceResponse.EvaluationResults?.filter((r) => r.ComplianceType === 'NON_COMPLIANT')
+          .length || 0;
 
       findings.push({
         type: 'config_rule',
@@ -396,10 +415,8 @@ async function collectConfigEvidence(region: string): Promise<EvidenceResult> {
       },
     };
   } catch (error) {
-    throw new Error(`Failed to collect AWS Config evidence: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to collect AWS Config evidence: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
-
-
-
-

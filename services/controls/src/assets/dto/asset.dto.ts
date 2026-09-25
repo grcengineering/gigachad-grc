@@ -132,17 +132,17 @@ export class UpdateAssetDto {
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
-  category?: string;
-
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
   status?: string;
 
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
   criticality?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  category?: string;
 
   @ApiPropertyOptional()
   @IsString()
@@ -180,15 +180,30 @@ export class AssetFilterDto {
   @IsOptional()
   types?: string[];
 
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  type?: string;
+
   @ApiPropertyOptional({ type: [String] })
   @IsArray()
   @IsOptional()
   statuses?: string[];
 
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  status?: string;
+
   @ApiPropertyOptional({ type: [String] })
   @IsArray()
   @IsOptional()
   criticalities?: string[];
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  criticality?: string;
 
   @ApiPropertyOptional()
   @IsString()

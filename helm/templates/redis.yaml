@@ -37,11 +37,10 @@ spec:
               drop:
                 - ALL
           command:
-            - redis-server
-            - --appendonly
-            - "yes"
-            - --requirepass
-            - $(REDIS_PASSWORD)
+            - sh
+            - -c
+          args:
+            - exec redis-server --appendonly yes --requirepass "$REDIS_PASSWORD"
           ports:
             - containerPort: 6379
               name: redis

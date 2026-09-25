@@ -163,8 +163,8 @@ export class PermissionsController {
   @Get('users/:id/overrides')
   @UseGuards(PermissionGuard)
   @RequirePermission(Resource.PERMISSIONS, Action.READ)
-  async getUserOverrides(@Param('id', ParseUUIDPipe) userId: string) {
-    return this.groupsService.getUserOverrides(userId);
+  async getUserOverrides(@Param('id', ParseUUIDPipe) userId: string, @User() caller: UserContext) {
+    return this.groupsService.getUserOverrides(userId, caller.organizationId);
   }
 
   // ===========================

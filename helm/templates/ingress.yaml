@@ -23,8 +23,24 @@ spec:
     - host: {{ .Values.ingress.host }}
       http:
         paths:
+          {{- if .Values.keycloak.enabled }}
+          - path: /auth
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-keycloak
+                port:
+                  number: 8080
+          {{- end }}
           # Controls API routes
           {{- if .Values.controls.enabled }}
+          - path: /scim
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "gigachad-grc.fullname" . }}-controls
+                port:
+                  number: {{ .Values.controls.port }}
           - path: /api/controls
             pathType: Prefix
             backend:

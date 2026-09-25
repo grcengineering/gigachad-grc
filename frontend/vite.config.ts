@@ -73,6 +73,7 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       proxy: {
         // Controls service
+        '/scim': { target: 'http://localhost:3001', changeOrigin: true },
         '/api/controls': { target: 'http://localhost:3001', changeOrigin: true },
         '/api/evidence': { target: 'http://localhost:3001', changeOrigin: true },
         '/api/implementations': { target: 'http://localhost:3001', changeOrigin: true },

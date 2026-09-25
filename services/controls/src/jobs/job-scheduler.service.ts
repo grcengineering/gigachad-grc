@@ -217,7 +217,8 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     for (const job of pendingJobs) {
       try {
         // Mark as active
-        await this.jobsService.markJobActive(job.id);
+        const claimed = await this.jobsService.markJobActive(job.id);
+        if (!claimed) continue;
 
         // Execute the job
         const result = await this.executeJob(job);
@@ -278,9 +279,6 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
 
       case 'run-retention-policies':
         return this.runRetentionPolicies(data);
-
-      case 'refresh-search-indexes':
-        return this.refreshSearchIndexes(data);
 
       // Webhook delivery
       case 'deliver-webhook':
@@ -497,6 +495,9 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
    */
   private async cleanupOldAuditLogs(data: any): Promise<JobResult> {
     const { retentionDays = 365, organizationId } = data;
+    if (!organizationId) {
+      throw new Error('organizationId is required for audit-log cleanup');
+    }
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
@@ -504,10 +505,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
       timestamp: { lt: cutoffDate },
     };
 
-    // If organizationId is provided, scope to that org
-    if (organizationId) {
-      whereClause.organizationId = organizationId;
-    }
+    whereClause.organizationId = organizationId;
 
     const result = await this.prisma.auditLog.deleteMany({
       where: whereClause,
@@ -552,59 +550,6 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     } catch (error: any) {
       this.logger.error(`Retention policies failed: ${error.message}`);
       throw error;
-    }
-  }
-
-  /**
-   * Refresh search indexes (tsvector columns)
-   */
-  private async refreshSearchIndexes(data: any): Promise<JobResult> {
-    const { organizationId: _organizationId } = data;
-    this.logger.log('Refreshing search indexes');
-
-    try {
-      // Refresh tsvector columns for controls
-      await this.prisma.$executeRaw`
-        UPDATE "Control"
-        SET "searchVector" = to_tsvector('english', 
-          COALESCE(title, '') || ' ' || 
-          COALESCE(description, '') || ' ' || 
-          COALESCE("controlId", '')
-        )
-        WHERE "searchVector" IS NULL 
-        OR "updatedAt" > NOW() - INTERVAL '1 day'
-      `;
-
-      // Refresh tsvector columns for risks
-      await this.prisma.$executeRaw`
-        UPDATE "Risk"
-        SET "searchVector" = to_tsvector('english', 
-          COALESCE(title, '') || ' ' || 
-          COALESCE(description, '') || ' ' || 
-          COALESCE("riskId", '')
-        )
-        WHERE "searchVector" IS NULL 
-        OR "updatedAt" > NOW() - INTERVAL '1 day'
-      `;
-
-      // Refresh tsvector columns for policies
-      await this.prisma.$executeRaw`
-        UPDATE "Policy"
-        SET "searchVector" = to_tsvector('english', 
-          COALESCE(title, '') || ' ' || 
-          COALESCE(description, '') || ' ' || 
-          COALESCE("policyId", '')
-        )
-        WHERE "searchVector" IS NULL 
-        OR "updatedAt" > NOW() - INTERVAL '1 day'
-      `;
-
-      this.logger.log('Search indexes refreshed');
-      return { status: 'completed' };
-    } catch (error: any) {
-      // If the tables don't have searchVector columns, just log and continue
-      this.logger.warn(`Search index refresh partial: ${error.message}`);
-      return { status: 'completed', warning: error.message };
     }
   }
 

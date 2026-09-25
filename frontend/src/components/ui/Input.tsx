@@ -2,6 +2,7 @@ import { InputHTMLAttributes, forwardRef, ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+  label?: ReactNode;
   invalid?: boolean;
   leftIcon?: ReactNode;
   rightSlot?: ReactNode;
@@ -15,9 +16,9 @@ const sizes = {
 };
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, invalid, leftIcon, rightSlot, inputSize = 'md', ...props }, ref) => {
-    if (leftIcon || rightSlot) {
-      return (
+  ({ className, invalid, leftIcon, rightSlot, inputSize = 'md', label, ...props }, ref) => {
+    const control =
+      leftIcon || rightSlot ? (
         <div className="relative w-full">
           {leftIcon && (
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-500 dark:text-surface-400 pointer-events-none">
@@ -46,22 +47,31 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             </span>
           )}
         </div>
+      ) : (
+        <input
+          ref={ref}
+          className={cn(
+            'w-full rounded-md border bg-white px-3 text-surface-900 placeholder:text-surface-600 transition-colors',
+            'focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1 focus-visible:ring-offset-surface-50',
+            'disabled:opacity-50 disabled:cursor-not-allowed',
+            invalid ? 'border-red-500/60' : 'border-surface-300 hover:border-surface-400',
+            sizes[inputSize],
+            className
+          )}
+          {...props}
+        />
       );
-    }
 
-    return (
-      <input
-        ref={ref}
-        className={cn(
-          'w-full rounded-md border bg-white px-3 text-surface-900 placeholder:text-surface-600 transition-colors',
-          'focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1 focus-visible:ring-offset-surface-50',
-          'disabled:opacity-50 disabled:cursor-not-allowed',
-          invalid ? 'border-red-500/60' : 'border-surface-300 hover:border-surface-400',
-          sizes[inputSize],
-          className
-        )}
-        {...props}
-      />
+    return label ? (
+      <label className="block space-y-1.5 text-sm font-medium text-surface-700">
+        <span>
+          {label}
+          {props.required && <span className="ml-1 text-red-600">*</span>}
+        </span>
+        {control}
+      </label>
+    ) : (
+      control
     );
   }
 );

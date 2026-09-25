@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import {
@@ -14,7 +19,7 @@ import {
 export class GroupsService {
   constructor(
     private prisma: PrismaService,
-    private auditService: AuditService,
+    private auditService: AuditService
   ) {}
 
   /**
@@ -28,13 +33,10 @@ export class GroupsService {
           select: { members: true },
         },
       },
-      orderBy: [
-        { isSystem: 'desc' },
-        { name: 'asc' },
-      ],
+      orderBy: [{ isSystem: 'desc' }, { name: 'asc' }],
     });
 
-    return groups.map(group => ({
+    return groups.map((group) => ({
       id: group.id,
       name: group.name,
       description: group.description || undefined,
@@ -82,7 +84,7 @@ export class GroupsService {
     organizationId: string,
     dto: CreatePermissionGroupDto,
     userId?: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<PermissionGroupResponseDto> {
     // Check for duplicate name
     const existing = await this.prisma.permissionGroup.findUnique({
@@ -140,7 +142,7 @@ export class GroupsService {
     organizationId: string,
     dto: UpdatePermissionGroupDto,
     userId?: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<PermissionGroupResponseDto> {
     const existing = await this.prisma.permissionGroup.findFirst({
       where: { id, organizationId },
@@ -215,7 +217,7 @@ export class GroupsService {
     id: string,
     organizationId: string,
     userId?: string,
-    userEmail?: string,
+    userEmail?: string
   ): Promise<void> {
     const group = await this.prisma.permissionGroup.findFirst({
       where: { id, organizationId },
@@ -273,7 +275,7 @@ export class GroupsService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return memberships.map(m => ({
+    return memberships.map((m) => ({
       id: m.user.id,
       keycloakId: m.user.keycloakId,
       email: m.user.email,
@@ -290,7 +292,7 @@ export class GroupsService {
     userId: string,
     organizationId: string,
     actorId?: string,
-    actorEmail?: string,
+    actorEmail?: string
   ): Promise<void> {
     const group = await this.prisma.permissionGroup.findFirst({
       where: { id: groupId, organizationId },
@@ -351,7 +353,7 @@ export class GroupsService {
     userId: string,
     organizationId: string,
     actorId?: string,
-    actorEmail?: string,
+    actorEmail?: string
   ): Promise<void> {
     const group = await this.prisma.permissionGroup.findFirst({
       where: { id: groupId, organizationId },
@@ -410,7 +412,7 @@ export class GroupsService {
     organizationId: string,
     overrides: UserPermissionOverrideDto[],
     actorId?: string,
-    actorEmail?: string,
+    actorEmail?: string
   ): Promise<void> {
     const user = await this.prisma.user.findFirst({
       where: { id: userId, organizationId },
@@ -428,7 +430,7 @@ export class GroupsService {
     // Create new overrides
     if (overrides.length > 0) {
       await this.prisma.userPermissionOverride.createMany({
-        data: overrides.map(o => ({
+        data: overrides.map((o) => ({
           userId,
           permission: o.permission,
           granted: o.granted,
@@ -454,12 +456,22 @@ export class GroupsService {
   /**
    * Get user's permission overrides
    */
-  async getUserOverrides(userId: string): Promise<UserPermissionOverrideDto[]> {
+  async getUserOverrides(
+    userId: string,
+    organizationId: string
+  ): Promise<UserPermissionOverrideDto[]> {
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, organizationId },
+      select: { id: true },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
     const overrides = await this.prisma.userPermissionOverride.findMany({
       where: { userId },
     });
 
-    return overrides.map(o => ({
+    return overrides.map((o) => ({
       permission: o.permission,
       granted: o.granted,
       resourceScope: o.resourceScope as any,
@@ -494,6 +506,3 @@ export class GroupsService {
     }
   }
 }
-
-
-

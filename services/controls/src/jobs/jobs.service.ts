@@ -436,15 +436,16 @@ export class JobsService {
   // Internal: Job Processing (for BullMQ worker)
   // ===========================================
 
-  async markJobActive(id: string): Promise<void> {
-    await this.prisma.job.update({
-      where: { id },
+  async markJobActive(id: string): Promise<boolean> {
+    const claimed = await this.prisma.job.updateMany({
+      where: { id, status: 'pending' },
       data: {
         status: 'active',
         processedAt: new Date(),
         attempts: { increment: 1 },
       },
     });
+    return claimed.count === 1;
   }
 
   async markJobCompleted(id: string, result: any): Promise<void> {

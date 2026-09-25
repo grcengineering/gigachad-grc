@@ -3,9 +3,14 @@ import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { PrismaModule } from './prisma/prisma.module';
+import { PrismaService } from './prisma/prisma.service';
 import { PoliciesModule } from './policies/policies.module';
 import { AuditModule } from './audit/audit.module';
-import { StorageModule } from '@gigachad-grc/shared';
+import {
+  StorageModule,
+  HealthModule,
+  createPrismaHealthProvider,
+} from '@gigachad-grc/shared';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
@@ -34,10 +39,12 @@ import { AuthModule } from './auth/auth.module';
     ]),
     PrismaModule,
     StorageModule.forRoot(),
+    HealthModule,
     AuditModule,
     PoliciesModule,
   ],
   providers: [
+    createPrismaHealthProvider(PrismaService),
     // Global rate limiting guard
     {
       provide: APP_GUARD,

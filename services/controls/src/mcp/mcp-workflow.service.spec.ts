@@ -87,10 +87,21 @@ describe('MCPWorkflowService durable execution state', () => {
       ),
     },
     auditLog: { create: jest.fn(async () => ({})) },
-    organization: { findMany: jest.fn(async () => []) },
+    organization: {
+      findMany: jest.fn(async () => []),
+      findUnique: jest.fn(async () => ({
+        name: 'Test Organization',
+        settings: { industry: 'technology', riskAppetite: 'medium' },
+      })),
+    },
   };
   const mcpClient: any = {
-    callTool: jest.fn(async () => ({ collected: true })),
+    callTool: jest.fn(async (_serverId: string, toolName: string) => {
+      if (toolName === 'analyze_risk') return { riskScore: 'medium' };
+      if (toolName === 'suggest_controls') return { suggestions: [{ id: 'control-1' }] };
+      if (toolName === 'map_requirements') return { mappings: [] };
+      return { collected: true };
+    }),
   };
   const counter: any = { inc: jest.fn() };
 
@@ -118,6 +129,7 @@ describe('MCPWorkflowService durable execution state', () => {
     await service.onModuleInit();
     const execution = await service.executeWorkflow('org-a', 'user-a', 'policy-review', {
       policyId: 'policy-1',
+      policyContent: 'Access reviews are performed quarterly and documented by the control owner.',
       framework: 'SOC2',
       policyType: 'security',
     });

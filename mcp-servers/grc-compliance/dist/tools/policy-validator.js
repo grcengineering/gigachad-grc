@@ -167,8 +167,11 @@ const requirementPatterns = {
 };
 export async function validatePolicyCompliance(params) {
     const { policyId, policyContent, framework, requirements } = params;
+    if (!policyContent?.trim()) {
+        throw new Error('Policy content is required; the standalone Compliance MCP server cannot retrieve a policy by ID.');
+    }
     const actualPolicyId = policyId || `policy-${Date.now()}`;
-    const content = policyContent || '';
+    const content = policyContent;
     // Get applicable requirements
     let applicableRequirements = [];
     if (requirements && requirements.length > 0) {

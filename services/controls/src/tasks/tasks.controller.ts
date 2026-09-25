@@ -1,27 +1,13 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { TasksService } from './tasks.service';
-import { CurrentUser, UserContext } from '@gigachad-grc/shared';
+import { CurrentUser, UserContext, Roles, RolesGuard } from '@gigachad-grc/shared';
 import { DevAuthGuard } from '../auth/dev-auth.guard';
 
 @ApiTags('tasks')
 @ApiBearerAuth()
 @Controller('api/tasks')
-@UseGuards(DevAuthGuard)
+@UseGuards(DevAuthGuard, RolesGuard)
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
@@ -32,36 +18,27 @@ export class TasksController {
     @Query('entityType') entityType?: string,
     @Query('entityId') entityId?: string,
     @Query('status') status?: string,
-    @Query('priority') priority?: string,
+    @Query('priority') priority?: string
   ) {
     if (entityType && entityId) {
-      return this.tasksService.findByEntity(
-        user.organizationId,
-        entityType,
-        entityId,
-      );
+      return this.tasksService.findByEntity(user.organizationId, entityType, entityId);
     }
     return this.tasksService.findAll(user.organizationId, { status, priority });
   }
 
   @Get('my')
   @ApiOperation({ summary: 'Get tasks assigned to current user' })
-  async findMyTasks(
-    @CurrentUser() user: UserContext,
-    @Query('status') status?: string,
-  ) {
-    return this.tasksService.findByAssignee(
-      user.organizationId,
-      user.userId,
-      status,
-    );
+  async findMyTasks(@CurrentUser() user: UserContext, @Query('status') status?: string) {
+    return this.tasksService.findByAssignee(user.organizationId, user.userId, status);
   }
 
   @Post()
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Create a task' })
   async create(
     @CurrentUser() user: UserContext,
-    @Body() body: {
+    @Body()
+    body: {
       entityType: string;
       entityId: string;
       title: string;
@@ -69,41 +46,34 @@ export class TasksController {
       priority?: string;
       assigneeId?: string;
       dueDate?: string;
-    },
+    }
   ) {
-    return this.tasksService.create(
-      user.organizationId,
-      user.userId,
-      body,
-    );
+    return this.tasksService.create(user.organizationId, user.userId, body);
   }
 
   @Put(':id')
+  @Roles('admin', 'compliance_manager', 'auditor')
   @ApiOperation({ summary: 'Update a task' })
   async update(
     @Param('id') id: string,
     @CurrentUser() user: UserContext,
-    @Body() body: {
+    @Body()
+    body: {
       title?: string;
       description?: string;
       status?: string;
       priority?: string;
       assigneeId?: string | null;
       dueDate?: string | null;
-    },
+    }
   ) {
     return this.tasksService.update(id, user.organizationId, body);
   }
 
   @Delete(':id')
+  @Roles('admin', 'compliance_manager')
   @ApiOperation({ summary: 'Delete a task' })
-  async delete(
-    @Param('id') id: string,
-    @CurrentUser() user: UserContext,
-  ) {
+  async delete(@Param('id') id: string, @CurrentUser() user: UserContext) {
     return this.tasksService.delete(id, user.organizationId);
   }
 }
-
-
-

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { risksApi } from '../lib/api';
+import api from '../lib/api';
 import { Clock, CheckCircle2, AlertTriangle, User, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import {
@@ -17,6 +17,7 @@ import {
 type QueueTab = 'assessments' | 'treatments' | 'approvals' | 'reviews';
 
 interface QueueRisk {
+  taskId: string;
   id: string;
   riskId: string;
   title: string;
@@ -25,6 +26,21 @@ interface QueueRisk {
   inherentRisk: string;
   createdAt: string;
   treatmentDueDate?: string;
+}
+
+interface QueueTask {
+  id: string;
+  taskType: string;
+  description?: string;
+  dueDate?: string;
+  createdAt: string;
+  risk?: {
+    id: string;
+    riskId: string;
+    title: string;
+    inherentRisk?: string;
+    status: string;
+  };
 }
 
 const LEVEL_DOT: Record<string, string> = {
@@ -38,24 +54,36 @@ export default function RiskQueue() {
   const [activeTab, setActiveTab] = useState<QueueTab>('assessments');
   const userId = localStorage.getItem('userId') || '';
 
-  const { data: assessmentQueue } = useQuery({
-    queryKey: ['risk-queue', 'assessments', userId],
+  const { data: taskQueue } = useQuery<{ tasks: QueueTask[] }>({
+    queryKey: ['risk-queue', 'tasks', userId],
     queryFn: () =>
-      risksApi.list({ status: 'risk_analysis_in_progress', limit: 50 }).then((r) => r.data),
+      api.get('/api/risk-tasks/my-tasks', { params: { limit: 100 } }).then((r) => r.data),
   });
-  const { data: treatmentQueue } = useQuery({
-    queryKey: ['risk-queue', 'treatments', userId],
-    queryFn: () =>
-      risksApi.list({ status: 'treatment_decision_review', limit: 50 }).then((r) => r.data),
-  });
-  const { data: approvalQueue } = useQuery({
-    queryKey: ['risk-queue', 'approvals', userId],
-    queryFn: () => risksApi.list({ status: 'executive_approval', limit: 50 }).then((r) => r.data),
-  });
-  const { data: reviewQueue } = useQuery({
-    queryKey: ['risk-queue', 'reviews', userId],
-    queryFn: () => risksApi.list({ status: 'grc_approval', limit: 50 }).then((r) => r.data),
-  });
+
+  const toQueueRisk = (task: QueueTask): QueueRisk | null =>
+    task.risk
+      ? {
+          taskId: task.id,
+          id: task.risk.id,
+          riskId: task.risk.riskId,
+          title: task.risk.title,
+          description: task.description || '',
+          category: task.taskType,
+          inherentRisk: task.risk.inherentRisk || 'medium',
+          createdAt: task.createdAt,
+          treatmentDueDate: task.dueDate,
+        }
+      : null;
+  const tasks = taskQueue?.tasks ?? [];
+  const queueFor = (...taskTypes: string[]) =>
+    tasks
+      .filter((task) => taskTypes.includes(task.taskType))
+      .map(toQueueRisk)
+      .filter((risk): risk is QueueRisk => risk !== null);
+  const assessmentQueue = queueFor('validate', 'assess');
+  const treatmentQueue = queueFor('treatment_decision', 'mitigation_update');
+  const approvalQueue = queueFor('executive_approval');
+  const reviewQueue = queueFor('review_assessment');
 
   const tabs: Array<{
     key: QueueTab;
@@ -68,7 +96,7 @@ export default function RiskQueue() {
     {
       key: 'assessments',
       label: 'My Assessments',
-      count: assessmentQueue?.risks?.length || 0,
+      count: assessmentQueue.length,
       icon: Clock,
       color: 'text-amber-700',
       bg: 'bg-amber-500/10',
@@ -76,7 +104,7 @@ export default function RiskQueue() {
     {
       key: 'treatments',
       label: 'Treatment Decisions',
-      count: treatmentQueue?.risks?.length || 0,
+      count: treatmentQueue.length,
       icon: AlertTriangle,
       color: 'text-orange-600',
       bg: 'bg-orange-500/10',
@@ -84,7 +112,7 @@ export default function RiskQueue() {
     {
       key: 'approvals',
       label: 'Executive Approvals',
-      count: approvalQueue?.risks?.length || 0,
+      count: approvalQueue.length,
       icon: User,
       color: 'text-purple-600',
       bg: 'bg-purple-500/10',
@@ -92,7 +120,7 @@ export default function RiskQueue() {
     {
       key: 'reviews',
       label: 'GRC Reviews',
-      count: reviewQueue?.risks?.length || 0,
+      count: reviewQueue.length,
       icon: CheckCircle2,
       color: 'text-cyan-600',
       bg: 'bg-cyan-500/10',
@@ -102,13 +130,13 @@ export default function RiskQueue() {
   const getActiveQueue = (): QueueRisk[] => {
     switch (activeTab) {
       case 'assessments':
-        return assessmentQueue?.risks || [];
+        return assessmentQueue;
       case 'treatments':
-        return treatmentQueue?.risks || [];
+        return treatmentQueue;
       case 'approvals':
-        return approvalQueue?.risks || [];
+        return approvalQueue;
       case 'reviews':
-        return reviewQueue?.risks || [];
+        return reviewQueue;
     }
   };
 
@@ -173,7 +201,7 @@ export default function RiskQueue() {
           ) : (
             queue.map((risk) => (
               <div
-                key={risk.id}
+                key={risk.taskId}
                 className="p-4 hover:bg-surface-100/40 transition-colors flex items-center gap-4"
               >
                 <span

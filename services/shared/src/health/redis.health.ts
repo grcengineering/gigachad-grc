@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import Redis from 'ioredis';
 import { HealthIndicatorResult } from './prisma.health';
 
 /**
@@ -30,9 +31,28 @@ interface IRedisEventBus {
  * Can check both raw Redis clients and RedisEventBus instances.
  */
 @Injectable()
-export class RedisHealthIndicator {
+export class RedisHealthIndicator implements OnModuleDestroy {
   private redisClient: IRedisClient | null = null;
   private redisEventBus: IRedisEventBus | null = null;
+  private ownedClient: Redis | null = null;
+
+  constructor() {
+    if (process.env.REDIS_URL) {
+      this.ownedClient = new Redis(process.env.REDIS_URL, {
+        lazyConnect: true,
+        maxRetriesPerRequest: 1,
+        enableOfflineQueue: false,
+      });
+      this.ownedClient.on('error', () => undefined);
+      this.redisClient = this.ownedClient;
+    }
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    if (this.ownedClient) {
+      await this.ownedClient.quit().catch(() => this.ownedClient?.disconnect());
+    }
+  }
 
   /**
    * Set the Redis client to use for health checks
@@ -78,8 +98,7 @@ export class RedisHealthIndicator {
       return this.checkRedisClientHealth(key);
     }
 
-    // No Redis configured - assume healthy (for services without Redis)
-    return this.getStatus(key, true, { message: 'No Redis configured' });
+    return this.getStatus(key, false, { message: 'Redis health client is not configured' });
   }
 
   /**
@@ -112,6 +131,7 @@ export class RedisHealthIndicator {
    */
   private async checkRedisClientHealth(key: string): Promise<HealthIndicatorResult> {
     try {
+      if (this.ownedClient?.status === 'wait') await this.ownedClient.connect();
       const startTime = Date.now();
       const result = await this.redisClient!.ping();
       const latencyMs = Date.now() - startTime;
