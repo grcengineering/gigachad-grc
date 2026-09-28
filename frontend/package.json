@@ -34,7 +34,7 @@
     "@testing-library/user-event": "14.6.1",
     "@types/react": "^18.2.46",
     "@types/react-dom": "^18.2.18",
-    "@typescript-eslint/eslint-plugin": "^8.64.0",
+    "@typescript-eslint/eslint-plugin": "^8.70.1",
     "@typescript-eslint/parser": "^8.63.0",
     "@vitejs/plugin-react": "6.0.3",
     "autoprefixer": "^10.4.16",
