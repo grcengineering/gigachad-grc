@@ -14,7 +14,7 @@
     "@aws-sdk/client-s3": "^3.1002.0",
     "@aws-sdk/client-iam": "^3.1002.0",
     "@aws-sdk/client-ec2": "^3.1002.0",
-    "@aws-sdk/client-config-service": "^3.1002.0",
+    "@aws-sdk/client-config-service": "^3.1140.0",
     "@azure/identity": "^4.13.1",
     "@azure/arm-resources": "^5.0.0",
     "@azure/arm-security": "^5.0.0",
