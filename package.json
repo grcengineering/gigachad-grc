@@ -62,7 +62,7 @@
     "jest": "^30.5.2",
     "lint-staged": "^15.0.0",
     "prettier": "^3.9.5",
-    "ts-jest": "^29.4.12",
+    "ts-jest": "^29.4.14",
     "typescript-eslint": "^8.62.1",
     "vitest": "5.0.1"
   },
