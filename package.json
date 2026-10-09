@@ -98,7 +98,7 @@
     "multer": "$multer",
     "serialize-javascript": ">=7.0.3",
     "file-type": ">=21.3.4",
-    "handlebars": ">=4.7.9",
+    "handlebars": ">=4.7.10",
     "path-to-regexp": ">=8.4.0",
     "picomatch": ">=2.3.2",
     "@xmldom/xmldom": "0.9.12",
