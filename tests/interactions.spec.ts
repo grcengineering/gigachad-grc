@@ -107,16 +107,18 @@ test.describe('Controls — nested EvidenceDrawer (the bug we just fixed)', () =
 
     expect(openedControlTitle.length).toBeGreaterThan(0);
 
-    // Capture the evidence title from the button text (first few words before the type/status suffix)
-    const evidenceButtonName = (await evidenceButton!.textContent())?.trim() || '';
-    const evidenceTitleStart = evidenceButtonName.split(/\s+/).slice(0, 2).join(' ');
+    // Read only the title element. button.textContent() concatenates title, type,
+    // and status without guaranteed whitespace (for example, "Network Diagramdocumentpending").
+    const evidenceTitle = (await evidenceButton!.locator('p').first().textContent())?.trim() || '';
+    expect(evidenceTitle.length).toBeGreaterThan(0);
 
     await evidenceButton!.click();
 
     // EvidenceDrawer opens — its heading appears (HUI may aria-hide the outer dialog, so use the new heading by text)
     const evidenceHeading = page.getByRole('heading', {
       level: 2,
-      name: new RegExp(evidenceTitleStart, 'i'),
+      name: evidenceTitle,
+      exact: true,
     });
     await expect(evidenceHeading).toBeVisible({ timeout: 6_000 });
 
