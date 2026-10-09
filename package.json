@@ -86,6 +86,7 @@
     "minipass": "^7.1.2",
     "@isaacs/brace-expansion": "^5.0.0",
     "brace-expansion": "^5.0.12",
+    "compression": "^1.8.2",
     "lodash": ">=4.18.0",
     "fast-xml-parser": ">=5.7.0",
     "fast-xml-builder": ">=1.2.0",
@@ -104,6 +105,9 @@
     "nodemailer": "10.0.15",
     "nanoid": "^3.3.18",
     "postcss": "^8.5.26",
+    "postcss-selector-parser": "^7.1.6",
+    "proxy-addr": "^2.0.8",
+    "source-map-js": "^1.2.2",
     "yaml": ">=2.8.3",
     "sanitize-html": "2.17.7",
     "follow-redirects": ">=1.16.0",
@@ -112,7 +116,6 @@
     "qs": "^6.16.0",
     "browserslist": "^4.28.9",
     "baseline-browser-mapping": "^2.11.23",
-    "postcss-selector-parser": "^6.1.4",
     "@nestjs/swagger": {
       "js-yaml": "^5.4.1"
     },
