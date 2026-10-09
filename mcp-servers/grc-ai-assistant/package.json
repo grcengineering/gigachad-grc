@@ -10,7 +10,7 @@
     "dev": "tsx src/index.ts"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.26.0",
+    "@modelcontextprotocol/sdk": "^1.31.0",
     "openai": "^4.20.0",
     "@anthropic-ai/sdk": "^0.128.0",
     "zod": "^3.22.0"
@@ -24,6 +24,7 @@
     "fast-uri": "^3.1.6",
     "form-data": "^4.0.6",
     "hono": "^4.13.5",
+    "proxy-addr": "^2.0.8",
     "qs": "^6.16.0",
     "ip-address": "^10.7.3"
   }
