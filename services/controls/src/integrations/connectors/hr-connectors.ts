@@ -7,6 +7,11 @@ import { safeFetch, SSRFProtectionError } from '@gigachad-grc/shared';
 // HR & People Management Connectors - Fully Implemented
 // =============================================================================
 
+// Without X-Gusto-API-Version, Gusto answers with the minimum API version set on the
+// application in the Developer Portal, so responses can differ per installation.
+// https://docs.gusto.com/app-integrations/docs/getting-setup
+const GUSTO_API_VERSION = '2026-06-15';
+
 @Injectable()
 export class GustoConnector extends BaseConnector {
   constructor() {
@@ -26,6 +31,7 @@ export class GustoConnector extends BaseConnector {
       this.setHeaders({
         Authorization: `Bearer ${config.apiKey}`,
         'Content-Type': 'application/json',
+        'X-Gusto-API-Version': config.apiVersion || GUSTO_API_VERSION,
       });
       this.setBaseURL('https://api.gusto.com');
 
@@ -48,6 +54,7 @@ export class GustoConnector extends BaseConnector {
     this.setHeaders({
       Authorization: `Bearer ${config.apiKey}`,
       'Content-Type': 'application/json',
+      'X-Gusto-API-Version': config.apiVersion || GUSTO_API_VERSION,
     });
     this.setBaseURL('https://api.gusto.com');
 
