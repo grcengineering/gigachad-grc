@@ -37,11 +37,11 @@
     "@nestjs/testing": "11.2.5",
     "@types/express": "^4.17.21",
     "@types/jest": "^30.0.0",
-    "@types/multer": "^2.2.0",
+    "@types/multer": "^2.3.0",
     "@types/node": "^20.19.39",
     "jest": "^30.5.2",
     "prisma": "^5.22.0",
-    "ts-jest": "^29.4.12",
+    "ts-jest": "^29.4.14",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   },
