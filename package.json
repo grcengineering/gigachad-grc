@@ -41,11 +41,11 @@
     "test:load:quick": "./tests/load/run-load-tests.sh quick"
   },
   "dependencies": {
-    "@nestjs/common": "11.2.5",
-    "@nestjs/core": "11.2.5",
-    "@nestjs/platform-express": "11.2.1",
+    "@nestjs/common": "11.2.7",
+    "@nestjs/core": "11.2.7",
+    "@nestjs/platform-express": "11.2.7",
     "@nestjs/swagger": "11.4.7",
-    "@nestjs/testing": "11.2.5",
+    "@nestjs/testing": "11.2.7",
     "exceljs": "4.4.0",
     "multer": "2.4.0",
     "uuid": "11.1.1"
