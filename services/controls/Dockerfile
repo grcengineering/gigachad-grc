@@ -27,6 +27,7 @@ RUN npm install --ignore-scripts --legacy-peer-deps
 WORKDIR /app/shared
 RUN npm install --ignore-scripts --legacy-peer-deps
 RUN npm run build
+RUN npm prune --omit=dev --ignore-scripts --legacy-peer-deps
 
 # Build controls service
 WORKDIR /app/controls
@@ -54,6 +55,7 @@ RUN ls -la node_modules/.prisma/client/ 2>/dev/null | head -5 || echo "Checking 
 
 # Build the service
 RUN npm run build
+RUN npm prune --omit=dev --ignore-scripts --legacy-peer-deps
 
 # Build each stdio MCP server as an independently installable runtime. The
 # controls process launches these directories directly; they are not npm

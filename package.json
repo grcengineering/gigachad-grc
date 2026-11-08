@@ -47,7 +47,7 @@
     "@nestjs/swagger": "11.4.7",
     "@nestjs/testing": "11.2.5",
     "exceljs": "4.4.0",
-    "multer": "2.4.0",
+    "multer": "2.5.0",
     "uuid": "11.1.1"
   },
   "devDependencies": {
@@ -62,7 +62,7 @@
     "jest": "^30.5.2",
     "lint-staged": "^15.0.0",
     "prettier": "^3.9.10",
-    "ts-jest": "^29.4.14",
+    "ts-jest": "^29.4.15",
     "typescript-eslint": "^8.62.1",
     "vitest": "5.0.5"
   },
@@ -90,30 +90,41 @@
     "lodash": ">=4.18.0",
     "fast-xml-parser": ">=5.7.0",
     "fast-xml-builder": ">=1.2.0",
-    "fast-uri": "^4.1.3",
+    "fast-uri@>=3 <4": "^3.1.9",
+    "fast-uri@>=4 <4.2.3": "^4.2.3",
     "axios": "^1.20.0",
-    "minimatch": "^10.2.3",
+    "minimatch": "11.0.1",
     "rollup": "^4.59.0",
     "@smithy/config-resolver": "^4.4.0",
     "multer": "$multer",
+    "body-parser": "^2.4.0",
     "serialize-javascript": ">=7.0.3",
     "file-type": ">=21.3.4",
     "handlebars": ">=4.7.10",
     "path-to-regexp": ">=8.4.0",
     "picomatch": ">=2.3.2",
     "@xmldom/xmldom": "0.9.12",
-    "nodemailer": "10.0.15",
+    "nodemailer": "10.1.4",
     "nanoid": "^3.3.18",
     "postcss": "^8.5.26",
-    "postcss-selector-parser": "^7.1.6",
+    "postcss-selector-parser": "^7.1.8",
     "proxy-addr": "^2.0.8",
     "source-map-js": "^1.2.2",
     "yaml": ">=2.8.3",
-    "sanitize-html": "2.17.7",
-    "follow-redirects": ">=1.16.0",
+    "sanitize-html": "2.18.1",
+    "follow-redirects": ">=1.16.2",
     "uuid": "$uuid",
     "js-yaml": "^4.3.2",
-    "qs": "^6.16.0",
+    "qs": "^6.17.1",
+    "ajv": {
+      "fast-uri": "3.1.9"
+    },
+    "tailwindcss": {
+      "postcss-selector-parser": "6.1.5"
+    },
+    "vitest": {
+      "vite": "8.3.6"
+    },
     "browserslist": "^4.28.9",
     "baseline-browser-mapping": "^2.11.23",
     "@nestjs/swagger": {
@@ -137,9 +148,6 @@
           "ajv": "8.18.0"
         }
       }
-    },
-    "@typescript-eslint/typescript-estree": {
-      "minimatch": "^9.0.7"
     }
   }
 }
