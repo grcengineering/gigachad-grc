@@ -34,17 +34,18 @@
     "@testing-library/user-event": "14.6.8",
     "@types/react": "^18.2.46",
     "@types/react-dom": "^18.2.18",
-    "@typescript-eslint/eslint-plugin": "^8.71.1",
-    "@typescript-eslint/parser": "^8.63.0",
+    "@typescript-eslint/eslint-plugin": "^8.72.1",
+    "@typescript-eslint/parser": "^8.72.1",
     "@vitejs/plugin-react": "6.0.3",
     "autoprefixer": "^10.4.16",
     "eslint": "^8.57.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "jsdom": "27.0.0",
     "postcss": "^8.5.26",
+    "postcss-selector-parser": "6.1.5",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.3.3",
-    "vite": "8.1.4",
+    "vite": "8.3.6",
     "vitest": "5.0.5"
   },
   "optionalDependencies": {
@@ -62,10 +63,11 @@
     "@xmldom/xmldom": "^0.9.12",
     "axios": "^1.20.0",
     "form-data": "^4.0.6",
+    "follow-redirects": ">=1.16.2",
     "underscore": "^1.13.8",
     "brace-expansion": "^5.0.12",
     "dompurify": ">=3.4.13",
     "picomatch": ">=2.3.2",
-    "minimatch": "^10.2.3"
+    "postcss-selector-parser": "^6.1.5"
   }
 }

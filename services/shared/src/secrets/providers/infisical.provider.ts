@@ -50,13 +50,15 @@ export class InfisicalSecretsProvider implements SecretsProvider {
     }
 
     try {
-      const { InfisicalSDK } = await import('@infisical/sdk');
-      this.client = new InfisicalSDK({
+      const { InfisicalClient } = await import('@infisical/sdk');
+      this.client = new InfisicalClient({
         siteUrl: this.siteUrl,
-      });
-      await this.client.auth().universalAuth.login({
-        clientId: this.clientId,
-        clientSecret: this.clientSecret,
+        auth: {
+          universalAuth: {
+            clientId: this.clientId,
+            clientSecret: this.clientSecret,
+          },
+        },
       });
       this.enabled = true;
       this.logger.log('Infisical SDK connected successfully');
@@ -75,11 +77,11 @@ export class InfisicalSecretsProvider implements SecretsProvider {
   async getSecret(name: string, path?: string): Promise<string | undefined> {
     if (this.enabled && this.client && this.projectId) {
       try {
-        const secret = await this.client.secrets().getSecret({
+        const secret = await this.client.getSecret({
           environment: this.environment,
           projectId: this.projectId,
           secretName: name,
-          secretPath: path || this.secretPath,
+          path: path || this.secretPath,
         });
         return secret.secretValue;
       } catch (error) {
@@ -95,10 +97,10 @@ export class InfisicalSecretsProvider implements SecretsProvider {
   async listSecrets(path?: string): Promise<Array<{ key: string; value: string }>> {
     if (this.enabled && this.client && this.projectId) {
       try {
-        const result = await this.client.secrets().listSecrets({
+        const result = await this.client.listSecrets({
           environment: this.environment,
           projectId: this.projectId,
-          secretPath: path || this.secretPath,
+          path: path || this.secretPath,
         });
         const secrets = result?.secrets || result || [];
         return (Array.isArray(secrets) ? secrets : []).map(
@@ -125,20 +127,22 @@ export class InfisicalSecretsProvider implements SecretsProvider {
     const secretPath = path || this.secretPath;
 
     try {
-      await this.client.secrets().createSecret(name, {
+      await this.client.createSecret({
         environment: this.environment,
         projectId: this.projectId,
+        secretName: name,
         secretValue: value,
-        secretPath,
+        path: secretPath,
       });
     } catch {
       // If create fails (already exists), try update
       try {
-        await this.client.secrets().updateSecret(name, {
+        await this.client.updateSecret({
           environment: this.environment,
           projectId: this.projectId,
+          secretName: name,
           secretValue: value,
-          secretPath,
+          path: secretPath,
         });
       } catch (error) {
         this.logger.error(
@@ -155,10 +159,11 @@ export class InfisicalSecretsProvider implements SecretsProvider {
     }
 
     try {
-      await this.client.secrets().deleteSecret(name, {
+      await this.client.deleteSecret({
         environment: this.environment,
         projectId: this.projectId,
-        secretPath: path || this.secretPath,
+        secretName: name,
+        path: path || this.secretPath,
       });
     } catch (error) {
       this.logger.error(
@@ -177,10 +182,10 @@ export class InfisicalSecretsProvider implements SecretsProvider {
   ): Promise<Array<{ key: string; createdAt?: Date; updatedAt?: Date }>> {
     if (this.enabled && this.client && this.projectId) {
       try {
-        const result = await this.client.secrets().listSecrets({
+        const result = await this.client.listSecrets({
           environment: this.environment,
           projectId: this.projectId,
-          secretPath: path || this.secretPath,
+          path: path || this.secretPath,
         });
         const secrets = result?.secrets || result || [];
         return (Array.isArray(secrets) ? secrets : []).map(
