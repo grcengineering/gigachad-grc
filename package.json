@@ -93,6 +93,7 @@
     "fast-uri@>=3 <4": "^3.1.9",
     "fast-uri@>=4 <4.2.3": "^4.2.3",
     "axios": "^1.20.0",
+    "minimatch": "11.0.1",
     "rollup": "^4.59.0",
     "@smithy/config-resolver": "^4.4.0",
     "multer": "$multer",
@@ -133,11 +134,7 @@
       "multer": "$multer"
     },
     "exceljs@4.4.0": {
-      "uuid": "11.1.1",
-      "archiver": "^8.0.0"
-    },
-    "readdir-glob": {
-      "minimatch": "11.0.1"
+      "uuid": "11.1.1"
     },
     "@istanbuljs/load-nyc-config": {
       "js-yaml": "3.15.2"
