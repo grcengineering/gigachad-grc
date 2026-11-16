@@ -64,7 +64,7 @@
     "prettier": "^3.9.10",
     "ts-jest": "^29.4.15",
     "typescript-eslint": "^8.62.1",
-    "vitest": "5.0.5"
+    "vitest": "5.1.0"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
