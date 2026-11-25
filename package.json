@@ -41,11 +41,11 @@
     "test:load:quick": "./tests/load/run-load-tests.sh quick"
   },
   "dependencies": {
-    "@nestjs/common": "11.2.5",
-    "@nestjs/core": "11.2.5",
-    "@nestjs/platform-express": "11.2.1",
-    "@nestjs/swagger": "11.4.7",
-    "@nestjs/testing": "11.2.5",
+    "@nestjs/common": "11.2.10",
+    "@nestjs/core": "11.2.10",
+    "@nestjs/platform-express": "11.2.10",
+    "@nestjs/swagger": "11.4.8",
+    "@nestjs/testing": "11.2.10",
     "exceljs": "4.4.0",
     "multer": "2.5.0",
     "uuid": "11.1.1"
@@ -130,9 +130,6 @@
     "@nestjs/swagger": {
       "js-yaml": "^5.4.1"
     },
-    "@nestjs/platform-express@11.2.1": {
-      "multer": "$multer"
-    },
     "exceljs@4.4.0": {
       "uuid": "11.1.1"
     },
@@ -148,6 +145,9 @@
           "ajv": "8.18.0"
         }
       }
+    },
+    "@nestjs/platform-express": {
+      "multer": "$multer"
     }
   }
 }
