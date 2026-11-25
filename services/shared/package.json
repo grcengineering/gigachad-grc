@@ -27,7 +27,7 @@
     "pdfkit": "^0.18.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
-    "sanitize-html": "2.18.1",
+    "sanitize-html": "2.18.2",
     "winston": "^3.11.0"
   },
   "devDependencies": {
@@ -35,7 +35,7 @@
     "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^20.19.39",
     "@types/pdfkit": "^0.17.5",
-    "@types/sanitize-html": "^2.16.1",
+    "@types/sanitize-html": "^2.16.2",
     "typescript": "^5.3.2"
   },
   "peerDependencies": {
